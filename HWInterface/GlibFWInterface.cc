@@ -184,6 +184,22 @@ namespace Ph2_HwInterface
 
 		cVecReg.clear();
 
+		// Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
+		cNPackets = ReadReg( "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
+
+		//Wait for start acknowledge
+		uhal::ValWord<uint32_t> cVal;
+		std::chrono::milliseconds cWait( 100 );
+		do
+		{
+			cVal = ReadReg( CMD_START_VALID );
+
+			if ( cVal == 0 )
+				std::this_thread::sleep_for( cWait );
+
+		}
+		while ( cVal == 0 );
+
 	}
 
 	void GlibFWInterface::Stop( uint32_t pNthAcq )
@@ -250,9 +266,6 @@ namespace Ph2_HwInterface
 
 		uhal::ValWord<uint32_t> cVal;
 
-		// Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
-		uint32_t cNPackets = pBoard->getReg( "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
-
 
 		//use a counting visitor to find out the number of CBCs
 		struct CbcCounter : public HwDescriptionVisitor
@@ -274,18 +287,7 @@ namespace Ph2_HwInterface
 		pBoard->accept( cCounter );
 		// compute the block size according to the number of CBC's on this board
 		// this will have to change with a more generic FW
-		uint32_t cBlockSize = cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
-
-		//Wait for start acknowledge
-		do
-		{
-			cVal = ReadReg( CMD_START_VALID );
-
-			if ( cVal == 0 )
-				std::this_thread::sleep_for( cWait );
-
-		}
-		while ( cVal == 0 );
+		cBlockSize = cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
 
 		//FIFO goes to write_data state
 		//Select SRAM
@@ -295,17 +297,15 @@ namespace Ph2_HwInterface
 		cVal = ReadReg( fStrFull );
 
 		do
-		{
-			std::this_thread::sleep_for( cWait );
-
+		{ 
 			cVal = ReadReg( fStrFull );
-
+			if (cVal==0)
+				std::this_thread::sleep_for( cWait ); 
 		}
 		while ( cVal == 0 );
 
 		//break trigger
-		if ( pBreakTrigger )
-			WriteReg( BREAK_TRIGGER, 1 );
+		//if ( pBreakTrigger ) WriteReg( BREAK_TRIGGER, 1 );
 
 		//Set read mode to SRAM
 		WriteReg( fStrSramUserLogic, 0 );
