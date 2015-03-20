@@ -6,11 +6,13 @@
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
-#include "../tools/Calibration.h"
+//#include "../tools/Calibration.h"
 #include "../Utils/Timer.h"
-#include <TApplication.h>
+//#include <TApplication.h>
 #include <inttypes.h>
 #include "../Utils/argvparser.h"
+#include "../Utils/ConsoleColor.h"
+#include "../System/SystemController.h"
 
 
 using namespace Ph2_HwDescription;

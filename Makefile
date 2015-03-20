@@ -1,6 +1,6 @@
 all: Utils HWDescription HWInterface System tools src GUI
 
-libs: Utils HWDescription HWInterface System
+libs: Utils HWDescription HWInterface System srcnoroot
 
 gui: Utils HWDescription HWInterface System tools src GUI
 
@@ -18,6 +18,8 @@ tools::
 	$(MAKE) -C $@
 src::
 	$(MAKE) -C $@
+srcnoroot::
+	$(MAKE) -C src noroot
 GUI::
 	$(MAKE) -C GUI/Macros
 	$(MAKE) -C $@

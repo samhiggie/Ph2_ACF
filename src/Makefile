@@ -1,6 +1,7 @@
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC `root-config --cflags --evelibs`
+CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC 
+CCFlagsRoot	= `root-config --cflags --evelibs`
 #DevFlags                    = -D__CBCDAQ_DEV__
 DevFlags                   =
 
@@ -12,15 +13,24 @@ LibraryDirs = /opt/cactus/lib ../lib
 # /opt/xdaq/lib
 LibraryPaths = $(LibraryDirs:%=-L%)
 
-ExternalObjects = $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system `root-config --glibs` -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Tools -lPh2_Utils
+ExternalObjects = $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils
+ExtObjectsRoot 	= `root-config --glibs` -lPh2_Tools 
 
 # -lboost_thread -lboost_filesystem -lboost_regex -lboost_system -lboost_thread
 
 %.o: %.cc %.h
 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-binaries=systemtest calibrate interfacetest datatest hybridtest cmtest
-all: clean $(binaries)
+binaries=systemtest datatest interfacetest 
+binariesRoot=hybridtest cmtest calibrate 
+
+all: 	clean rootflags $(binaries) $(binariesRoot)
+
+noroot: clean $(binaries)
+
+rootflags:
+	CCFlags+=$(CCFlagsRoot)
+	ExternalObjects+=$(ExtObjectsRoot)
 
 systemtest: systemtest.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
