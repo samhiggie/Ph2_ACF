@@ -64,6 +64,7 @@ namespace GUI{
     void SetupTab::on_btnLoad_clicked()
     {
         emit enableAllTabs(false);
+        emit onBtnLoad();
         emit onBtnLoadSettingsClicked(isCbc2Checked());
         ui->btnInit->setEnabled(true);
         ui->btnConfig->setEnabled(false);
@@ -110,6 +111,7 @@ namespace GUI{
 
     void SetupTab::on_btnLoadCustom_clicked()
     {
+        emit onBtnLoad();
         emit onBtnCustomLoadSettingsClicked(ui->lineSettings->text());
     }
 

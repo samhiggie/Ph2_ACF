@@ -1,8 +1,7 @@
 #pragma once
 #include "cbcregisterworker.h"
-#include "Model/systemcontroller.h"
-#include <QThread>
 #include <QDebug>
+#include <QThread>
 
 
 using namespace Ph2_HwDescription;
@@ -19,14 +18,6 @@ namespace GUI
     CbcRegisterWorker::~CbcRegisterWorker()
     {
         qDebug() << "Destructing CbcRegister Worker" << this;
-    }
-
-    void CbcRegisterWorker::doWork()
-    {
-        fBeBoardInterface = m_systemController.getBeBoardInterface();
-        fCbcInterface = m_systemController.getCbcInterface();
-        fShelveVector = m_systemController.getfShelveVector();
-        fBeBoardFWMap = m_systemController.getBeBoardFWMap();
     }
 
     void CbcRegisterWorker::requestWork()
@@ -68,11 +59,16 @@ namespace GUI
 
                     for ( auto cCbc : cFe->fCbcVector )
                     {
-                        emit sendInitialCbcRegisterValue(cCbc->getCbcId(), cCbc->getRegMap());
+                        emit sendInitialCbcRegisterValues(cShelve->getShelveId(),
+                                                          cBoard->getBeId(),
+                                                          cFe->getFeId(),
+                                                          cCbc->getCbcId(), cCbc->getRegMap());
                     }
                 }
             }
         }
+
+        emit finishedInitCbcReg();
     }
 
     void CbcRegisterWorker::getCbcRegistersMap()
@@ -89,11 +85,25 @@ namespace GUI
 
                     for ( auto cCbc : cFe->fCbcVector )
                     {
-                        emit sendCbcRegisterValue(cCbc->getCbcId(), cCbc->getRegMap()); //TODO - change to ptr and not Id
+                        //emit sendCbcRegisterValue(cCbc->getCbcId(), cCbc->getRegMap());
                     }
                 }
             }
         }
+    }
+
+    void CbcRegisterWorker::getBeBoardRegisterValues()
+    {
+        getObjects();
+
+        for ( auto cShelve : fShelveVector )
+        {
+            for ( auto cBoard : ( cShelve )->fBoardVector )
+            {
+                std::cout << (uint8_t)cBoard->getBeId() << endl;
+            }
+        }
+
     }
 
     void CbcRegisterWorker::writeCbcRegisters(const int cbc, std::vector<std::pair<std::string, std::uint8_t>> mapReg)

@@ -22,10 +22,18 @@ namespace GUI{
 
     signals:
         void notifyStatusUpdated(const QString& value);
+        void onBtnLoadClicked();
+        void sendSh(const int idSh);
+        void sendBe(const int idSh, const int idBe);
+        void sendFe(const int idSh, const int idBe, const int idFe);
+        void sendCbc(const int idSh, const int idBe, const int idFe, const int idCbc);
+
         void enableAlltabs(const bool enable);
         void on2CbcToggle(const bool);
         void notifyConfigFinished();
+        void sendInitialiseBeRegistersView();
         void sendInitialiseRegistersView();
+        void onConfigFinished();
 
     private:
 
@@ -34,7 +42,7 @@ namespace GUI{
 
         void WireMessages(Settings &config);
         void WireSetupTabButtons(Settings &config);
-        void WireCallToOtherTabs();
+        void WireCallToOtherTabs(Settings &config);
         void WireCallFromOtherTabs();
 
         explicit SetupTabViewManager(const SetupTabViewManager& rhs) = delete;

@@ -1,10 +1,10 @@
 #pragma once
 #include <QObject>
-#include <memory>
 
 namespace GUI{
 
     class SetupTab;
+    class BeBoardRegistersTab;
     class CbcRegistersTab;
     class HybridTestTab;
     class CalibrateTab;
@@ -15,12 +15,14 @@ namespace GUI{
     class Settings;
 
     class SystemController;
+    class BeBoardRegisters;
     class CbcRegisters;
     class HybridTest;
     class Calibrate;
     class CmTest;
 
     class SetupTabViewManager;
+    class BeBoardRegistersViewManager;
     class CbcRegViewManager;
     class HybridTestViewManager;
     class CalibrateViewManager;
@@ -38,6 +40,7 @@ namespace GUI{
         ~Startup();
     private:
         SetupTab& m_setupTab;
+        BeBoardRegistersTab& m_beTab;
         CbcRegistersTab& m_regTab;
         HybridTestTab& m_hybridTab;
         CalibrateTab& m_calibrateTab;
@@ -48,12 +51,14 @@ namespace GUI{
 
         SystemController* m_systemController;
 
+        BeBoardRegisters* m_beReg;
         CbcRegisters* m_cbcReg;
         HybridTest* m_hybridTest;
         Calibrate* m_calibrate;
         CmTest* m_cm;
 
         SetupTabViewManager& m_setupTabVm;
+        BeBoardRegistersViewManager& m_beRegTabVm;
         CbcRegViewManager& m_cbcRegTabVm;
         HybridTestViewManager& m_hybridTabVm;
         CalibrateViewManager& m_calibrateTabVm;

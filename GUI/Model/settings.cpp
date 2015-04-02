@@ -90,11 +90,8 @@ namespace GUI
         return cJsonValue;
     }
 
-    //TODO tidy massively
     QStandardItemModel* Settings::CreateItemModel()
     {
-        //could replace rows with maps of rows..
-
 
         QStandardItemModel* standardModel = new QStandardItemModel;
 
@@ -110,6 +107,8 @@ namespace GUI
         {
             double cShelveId = cShelve.get( "Id" ).get<double>() ;
 
+            emit sendSh(cShelveId);
+
             QList<QStandardItem *> preparedRow = prepareRow("Shelve Id " + QString::number(cShelveId));
             QStandardItem *item = standardModel->invisibleRootItem();
             item->appendRow(preparedRow);
@@ -124,6 +123,8 @@ namespace GUI
 
                 QList<QStandardItem *> thirdRow_2 = prepareRow("Board Type: " + QString::fromStdString(cBoard.get( "boardType" ).get<std::string>()));
                 secondRow.first()->appendRow(thirdRow_2);
+
+                emit sendBe(cShelveId,cBeId);
 
                 QList<QStandardItem *> thirdRow = prepareRow("Registers");
                 secondRow.first()->appendRow(thirdRow);
@@ -142,9 +143,12 @@ namespace GUI
                     uint32_t cFMCId = ( cModuleNode.get( "FMCId" ).get<double>() );
                     uint32_t cFeId = ( cModuleNode.get( "FeId" ).get<double>() );
 
-                    QList<QStandardItem *> thirdRow = prepareRow("Front End Id: " + QString::number(cModuleId));
-                    QList<QStandardItem *> thirdRow_2 = prepareRow("FMC Id: " + QString::number(cFMCId));
-                    QList<QStandardItem *> thirdRow_3 = prepareRow("Fe Id: " + QString::number(cFeId));
+                    emit sendFe(cShelveId, cBeId, cFeId);
+
+                    QList<QStandardItem *> thirdRow = prepareRow("Module Id: " + QString::number(cModuleId));
+                    QList<QStandardItem *> thirdRow_2 = prepareRow("Fe Id: " + QString::number(cFeId));
+                    QList<QStandardItem *> thirdRow_3 = prepareRow("FMC Id: " + QString::number(cFMCId));
+
                     secondRow.first()->appendRow(thirdRow);
                     secondRow.first()->appendRow(thirdRow_2);
                     secondRow.first()->appendRow(thirdRow_3);
@@ -168,6 +172,8 @@ namespace GUI
 
                             QList<QStandardItem *> cbcRow = prepareRow("Cbc " + QString::number(cCbcId) + " : Files Path: " + QString::fromStdString(cFileName));
                             secondRow.first()->appendRow(cbcRow);
+
+                            emit sendCbc(cShelveId, cBeId, cFeId, cCbcId);
 
                             if ( !cCbcNode.get( "Register" ).is<picojson::null>() )
                             {

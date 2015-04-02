@@ -23,6 +23,7 @@ namespace GUI {
         ~SetupTab();
 
     signals:
+        void onBtnLoad();
         void onBtnLoadSettingsClicked(bool cbc2);
         void onBtnCustomLoadSettingsClicked(QString cFileName);
         void onBtnInitClicked();

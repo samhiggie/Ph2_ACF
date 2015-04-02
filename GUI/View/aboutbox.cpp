@@ -1,3 +1,4 @@
+#pragma once
 #include "aboutbox.h"
 #include "ui_aboutbox.h"
 

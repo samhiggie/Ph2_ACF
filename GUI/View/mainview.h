@@ -9,6 +9,7 @@ namespace Ui {
 namespace GUI{
 
     class SetupTab;
+    class BeBoardRegistersTab;
     class CbcRegistersTab;
     class HybridTestTab;
     class CalibrateTab;
@@ -21,6 +22,7 @@ namespace GUI{
     public:
         explicit MainView(QWidget *parent,
                           GUI::SetupTab &setup,
+                          GUI::BeBoardRegistersTab &beBoard,
                           GUI::CbcRegistersTab &reg,
                           GUI::HybridTestTab &hybrid,
                           GUI::CalibrateTab &calibrate,

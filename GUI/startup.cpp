@@ -1,6 +1,6 @@
-#define _GUI
 #include "startup.h"
 #include "View/setuptab.h"
+#include "View/beboardregisterstab.h"
 #include "View/cbcregisterstab.h"
 #include "View/hybridtesttab.h"
 #include "View/calibratetab.h"
@@ -11,6 +11,8 @@
 #include "Model/settings.h"
 #include "Model/systemcontroller.h"
 #include "Model/systemcontrollerworker.h"
+
+#include "Model/beboardregisters.h"
 #include "Model/cbcregisters.h"
 #include "Model/hybridtest.h"
 #include "Model/calibrate.h"
@@ -18,6 +20,7 @@
 
 #include "ViewMgr/setuptabviewmanager.h"
 #include "provider.h"
+#include "ViewMgr/beboardregistersviewmanager.h"
 #include "ViewMgr/cbcregviewmanager.h"
 #include "ViewMgr/hybridtestviewmanager.h"
 #include "ViewMgr/calibrateviewmanager.h"
@@ -27,9 +30,6 @@
 #include "utils.h"
 
 #include <QDebug>
-#include <memory>
-
-
 
 namespace GUI
 {
@@ -37,6 +37,7 @@ namespace GUI
         QObject(nullptr),
 
         m_setupTab(*new SetupTab(nullptr)), //nullptr - transferring ownership in mainview
+        m_beTab(*new BeBoardRegistersTab(nullptr)),
         m_regTab(*new CbcRegistersTab(nullptr)),
         m_hybridTab(*new HybridTestTab(nullptr)),
         m_calibrateTab(*new CalibrateTab(nullptr)),
@@ -44,6 +45,7 @@ namespace GUI
 
         m_mainView(*new MainView(nullptr,
                                  m_setupTab,
+                                 m_beTab,
                                  m_regTab,
                                  m_hybridTab,
                                  m_calibrateTab,
@@ -51,6 +53,10 @@ namespace GUI
 
         m_systemController(new SystemController(this,
                                                 Provider::getSettingsAsSingleton())),
+
+
+        m_beReg(new BeBoardRegisters(this,
+                                          *m_systemController)),
         m_cbcReg(new CbcRegisters(this,
                                   *m_systemController)),
         m_hybridTest(new HybridTest(this)),
@@ -61,6 +67,9 @@ namespace GUI
                                              m_setupTab,
                                              *m_systemController,
                                              Provider::getSettingsAsSingleton() )),
+        m_beRegTabVm(*new BeBoardRegistersViewManager(this,
+                                                      m_beTab,
+                                                      *m_beReg)),
         m_cbcRegTabVm(*new CbcRegViewManager(this,
                                              m_regTab,
                                              *m_cbcReg)),
@@ -78,6 +87,7 @@ namespace GUI
         m_mainViewVm(new MainViewManager(this,
                                          m_mainView,
                                          m_setupTabVm,
+                                         m_beRegTabVm,
                                          m_cbcRegTabVm,
                                          m_hybridTabVm,
                                          m_calibrateTabVm,

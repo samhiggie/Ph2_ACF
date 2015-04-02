@@ -4,19 +4,6 @@
 #include "Model/settings.h"
 #include <QVariantMap>
 
-#include "../HWInterface/BeBoardFWInterface.h"
-#include "../HWDescription/Shelve.h"
-#include "../HWInterface/CbcInterface.h"
-#include "../HWInterface/BeBoardInterface.h"
-#include "../HWDescription/Definition.h"
-#include "../Utils/Visitor.h"
-
-#include <iostream>
-#include <vector>
-#include <map>
-#include <stdlib.h>
-#include <string.h>
-
 #include "../tools/Tool.h"
 
 using namespace Ph2_HwDescription;

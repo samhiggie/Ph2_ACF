@@ -6,6 +6,7 @@ namespace GUI{
 
     class MainView;
     class SetupTabViewManager;
+    class BeBoardRegistersViewManager;
     class CbcRegViewManager;
     class HybridTestViewManager;
     class CalibrateViewManager;
@@ -18,6 +19,7 @@ namespace GUI{
         explicit MainViewManager(QObject *parent,
                                  MainView& mainView,
                                  SetupTabViewManager& setupVm,
+                                 BeBoardRegistersViewManager& beVm,
                                  CbcRegViewManager& cbcVm,
                                  HybridTestViewManager& hybridVm,
                                  CalibrateViewManager& calibVm,
@@ -27,11 +29,13 @@ namespace GUI{
     private:
         MainView& m_mainView;
         SetupTabViewManager& m_setupVm;
+        BeBoardRegistersViewManager& m_beVm;
         CbcRegViewManager& m_cbcRegVm;
         HybridTestViewManager& m_hybridTestVm;
         CalibrateViewManager& m_calibrateVm;
         CmTestViewManager& m_cmVm;
 
+        void WireStartup();
         void WireSetupVmMessages();
         void WireLaunchButtons();
 

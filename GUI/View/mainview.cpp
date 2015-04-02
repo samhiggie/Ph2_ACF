@@ -1,6 +1,7 @@
 #include "mainview.h"
 #include "ui_mainview.h"
 #include "View/setuptab.h"
+#include "View/beboardregisterstab.h"
 #include "View/cbcregisterstab.h"
 #include "View/calibratetab.h"
 #include "View/hybridtesttab.h"
@@ -14,6 +15,7 @@ namespace GUI{
 
     MainView::MainView(QWidget *parent,
                        SetupTab& setup,
+                       BeBoardRegistersTab& beBoard,
                        CbcRegistersTab& regTab,
                        HybridTestTab& hybrid,
                        CalibrateTab& calibrate,
@@ -24,6 +26,7 @@ namespace GUI{
         ui->setupUi(this);
         setWindowTitle("Ph2_ACF");
         ui->loSetup->addWidget(&setup);
+        ui->loBeBoard->addWidget(&beBoard);
         ui->loRegisters->addWidget(&regTab);
         ui->loHybridTest->addWidget(&hybrid);
         ui->loHybridTest->addWidget(&calibrate);
@@ -44,6 +47,7 @@ namespace GUI{
 
     void MainView::enableAllTabsSlot(const bool enable)
     {
+        ui->tabBeBoard->setEnabled(enable);
         ui->tabRegisters->setEnabled(enable);
         ui->tabHybridTest->setEnabled(enable);
     }
@@ -57,7 +61,7 @@ namespace GUI{
 
     void MainView::on_actionUser_Settings_triggered()
     {
-
+        //TODO
     }
 
 

@@ -4,11 +4,10 @@
 #include "Model/systemcontrollerworker.h"
 #include "../System/SystemController.h"
 
-//TODO Add proper destruct and safety methods to thread
-
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 
+//TODO Add proper destruct and safety methods to thread
 namespace GUI
 {
 
@@ -79,7 +78,6 @@ namespace GUI
 
     void SystemControllerWorker::onConfigureHw()
     {
-        qDebug() << "Configuring hardware on: " << this;
 
         ConfigureHw();
 
@@ -87,7 +85,6 @@ namespace GUI
         _working = false;
         mutex.unlock();
         emit finishedConfigureHw();
-        qDebug() << "Finished configure";
     }
 
 }

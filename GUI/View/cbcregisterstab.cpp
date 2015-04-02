@@ -22,11 +22,10 @@ namespace GUI {
     CbcRegistersTab::CbcRegistersTab(QWidget *parent) :
         QWidget(parent),
         ui(new Ui::CbcRegistersTab),
-        m_tabCbc(new QTabWidget)
+        m_tabSh(new QTabWidget)
     {
         ui->setupUi(this);
-        ui->loCbcs->addWidget(m_tabCbc);
-        setupCbcRegGrid(true);
+        ui->loCbcs->addWidget(m_tabSh);
     }
 
     CbcRegistersTab::~CbcRegistersTab()
@@ -35,43 +34,109 @@ namespace GUI {
         delete ui;
     }
 
-    void CbcRegistersTab::setupCbcRegGrid(const bool cbc2)
+    void CbcRegistersTab::reset()
     {
-        int cNCbc;
-        if(cbc2) cNCbc = 2;
-        else cNCbc = 8;
-
         clearTabs();
+    }
 
-        for (int i=0; i<cNCbc; i++)
+    void CbcRegistersTab::setupShTab(const int idSh)
+    {
+
+        reset();
+
+        QTabWidget *tabSh =  new QTabWidget(this);
+
+        QString title = QString("Sh %1").arg(idSh);
+        m_tabSh->addTab(tabSh, title);
+        m_mapTabSh[idSh] = tabSh;
+    }
+
+    void CbcRegistersTab::setupBeTab(const int idSh, const int idBe)
+    {
+        if (!m_mapTabSh.contains(idSh))
         {
-            QString title = QString("CBC %1").arg(i);
-            m_tabCbc->addTab(createCbcTab(), title);
+            qDebug() << this->objectName() << "WARNING: idSh " << idSh << "is not valid";
         }
 
-        CbcRegItem test;
-        test.fAddress=0;
-        test.fDefValue=5;
-        test.fPage=0;
-        test.fValue=6;
+        QTabWidget *tabBe =  new QTabWidget(this);
 
-        /*std::map<std::string, CbcRegItem> testing;
-        for(int i=0; i<50; i++)
+        QString title = QString("Be %1").arg(idBe);
+        m_mapTabSh[idSh]->addTab(tabBe, title);
+
+        m_mapTabBe[idSh][idBe] = tabBe;
+    }
+
+    void CbcRegistersTab::setupFeTab(const int idSh, const int idBe, const int idFe)
+    {
+        if (!m_mapTabBe.contains(idSh))
         {
-            std::string tit = "Test";
-            tit.append(std::to_string(i));
-
-            testing.insert( std::pair<std::string, CbcRegItem>(tit,test ) );
+            qDebug() << this->objectName() << "WARNING: idSh " << idSh << "is not valid";
         }
 
-        createCbcRegisterValue(0,testing);
-        createCbcRegisterValue(1,testing);*/
+        if (!m_mapTabBe[idSh].contains(idBe))
+        {
+            qDebug() << this->objectName() << "WARNING: in idSh " << idSh << ", idBe " << idBe << "is not valid";
+        }
+
+        QTabWidget *tabFe =  new QTabWidget(this);
+
+        QString title = QString("Fe %1").arg(idFe);
+        m_mapTabBe[idSh][idBe]->addTab(tabFe, title);
+
+        m_mapTabFe[idSh][idBe][idFe] = tabFe;
+
+    }
+
+    void CbcRegistersTab::setupCbcRegGrid(const int idSh, const int idBe, const int idFe, const int idCbc)
+    {
+        if (!m_mapTabFe.contains(idSh))
+        {
+            qDebug() << this->objectName() << "WARNING: idSh " << idSh << "is not valid";
+        }
+
+        if (!m_mapTabFe[idSh].contains(idBe))
+        {
+            qDebug() << this->objectName() << "WARNING: in idSh " << idSh << ", idBe " << idBe << "is not valid";
+        }
+
+        if (!m_mapTabFe[idSh][idBe].contains(idFe))
+        {
+            qDebug() << this->objectName() << "WARNING: in idSh " << idSh << " & idBe " << idBe << ", idFe " <<idFe << " is not valid";
+        }
+
+
+        QTabWidget *tabCbc =  new QTabWidget(this);
+
+        for(int i=0; i<2; i++) //number of register PAGES
+        {
+            QWidget *client = new QWidget; //client widget for scroll area
+            QScrollArea *scrollArea = new QScrollArea;
+            scrollArea->setWidgetResizable(true);
+            scrollArea->setWidget(client); //add scroll area to client
+            QGridLayout *loGrid = new QGridLayout;
+            client->setLayout(loGrid);
+
+            m_mapTabPage[idSh][idBe][idFe][idCbc].push_back(loGrid);
+
+            QWidget *pageWidget = new QWidget;
+            pageWidget->setLayout(new QVBoxLayout);
+            pageWidget->layout()->addWidget(scrollArea);
+
+            QString title = QString("Page %1").arg(i);
+            tabCbc->addTab(pageWidget, title);
+        }
+
+        QString title = QString("CBC %1").arg(idCbc);
+        m_mapTabFe[idSh][idBe][idFe]->addTab(tabCbc, title);
+        m_mapTabCbc[idSh][idBe][idFe][idCbc] = tabCbc;
 
     }
 
 
-    void CbcRegistersTab::createCbcRegisterValue(const int cbc, const std::map<std::string, CbcRegItem> mapReg) //for initial creation - later should find inside map
+    void CbcRegistersTab::createCbcRegisterValue(const int idSh, const int idBe, const int idFe, const int idCbc,
+                                                 const std::map<std::string, CbcRegItem> mapReg) //for initial creation - later should find inside map
     {
+        qDebug() << "populating values";
         int row = 0;
         int column = 0;
         int cSizeTitle = 0;
@@ -109,7 +174,7 @@ namespace GUI {
             loHorz->addSpacerItem(spacer);
             loHorz->addStretch(5);
 
-            m_loGridVec.at(cbc).at(kv.second.fPage)->addLayout(loHorz, row, column);
+            m_mapTabPage[idSh][idBe][idFe][idCbc][kv.second.fPage]->addLayout(loHorz, row, column);
 
             cWidgetMap.insert(QString::fromStdString(kv.first),lineRegValue);
 
@@ -123,58 +188,26 @@ namespace GUI {
                 ++column;
                 row = 0;
             }
+
         }
-        m_widgetMap.push_back(cWidgetMap);
+        m_mapWidgets[idSh][idBe][idFe][idCbc] = cWidgetMap;
     }
 
-    void CbcRegistersTab::updateCbcRegisterValues(const int cbc, const std::map<std::string, CbcRegItem> mapReg)
+    void CbcRegistersTab::updateCbcRegisterValues(const int idSh, const int idBe, const int idFe, const int idCbc,
+                                                  const std::map<std::string, CbcRegItem> mapReg)
     {
         for(auto &kv : mapReg)
         {
             auto cValue = kv.second.fValue;
-            qDebug() << QString::fromStdString(kv.first) << "  " << cValue;
-
-            //std::cout << m_widgetMap.at(cbc).value(kv.first);
-
-            //qDebug() << m_widgetMap.at(cbc).value(kv.first);
-            m_widgetMap.at(cbc).value(QString::fromStdString(kv.first))->setText(QString::number(cValue));
+            m_mapWidgets[idSh][idBe][idFe][idCbc].value(QString::fromStdString(kv.first))->setText(QString::number(cValue));
         }
-    }
-
-    QTabWidget *CbcRegistersTab::createCbcTab()
-    {
-        QTabWidget *tabCbc =  new QTabWidget(this);
-
-        QVector<QGridLayout*> loVec; //to add to master layout
-
-        for(int i=0; i<2; i++) //number of REGISTER pages
-        {
-            QWidget *client = new QWidget; //client widget for scroll area
-            QScrollArea *scrollArea = new QScrollArea;
-            scrollArea->setWidgetResizable(true);
-            scrollArea->setWidget(client); //add scroll area to client
-            QGridLayout *loGrid = new QGridLayout;
-            client->setLayout(loGrid);
-
-            QWidget *pageWidget = new QWidget;
-            pageWidget->setLayout(new QVBoxLayout);
-            pageWidget->layout()->addWidget(scrollArea);
-
-            QString title = QString("Page %1").arg(i);
-            tabCbc->addTab(pageWidget, title);
-
-            loVec.push_back(loGrid);
-        }
-        m_loGridVec.push_back(loVec);
-
-        return tabCbc;
     }
 
     void CbcRegistersTab::createCbcRegItems()
     {
         int nCbc = 0;
 
-        for(auto& cCbc : m_widgetMap)
+        /*for(auto& cCbc : m_widgetMap)
         {
             std::vector<std::pair<std::string, std::uint8_t>> vecRegValues;
             for (auto& regName : cCbc.keys())
@@ -187,16 +220,19 @@ namespace GUI {
 
                 vecRegValues.push_back(std::make_pair(regTitle, regValue));
             }
-            emit writeCbcRegisters(nCbc, vecRegValues);
+            //emit writeCbcRegisters(nCbc, vecRegValues);
             ++nCbc;
-        }
+        }*/
     }
 
     void CbcRegistersTab::clearTabs()
     {
-        m_tabCbc->clear();
-        m_loGridVec.clear();
-        m_widgetMap.clear();
+       m_mapWidgets.clear();
+       m_mapTabSh.clear();
+       m_mapTabBe.clear();
+       m_mapTabFe.clear();
+       m_mapTabCbc.clear();
+       m_mapTabPage.clear();
     }
 
     void CbcRegistersTab::on_btnRefresh_clicked()
@@ -207,7 +243,16 @@ namespace GUI {
     void CbcRegistersTab::on_btnWrite_clicked()
     {
         createCbcRegItems();
-        //emit updateCbcRegisters();
+    }
+
+    void CbcRegistersTab::on_btnResetSoft_clicked()
+    {
+        return; //TODO
+    }
+
+    void CbcRegistersTab::on_btnHardReset_clicked()
+    {
+        return; //TODO
     }
 
 

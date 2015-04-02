@@ -15,10 +15,6 @@
 #include <QVariantMap>
 #include <QVector>
 
-using namespace Ph2_HwDescription;
-using namespace Ph2_HwInterface;
-
-
 namespace GUI
 {
     SystemController::SystemController(QObject *parent,
@@ -81,10 +77,13 @@ namespace GUI
     void SystemController::finishConfigureHw()
     {
         SendStatusMessage(tr("Hardware configured"));
-        emit sendInitialiseRegistersView();
         SendStatusMessage(tr("Initialising register values"));
-        emit notifyConfigFinished();
-        SendStatusMessage(tr("Register values initialised"));
+        emit sendInitialiseBeRegistersView();
+        //SendStatusMessage(tr("BE board values initialised"));
+        //emit sendInitialiseRegistersView();
+        //SendStatusMessage(tr("Initialising CBC register values"));
+        //emit notifyConfigFinished();
+        //SendStatusMessage(tr("Register CBC values initialised"));
     }
 
     void SystemController::SendStatusMessage(QString msg)

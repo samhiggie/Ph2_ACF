@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QSharedDataPointer>
 #include <QWidget>
 #include <QTabWidget>
 #include <QTableView>
@@ -8,6 +7,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMap>
 
 #include "Model/systemcontroller.h"
 
@@ -33,9 +33,13 @@ namespace GUI {
         void writeCbcRegisters(const int cbc, std::vector<std::pair<std::string, std::uint8_t>>);
 
     public slots:
-        void setupCbcRegGrid(const bool cbc2);
-        void createCbcRegisterValue(const int cbc, const std::map<std::string, CbcRegItem> mapReg);
-        void updateCbcRegisterValues(const int cbc, const std::map<std::string, CbcRegItem> mapReg);
+        void reset();
+        void setupShTab(const int idSh);
+        void setupBeTab(const int idSh, const int idBe);
+        void setupFeTab(const int idSh, const int idBe, const int idFe);
+        void setupCbcRegGrid(const int idSh, const int idBe, const int idFe, const int idCbc);
+        void createCbcRegisterValue(const int idSh, const int idBe, const int idFe, const int idCbc, const std::map<std::string, CbcRegItem> mapReg);
+        void updateCbcRegisterValues(const int idSh, const int idBe, const int idFe, const int idCbc, const std::map<std::string, CbcRegItem> mapReg);
 
     private slots:
 
@@ -43,13 +47,22 @@ namespace GUI {
 
         void on_btnWrite_clicked();
 
+        void on_btnResetSoft_clicked();
+
+        void on_btnHardReset_clicked();
+
     private:
+
         Ui::CbcRegistersTab *ui;
 
-        QVector<QVector<QGridLayout*>> m_loGridVec; //so I can access widgets inside it later
-        QVector<QMap<QString, QLineEdit*>> m_widgetMap;
+        QTabWidget *m_tabSh;
 
-        QTabWidget *m_tabCbc;
+        QMap<int, QTabWidget*> m_mapTabSh;
+        QMap<int, QMap<int, QTabWidget*>> m_mapTabBe;
+        QMap<int, QMap<int, QMap<int, QTabWidget*>>> m_mapTabFe;
+        QMap<int, QMap<int, QMap<int, QMap<int, QTabWidget*>>>> m_mapTabCbc;
+        QMap<int, QMap<int, QMap<int, QMap<int, QVector<QGridLayout*>>>>> m_mapTabPage;
+        QMap<int, QMap<int, QMap<int, QMap<int, QMap<QString, QLineEdit*>>>>> m_mapWidgets;
 
         QTabWidget *createCbcTab();
         void createCbcRegItems();

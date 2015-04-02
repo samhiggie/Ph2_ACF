@@ -4,12 +4,9 @@
 
 #include "ui_hybridtesttab.h"
 #include <QDebug>
-#include <memory>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QTabWidget>
-
-#include "TSocket.h"
 
 #include "utils.h"
 

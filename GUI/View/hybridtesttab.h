@@ -1,10 +1,6 @@
 #pragma once
 
 #include <QWidget>
-#include <QGroupBox>
-#include <QHBoxLayout>
-#include <memory>
-#include <QTabWidget>
 
 namespace Ui {
     class HybridTestTab;

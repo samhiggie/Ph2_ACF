@@ -16,7 +16,12 @@ namespace GUI{
     ~CbcRegViewManager();
 
     signals:
-        void on2CbcToggle(const bool);
+
+        void sendSh(int idSh);
+        void sendBe(const int idSh, const int idBe);
+        void sendFe(const int idSh, const int idBe, const int idFe);
+        void sendCbc(const int idSh, const int idBe, const int idFe, const int idCbc);
+
         void notifyConfigFinished();
         void sendInitialiseRegistersView();
 

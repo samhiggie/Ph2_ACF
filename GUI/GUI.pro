@@ -21,14 +21,12 @@ LibraryDirs = /opt/cactus/lib /opt/xdaq/lib ../
 LibraryPaths = $(LibraryDirs:%=-L%)
 LIBS += $(LibraryPaths:%=-L%) -uhal `root-config --glibs`
 
-LIBS += -L/usr/lib/ -lqjson
-INCLUDEPATH += /usr/include/qjson/
 INCLUDEPATH += $(ROOTSYS)/include
 
 INCLUDEPATH += /opt/cactus/include /../../Ph2DAQ_dev/
 
 INCLUDEPATH += /../../Ph2DAQ_dev/
-INCLUDEPATH += /usr/local/boost
+
 LIBS += -L/usr/local/boost/libs -lrt -lboost_system
 
 
@@ -58,7 +56,11 @@ SOURCES += main.cpp\
     View/cmtesttab.cpp \
     ViewMgr/cmtestviewmanager.cpp \
     Model/cmtest.cpp \
-    Model/cmtestworker.cpp
+    Model/cmtestworker.cpp \
+    Model/beboardregisters.cpp \
+    Model/beboardregistersworker.cpp \
+    ViewMgr/beboardregistersviewmanager.cpp \
+    View/beboardregisterstab.cpp
 
 
 HEADERS  += View/mainview.h \
@@ -74,7 +76,6 @@ HEADERS  += View/mainview.h \
     View/aboutbox.h \
     Model/systemcontrollerworker.h \
     Model/cbcregisters.h \
-    #lib/CustomTQtWidget.h \
     ViewMgr/mainviewmanager.h \
     Model/cbcregisterworker.h \
     Model/hybridtest.h \
@@ -88,8 +89,11 @@ HEADERS  += View/mainview.h \
     View/cmtesttab.h \
     ViewMgr/cmtestviewmanager.h \
     Model/cmtest.h \
-    Model/cmtestworker.h
-    #lib/TQtWidget.h
+    Model/cmtestworker.h \
+    Model/beboardregisters.h \
+    Model/beboardregistersworker.h \
+    ViewMgr/beboardregistersviewmanager.h \
+    View/beboardregisterstab.h
 
 
 FORMS    += View/mainview.ui \
@@ -98,7 +102,8 @@ FORMS    += View/mainview.ui \
     View/aboutbox.ui \
     View/hybridtesttab.ui \
     View/calibratetab.ui \
-    View/cmtesttab.ui
+    View/cmtesttab.ui \
+    View/beboardregisterstab.ui
 
 OTHER_FILES +=
 

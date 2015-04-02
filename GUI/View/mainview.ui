@@ -30,9 +30,19 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tabBeBoard">
+       <attribute name="title">
+        <string>BeBoard</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <layout class="QVBoxLayout" name="loBeBoard"/>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="tabRegisters">
        <attribute name="title">
-        <string>Registers</string>
+        <string>Cbc Registers</string>
        </attribute>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>

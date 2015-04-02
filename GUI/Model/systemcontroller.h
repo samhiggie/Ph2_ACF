@@ -31,18 +31,15 @@ namespace GUI{
         ShelveVec getfShelveVector() const {return (m_worker->fShelveVector);}
         BeBoardFWMap getBeBoardFWMap() const {return (m_worker->fBeBoardFWMap);}
 
-        //SystemControllerWorker* getSysCtrlWorker() const {return m_worker;}
-
         SystemControllerWorker *m_worker;
 
         ~SystemController();
 
     signals:
         void notifyStatusMessage(QString msg);
-        void notifyConfigFinished();
         void notifyInitFinished();
 
-        void sendInitialiseRegistersView();
+        void sendInitialiseBeRegistersView();
 
     public slots:
 

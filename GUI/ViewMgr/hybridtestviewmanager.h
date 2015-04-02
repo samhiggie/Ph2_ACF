@@ -1,7 +1,6 @@
 #pragma once
 #include <QObject>
 #include <QThread>
-#include "Model/hybridtest.h"
 
 namespace GUI{
 

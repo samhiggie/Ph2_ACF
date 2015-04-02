@@ -18,7 +18,7 @@ namespace GUI
     {
         WireMessages(config);
         WireSetupTabButtons(config);
-        WireCallToOtherTabs();
+        WireCallToOtherTabs(config);
         WireCallFromOtherTabs();
     }
 
@@ -38,6 +38,9 @@ namespace GUI
 
     void SetupTabViewManager::WireSetupTabButtons(Settings& config)
     {
+        connect(&m_setupTab, SIGNAL(onBtnLoad()),
+                this, SIGNAL(onBtnLoadClicked()));
+
         connect(&m_setupTab, SIGNAL(onBtnLoadSettingsClicked(bool)),
                 &config, SLOT(onLoadButtonClicked(bool)) );
 
@@ -54,22 +57,33 @@ namespace GUI
 
         connect(&m_systemController, SIGNAL(notifyInitFinished()),
                 &m_setupTab, SLOT(onInitFinished()));
-        connect(&m_systemController, SIGNAL(notifyConfigFinished()),
-                &m_setupTab, SLOT(onConfigFinished()));
     }
 
-    void SetupTabViewManager::WireCallToOtherTabs()
+    void SetupTabViewManager::WireCallToOtherTabs(Settings &config)
     {
         connect(&m_setupTab, SIGNAL(enableAllTabs(bool)),
                 this, SIGNAL(enableAlltabs(bool)));
         connect(&m_setupTab, SIGNAL(on2CbcToggle(bool)),
                 this, SIGNAL(on2CbcToggle(bool)));
 
-        connect(&m_systemController, SIGNAL(sendInitialiseRegistersView()),
-                this, SIGNAL(sendInitialiseRegistersView()));
+        connect(&m_systemController, SIGNAL(sendInitialiseBeRegistersView()),
+                this, SIGNAL(sendInitialiseBeRegistersView()));
+
+        connect(&config, SIGNAL(sendSh(int)),
+                this, SIGNAL(sendSh(int)));
+        connect(&config, SIGNAL(sendBe(int,int)),
+                this, SIGNAL(sendBe(int,int)));
+        connect(&config, SIGNAL(sendFe(int,int,int)),
+                this, SIGNAL(sendFe(int,int,int)));
+        connect(&config, SIGNAL(sendCbc(int,int,int,int)),
+                this, SIGNAL(sendCbc(int,int,int,int)));
+
+
     }
 
     void SetupTabViewManager::WireCallFromOtherTabs()
     {
+        connect(this, SIGNAL(onConfigFinished()),
+                &m_setupTab, SLOT(onConfigFinished()));
     }
 }

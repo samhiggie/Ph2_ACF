@@ -13,7 +13,6 @@ namespace GUI
     CbcRegisters::CbcRegisters(QObject *parent,
                                SystemController &sysCtrl) :
         QObject(parent),
-        m_systemController(sysCtrl),
         m_thread(new QThread()),
         m_worker(new CbcRegisterWorker(nullptr,
                                        sysCtrl))
@@ -47,14 +46,17 @@ namespace GUI
 
         connect(this, SIGNAL(createInitialCbcRegistersMap()),
                 m_worker, SLOT(getInitialCbcRegistersMap()));
-        connect(m_worker, SIGNAL(sendInitialCbcRegisterValue(int,std::map<std::string,CbcRegItem>)),
-                this, SIGNAL(sendInitialCbcRegisterValue(int,std::map<std::string,CbcRegItem>)));
+        connect(m_worker, SIGNAL(sendInitialCbcRegisterValues(int,int,int,int,std::map<std::string,CbcRegItem>)),
+                this, SIGNAL(sendInitialCbcRegisterValue(int,int,int,int,std::map<std::string,CbcRegItem>)));
+        connect(m_worker, SIGNAL(finishedInitCbcReg()),
+                this, SIGNAL(finishedInitCbcReg()));
+
         connect(this, SIGNAL(getCbcRegistersMap()),
                 m_worker, SLOT(getCbcRegistersMap()));
         connect(this, SIGNAL(writeCbcRegisterValue(int,std::vector<std::pair<std::string,std::uint8_t> >)),
                 m_worker, SLOT(writeCbcRegisters(int,std::vector<std::pair<std::string,std::uint8_t> >)));
-        connect(m_worker, SIGNAL(sendCbcRegisterValue(int,std::map<std::string,CbcRegItem>)),
-                this, SIGNAL(sendCbcRegisterValue(int,std::map<std::string,CbcRegItem>)));
+        /*connect(m_worker, SIGNAL(sendCbcRegisterValue(int,std::map<std::string,CbcRegItem>)),
+                this, SIGNAL(sendCbcRegisterValue(int,std::map<std::string,CbcRegItem>)));*/
 
 
     }

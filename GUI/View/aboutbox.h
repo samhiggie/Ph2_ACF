@@ -1,5 +1,4 @@
-#ifndef ABOUTBOX_H
-#define ABOUTBOX_H
+#pragma once
 
 #include <QDialog>
 
@@ -18,5 +17,3 @@ public:
 private:
     Ui::AboutBox *ui;
 };
-
-#endif // ABOUTBOX_H
