@@ -17,10 +17,10 @@ namespace GUI{
     ~HybridTestViewManager();
 
     signals:
+        void sendGlobalEnable(bool enable);
+        void receiveGlobalEnable(bool enable);
         void startedHybridTest();
         void finishedHybridTest();
-        void disableLaunch();
-        void enableLaunch();
 
     private:
 

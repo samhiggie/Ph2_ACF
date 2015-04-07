@@ -44,8 +44,6 @@ namespace GUI {
 
         connect(m_worker, SIGNAL(workRequested()),
                 m_thread, SLOT(start()));
-        connect(m_thread, SIGNAL(started()),
-                m_worker, SLOT(doWork()));
         connect(m_worker, SIGNAL(finished()),
                 m_thread, SLOT(quit()), Qt::DirectConnection);
 

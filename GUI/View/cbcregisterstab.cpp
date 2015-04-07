@@ -39,6 +39,12 @@ namespace GUI {
         clearTabs();
     }
 
+    void CbcRegistersTab::enable(bool enable)
+    {
+        ui->btnRefresh->setEnabled(enable);
+        ui->btnWrite->setEnabled(enable);
+    }
+
     void CbcRegistersTab::setupShTab(const int idSh)
     {
         reset();
@@ -135,7 +141,6 @@ namespace GUI {
     void CbcRegistersTab::createCbcRegisterValue(const int idSh, const int idBe, const int idFe, const int idCbc,
                                                  const std::map<std::string, CbcRegItem> mapReg) //for initial creation - later should find inside map
     {
-        qDebug() << "populating values";
         int row = 0;
         int column = 0;
         int cSizeTitle = 0;
@@ -252,11 +257,13 @@ namespace GUI {
 
     void CbcRegistersTab::on_btnRefresh_clicked()
     {
+        emit globalEnable(false);
         emit refreshCbcRegisters();
     }
 
     void CbcRegistersTab::on_btnWrite_clicked()
     {
+        emit globalEnable(false);
         createCbcRegItems();
     }
 

@@ -28,6 +28,7 @@ namespace GUI{
         ~MainViewManager();
     signals:
         void globalEnable(bool enable);
+
     private:
         MainView& m_mainView;
         SetupTabViewManager& m_setupVm;
@@ -40,7 +41,6 @@ namespace GUI{
         void WireStartup();
         void WireGlobalEnable();
         void WireSetupVmMessages();
-        void WireLaunchButtons();
 
 
         explicit MainViewManager(const MainViewManager& rhs) = delete;

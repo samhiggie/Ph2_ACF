@@ -38,11 +38,11 @@ namespace GUI
     {
         connect(m_worker, SIGNAL(workRequested()),
                 m_thread, SLOT(start()));
-        connect(m_thread, SIGNAL(started()),
-                m_worker, SLOT(doWork()));
         connect(m_worker, SIGNAL(finished()),
                 m_thread, SLOT(quit()), Qt::DirectConnection);
 
+        connect(m_worker, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
 
         connect(this, SIGNAL(createInitialCbcRegistersMap()),
                 m_worker, SLOT(getInitialCbcRegistersMap()));

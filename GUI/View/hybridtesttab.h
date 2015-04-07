@@ -17,6 +17,7 @@ namespace GUI{
 
     ~HybridTestTab();
     signals:
+        void globalEnable(bool enable);
         void startHybridTest();
         void sendVcthValue(int cVcth);
         void sendEventsNumber(int cEvents);
@@ -25,13 +26,12 @@ namespace GUI{
         void sendIsHoleModeChecked(const bool);
 
     public slots:
+        void enable(bool enable);
         void getVcthDialValue();
         void getEventsDial();
         void getIsRegTestChecked();
         void getIsScanChecked();
         void getIsHoleModeChecked();
-        void enableLaunch();
-        void disableLaunch();
 
     private slots:
         void on_btnStart_clicked();

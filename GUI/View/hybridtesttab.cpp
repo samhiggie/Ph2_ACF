@@ -28,6 +28,11 @@ namespace GUI {
         delete ui;
     }
 
+    void HybridTestTab::enable(bool enable)
+    {
+        ui->btnStart->setEnabled(enable);
+    }
+
     void HybridTestTab::getVcthDialValue()
     {
         emit sendVcthValue(m_Vcth);
@@ -53,18 +58,9 @@ namespace GUI {
         emit sendIsHoleModeChecked(ui->checkHoleMode->isChecked());
     }
 
-    void HybridTestTab::disableLaunch()
-    {
-        ui->btnStart->setEnabled(false);
-    }
-
-    void HybridTestTab::enableLaunch()
-    {
-        ui->btnStart->setEnabled(true);
-    }
-
     void HybridTestTab::on_btnStart_clicked()
     {
+        emit globalEnable(false);
         emit startHybridTest();
     }
 

@@ -44,6 +44,13 @@ namespace GUI
         connect(&m_cbcRegisters, SIGNAL(finishedInitCbcReg()),
                 this, SIGNAL(notifyConfigFinished()));
 
+        connect(&m_cbcRegisters, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+        connect(&m_cbcRegistersTab, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+        connect(this, SIGNAL(receiveGlobalEnable(bool)),
+                &m_cbcRegistersTab, SLOT(enable(bool)));
+
         connect(this, SIGNAL(sendSh(int)),
                 &m_cbcRegistersTab, SLOT(setupShTab(int)));
         connect(this, SIGNAL(sendBe(int,int)),

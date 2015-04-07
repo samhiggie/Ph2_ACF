@@ -21,6 +21,7 @@ namespace GUI{
     ~SetupTabViewManager();
 
     signals:
+        void receiveGlobalEnable(bool enable);
         void notifyStatusUpdated(const QString& value);
         void onBtnLoadClicked();
         void sendSh(const int idSh);

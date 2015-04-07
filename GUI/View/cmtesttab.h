@@ -16,13 +16,13 @@ namespace GUI {
         explicit CmTestTab(QWidget *parent);
         ~CmTestTab();
     signals:
+        void globalEnable(bool enable);
         void startCmTest();
         void sendIsScan(const bool);
 
     public slots:
+        void enable(bool enable);
         void getIsNoiseScan();
-        void disableLaunch();
-        void enableLaunch();
 
     private slots:
         void on_btnLaunch_clicked();

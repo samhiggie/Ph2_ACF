@@ -35,6 +35,9 @@ namespace GUI {
                 this, SIGNAL(finishedCalibration()));
         connect(m_worker, SIGNAL(finished()),
                 m_thread, SLOT(quit()), Qt::DirectConnection);
+
+        connect(m_worker, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
     }
 
     void Calibrate::initialiseSettings()

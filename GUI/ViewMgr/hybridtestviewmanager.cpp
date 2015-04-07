@@ -47,22 +47,18 @@ namespace GUI
                 &m_hybridTestTab, SLOT(getIsHoleModeChecked()));
         connect(&m_hybridTestTab, SIGNAL(sendIsHoleModeChecked(bool)),
                 &m_hybridTest, SLOT(setHoleMode(bool)));
-
-        connect(&m_hybridTest, SIGNAL(startedHybridTest()),
-                &m_hybridTestTab, SLOT(disableLaunch()));
-        connect(&m_hybridTest, SIGNAL(finishedHybridTest()),
-                &m_hybridTestTab, SLOT(enableLaunch()));
     }
 
     void HybridTestViewManager::WireExternalCalls()
     {
         connect(&m_hybridTest, SIGNAL(startedHybridTest()),
                 this, SIGNAL(startedHybridTest()));
-        connect(&m_hybridTest, SIGNAL(finishedHybridTest()),
-                this, SIGNAL(finishedHybridTest()));
-        connect(this, SIGNAL(disableLaunch()),
-                &m_hybridTestTab, SLOT(disableLaunch()));
-        connect(this, SIGNAL(enableLaunch()),
-                &m_hybridTestTab, SLOT(enableLaunch()));
+
+        connect(&m_hybridTest, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+        connect(&m_hybridTestTab, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+        connect(this, SIGNAL(receiveGlobalEnable(bool)),
+                &m_hybridTestTab, SLOT(enable(bool)));
     }
 }

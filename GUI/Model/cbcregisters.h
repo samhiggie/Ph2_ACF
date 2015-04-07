@@ -21,6 +21,7 @@ namespace GUI{
         ~CbcRegisters();
 
     signals:
+        void globalEnable(bool enable);
         void createInitialCbcRegistersMap();
         void sendInitialCbcRegisterValue(const int idBe,
                                   const int idFe,

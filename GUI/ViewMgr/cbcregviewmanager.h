@@ -17,6 +17,9 @@ namespace GUI{
 
     signals:
 
+        void sendGlobalEnable(bool enable);
+        void receiveGlobalEnable(bool enable);
+
         void sendSh(int idSh);
         void sendBe(const int idSh, const int idBe);
         void sendFe(const int idSh, const int idBe, const int idFe);

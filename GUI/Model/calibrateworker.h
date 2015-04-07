@@ -12,6 +12,7 @@ namespace GUI{
 
         void requestWork(bool calibFast, bool scan, bool bitwise, bool allCh);
     signals:
+        void globalEnable(bool enable);
         void workRequested();
         void finished();
 

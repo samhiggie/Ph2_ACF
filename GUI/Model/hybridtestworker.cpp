@@ -44,9 +44,9 @@ namespace GUI {
 
         char *someData = ba.data();
 
-        qDebug() << "Testing QProcess ..." ;
         qDebug() << someData;
-        qDebug() << "done!" ;
+
+        emit globalEnable(true);
 
         emit finished();
     }

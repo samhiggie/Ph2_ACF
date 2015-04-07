@@ -78,11 +78,12 @@ namespace GUI
         connect(&config, SIGNAL(sendCbc(int,int,int,int)),
                 this, SIGNAL(sendCbc(int,int,int,int)));
 
-
     }
 
     void SetupTabViewManager::WireCallFromOtherTabs()
     {
+        connect(this, SIGNAL(receiveGlobalEnable(bool)),
+                &m_setupTab, SLOT(enable(bool)));
         connect(this, SIGNAL(onConfigFinished()),
                 &m_setupTab, SLOT(onConfigFinished()));
     }

@@ -20,6 +20,8 @@ namespace GUI{
         void finishedCalibration();
         void disableLaunch();
         void enableLaunch();
+        void sendGlobalEnable(bool enable);
+        void receiveGlobalEnable(bool enable);
 
     private:
 

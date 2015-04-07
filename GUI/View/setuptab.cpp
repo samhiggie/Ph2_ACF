@@ -25,6 +25,14 @@ namespace GUI{
         delete ui;
     }
 
+    void SetupTab::enable(bool enable)
+    {
+        ui->btnConfig->setEnabled(enable);
+        ui->btnInit->setEnabled(enable);
+        ui->btnLoad->setEnabled(enable);
+        ui->btnLoadCustom->setEnabled(enable);
+    }
+
     void SetupTab::setHwTreeView(QStandardItemModel *model)
     {
         ui->treeTest->setModel(model);
@@ -58,6 +66,7 @@ namespace GUI{
         ui->btnConfig->setEnabled(false);
         ui->btnInit->setEnabled(false);
         ui->btnLoad->setEnabled(false);
+        ui->btnLoadCustom->setEnabled(false);
         emit onBtnCfgClicked();
     }
 
@@ -75,6 +84,7 @@ namespace GUI{
         emit enableAllTabs(false);
         ui->btnInit->setEnabled(false);
         ui->btnLoad->setEnabled(false);
+        ui->btnLoad->setEnabled(false);
         ui->btnConfig->setEnabled(false);
         emit onBtnInitClicked();
     }
@@ -85,6 +95,7 @@ namespace GUI{
         ui->btnConfig->setEnabled(true);
         ui->btnInit->setEnabled(true);
         ui->btnLoad->setEnabled(true);
+        ui->btnLoadCustom->setEnabled(true);
     }
 
     void SetupTab::onConfigFinished()
@@ -93,6 +104,7 @@ namespace GUI{
         ui->btnConfig->setEnabled(true);
         ui->btnInit->setEnabled(true);
         ui->btnLoad->setEnabled(true);
+        ui->btnLoadCustom->setEnabled(true);
     }
 
 
@@ -104,7 +116,7 @@ namespace GUI{
     void SetupTab::on_btnOpenDir_clicked()
     {
         QString fileName = QFileDialog::getOpenFileName(this,
-                                                        tr("Open Settings"), "./GUI/settings", tr("Settings File (*.json)"));
+                                                        tr("Open Settings"), "./settings", tr("Settings File (*.json)"));
 
         ui->lineSettings->setText(fileName);
     }

@@ -31,11 +31,6 @@ namespace GUI {
                 &m_cmTab, SLOT(getIsNoiseScan()));
         connect(&m_cmTab, SIGNAL(sendIsScan(bool)),
                 &m_cm, SLOT(setIsScan(bool)));
-
-        connect(&m_cm, SIGNAL(startedCmTest()),
-                &m_cmTab, SLOT(disableLaunch()));
-        connect(&m_cm, SIGNAL(finishedCmTest()),
-                &m_cmTab, SLOT(disableLaunch()));
     }
 
     void CmTestViewManager::WireExternalCalls()
@@ -45,10 +40,12 @@ namespace GUI {
         connect(&m_cm, SIGNAL(finishedCmTest()),
                 this, SIGNAL(onCmTestFinished()));
 
-        connect(this, SIGNAL(enableLaunch()),
-                &m_cmTab,SLOT(enableLaunch()));
-        connect(this, SIGNAL(disableLaunch()),
-                &m_cmTab, SLOT(disableLaunch()));
+        connect(&m_cm, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+        connect(&m_cmTab, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+        connect(this, SIGNAL(receiveGlobalEnable(bool)),
+                &m_cmTab, SLOT(enable(bool)));
 
     }
 

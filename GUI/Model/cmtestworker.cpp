@@ -39,6 +39,8 @@ namespace GUI{
 
         qDebug() << someData;
 
+        emit globalEnable(true);
+
         emit finished();
 
     }

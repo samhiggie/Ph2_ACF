@@ -17,23 +17,19 @@ namespace GUI {
         delete ui;
     }
 
+    void CmTestTab::enable(bool enable)
+    {
+        ui->btnLaunch->setEnabled(enable);
+    }
+
     void CmTestTab::getIsNoiseScan()
     {
         emit sendIsScan(ui->chbxScanNoise->isChecked());
     }
 
-    void CmTestTab::disableLaunch()
-    {
-        ui->btnLaunch->setEnabled(false);
-    }
-
-    void CmTestTab::enableLaunch()
-    {
-        ui->btnLaunch->setEnabled(true);
-    }
-
     void CmTestTab::on_btnLaunch_clicked()
     {
+        emit globalEnable(false);
         emit startCmTest();
     }
 

@@ -15,6 +15,7 @@ namespace GUI{
         ~CmTest();
 
     signals:
+        void globalEnable(bool enable);
         void getIsScan();
         void startedCmTest();
         void finishedCmTest();

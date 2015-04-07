@@ -42,19 +42,16 @@ namespace GUI
                 &m_calibrateTab, SLOT(getIsAllCh()));
         connect(&m_calibrateTab, SIGNAL(sendIsAllCh(bool)),
                 &m_calibrate, SLOT(setAllChValue(bool)));
-
-        connect(&m_calibrate, SIGNAL(startedCalibration()),
-                &m_calibrateTab, SLOT(disableLaunch()));
-        connect(&m_calibrate, SIGNAL(finishedCalibration()),
-                &m_calibrateTab, SLOT(enableLaunch()));
     }
 
     void CalibrateViewManager::WireExternalConnections()
     {
-        connect(this, SIGNAL(enableLaunch()),
-                &m_calibrateTab, SLOT(enableLaunch()));
-        connect(this, SIGNAL(disableLaunch()),
-                &m_calibrateTab, SLOT(disableLaunch()));
+        connect(&m_calibrate, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+        connect(&m_calibrateTab, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+        connect(this, SIGNAL(receiveGlobalEnable(bool)),
+                &m_calibrateTab, SLOT(enable(bool)));
 
         connect(&m_calibrate, SIGNAL(startedCalibration()),
                 this, SIGNAL(startedCalibration()));

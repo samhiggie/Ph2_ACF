@@ -29,8 +29,8 @@ namespace GUI
         m_cmVm(cmVm)
     {
         WireStartup();
+        WireGlobalEnable();
         WireSetupVmMessages();
-        WireLaunchButtons();
     }
 
     MainViewManager::~MainViewManager()
@@ -60,7 +60,6 @@ namespace GUI
         connect(&m_setupVm, SIGNAL(sendCbc(int,int,int,int)),
                 &m_cbcRegVm, SIGNAL(sendCbc(int,int,int,int)));
         
-
         connect(&m_setupVm, SIGNAL(sendInitialiseBeRegistersView()),
                 &m_beVm, SIGNAL(initialiseBeRegView()));
 
@@ -74,45 +73,34 @@ namespace GUI
 
     void MainViewManager::WireGlobalEnable()
     {
-        connect(&m_beVm, SIGNAL(globalEnable(bool)),
+        connect(&m_beVm, SIGNAL(sendGlobalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
+        connect(&m_calibrateVm, SIGNAL(sendGlobalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
+        connect(&m_cbcRegVm, SIGNAL(sendGlobalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
+        connect(&m_cmVm, SIGNAL(sendGlobalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
+        connect(&m_hybridTestVm, SIGNAL(sendGlobalEnable(bool)),
                 this, SIGNAL(globalEnable(bool)));
 
+        connect(this, SIGNAL(globalEnable(bool)),
+                &m_beVm, SIGNAL(receiveGlobalEnable(bool)));
+        connect(this, SIGNAL(globalEnable(bool)),
+                &m_calibrateVm, SIGNAL(receiveGlobalEnable(bool)));
+        connect(this, SIGNAL(globalEnable(bool)),
+                &m_cbcRegVm, SIGNAL(receiveGlobalEnable(bool)));
+        connect(this, SIGNAL(globalEnable(bool)),
+                &m_cmVm, SIGNAL(receiveGlobalEnable(bool)));
+        connect(this, SIGNAL(globalEnable(bool)),
+                &m_hybridTestVm, SIGNAL(receiveGlobalEnable(bool)));
+        connect(this, SIGNAL(globalEnable(bool)),
+                &m_setupVm, SIGNAL(receiveGlobalEnable(bool)));
     }
 
     void MainViewManager::WireSetupVmMessages()
     {
         connect(&m_setupVm, SIGNAL(enableAlltabs(bool)),
                 &m_mainView, SLOT(enableAllTabsSlot(bool)));
-    }
-
-    void MainViewManager::WireLaunchButtons()
-    {
-        connect(&m_hybridTestVm, SIGNAL(startedHybridTest()),
-                &m_calibrateVm, SIGNAL(disableLaunch()));
-        connect(&m_hybridTestVm, SIGNAL(finishedHybridTest()),
-                &m_calibrateVm, SIGNAL(enableLaunch()));
-        connect(&m_hybridTestVm, SIGNAL(startedHybridTest()),
-                &m_cmVm, SIGNAL(disableLaunch()));
-        connect(&m_hybridTestVm, SIGNAL(finishedHybridTest()),
-                &m_cmVm, SIGNAL(enableLaunch()));
-
-        connect(&m_calibrateVm, SIGNAL(startedCalibration()),
-                &m_hybridTestVm, SIGNAL(disableLaunch()));
-        connect(&m_calibrateVm, SIGNAL(finishedCalibration()),
-                &m_hybridTestVm, SIGNAL(enableLaunch()));
-        connect(&m_calibrateVm, SIGNAL(startedCalibration()),
-                &m_cmVm, SIGNAL(disableLaunch()));
-        connect(&m_calibrateVm, SIGNAL(finishedCalibration()),
-                &m_cmVm, SIGNAL(enableLaunch()));
-
-        connect(&m_cmVm, SIGNAL(onCmTestStart()),
-                &m_hybridTestVm, SIGNAL(disableLaunch()));
-        connect(&m_cmVm, SIGNAL(onCmTestFinished()),
-                &m_hybridTestVm, SIGNAL(enableLaunch()));
-        connect(&m_cmVm, SIGNAL(onCmTestStart()),
-                &m_calibrateVm, SIGNAL(disableLaunch()));
-        connect(&m_cmVm, SIGNAL(onCmTestFinished()),
-                &m_calibrateVm, SIGNAL(enableLaunch()));
-
     }
 }

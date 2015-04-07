@@ -32,6 +32,7 @@ namespace GUI {
         void on2CbcToggle(const bool checked);
 
     public slots:
+        void enable(bool enable);
         void onStatusUpdate(const QString& statusMsg);
         void setHwTreeView(QStandardItemModel *model);
         void onInitFinished();

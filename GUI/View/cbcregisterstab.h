@@ -29,12 +29,14 @@ namespace GUI {
         ~CbcRegistersTab();
 
     signals:
+        void globalEnable(bool enable);
         void refreshCbcRegisters();
         void writeCbcRegisters(const int idSh, const int idBe, const int idFe, const int cbc,
                                std::vector<std::pair<std::string, std::uint8_t>>);
 
     public slots:
         void reset();
+        void enable(bool enable);
         void setupShTab(const int idSh);
         void setupBeTab(const int idSh, const int idBe);
         void setupFeTab(const int idSh, const int idBe, const int idFe);

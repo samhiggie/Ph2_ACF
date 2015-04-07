@@ -44,7 +44,7 @@ namespace GUI{
         char *someData = ba.data();
 
         qDebug() << someData;
-
+        emit globalEnable(true);
         emit finished();
 
     }

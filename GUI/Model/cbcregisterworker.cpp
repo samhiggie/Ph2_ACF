@@ -93,6 +93,7 @@ namespace GUI
                 }
             }
         }
+        emit globalEnable(true);
     }
 
     void CbcRegisterWorker::writeCbcRegisters(const int idSh, const int idBe, const int idFe, const int idCbc,
@@ -116,7 +117,6 @@ namespace GUI
                                     if (cCbc->getCbcId()==idCbc)
                                     {
                                         fCbcInterface->WriteCbcMultReg(cCbc, mapReg );
-                                        qDebug() << "!!";
                                     }
                                 }
                             }
@@ -125,6 +125,7 @@ namespace GUI
                 }
             }
         }
+        emit globalEnable(true);
     }
 
 }

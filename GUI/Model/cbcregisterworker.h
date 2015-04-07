@@ -19,6 +19,7 @@ namespace GUI{
         ~CbcRegisterWorker();
 
     signals:
+        void globalEnable(bool enable);
         void sendInitialCbcRegisterValues(const int idBe,
                                           const int idFe,
                                           const int idFmc,

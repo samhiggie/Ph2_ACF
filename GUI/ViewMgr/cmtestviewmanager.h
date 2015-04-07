@@ -16,6 +16,8 @@ namespace GUI {
         ~CmTestViewManager();
 
     signals:
+        void sendGlobalEnable(bool enable);
+        void receiveGlobalEnable(bool enable);
         void onCmTestStart();
         void onCmTestFinished();
         void enableLaunch();

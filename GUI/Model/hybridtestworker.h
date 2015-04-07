@@ -15,6 +15,7 @@ namespace GUI{
         ~HybridTestWorker();
 
     signals:
+        void globalEnable(bool enable);
         void workRequested();
         void finished();
 

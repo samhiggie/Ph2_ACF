@@ -16,6 +16,7 @@ namespace GUI{
         ~HybridTest();
 
     signals:
+        void globalEnable(bool enable);
         void getVcthValue();
         void getEventsValue();
         void getIsRegTestChecked();

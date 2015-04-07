@@ -21,6 +21,7 @@ namespace GUI{
         void getIsAllCh();
         void startedCalibration();
         void finishedCalibration();
+        void globalEnable(bool enable);
 
     public slots:
         void initialiseSettings();

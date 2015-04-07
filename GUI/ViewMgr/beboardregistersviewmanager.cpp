@@ -49,10 +49,11 @@ namespace GUI {
                 &m_beBoardTab, SLOT(setupBe(int,int)));
 
         connect(&m_beBoard, SIGNAL(globalEnable(bool)),
-                this, SIGNAL(globalEnable(bool)));
+                this, SIGNAL(sendGlobalEnable(bool)));
         connect(&m_beBoardTab, SIGNAL(globalEnable(bool)),
-                this, SIGNAL(globalEnable(bool)));
-        connect(this, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(sendGlobalEnable(bool)));
+
+        connect(this, SIGNAL(receiveGlobalEnable(bool)),
                 &m_beBoardTab, SLOT(enable(bool)));
 
         connect(&m_beBoard, SIGNAL(finishedInitialiseBeBoardRegValues()),

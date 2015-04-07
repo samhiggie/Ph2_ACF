@@ -12,6 +12,7 @@ namespace GUI{
         ~CmTestWorker();
 
     signals:
+        void globalEnable(bool enable);
         void workRequested();
         void finished();
 

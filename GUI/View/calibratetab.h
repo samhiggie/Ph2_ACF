@@ -17,6 +17,7 @@ namespace GUI{
 
     signals:
         void startCalibration();
+        void globalEnable(bool enable);
         void sendIsFastCalib(bool isFast);
         void sendIsScan(bool isScan);
         void sendIsBitwise(bool isBit);
@@ -27,8 +28,7 @@ namespace GUI{
         void getIsScan();
         void getIsBitwise();
         void getIsAllCh();
-        void enableLaunch();
-        void disableLaunch();
+        void enable(bool enable);
 
     private slots:
         void on_btnCalibrate_clicked();
