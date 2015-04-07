@@ -92,14 +92,20 @@ namespace GUI {
             lblRegTitle->setText(QString::fromStdString(kv.first));
             QLineEdit *lineEdit = new QLineEdit(this);
             lineEdit->setText(QString::number(kv.second));
+            lblRegTitle->setFixedWidth(500);
+            lineEdit->setFixedWidth(100);
 
             loHorz->addWidget(lblRegTitle);
+            loHorz->setAlignment(lblRegTitle, Qt::AlignLeft);
             loHorz->addWidget(lineEdit);
+            loHorz->setAlignment(lineEdit, Qt::AlignLeft);
 
             m_mapBeGrid[idSh][idBe]->addLayout(loHorz, row, column);
             row++;
 
             cWidgetMap.insert(QString::fromStdString(kv.first), lineEdit);
+
+            if (cSizeTitle < lblRegTitle->width()) cSizeTitle = lblRegTitle->width();
 
         }
 
