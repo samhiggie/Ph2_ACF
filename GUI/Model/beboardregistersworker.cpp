@@ -45,8 +45,46 @@ namespace GUI{
         }
 
         emit finishedInitialiseBeBoardRegValues();
+    }
+    void BeBoardRegistersWorker::getBeBoardRegMap()
+    {
+        getObjects();
+        for ( auto cShelve : fShelveVector )
+        {
+            for ( auto cBoard : ( cShelve )->fBoardVector )
+            {
+                emit sendInitialBeBoardRegValues(cShelve->getShelveId(),
+                                                 cBoard->getBeId(),
+                                                 cBoard->getBeBoardRegMap());
+            }
+        }
+        emit globalEnable(true);
+    }
 
+    void BeBoardRegistersWorker::writeBeRegisters(const int idSh, const int idBe, QMap<QString, int> cMap)
+    {
+        getObjects();
 
+        for ( auto cShelve : fShelveVector )
+        {
+            if (cShelve->getShelveId() == idSh)
+            {
+                for ( auto cBoard : ( cShelve )->fBoardVector )
+                {
+                    if(cBoard->getBeId() == idBe)
+                    {
+                        for (auto& cRegName : cMap.keys())
+                        {
+                            std::string nameReg = cRegName.toStdString();
+
+                            cBoard->setReg(nameReg, cMap[cRegName]);
+                        }
+                    }
+
+                }
+            }
+        }
+        emit globalEnable(true);
     }
 
 }

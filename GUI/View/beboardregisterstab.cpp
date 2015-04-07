@@ -30,6 +30,12 @@ namespace GUI {
         tabsClear();
     }
 
+    void BeBoardRegistersTab::enable(bool enable)
+    {
+        ui->btnRefresh->setEnabled(enable);
+        ui->btnWrite->setEnabled(enable);
+    }
+
     void BeBoardRegistersTab::setupSh(const int idSh)
     {
         reset();
@@ -59,10 +65,6 @@ namespace GUI {
         QGridLayout *loGrid = new QGridLayout;
         client->setLayout(loGrid);
 
-        //QWidget *pageWidget = new QWidget;
-        //pageWidget->setLayout(new QVBoxLayout);
-        //pageWidget->layout()->addWidget(scrollArea);
-
         QString title = QString("Be %1").arg(idBe);
 
         tabBe->setLayout(new QVBoxLayout);
@@ -81,6 +83,8 @@ namespace GUI {
         int column = 0;
         int cSizeTitle = 0;
 
+        QMap<QString, QLineEdit*> cWidgetMap;
+
         for (auto& kv : mapReg)
         {
             QHBoxLayout *loHorz = new QHBoxLayout;
@@ -95,24 +99,36 @@ namespace GUI {
             m_mapBeGrid[idSh][idBe]->addLayout(loHorz, row, column);
             row++;
 
+            cWidgetMap.insert(QString::fromStdString(kv.first), lineEdit);
+
         }
-        //m_widgetMap.push_back(cWidgetMap);
+
+        m_mapWidgets[idSh][idBe] = cWidgetMap;
     }
 
-    void BeBoardRegistersTab::on_btnRefresh_clicked()
+    void BeBoardRegistersTab::refreshBeBoardRegisterValues(const int idSh, const int idBe, const std::map<std::string, uint32_t> mapReg)
     {
-        emit refreshBeValues();
-    }
-
-    void BeBoardRegistersTab::onInitialiseBeReg(const std::map<std::string, uint32_t> cMap)
-    {
-        for (auto value : cMap )
+        for (auto& regName : mapReg)
         {
-            qDebug() << QString::fromStdString(value.first);
-
-            //qDebug() << QString::number(cMap[value.first]);
+            m_mapWidgets[idSh][idBe][QString::fromStdString(regName.first)]->setText(QString::number(regName.second));
         }
 
+    }
+
+    void BeBoardRegistersTab::createBeRegItems()
+    {
+        for(auto& cSh : m_mapWidgets.keys())
+        {
+            for(auto& cBe : m_mapWidgets[cSh].keys())
+            {
+                QMap<QString, int> cMap;
+                for (auto& regName: m_mapWidgets[cSh][cBe].keys())
+                {
+                    cMap[regName] = (m_mapWidgets[cSh][cBe][regName]->text()).toInt();
+                }
+                emit writeBeRegisters(cSh,cBe, cMap);
+            }
+        }
     }
 
     void BeBoardRegistersTab::tabsClear()
@@ -121,6 +137,18 @@ namespace GUI {
         m_mapTabBe.clear();
         m_mapTabSh.clear();
 
+    }
+
+    void BeBoardRegistersTab::on_btnRefresh_clicked()
+    {
+        emit globalEnable(false);
+        emit refreshBeValues();
+    }
+
+    void BeBoardRegistersTab::on_btnWrite_clicked()
+    {
+        emit globalEnable(false);
+        createBeRegItems();
     }
 
 }

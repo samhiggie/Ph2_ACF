@@ -26,6 +26,8 @@ namespace GUI{
                                  CmTestViewManager &cmVm);
 
         ~MainViewManager();
+    signals:
+        void globalEnable(bool enable);
     private:
         MainView& m_mainView;
         SetupTabViewManager& m_setupVm;
@@ -36,6 +38,7 @@ namespace GUI{
         CmTestViewManager& m_cmVm;
 
         void WireStartup();
+        void WireGlobalEnable();
         void WireSetupVmMessages();
         void WireLaunchButtons();
 

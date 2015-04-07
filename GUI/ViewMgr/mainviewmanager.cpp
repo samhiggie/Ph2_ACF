@@ -72,6 +72,13 @@ namespace GUI
 
     }
 
+    void MainViewManager::WireGlobalEnable()
+    {
+        connect(&m_beVm, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
+
+    }
+
     void MainViewManager::WireSetupVmMessages()
     {
         connect(&m_setupVm, SIGNAL(enableAlltabs(bool)),

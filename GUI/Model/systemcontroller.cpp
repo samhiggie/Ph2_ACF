@@ -79,9 +79,7 @@ namespace GUI
         SendStatusMessage(tr("Hardware configured"));
         SendStatusMessage(tr("Initialising register values"));
         emit sendInitialiseBeRegistersView();
-        //SendStatusMessage(tr("BE board values initialised"));
-        //emit sendInitialiseRegistersView();
-        //SendStatusMessage(tr("Initialising CBC register values"));
+
         //emit notifyConfigFinished();
         //SendStatusMessage(tr("Register CBC values initialised"));
     }

@@ -26,14 +26,14 @@ namespace GUI
     {
         connect(&m_cbcRegisters, SIGNAL(sendInitialCbcRegisterValue(int,int,int,int,std::map<std::string,CbcRegItem>)),
                 &m_cbcRegistersTab, SLOT(createCbcRegisterValue(int,int,int,int,std::map<std::string,CbcRegItem>)));
-        connect(&m_cbcRegistersTab, SIGNAL(writeCbcRegisters(int,std::vector<std::pair<std::string,std::uint8_t> >)),
-                &m_cbcRegisters, SIGNAL(writeCbcRegisterValue(int,std::vector<std::pair<std::string,std::uint8_t> >)));
+        connect(&m_cbcRegistersTab, SIGNAL(writeCbcRegisters(int,int,int,int,std::vector<std::pair<std::string,std::uint8_t> >)),
+                &m_cbcRegisters, SIGNAL(writeCbcRegisters(int,int,int,int,std::vector<std::pair<std::string,std::uint8_t> >)));
 
         connect(&m_cbcRegistersTab, SIGNAL(refreshCbcRegisters()),
                 &m_cbcRegisters, SIGNAL(getCbcRegistersMap()));
 
-        connect(&m_cbcRegisters, SIGNAL(sendCbcRegisterValue(int,std::map<std::string,CbcRegItem>)),
-                &m_cbcRegistersTab, SLOT(updateCbcRegisterValues(int,std::map<std::string,CbcRegItem>)));
+        connect(&m_cbcRegisters, SIGNAL(sendCbcRegisterValues(int,int,int,int,std::map<std::string,CbcRegItem>)),
+                &m_cbcRegistersTab, SLOT(updateCbcRegisterValues(int,int,int,int,std::map<std::string,CbcRegItem>)));
 
     }
 

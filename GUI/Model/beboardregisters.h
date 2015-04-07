@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <map>
+#include <QMap>
 
 namespace GUI {
 
@@ -19,8 +20,12 @@ namespace GUI {
     signals:
         void createInitialBeBoardMap();
         void getInitialBeRegValues();
+        void getBeRegValues();
         void sendInitialBeBoardRegValues(const int idSh, const int idBe, const std::map< std::string, uint32_t >  cMap);
+        void sendBeBoardRegValues(const int idSh, const int idBe, const std::map< std::string, uint32_t >  cMap);
         void finishedInitialiseBeBoardRegValues();
+        void writeBeRegisters(const int idSh, const int idBe, QMap<QString, int>);
+        void globalEnable(bool enable);
 
     private :
 

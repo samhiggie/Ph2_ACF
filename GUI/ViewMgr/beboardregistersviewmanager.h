@@ -21,6 +21,7 @@ namespace GUI {
         void finishedInitialiseBeBoardRegValues();
         void sendSh(const int idSh);
         void sendBe(const int idSh, const int idBe);
+        void globalEnable(bool enable);
 
     private:
 

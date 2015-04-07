@@ -23,14 +23,22 @@ namespace GUI {
 
     signals:
         void refreshBeValues();
+        void writeBeRegisters(const int idSh, const int idBe, QMap<QString, int>);
+        void globalEnable(bool enable);
 
-    private slots:
+    public slots:
         void reset();
+        void enable(bool enable);
         void setupSh(const int idSh);
         void setupBe(const int idSh, const int idBe);
+
         void createBeBoardRegisterValues(const int idSh, const int idBe, const std::map< std::string, uint32_t > mapReg);
+        void refreshBeBoardRegisterValues(const int idSh, const int idBe, const std::map< std::string, uint32_t > mapReg);
+
+    private slots:
         void on_btnRefresh_clicked();
-        void onInitialiseBeReg(const std::map< std::string, uint32_t >  cMap);
+
+        void on_btnWrite_clicked();
 
     private:
 
@@ -40,8 +48,8 @@ namespace GUI {
         QMap<int, QMap<int, QTabWidget*>> m_mapTabBe;
 
         QMap<int, QMap<int, QGridLayout*>> m_mapBeGrid;
-        //QMap<int, QMap<int,
-
+        QMap<int, QMap<int, QMap<QString, QLineEdit*>>> m_mapWidgets;
+        void createBeRegItems();
         void tabsClear();
         Ui::BeBoardRegistersTab *ui;
     };

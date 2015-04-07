@@ -85,42 +85,41 @@ namespace GUI
 
                     for ( auto cCbc : cFe->fCbcVector )
                     {
-                        //emit sendCbcRegisterValue(cCbc->getCbcId(), cCbc->getRegMap());
+                        emit sendCbcRegisterValues(cShelve->getShelveId(),
+                                                  cBoard->getBeId(),
+                                                  cFe->getFeId(),
+                                                  cCbc->getCbcId(), cCbc->getRegMap());
                     }
                 }
             }
         }
     }
 
-    void CbcRegisterWorker::getBeBoardRegisterValues()
+    void CbcRegisterWorker::writeCbcRegisters(const int idSh, const int idBe, const int idFe, const int idCbc,
+                                              std::vector<std::pair<std::string, std::uint8_t>> mapReg)
     {
         getObjects();
 
         for ( auto cShelve : fShelveVector )
         {
-            for ( auto cBoard : ( cShelve )->fBoardVector )
-            {
-                std::cout << (uint8_t)cBoard->getBeId() << endl;
-            }
-        }
-
-    }
-
-    void CbcRegisterWorker::writeCbcRegisters(const int cbc, std::vector<std::pair<std::string, std::uint8_t>> mapReg)
-    {
-        getObjects();
-
-        for ( auto cShelve : fShelveVector )
-        {
-            for ( auto cBoard : ( cShelve )->fBoardVector )
-            {
-                for ( auto cFe : cBoard->fModuleVector )
+            if (cShelve->getShelveId() == idSh) {
+                for ( auto cBoard : ( cShelve )->fBoardVector )
                 {
-                    for ( auto cCbc : cFe->fCbcVector )
+                    if (cBoard->getBeId() == idBe)
                     {
-                        if (cCbc->getCbcId()==cbc)
+                        for ( auto cFe : cBoard->fModuleVector )
                         {
-                            fCbcInterface->WriteCbcMultReg(cCbc, mapReg );
+                            if (cFe->getFeId() == idFe)
+                            {
+                                for ( auto cCbc : cFe->fCbcVector )
+                                {
+                                    if (cCbc->getCbcId()==idCbc)
+                                    {
+                                        fCbcInterface->WriteCbcMultReg(cCbc, mapReg );
+                                        qDebug() << "!!";
+                                    }
+                                }
+                            }
                         }
                     }
                 }

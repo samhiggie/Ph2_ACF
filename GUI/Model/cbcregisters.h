@@ -27,8 +27,14 @@ namespace GUI{
                                   const int idFmc,
                                   const int idCbc,
                                   const std::map<std::string, CbcRegItem> mapReg);
+        void sendCbcRegisterValues(const int idBe,
+                                  const int idFe,
+                                  const int idFmc,
+                                  const int idCbc,
+                                  const std::map<std::string, CbcRegItem> mapReg);
         void finishedInitCbcReg();
-        void writeCbcRegisterValue(const int cbc, std::vector<std::pair<std::string, std::uint8_t>> mapReg);
+        void writeCbcRegisters(const int idSh, const int idBe, const int idFe, const int idCbc,
+                               std::vector<std::pair<std::string, std::uint8_t>>);
         void getCbcRegistersMap();
 
     private:

@@ -30,7 +30,8 @@ namespace GUI {
 
     signals:
         void refreshCbcRegisters();
-        void writeCbcRegisters(const int cbc, std::vector<std::pair<std::string, std::uint8_t>>);
+        void writeCbcRegisters(const int idSh, const int idBe, const int idFe, const int cbc,
+                               std::vector<std::pair<std::string, std::uint8_t>>);
 
     public slots:
         void reset();
@@ -43,13 +44,11 @@ namespace GUI {
 
     private slots:
 
+        void onValueChanged(QString cMsg);
+
         void on_btnRefresh_clicked();
 
         void on_btnWrite_clicked();
-
-        void on_btnResetSoft_clicked();
-
-        void on_btnHardReset_clicked();
 
     private:
 

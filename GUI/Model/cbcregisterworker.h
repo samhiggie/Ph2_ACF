@@ -24,7 +24,7 @@ namespace GUI{
                                           const int idFmc,
                                           const int idCbc,
                                           const std::map<std::string, CbcRegItem> mapReg);
-        void sendCbcRegisterValue(const int idBe,
+        void sendCbcRegisterValues(const int idBe,
                                   const int idFe,
                                   const int idFmc,
                                   const int idCbc,
@@ -34,10 +34,10 @@ namespace GUI{
         void finished();
 
     public slots:
-        void writeCbcRegisters(const int cbc, std::vector<std::pair<std::string, std::uint8_t>> mapReg);
+        void writeCbcRegisters(const int idSh, const int idBe, const int idFe, const int idCbc,
+                               std::vector<std::pair<std::string, std::uint8_t>> mapReg);
         void getInitialCbcRegistersMap();
         void getCbcRegistersMap();
-        void getBeBoardRegisterValues();
 
     private:
 

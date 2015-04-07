@@ -26,6 +26,13 @@ namespace GUI {
     {
         connect(&m_beBoard, SIGNAL(sendInitialBeBoardRegValues(int,int,std::map<std::string,uint32_t>)),
                 &m_beBoardTab, SLOT(createBeBoardRegisterValues(int,int,std::map<std::string,uint32_t>)));
+        connect(&m_beBoard, SIGNAL(sendBeBoardRegValues(int,int,std::map<std::string,uint32_t>)),
+                &m_beBoardTab, SLOT(refreshBeBoardRegisterValues(int,int,std::map<std::string,uint32_t>)));
+
+        connect(&m_beBoardTab, SIGNAL(refreshBeValues()),
+                &m_beBoard, SIGNAL(getBeRegValues()));
+        connect(&m_beBoardTab, SIGNAL(writeBeRegisters(int,int,QMap<QString,int>)),
+                &m_beBoard, SIGNAL(writeBeRegisters(int,int,QMap<QString,int>)));
     }
 
     void BeBoardRegistersViewManager::WireExternalCalls()
@@ -41,6 +48,12 @@ namespace GUI {
         connect(this, SIGNAL(sendBe(int,int)),
                 &m_beBoardTab, SLOT(setupBe(int,int)));
 
+        connect(&m_beBoard, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
+        connect(&m_beBoardTab, SIGNAL(globalEnable(bool)),
+                this, SIGNAL(globalEnable(bool)));
+        connect(this, SIGNAL(globalEnable(bool)),
+                &m_beBoardTab, SLOT(enable(bool)));
 
         connect(&m_beBoard, SIGNAL(finishedInitialiseBeBoardRegValues()),
                 this, SIGNAL(finishedInitialiseBeBoardRegValues()));

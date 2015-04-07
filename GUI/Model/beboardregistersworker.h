@@ -20,11 +20,15 @@ namespace GUI{
     signals:
         void workRequested();
         void sendInitialBeBoardRegValues(const int idSh, const int idBe, const std::map< std::string, uint32_t >  cMap);
+        void sendBeBoardRegValues(const int idSh, const int idBe, const std::map< std::string, uint32_t >  cMap);
         void finished();
         void finishedInitialiseBeBoardRegValues();
+        void globalEnable(bool enable);
 
     public slots:
+        void writeBeRegisters(const int idSh, const int idBe, QMap<QString, int> cMap);
         void getInitialBeBoardRegMap();
+        void getBeBoardRegMap();
 
     private:
 

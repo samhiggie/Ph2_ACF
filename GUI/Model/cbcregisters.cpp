@@ -53,10 +53,10 @@ namespace GUI
 
         connect(this, SIGNAL(getCbcRegistersMap()),
                 m_worker, SLOT(getCbcRegistersMap()));
-        connect(this, SIGNAL(writeCbcRegisterValue(int,std::vector<std::pair<std::string,std::uint8_t> >)),
-                m_worker, SLOT(writeCbcRegisters(int,std::vector<std::pair<std::string,std::uint8_t> >)));
-        /*connect(m_worker, SIGNAL(sendCbcRegisterValue(int,std::map<std::string,CbcRegItem>)),
-                this, SIGNAL(sendCbcRegisterValue(int,std::map<std::string,CbcRegItem>)));*/
+        connect(this, SIGNAL(writeCbcRegisters(int,int,int,int,std::vector<std::pair<std::string,std::uint8_t> >)),
+                m_worker, SLOT(writeCbcRegisters(int,int,int,int,std::vector<std::pair<std::string,std::uint8_t> >)));
+        connect(m_worker, SIGNAL(sendCbcRegisterValues(int,int,int,int,std::map<std::string,CbcRegItem>)),
+                this, SIGNAL(sendCbcRegisterValues(int,int,int,int,std::map<std::string,CbcRegItem>)));
 
 
     }

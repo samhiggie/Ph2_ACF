@@ -40,20 +40,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="btnResetSoft">
-          <property name="text">
-           <string>Soft Reset</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="btnHardReset">
-          <property name="text">
-           <string>Hard Reset</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <spacer name="spacerRefresh">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>

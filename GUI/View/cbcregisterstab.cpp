@@ -41,7 +41,6 @@ namespace GUI {
 
     void CbcRegistersTab::setupShTab(const int idSh)
     {
-
         reset();
 
         QTabWidget *tabSh =  new QTabWidget(this);
@@ -165,6 +164,9 @@ namespace GUI {
             lineRegValue->setText(QString::number(kv.second.fValue));
             lineRegValue->setFont(font);
 
+            //connect(lineRegValue, SIGNAL(textEdited(QString)),
+            //        this, SLOT(onValueChanged(QString)));
+
             loHorz->addWidget(lblRegTitle);
             loHorz->setAlignment(lblRegTitle, Qt::AlignLeft);
             loHorz->addWidget(lblRegAddress);
@@ -203,36 +205,49 @@ namespace GUI {
         }
     }
 
+    void CbcRegistersTab::onValueChanged(QString cMsg)
+    {
+        qDebug() << cMsg;
+    }
+
     void CbcRegistersTab::createCbcRegItems()
     {
-        int nCbc = 0;
-
-        /*for(auto& cCbc : m_widgetMap)
+        for(auto& cSh : m_mapWidgets.keys())
         {
-            std::vector<std::pair<std::string, std::uint8_t>> vecRegValues;
-            for (auto& regName : cCbc.keys())
+            for(auto& cBe : m_mapWidgets[cSh].keys())
             {
-                std::string regTitle = regName.toStdString();
+                for(auto& cFe : m_mapWidgets[cSh][cBe].keys())
+                {
+                    for(auto& cCbc : m_mapWidgets[cSh][cBe][cFe].keys())
+                    {
+                        std::vector<std::pair<std::string, std::uint8_t>> vecRegValues;
+                        for (auto& regName : m_mapWidgets[cSh][cBe][cFe][cCbc].keys())
+                        {
+                            std::string regTitle = regName.toStdString();
 
-                std::string regValueTemp = (cCbc.value(regName)->text()).toStdString();
-                std::vector<uint8_t> stupidConversion(regValueTemp.begin(), regValueTemp.end());
-                std::uint8_t regValue = *&stupidConversion[0];
+                            std::string regValueTemp = (m_mapWidgets[cSh][cBe][cFe][cCbc][regName])->text().toStdString();
+                            std::vector<uint8_t> stupidConversion(regValueTemp.begin(), regValueTemp.end());
+                            std::uint8_t regValue = *&stupidConversion[0];
 
-                vecRegValues.push_back(std::make_pair(regTitle, regValue));
+                            vecRegValues.push_back(std::make_pair(regTitle, regValue));
+
+                        }
+                        emit writeCbcRegisters(cSh, cBe, cFe, cCbc, vecRegValues);
+                    }
+                }
             }
-            //emit writeCbcRegisters(nCbc, vecRegValues);
-            ++nCbc;
-        }*/
+        }
     }
 
     void CbcRegistersTab::clearTabs()
     {
-       m_mapWidgets.clear();
-       m_mapTabSh.clear();
-       m_mapTabBe.clear();
-       m_mapTabFe.clear();
-       m_mapTabCbc.clear();
-       m_mapTabPage.clear();
+        m_mapWidgets.clear();
+        m_mapTabSh.clear();
+        m_mapTabBe.clear();
+        m_mapTabFe.clear();
+        m_mapTabCbc.clear();
+        m_mapTabPage.clear();
+
     }
 
     void CbcRegistersTab::on_btnRefresh_clicked()
@@ -243,16 +258,6 @@ namespace GUI {
     void CbcRegistersTab::on_btnWrite_clicked()
     {
         createCbcRegItems();
-    }
-
-    void CbcRegistersTab::on_btnResetSoft_clicked()
-    {
-        return; //TODO
-    }
-
-    void CbcRegistersTab::on_btnHardReset_clicked()
-    {
-        return; //TODO
     }
 
 
