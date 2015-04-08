@@ -96,6 +96,7 @@ int main( int argc, char* argv[] )
 		}
 	};
 
+
 	if ( cSingle )
 	{
 		t.start();
@@ -116,6 +117,7 @@ int main( int argc, char* argv[] )
 	for ( uint8_t cChannel = 1; cChannel < nChannels; cChannel++ )
 	{
 
+
 		std::string cRegName = (boost::format("Channel%03d")%cChannel ).str();
 		uint8_t cRegValue = 0x50;
 
@@ -129,10 +131,12 @@ int main( int argc, char* argv[] )
 		t.start();
 
 		cSystemController.fCbcInterface->WriteCbcMultReg( cSystemController.fShelveVector[0]->getBoard( 0 )->getModule( 0 )->getCbc( 0 ), cRegVec, true );
-		// cSystemController.fCbcInterface->WriteCbcMultReg(cSystemController.fShelveVector[0]->getBoard(0)->getModule(0)->getCbc(1),cRegVec, false);
+		cSystemController.fCbcInterface->WriteCbcMultReg( cSystemController.fShelveVector[0]->getBoard( 0 )->getModule( 0 )->getCbc( 1 ), cRegVec, false );
 
 		t.stop();
-		t.show( "Time for writing 254 registers to a single CBC" );
+		t.show( "Time for writing 254 registers to 2 CBCs" );
+		CbcRegReader cReader( cSystemController.fCbcInterface, "Channel005" );
+		cSystemController.accept( cReader );
 	}
 	return 0;
 }

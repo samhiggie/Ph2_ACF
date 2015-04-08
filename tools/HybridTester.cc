@@ -207,7 +207,6 @@ void HybridTester::ScanThreshold()
 					}
 					cNthAcq++;
 				}
-
 				// std::cout << +cVcth << " " << cHitCounter << std::endl;
 				// Draw the thing after each point
 				updateSCurveCanvas( pBoard );

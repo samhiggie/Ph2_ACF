@@ -40,6 +40,7 @@ On this Repo, you can find different version of the software :
     - updated address table for 2 & 8 CBC setups
     - new FW files for DIO5 FW for 2 & 8 CBC setups
     - a macro directory with a macro to visualize calibration results
+
 - 11/02/15 : new update (v1-02) with the following changes:
     - removed all dependences on ROOT from the HWDescription/ HWInterface / System / Utils Library
     - added a new Tool base-class that inherits from SystemController and handles the creation of Root files for the Tools (the Tools library is the onely one that requires ROOT)
@@ -460,6 +461,7 @@ Several bugs / problematic behavior has been reported by various users that is n
         gStyle->Set ... ;
 
     statements. This has been observed by several users on the VM and can be fixed by re-compiling ROOT using GCC 4.8
+
 
 
 
