@@ -21,6 +21,20 @@ using namespace Ph2_System;
 
 using namespace CommandLineProcessing;
 
+//Class used to process events acquired by a parallel acquisition
+class AcqVisitor: public HwInterfaceVisitor{
+	int cN;
+public:
+	AcqVisitor(){
+		cN=0;
+	}
+	//void init(std::ofstream* pfSave, bool bText);
+	virtual void visit ( const Ph2_HwInterface::Event& pEvent ){
+		cN++;
+		std::cout << ">>> Event #" << cN << std::endl;
+		std::cout << pEvent << std::endl;
+	}
+};
 
 void syntax( int argc )
 {
@@ -46,6 +60,9 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
+	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC.");
+	cmd.defineOptionAlternative( "ignoreI2c", "i" );
+
 	cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
 
@@ -54,6 +71,9 @@ int main( int argc, char* argv[] )
 
 	cmd.defineOption( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "events", "e" );
+
+	cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
+	cmd.defineOptionAlternative( "parallel", "p" );
 
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
@@ -71,7 +91,7 @@ int main( int argc, char* argv[] )
 	t.start();
 
 	cSystemController.InitializeHw( cHWFile );
-	cSystemController.ConfigureHw();
+	cSystemController.ConfigureHw(std::cout, cmd.foundOption("ignoreI2c"));
 
 	t.stop();
 	t.show( "Time to Initialize/configure the system: " );
@@ -99,33 +119,48 @@ int main( int argc, char* argv[] )
 		t.show( "Time for changing VCth on all CBCs:" );
 	}
 
-	// make event counter start at 1 as does the L1A counter
-	uint32_t cN = 1;
-	uint32_t cNthAcq = 0;
+	BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
+	if (cmd.foundOption("parallel")){
+		uint32_t nbPacket=pBoard->getReg(CBC_PACKET_NB), nbAcq = pEventsperVcth/(nbPacket+1) + (pEventsperVcth%(nbPacket+1)!=0 ? 1 : 0);
+		std::cout<<"Packet number="<<nbPacket<<", Nb events="<<pEventsperVcth<<" -> Nb acquisition iterations="<<nbAcq<<std::endl;
 
-	while ( cN <= pEventsperVcth )
-	{
-		if ( cN > pEventsperVcth ) break;
-		BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
-		cSystemController.Run( pBoard, cNthAcq );
+		AcqVisitor visitor;
+		std::cout<<"Press Enter to start the acquisition, press Enter again to stop it."<<std::endl;
+		std::cin.ignore();
+		cSystemController.fBeBoardInterface->StartThread(pBoard, nbAcq, &visitor);
+		std::cin.ignore();
+		cSystemController.fBeBoardInterface->StopThread(pBoard);
+	} else {
 
-		const Event* cEvent = cSystemController.fBeBoardInterface->GetNextEvent( pBoard );
+		// make event counter start at 1 as does the L1A counter
+		uint32_t cN = 1;
+		uint32_t cNthAcq = 0;
 
-		while ( cEvent )
+		cSystemController.fBeBoardInterface->Start( pBoard );
+		while ( cN <= pEventsperVcth )
 		{
-			std::cout << " cVcth = " << cVcth << std::endl;
-			std::cout << ">>> Event #" << cN << std::endl;
-			std::cout << *cEvent << std::endl;
-			if ( cN > pEventsperVcth )
-				break;
-			cN++;
+			if ( cN > pEventsperVcth ) break;
+			//cSystemController.Run( pBoard, cNthAcq );
+			cSystemController.fBeBoardInterface->ReadData(pBoard, cNthAcq, false);
+			const Event* cEvent = cSystemController.fBeBoardInterface->GetNextEvent( pBoard );
 
-			if ( cN <= pEventsperVcth )
-				cEvent = cSystemController.fBeBoardInterface->GetNextEvent( pBoard );
-			else break;
+			while ( cEvent )
+			{
+				std::cout << " cVcth = " << cVcth << std::endl;
+				std::cout << ">>> Event #" << cN << std::endl;
+				std::cout << *cEvent << std::endl;
+				if ( cN > pEventsperVcth )
+					break;
+				cN++;
+
+				if ( cN <= pEventsperVcth )
+					cEvent = cSystemController.fBeBoardInterface->GetNextEvent( pBoard );
+				else break;
+			}
+			cNthAcq++;
 		}
-		cNthAcq++;
+		cSystemController.fBeBoardInterface->Stop(pBoard, cNthAcq);
 	}
 
-
 }
+

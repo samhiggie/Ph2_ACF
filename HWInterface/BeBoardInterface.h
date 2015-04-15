@@ -139,6 +139,20 @@ namespace Ph2_HwInterface
 		 */
 		void ConfigureBoard( const BeBoard* pBoard );
 		/*!
+		 * \brief Start an acquisition in a separate thread
+		 * \param pBoard Board running the acquisition
+		 * \param uNbAcq Number of acquisition iterations (each iteration will get CBC_DATA_PACKET_NUMBER + 1 events)
+		 * \param visitor override the visit() method of this object to process each event
+		 */
+		void StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor);
+		/*! \brief Stop a running parallel acquisition
+		 */
+		void StopThread( BeBoard* pBoard);
+		/*! \brief Get the parallel acquisition iteration number */
+		int getNumAcqThread( BeBoard* pBoard);
+		/*! \brief Is a parallel acquisition running ? */
+		bool isRunningThread( BeBoard* pBoard);
+		/*!
 		 * \brief Start a DAQ
 		 * \param pBoard
 		 */

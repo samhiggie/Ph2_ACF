@@ -32,6 +32,11 @@ namespace Ph2_HwDescription
 	class Cbc;
 }
 
+namespace Ph2_HwInterface
+{
+	class Event;
+}
+
 class HwDescriptionVisitor
 {
   public:
@@ -68,6 +73,12 @@ class HwDescriptionVisitor
 	 * \param pCbc
 	 */
 	virtual void visit( Ph2_HwDescription::Cbc& pCbc ) {}
+};
+
+class HwInterfaceVisitor
+{
+    public:
+	virtual void visit ( const Ph2_HwInterface::Event& pEvent ) = 0;
 };
 
 #endif

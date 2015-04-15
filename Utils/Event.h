@@ -100,7 +100,10 @@ namespace Ph2_HwInterface
 		 * \return Aknowledgement of the Event setting (1/0)
 		 */
 		int SetEvent( const char* pEvent );
-
+		/*! \brief Get raw data */
+		char* GetEventData() const {return fBuf;}
+		/*! \brief Get the event size in bytes */
+		uint32_t GetSize() const {return fEventSize;}
 		//user interface
 		/*!
 		 * \brief Get an event contained in a Cbc

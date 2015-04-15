@@ -49,7 +49,7 @@ namespace Ph2_System
 			std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
 	}
 
-	void SystemController::ConfigureHw( std::ostream& os )
+	void SystemController::ConfigureHw( std::ostream& os , bool bIgnoreI2c)
 	{
 
 		bool cHoleMode, cCheck;
@@ -68,12 +68,12 @@ namespace Ph2_System
 		class Configurator : public HwDescriptionVisitor
 		{
 		  private:
-			bool fHoleMode, fCheck;
+			bool fHoleMode, fCheck, fIgnoreI2c;
 			Ph2_HwInterface::BeBoardInterface* fBeBoardInterface;
 			Ph2_HwInterface::CbcInterface* fCbcInterface;
 			std::ostream& los_;
 		  public:
-			Configurator( Ph2_HwInterface::BeBoardInterface* pBeBoardInterface, Ph2_HwInterface::CbcInterface* pCbcInterface, bool pHoleMode, bool pCheck, std::ostream& los ): fBeBoardInterface( pBeBoardInterface ), fCbcInterface( pCbcInterface ), fHoleMode( pHoleMode ), fCheck( pCheck ), los_( los ) {}
+			Configurator( Ph2_HwInterface::BeBoardInterface* pBeBoardInterface, Ph2_HwInterface::CbcInterface* pCbcInterface, bool pHoleMode, bool pCheck, bool pIgnoreI2c, std::ostream& los ): fBeBoardInterface( pBeBoardInterface ), fCbcInterface( pCbcInterface ), fHoleMode( pHoleMode ), fCheck( pCheck ), fIgnoreI2c( pIgnoreI2c ), los_( los ) {}
 
 			void visit( BeBoard& pBoard ) {
 				fBeBoardInterface->ConfigureBoard( &pBoard );
@@ -84,13 +84,14 @@ namespace Ph2_System
 			}
 
 			void visit( Cbc& pCbc ) {
-				fCbcInterface->ConfigureCbc( &pCbc );
-				los_ << GREEN <<  "Successfully configured Cbc " << int( pCbc.getCbcId() ) << RESET << std::endl;
-
+				if (!fIgnoreI2c){
+					fCbcInterface->ConfigureCbc( &pCbc );
+					los_ << GREEN <<  "Successfully configured Cbc " << int( pCbc.getCbcId() ) << RESET << std::endl;
+				} 
 			}
 		};
 
-		Configurator cConfigurator( fBeBoardInterface, fCbcInterface, cHoleMode, cCheck, os );
+		Configurator cConfigurator( fBeBoardInterface, fCbcInterface, cHoleMode, cCheck, bIgnoreI2c, os );
 		accept( cConfigurator );
 	}
 
