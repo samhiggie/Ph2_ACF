@@ -59,6 +59,14 @@ On this Repo, you can find different version of the software :
     - added a CMD line option: g for GUI, should only be used by the latter
     - SystemController class can now parse .json files in addition to .xml
 - 04/03/15: added GUI (v1-10)
+- 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading. 
+    - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog. 
+    - BeBoardInterface::FlashProm(...) uploads an MCS file into the FPGA
+- 15/04/15 : Acquisition in a separate thread
+    - Start() should be called when acquisition begins, Stop() when it ends and ReadData(...) at each iteration.
+    - New functions BeBoardInterface::StartThread, StopThread, getNumAcqThread, isRunningThread. Abstract class HwInterfaceVisitor.
+    - datatest -p option to perform an acquisition in a separate thread
+    - datatest -i option to ignore CBC configuration. Can be run on a bare GLIB board without CBC
 
 
 ### Setup
