@@ -23,7 +23,7 @@ srcnoroot::
 GUI::
 	$(MAKE) -C GUI/Macros
 	$(MAKE) -C $@
-	cp $@/Ph2_ACF ../bin
+	cp $@/Ph2_ACF ./bin
 doc::
 	$(MAKE) -C $@
 
