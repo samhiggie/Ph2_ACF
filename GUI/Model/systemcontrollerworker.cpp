@@ -7,14 +7,12 @@
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 
-//TODO Add proper destruct and safety methods to thread
 namespace GUI
 {
 
     SystemControllerWorker::SystemControllerWorker(QObject *parent,
                                                    Settings &config) :
         QObject(parent)
-        //m_Settings(config)
     {
         _working = false;
         _abort = false;

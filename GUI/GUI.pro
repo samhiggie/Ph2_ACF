@@ -12,13 +12,14 @@ TARGET = Ph2_ACF
 TEMPLATE = app
 
 CONFIG += c++11 
-QMAKE_CXXFLAGS += -g -O1 -w -Wall -pedantic -fPIC -std=c++11 -lrt  `root-config --cflags --evelibs` -Wcpp -shared -pthread
+QMAKE_CXXFLAGS += -g -O1 -w -Wall -pedantic -fPIC -std=c++11 -lrt  `root-config --cflags --evelibs` -Wcpp -pthread
 
 LIBS += -L../lib -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Tools -lPh2_Utils
-LIBS += -L/opt/cactus/lib -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal
-LibraryDirs = /opt/cactus/lib /opt/xdaq/lib ../
+LIBS += -L/opt/cactus/lib -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system
+#LibraryDirs = /opt/cactus/lib
+#LibraryDirs = /opt/xdaq/lib ../
 LibraryPaths = $(LibraryDirs:%=-L%)
-LIBS += $(LibraryPaths:%=-L%) -uhal `root-config --glibs`
+LIBS += $(LibraryPaths:%=-L%) -uhal  `root-config --glibs`
 
 INCLUDEPATH += $(ROOTSYS)/include
 

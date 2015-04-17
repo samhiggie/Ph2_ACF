@@ -159,28 +159,21 @@ Note: You may also need to set the environment variables:
 
  These instructions are provided to install the optional GUI.
 
-1. Install qtRoot:
 
-    $> svn co https://svn.code.sf.net/p/qtroot/code/trunk qtRoot
-
-2. Install QJson:
-    
-     $> wget  http://downloads.sourceforge.net/qjson/qjson-0.8.1.tar.bz2
-
-3. Source the variables:
+1. Source the variables:
 
     $> source setup.sh
         
-4. Make the GUI:
+2. Make the GUI:
 
         $> make
     or
 
         $> make GUI
 
-5. Run it:
+3. Run it:
         
-        $> Ph2_ACF
+        $> ./Ph2_ACF
 
 
 ### The Ph2_ACF Software : 

@@ -14,7 +14,6 @@ namespace GUI
     class SystemControllerWorker : public QObject, public Tool
     {
         Q_OBJECT
-    public:
 
     public:
         explicit SystemControllerWorker(QObject *parent,
