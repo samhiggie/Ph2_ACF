@@ -9,12 +9,11 @@
 
  */
 
-#include <uhal/uhal.hpp>
 #include <time.h>
-#include "GlibFWInterface.h"
 #include <chrono>
-#include <thread>
-
+#include <uhal/uhal.hpp>
+#include "GlibFWInterface.h"
+#include "FpgaConfig.h"
 
 namespace Ph2_HwInterface
 {
@@ -184,6 +183,22 @@ namespace Ph2_HwInterface
 
 		cVecReg.clear();
 
+		// Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
+		cNPackets = ReadReg( CBC_PACKET_NB ) + 1 ;
+
+		//Wait for start acknowledge
+		uhal::ValWord<uint32_t> cVal;
+		std::chrono::milliseconds cWait( 100 );
+		do
+		{
+			cVal = ReadReg( CMD_START_VALID );
+
+			if ( cVal == 0 )
+				std::this_thread::sleep_for( cWait );
+
+		}
+		while ( cVal == 0 );
+
 	}
 
 	void GlibFWInterface::Stop( uint32_t pNthAcq )
@@ -250,43 +265,9 @@ namespace Ph2_HwInterface
 
 		uhal::ValWord<uint32_t> cVal;
 
-		// Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
-		uint32_t cNPackets = pBoard->getReg( "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
-
-
-		//use a counting visitor to find out the number of CBCs
-		struct CbcCounter : public HwDescriptionVisitor
-		{
-			uint32_t fNCbc = 0;
-
-			void visit( Cbc& pCbc ) {
-				fNCbc++;
-			}
-			uint32_t getNCbc() {
-				if ( fNCbc == 2 )
-					// since the 2 CBC FW outputs data for 4 CBCs (beamtest heritage, might have to change in the future)
-					return 2 * fNCbc;
-				else return fNCbc;
-			}
-		};
-
-		CbcCounter cCounter;
-		pBoard->accept( cCounter );
-		// compute the block size according to the number of CBC's on this board
-		// this will have to change with a more generic FW
-		uint32_t cBlockSize = cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
-
-		//Wait for start acknowledge
-		do
-		{
-			cVal = ReadReg( CMD_START_VALID );
-
-			if ( cVal == 0 )
-				std::this_thread::sleep_for( cWait );
-
+		if (pBoard){
+			cBlockSize = computeBlockSize(pBoard);
 		}
-		while ( cVal == 0 );
-
 		//FIFO goes to write_data state
 		//Select SRAM
 		SelectDaqSRAM( pNthAcq );
@@ -295,17 +276,15 @@ namespace Ph2_HwInterface
 		cVal = ReadReg( fStrFull );
 
 		do
-		{
-			std::this_thread::sleep_for( cWait );
-
+		{ 
 			cVal = ReadReg( fStrFull );
-
+			if (cVal==0)
+				std::this_thread::sleep_for( cWait ); 
 		}
 		while ( cVal == 0 );
 
 		//break trigger
-		if ( pBreakTrigger )
-			WriteReg( BREAK_TRIGGER, 1 );
+		//if ( pBreakTrigger ) WriteReg( BREAK_TRIGGER, 1 );
 
 		//Set read mode to SRAM
 		WriteReg( fStrSramUserLogic, 0 );
@@ -337,6 +316,29 @@ namespace Ph2_HwInterface
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
 		fData->Set( &cData , cNPackets );
+	}
+	/** compute the block size according to the number of CBC's on this board
+	 * this will have to change with a more generic FW */ 
+	uint32_t GlibFWInterface::computeBlockSize(BeBoard* pBoard){
+		//use a counting visitor to find out the number of CBCs
+		struct CbcCounter : public HwDescriptionVisitor
+		{
+			uint32_t fNCbc = 0;
+
+			void visit( Cbc& pCbc ) {
+				fNCbc++;
+			}
+			uint32_t getNCbc() {
+				if ( fNCbc == 2 )
+					// since the 2 CBC FW outputs data for 4 CBCs (beamtest heritage, might have to change in the future)
+					return 2 * fNCbc;
+				else return fNCbc;
+			}
+		};
+
+		CbcCounter cCounter;
+		pBoard->accept( cCounter );
+		return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
 	}
 
 	std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -395,6 +397,33 @@ namespace Ph2_HwInterface
 		fStrSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
 		fStrOtherSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
 	}
+
+
+	void GlibFWInterface::StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor){
+		if (runningAcquisition) return;
+
+		runningAcquisition=true;
+		numAcq=0;
+		nbMaxAcq=uNbAcq;
+
+		thrAcq=boost::thread(&Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor);
+	}
+
+	void GlibFWInterface::threadAcquisitionLoop(BeBoard* pBoard, HwInterfaceVisitor* visitor){
+			Start( );
+			cBlockSize = computeBlockSize(pBoard);
+			while (runningAcquisition && (nbMaxAcq==0 || numAcq<nbMaxAcq)) {
+				ReadData( NULL, numAcq, true );
+				for (const Ph2_HwInterface::Event *cEvent = GetNextEvent( pBoard ); cEvent; cEvent = GetNextEvent( pBoard ))
+					visitor->visit(*cEvent);
+				
+				if (runningAcquisition) 
+					numAcq++;
+			
+			}
+			Stop( numAcq );
+			runningAcquisition=false;
+	};
 
 	bool GlibFWInterface::I2cCmdAckWait( uint32_t pAckVal, uint8_t pNcount )
 	{
@@ -550,5 +579,16 @@ namespace Ph2_HwInterface
 		ReadI2cBlockValuesInSRAM( pVecReq );
 
 		EnableI2c( 0 );
+	}
+
+	void GlibFWInterface::FlashProm(uint16_t numConfig, const char* pstrFile)
+	{
+		if (fpgaConfig && fpgaConfig->getUploadingFpga()>0)
+			throw Exception("This board is already uploading an FPGA configuration");
+		
+		if (!fpgaConfig)
+			fpgaConfig=new FpgaConfig(this); 
+
+		fpgaConfig->runUpload(numConfig, pstrFile);
 	}
 }

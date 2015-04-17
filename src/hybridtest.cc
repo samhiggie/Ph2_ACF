@@ -89,6 +89,18 @@ int main( int argc, char* argv[] )
 		cHybridTester.CreateResultDirectory( cDirectory );
 		cHybridTester.InitResultFile( "HybridTest" );
 		cHybridTester.ConfigureHw();
+
+		// Here comes our Part:
+		if ( cRegisters ) cHybridTester.TestRegisters();
+		if ( cScan ) {
+			 cHybridTester.ScanThreshold();
+			 // Wait for user to acknowledge and turn on external Source!
+			 std::cout << "Identified the threshold for 0 noise occupancy - Start external Signal source!" << std::endl;
+			 mypause();
+		}
+		cHybridTester.Measure();
+		cHybridTester.SaveResults();
+
 	}
 	else
 	{
@@ -102,14 +114,15 @@ int main( int argc, char* argv[] )
 		cHybridTester.InitialiseGUI( cVcth, nEvents, cRegisters, cScan, cHoleMode );
 		cHybridTester.CreateResultDirectory( cDirectory );
 		cHybridTester.InitResultFile( "HybridTest" );
+
+		// Here comes our Part:
+		if ( cRegisters ) cHybridTester.TestRegisters();
+		if ( cScan )  cHybridTester.ScanThreshold();
+		cHybridTester.Measure();
+		cHybridTester.SaveResults();
+
 	}
 
-	// Here comes our Part:
-
-	if ( cRegisters ) cHybridTester.TestRegisters();
-	if ( cScan ) cHybridTester.ScanThreshold();
-	cHybridTester.Measure();
-	cHybridTester.SaveResults();
 
 
 	if ( !batchMode ) cApp.Run();

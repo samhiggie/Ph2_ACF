@@ -29,6 +29,7 @@ using namespace Ph2_HwDescription;
  */
 namespace Ph2_HwInterface
 {
+	class FpgaConfig;
 	/*!
 	 * \class GlibFWInterface
 	 * \brief init/config of the Glib and its Cbc's
@@ -40,7 +41,7 @@ namespace Ph2_HwInterface
 		struct timeval fStartVeto;
 		std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
 		std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
-
+		FpgaConfig* fpgaConfig;
 
 	  private:
 		/*!
@@ -106,11 +107,16 @@ namespace Ph2_HwInterface
 		*/
 		const char* GetBuffer( uint32_t& pBufSize ) const;
 
-
+		/*! \brief Read a block of a given size
+		 * \param pRegNode Param Node name
+		 * \param pBlocksize Number of 32-bit words to read
+		 * \return Vector of validated 32-bit values
+		 */
 		std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize );
 
 		bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues );
 
+		void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor);
 		//Methods for the Cbc's:
 
 	  private:
@@ -143,6 +149,11 @@ namespace Ph2_HwInterface
 
 		void SelectFeSRAM( uint32_t pFe );
 
+		/*! Compute the size of an acquisition data block
+		 * \return Number of 32-bit words to be read at each iteration */
+		uint32_t computeBlockSize(BeBoard* pBoard);
+		
+
 	  public:
 
 		//r/w the Cbc registers
@@ -152,11 +163,20 @@ namespace Ph2_HwInterface
 		 * \param pVecReq : Vector to stack the read words
 		 */
 		void WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq );
-		/* \brief Read register blocks of a Cbc
+		/*! \brief Read register blocks of a Cbc
 		 * \param pFeId : FrontEnd to work with
 		 * \param pVecReq : Vector to stack the read words
 		 */
 		void ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq );
+		/*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration
+		 * \param numConfig FPGA configuration number (1 or 2)
+		 * \param pstrFile path to MCS file
+		 */
+		void FlashProm(uint16_t numConfig, const char* pstrFile);
+		/*! \brief Is the FPGA being configured ?
+		 * \return FPGA configuring process or NULL if configuration occurs */
+		const FpgaConfig* getConfiguringFpga(){ return fpgaConfig; }
+		void threadAcquisitionLoop(BeBoard* pBoard, HwInterfaceVisitor* visitor);
 
 	};
 }

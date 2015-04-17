@@ -40,6 +40,7 @@ On this Repo, you can find different version of the software :
     - updated address table for 2 & 8 CBC setups
     - new FW files for DIO5 FW for 2 & 8 CBC setups
     - a macro directory with a macro to visualize calibration results
+
 - 11/02/15 : new update (v1-02) with the following changes:
     - removed all dependences on ROOT from the HWDescription/ HWInterface / System / Utils Library
     - added a new Tool base-class that inherits from SystemController and handles the creation of Root files for the Tools (the Tools library is the onely one that requires ROOT)
@@ -57,6 +58,15 @@ On this Repo, you can find different version of the software :
     - some modifications to HybridTester tool to make it compatible with the GUI
     - added a CMD line option: g for GUI, should only be used by the latter
     - SystemController class can now parse .json files in addition to .xml
+- 04/03/15: added GUI (v1-10)
+- 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading. 
+    - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog. 
+    - BeBoardInterface::FlashProm(...) uploads an MCS file into the FPGA
+- 15/04/15 : Acquisition in a separate thread
+    - Start() should be called when acquisition begins, Stop() when it ends and ReadData(...) at each iteration.
+    - New functions BeBoardInterface::StartThread, StopThread, getNumAcqThread, isRunningThread. Abstract class HwInterfaceVisitor.
+    - datatest -p option to perform an acquisition in a separate thread
+    - datatest -i option to ignore CBC configuration. Can be run on a bare GLIB board without CBC
 
 
 ### Setup
@@ -84,16 +94,11 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
 
 3. Finally, update uHAL to version 2.3:
 
-<<<<<<< HEAD
-        sudo yum groupremove uhal
-        wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
-        (You may need the --no-check-certificate)
-=======
         $> sudo yum groupremove uhal
-        $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
->>>>>>> Dev
+        $>wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
 
-	
+    (You may need the --no-check-certificate)
+
         $> sudo cp cactus.slc5.x86_64.repo /etc/yum.repos.d/cactus.repo
         $> sudo yum clean all
         $> sudo yum groupinstall uhal
@@ -121,33 +126,6 @@ Note: You may also need to set the environment variables:
 
     For SLC5:
 
-<<<<<<< HEAD
-The GUI :
---------
-
-These instructions are provided to install the optional GUI.
-
-1. Install qtRoot:
-
-	```
-svn co https://svn.code.sf.net/p/qtroot/code/trunk qtRoot
-	```
-2. Install QJson:
-	```
-	wget  http://downloads.sourceforge.net/qjson/qjson-0.8.1.tar.bz2
-	```
-3. Source the variables:
-	```
-	 set_environment.sh
-	```
-4. Make and run the GUI:
-	```
-	cd GUI
-	make
-	cd ..
-	./GUI/Ph2_ACF
-	```
-=======
         $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
    
     or for SLC6:
@@ -155,7 +133,6 @@ svn co https://svn.code.sf.net/p/qtroot/code/trunk qtRoot
         $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc6.x86_64.repo 
 
     (You may need the --no-check-certificate)
->>>>>>> Dev
 
     for SLC5:
 
@@ -176,6 +153,35 @@ Note: You may also need to set the environment variables:
 
     $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
     $> export PATH=/opt/cactus/bin:$PATH
+
+
+#### The GUI :
+
+ These instructions are provided to install the optional GUI.
+
+1. Install qtRoot:
+
+    $> svn co https://svn.code.sf.net/p/qtroot/code/trunk qtRoot
+
+2. Install QJson:
+    
+     $> wget  http://downloads.sourceforge.net/qjson/qjson-0.8.1.tar.bz2
+
+3. Source the variables:
+
+    $> source setup.sh
+        
+4. Make the GUI:
+
+        $> make
+    or
+
+        $> make GUI
+
+5. Run it:
+        
+        $> Ph2_ACF
+
 
 ### The Ph2_ACF Software : 
 
@@ -463,6 +469,7 @@ Several bugs / problematic behavior has been reported by various users that is n
         gStyle->Set ... ;
 
     statements. This has been observed by several users on the VM and can be fixed by re-compiling ROOT using GCC 4.8
+
 
 
 

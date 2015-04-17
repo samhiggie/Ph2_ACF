@@ -1,0 +1,5 @@
+moc_*
+ui_*
+Ph2_ACF
+Macros/TBrowser
+*.o

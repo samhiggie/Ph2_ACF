@@ -54,7 +54,7 @@ namespace Ph2_HwInterface
 		 * \brief Constructor of the Data class
 		 * \param pNbCbc
 		 */
-		Data( ) : fBuf( nullptr ), fCurrentEvent( 0 ), fEvent( nullptr ), fEventSize( 0 ) {
+		Data( ) : fBuf( nullptr ), fEvent( nullptr ), fCurrentEvent( 0 ), fEventSize( 0 ) {
 		}
 		/*!
 		 * \brief Copy Constructor of the Data class

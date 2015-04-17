@@ -154,6 +154,41 @@ namespace Ph2_HwInterface
 		return cWriteCorr;
 	}
 
+	bool RegManager::WriteBlockAtAddress(uint32_t uAddr, const std::vector< uint32_t >& pValues, bool bNonInc)
+	{
+		fBoardMutex.lock();
+		fBoard->getClient().writeBlock(uAddr, pValues, bNonInc ? uhal::defs::NON_INCREMENTAL : uhal::defs::INCREMENTAL); 
+		fBoard->dispatch();
+		fBoardMutex.unlock();
+
+		bool cWriteCorr = true;
+
+		//Verifying block
+		if ( DEV_FLAG )
+		{
+			int cErrCount = 0;
+
+			fBoardMutex.lock();
+			uhal::ValVector<uint32_t> cBlockRead = fBoard->getClient().readBlock(uAddr, pValues.size(), bNonInc ? uhal::defs::NON_INCREMENTAL : uhal::defs::INCREMENTAL );
+			fBoard->dispatch();
+			fBoardMutex.unlock();
+
+			//Use size_t and not an iterator as op[] only works with size_t type
+			for ( std::size_t i = 0; i != cBlockRead.size(); i++ )
+			{
+				if ( cBlockRead[i] != pValues.at( i ) )
+				{
+					cWriteCorr = false;
+					cErrCount++;
+				}
+			}
+
+			std::cout << "BlockWriteAtAddress finished !!\n" << cErrCount << " values failed to write !" << std::endl;
+		}
+
+		return cWriteCorr;
+	}
+            
 
 	uhal::ValWord<uint32_t> RegManager::ReadReg( const std::string& pRegNode )
 	{
@@ -166,6 +201,22 @@ namespace Ph2_HwInterface
 		{
 			uint32_t read = ( uint32_t ) cValRead;
 			std::cout << "\nValue in register ID " << pRegNode << " : " << read << std::endl;
+		}
+
+		return cValRead;
+	}
+
+	uhal::ValWord<uint32_t> RegManager::ReadAtAddress(uint32_t uAddr, uint32_t uMask )
+	{
+		fBoardMutex.lock();
+		uhal::ValWord<uint32_t> cValRead = fBoard->getClient().read( uAddr, uMask );
+		fBoard->dispatch();
+		fBoardMutex.unlock();
+
+		if ( DEV_FLAG )
+		{
+			uint32_t read = ( uint32_t ) cValRead;
+			std::cout << "\nValue at address " << std::hex<< uAddr <<std::dec << " : " << read << std::endl;
 		}
 
 		return cValRead;

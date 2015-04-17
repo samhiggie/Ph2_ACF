@@ -61,12 +61,26 @@ namespace Ph2_HwInterface
 		* \return boolean confirming the writing
 		*/
 		virtual bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues );
+		/** \brief Write a block of values at a given address 
+		 * \param uAddr 32-bit address
+		* \param pValues : Block of values to write
+		 * \param bNonInc true if Write mode is non-incremental
+		* \return boolean confirming the writing
+		 */
+		virtual bool WriteBlockAtAddress(uint32_t uAddr, const std::vector< uint32_t >& pValues, bool bNonInc=false);
 		/*!
 		* \brief Read a value in a register
 		* \param pRegNode : Node of the register to read
 		* \return ValWord value of the register
 		*/
 		virtual uhal::ValWord<uint32_t> ReadReg( const std::string& pRegNode );
+		/*!
+		* \brief Read a value at a given address
+		* \param uAddr 32-bit address
+		* \param uMask 32-bit mask
+		* \return ValWord value of the register
+		*/
+		virtual uhal::ValWord<uint32_t> ReadAtAddress(uint32_t uAddr, uint32_t uMask=0xFFFFFFFF);
 		/*!
 		* \brief Read a block of values in a register
 		* \param pRegNode : Node of the register to read
@@ -85,6 +99,7 @@ namespace Ph2_HwInterface
 		/*!
 		 * \brief Constructor of the RegManager class
 		 * \param puHalConfigFileName : path of the uHal Config File
+		 * \param pBoardId Board Id in the XML configuration file. The uHAL connection name will be boardX where X is the number Id.
 		 */
 		RegManager( const char* puHalConfigFileName, uint32_t pBoardId );
 		/*!

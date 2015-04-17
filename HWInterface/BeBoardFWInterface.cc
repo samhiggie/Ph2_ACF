@@ -12,6 +12,7 @@
 
 
 #include "BeBoardFWInterface.h"
+#include "FpgaConfig.h"
 
 #define DEV_FLAG         0
 
@@ -20,9 +21,11 @@ namespace Ph2_HwInterface
 
 	//Constructor, makes the board map
 	BeBoardFWInterface::BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		RegManager( puHalConfigFileName, pBoardId ),
-		fNTotalAcq( 0 )
+		RegManager( puHalConfigFileName, pBoardId )
 	{
+		fNTotalAcq=0;
+		runningAcquisition=false;
+		numAcq=0; 
 		fData = new Data( );
 	}
 
@@ -100,4 +103,24 @@ namespace Ph2_HwInterface
 		pRegItem.fValue = pWord & cMask1;
 	}
 
+
+	
+	void BeBoardFWInterface::StopThread(){
+		if (runningAcquisition) {
+			runningAcquisition=false;
+			try {
+				thrAcq.join();
+			} catch (std::exception & e) {
+				std::cerr << "Death to Stop in BeBoardFWInterface::StopThread()" << e.what() << std::endl;
+			} catch (...) {
+				std::cerr << "Death to Stop in BeBoardFWInterface::StopThread(). failed to perform thrAcq.join()" << std::endl;
+			}
+		}
+
+	}
+	
+	int BeBoardFWInterface::getNumAcqThread(){
+			return (int)numAcq;
+	}
 }
+

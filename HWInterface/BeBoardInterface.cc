@@ -108,6 +108,30 @@ namespace Ph2_HwInterface
 	}
 
 
+	void BeBoardInterface::StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->StartThread(pBoard, uNbAcq, visitor);
+	}
+		
+	void BeBoardInterface::StopThread( BeBoard* pBoard)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->StopThread();
+	}
+		
+	int BeBoardInterface::getNumAcqThread( BeBoard* pBoard)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->getNumAcqThread();
+	}
+
+	bool BeBoardInterface::isRunningThread( BeBoard* pBoard)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->isRunningThread();
+	}
+
 	void BeBoardInterface::Start( BeBoard* pBoard )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
@@ -167,4 +191,15 @@ namespace Ph2_HwInterface
 	}
 
 
+	void BeBoardInterface::FlashProm( BeBoard* pBoard, uint16_t numConfig, const char* pstrFile)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->FlashProm( numConfig, pstrFile );
+	}
+
+	const FpgaConfig* BeBoardInterface::getConfiguringFpga(BeBoard* pBoard)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->getConfiguringFpga();
+	}
 }

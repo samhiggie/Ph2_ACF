@@ -1,4 +1,4 @@
-Objs                    = RegManager.o BeBoardFWInterface.o GlibFWInterface.o CbcInterface.o BeBoardInterface.o 
+Objs                    = RegManager.o BeBoardFWInterface.o GlibFWInterface.o CbcInterface.o BeBoardInterface.o FpgaConfig.o
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC  -Wcpp
