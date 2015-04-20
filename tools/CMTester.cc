@@ -49,22 +49,23 @@ void CMTester::ScanNoiseChannels()
 	{
 		for ( BeBoard* pBoard : cShelve->fBoardVector )
 		{
-			uint32_t cN = 0;
+			uint32_t cN = 1;
 			uint32_t cNthAcq = 0;
 
-			while ( cN <  cTotalEvents )
-			{
-				Run( pBoard, cNthAcq );
+			fBeBoardInterface->Start( pBoard );
 
+			while ( cN <=  cTotalEvents )
+			{
+				// Run( pBoard, cNthAcq );
+				if ( cN > cTotalEvents ) break;
+				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 
 				// Loop over Events from this Acquisition
-
 				while ( cEvent )
-					// while(cN < cTotalEvents)
 				{
 
-					if ( cN == cTotalEvents )
+					if ( cN > cTotalEvents )
 						break;
 
 					for ( auto& cFe : pBoard->fModuleVector )
@@ -91,12 +92,13 @@ void CMTester::ScanNoiseChannels()
 
 					cN++;
 
-					// if ( cN < cTotalEvents )
-					cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-					// else break;
+					if ( cN <= cTotalEvents )
+						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+					else break;
 				}
 				cNthAcq++;
 			} // End of Analyze Events of last Acquistion loop
+			fBeBoardInterface->Stop( pBoard, cNthAcq );
 		}
 	}
 
@@ -143,10 +145,13 @@ void CMTester::TakeData()
 			uint32_t cN = 0;
 			uint32_t cNthAcq = 0;
 
-			while ( cN <  fNevents )
-			{
-				Run( pBoard, cNthAcq );
+			fBeBoardInterface->Start( pBoard );
 
+			while ( cN <=  fNevents )
+			{
+				// Run( pBoard, cNthAcq );
+				if ( cN > fNevents ) break;
+				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 
 				// Loop over Events from this Acquisition
@@ -155,7 +160,7 @@ void CMTester::TakeData()
 					// while ( cN < fNevents )
 				{
 
-					if ( cN == fNevents )
+					if ( cN > fNevents )
 						break;
 
 					analyze( pBoard, cEvent );
@@ -168,12 +173,13 @@ void CMTester::TakeData()
 
 					cN++;
 
-					if ( cN < fNevents )
+					if ( cN <= fNevents )
 						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 					else break;
 				}
 				cNthAcq++;
 			} // End of Analyze Events of last Acquistion loop
+			fBeBoardInterface->Stop( pBoard, cNthAcq );
 		}
 	}
 

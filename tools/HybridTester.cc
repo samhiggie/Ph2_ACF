@@ -175,7 +175,7 @@ void HybridTester::ScanThreshold()
 		// Set current Vcth value on all Cbc's
 		CbcRegWriter cWriter( fCbcInterface, "VCth", cVcth );
 		accept( cWriter );
-		uint32_t cN = 0;
+		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
 		uint32_t cHitCounter = 0;
 
@@ -185,16 +185,18 @@ void HybridTester::ScanThreshold()
 			if ( cAllOne ) break;
 			for ( BeBoard* pBoard : cShelve->fBoardVector )
 			{
-				while ( cN <  cEventsperVcth )
+				fBeBoardInterface->Start( pBoard );
+				while ( cN <=  cEventsperVcth )
 				{
-					Run( pBoard, cNthAcq );
-
+					// Run( pBoard, cNthAcq );
+					if ( cN > cEventsperVcth ) break;
+					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 
 					// Loop over Events from this Acquisition
 					while ( cEvent )
 					{
-						if ( cN == cEventsperVcth )
+						if ( cN > cEventsperVcth )
 							break;
 
 						// loop over Modules & Cbcs and count hits separately
@@ -207,6 +209,7 @@ void HybridTester::ScanThreshold()
 					}
 					cNthAcq++;
 				}
+				fBeBoardInterface->Stop( pBoard, cNthAcq );
 				// std::cout << +cVcth << " " << cHitCounter << std::endl;
 				// Draw the thing after each point
 				updateSCurveCanvas( pBoard );
@@ -451,19 +454,23 @@ void HybridTester::Measure()
 	{
 		for ( BeBoard* pBoard : cShelve->fBoardVector )
 		{
-			uint32_t cN = 0;
+			uint32_t cN = 1;
 			uint32_t cNthAcq = 0;
 
-			while ( cN <  fTotalEvents )
-			{
-				Run( pBoard, cNthAcq );
+			fBeBoardInterface->Start( pBoard );
 
+			while ( cN <=  fTotalEvents )
+			{
+				// Run( pBoard, cNthAcq );
+				if ( cN > fTotalEvents ) break;
+				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+
 				// Loop over Events from this Acquisition
 				while ( cEvent )
 				{
 
-					if ( cN == fTotalEvents )
+					if ( cN > fTotalEvents )
 						break;
 
 					HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
@@ -474,12 +481,13 @@ void HybridTester::Measure()
 
 					cN++;
 
-					if ( cN < fTotalEvents )
+					if ( cN <= fTotalEvents )
 						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 					else break;
 				}
 				cNthAcq++;
 			}
+			fBeBoardInterface->Stop( pBoard, cNthAcq );
 		}
 	}
 	fHistTop->Scale( 100 / double_t( fTotalEvents ) );

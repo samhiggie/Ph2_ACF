@@ -144,19 +144,21 @@ void FastCalibration::Validate()
 	{
 		for ( BeBoard* pBoard : cShelve->fBoardVector )
 		{
-			uint32_t cN = 0;
+			uint32_t cN = 1;
 			uint32_t cNthAcq = 0;
 
-			while ( cN <  cTotalEvents )
-			{
-				Run( pBoard, cNthAcq );
+			fBeBoardInterface->Start( pBoard );
 
+			while ( cN <=  cTotalEvents )
+			{
+				// Run( pBoard, cNthAcq );
+				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 				// Loop over Events from this Acquisition
 				while ( cEvent )
 				{
 
-					if ( cN == cTotalEvents )
+					if ( cN > cTotalEvents )
 						break;
 
 					uint32_t cHitCounter = 0;
@@ -179,12 +181,13 @@ void FastCalibration::Validate()
 					}
 					cN++;
 
-					if ( cN < cTotalEvents )
+					if ( cN <= cTotalEvents )
 						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 					else break;
 				}
 				cNthAcq++;
 			} // End of Analyze Events of last Acquistion loop
+			fBeBoardInterface->Stop( pBoard, cNthAcq );
 		}
 	}
 
@@ -419,7 +422,7 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 		else
 			setOffset( cValue, pTGrpId ); //need to pass on the testgroup
 
-		uint32_t cN = 0;
+		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
 		uint32_t cHitCounter = 0;
 
@@ -432,28 +435,32 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 			{
 				Counter cCounter;
 				pBoard->accept( cCounter );
-				while ( cN <  fEventsPerPoint )
-				{
-					Run( pBoard, cNthAcq );
 
+				fBeBoardInterface->Start( pBoard );
+
+				while ( cN <=  fEventsPerPoint )
+				{
+					// Run( pBoard, cNthAcq );
+					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 
 					// Loop over Events from this Acquisition
 					while ( cEvent )
 					{
-						if ( cN == fEventsPerPoint )
+						if ( cN > fEventsPerPoint )
 							break;
 
 						cHitCounter += fillSCurves( pBoard, cEvent, cValue, pTGrpId ); //pass test group here
 
 						cN++;
 
-						if ( cN < fEventsPerPoint )
+						if ( cN <= fEventsPerPoint )
 							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 						else break;
 					}
 					cNthAcq++;
 				} // done with this acquisition
+				fBeBoardInterface->Stop( pBoard, cNthAcq );
 
 				if ( pOffset ) std::cout << "Offset " << int( cValue ) << " Hits: " << cHitCounter << std::endl;
 				// std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << std::endl;
