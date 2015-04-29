@@ -1,5 +1,6 @@
 #include "FastCalibration.h"
-#include<cmath>
+#include <cmath>
+
 // TODO: Canvas divisions
 
 void FastCalibration::ScanVplus()
