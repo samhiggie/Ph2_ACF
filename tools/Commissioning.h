@@ -53,6 +53,7 @@ class Commissioning : public Tool
 	int countHits( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	void updateHists( std::string pHistName, bool pFinal );
 	void parseSettings();
+	void dumpConfigFiles();
 
 	// Histogram Methods
 	// TObject* getHist( Cbc* pCbc, std::string pName );

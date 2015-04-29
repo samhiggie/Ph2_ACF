@@ -37,13 +37,14 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 	this->accept( cReader );
 	uint8_t cVcth = cReader.fRegValue;
 
-	// int cVcthStep = ( fHoleMode == 1 ) ? +8 : -8;
-	// std::cout << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << +( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" << std::endl;
-	// cVcth += cVcthStep;
+	int cVcthStep = ( fHoleMode == 1 ) ? +20 : -20;
+	std::cout << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << +( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" << std::endl;
+	cVcth += cVcthStep;
 
-	// //  Set that VCth Value on all FEs
-	// CbcRegWriter cVcthWriter( fCbcInterface, "VCth", cVcth );
-	// this->accept( cVcthWriter );
+	//  Set that VCth Value on all FEs
+	CbcRegWriter cVcthWriter( fCbcInterface, "VCth", cVcth );
+	this->accept( cVcthWriter );
+	this->accept( cReader );
 
 	// Now the actual scan
 	std::cout << "Scanning Latency ... " << std::endl;
@@ -54,26 +55,27 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 		CbcRegWriter cLatWriter( fCbcInterface, "TriggerLatency", cLat );
 		this->accept( cLatWriter );
 
-		uint32_t cN = 0;
+		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
+		int cNHits = 0;
 
 		// Take Data for all Modules
 		for ( auto& cShelve : fShelveVector )
 		{
 			for ( BeBoard* pBoard : cShelve->fBoardVector )
 			{
-				while ( cN < fNevents )
+				fBeBoardInterface->Start( pBoard );
+
+				while ( cN <= fNevents )
 				{
-					Run( pBoard, cNthAcq );
-
+					if ( cN > fNevents ) break;
+					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-
-					int cNHits = 0;
 
 					// Loop over Events from this Acquisition
 					while ( cEvent )
 					{
-						if ( cN == fNevents )
+						if ( cN > fNevents )
 							break;
 						for ( auto cFe : pBoard->fModuleVector )
 							cNHits += countHits( cFe, cEvent, "module_latency", cLat );
@@ -83,10 +85,11 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 						else break;
 					}
-					std::cout << "Latency " << +cLat << " Hits " << cNHits  << " Events " << cN << std::endl;
-
 					cNthAcq++;
 				}
+				fBeBoardInterface->Stop( pBoard, cNthAcq );
+				std::cout << "Latency " << +cLat << " Hits " << cNHits  << " Events " << cN << std::endl;
+
 			}
 		}
 
@@ -102,8 +105,10 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 	for ( auto cFe : fModuleHistMap )
 	{
 		TH1F* cTmpHist = ( TH1F* )getHist( cFe.first, "module_latency" );
-		uint8_t cLatency =  static_cast<uint8_t>( cTmpHist->GetMaximumBin() );
+		uint8_t cLatency =  static_cast<uint8_t>( cTmpHist->GetMaximumBin() - 1 );
 		cLatencyMap[cFe.first] = cLatency;
+		CbcRegWriter cFinalLatWriter( fCbcInterface, "TriggerLatency", cLatency );
+		this->accept( cFinalLatWriter );
 
 		std::cout << "	FE " << +cFe.first->getModuleId()  << ": " << +cLatency << " clock cycles!" << std::endl;
 	}
@@ -144,7 +149,7 @@ void Commissioning::ScanThreshold()
 		CbcRegWriter cWriter( fCbcInterface, "VCth", static_cast<uint8_t>( cVcth ) );
 		accept( cWriter );
 
-		uint32_t cN = 0;
+		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
 		uint32_t cHitCounter = 0;
 
@@ -154,16 +159,20 @@ void Commissioning::ScanThreshold()
 			// if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
 			for ( BeBoard* pBoard : cShelve->fBoardVector )
 			{
-				while ( cN <  cEventsperVcth )
+
+				fBeBoardInterface->Start( pBoard );
+
+				while ( cN <=  cEventsperVcth )
 				{
-					Run( pBoard, cNthAcq );
+					if ( cN > cEventsperVcth ) break;
+					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 
 					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 
 					// Loop over Events from this Acquisition
 					while ( cEvent )
 					{
-						if ( cN == cEventsperVcth )
+						if ( cN > cEventsperVcth )
 							break;
 
 						for ( auto cFe : pBoard->fModuleVector )
@@ -177,6 +186,7 @@ void Commissioning::ScanThreshold()
 					}
 					cNthAcq++;
 				}
+				fBeBoardInterface->Stop( pBoard, cNthAcq );
 
 				// now update the Histograms
 				updateHists( "module_threshold", false );
@@ -254,6 +264,8 @@ void Commissioning::SaveResults()
 
 	fResultFile->Write();
 	fResultFile->Close();
+
+	// dumpConfigFiles();
 
 	std::cout << "Results saved!" << std::endl;
 }
@@ -462,4 +474,27 @@ void Commissioning::initializeHists()
 			}
 		}
 	}
+}
+
+void Commissioning::dumpConfigFiles()
+{
+	// visitor to call dumpRegFile on each Cbc
+	struct RegMapDumper : public HwDescriptionVisitor
+	{
+		std::string fDirectoryName;
+		RegMapDumper( std::string pDirectoryName ): fDirectoryName( pDirectoryName ) {};
+		void visit( Cbc& pCbc ) {
+			if ( !fDirectoryName.empty() ) {
+				TString cFilename = fDirectoryName + Form( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
+				// cFilename += Form( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
+				pCbc.saveRegMap( cFilename.Data() );
+			}
+			else std::cout << "Error: no results Directory initialized! "  << std::endl;
+		}
+	};
+
+	RegMapDumper cDumper( fDirectoryName );
+	accept( cDumper );
+
+	std::cout << BOLDBLUE << "Configfiles for all Cbcs written to " << fDirectoryName << RESET << std::endl;
 }
