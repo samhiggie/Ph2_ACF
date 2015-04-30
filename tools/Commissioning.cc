@@ -123,7 +123,7 @@ void Commissioning::ScanThreshold()
 	std::cout << "Scanning the Threshold ... " << std::endl;
 
 	// Necessary variables
-	uint32_t cEventsperVcth = 100;
+	// uint32_t cEventsperVcth = 50;
 	bool cNonZero = false;
 	// bool cAllOne = false;
 	bool cSlopeZero = false;
@@ -162,9 +162,9 @@ void Commissioning::ScanThreshold()
 
 				fBeBoardInterface->Start( pBoard );
 
-				while ( cN <=  cEventsperVcth )
+				while ( cN <=  fNevents )
 				{
-					if ( cN > cEventsperVcth ) break;
+					if ( cN > fNevents ) break;
 					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 
 					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
@@ -172,7 +172,7 @@ void Commissioning::ScanThreshold()
 					// Loop over Events from this Acquisition
 					while ( cEvent )
 					{
-						if ( cN > cEventsperVcth )
+						if ( cN > fNevents )
 							break;
 
 						for ( auto cFe : pBoard->fModuleVector )
@@ -180,7 +180,7 @@ void Commissioning::ScanThreshold()
 
 						cN++;
 
-						if ( cN < cEventsperVcth )
+						if ( cN < fNevents )
 							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
 						else break;
 					}
@@ -188,12 +188,13 @@ void Commissioning::ScanThreshold()
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
 
+				std::cout << "Threshold " << +cVcth << " Hits " << cHitCounter << " Events " << cN << std::endl;
 				// now update the Histograms
 				updateHists( "module_threshold", false );
 
 				// check if the hitcounter is all ones
 
-				if ( cNonZero == false && cHitCounter != 0 )
+				if ( cNonZero == false && cHitCounter > fNevents / 10 )
 				{
 					cDoubleVcth = cVcth;
 					cNonZero = true;
@@ -201,10 +202,10 @@ void Commissioning::ScanThreshold()
 					cStep /= 10;
 					continue;
 				}
-				if ( cNonZero && cHitCounter != 0 )
+				if ( cNonZero && cHitCounter > NCHANNELS * fNCbc * fNevents * 0.95 )
 				{
 					// check if all Cbcs have reached full occupancy
-					// if ( cHitCounter > 0.95 * cEventsperVcth * fNCbc * NCHANNELS ) cAllOneCounter++;
+					// if ( cHitCounter > 0.95 * fNevents * fNCbc * NCHANNELS ) cAllOneCounter++;
 					// if the number of hits does not change any more,  increase stepsize by a factor of 10
 					if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
 				}
@@ -226,7 +227,7 @@ void Commissioning::ScanThreshold()
 	}
 	// finished scanning the comparator threshold range
 	// need to see what range to fit and what threshold to extract automatically!!
-
+	updateHists( "module_threshold", true );
 	for ( auto cFe : fModuleHistMap )
 	{
 		TH1F* cTmpHist = ( TH1F* )getHist( cFe.first, "module_threshold" );
@@ -315,6 +316,8 @@ void Commissioning::updateHists( std::string pHistName, bool pFinal )
 
 			if ( pFinal )
 			{
+				cTmpHist->Scale( double( 1 / ( NCHANNELS * fNCbc * fNevents ) ) );
+				cTmpHist->Draw( "P" );
 				// get the fit and draw that too
 				TF1* cFit = ( TF1* )getHist( cCanvas.first, "module_fit" );
 
@@ -442,19 +445,22 @@ void Commissioning::initializeHists()
 				// Here create the Module-wise histos
 
 				std::map<std::string, TObject*> cModuleMap;
-				uint32_t cNCbc = cFe->getNCbc();
+				fNCbc = cFe->getNCbc();
 
 				// 1D Hist forlatency scan
 				TString cName =  Form( "h_module_latency_Fe%d", cFeId );
 				TObject* cObj = gROOT->FindObject( cName );
 				if ( cObj ) delete cObj;
 				TH1F* cLatHist = new TH1F( cName, Form( "Latency FE%d; Latency; # of Hits", cFeId ), 256, -.5, 255.5 );
+				cLatHist->SetFillColor( 4 );
+				cLatHist->SetFillStyle( 3001 );
 				cModuleMap["module_latency"] = cLatHist;
 
 				cName =  Form( "h_module_threshold_Fe%d", cFeId );
 				cObj = gROOT->FindObject( cName );
 				if ( cObj ) delete cObj;
 				TH1F* cThresHist = new TH1F( cName, Form( "Threshold FE%d; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
+				cThresHist->SetMarkerStyle( 2 );
 				cModuleMap["module_threshold"] = cThresHist;
 
 				cName =  Form( "f_module_threshold_Fit_Fe%d", cFeId );

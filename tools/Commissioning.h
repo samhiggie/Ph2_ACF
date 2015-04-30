@@ -65,7 +65,8 @@ class Commissioning : public Tool
 	ModuleHistogramMap fModuleHistMap;
 	uint32_t fNevents;
 	uint32_t fInitialThreshold;
-	uint32_t  fHoleMode;
+	uint32_t fHoleMode;
+	uint32_t fNCbc;
 };
 
 #endif
