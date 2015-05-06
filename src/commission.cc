@@ -42,6 +42,9 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "threshold", "scan the CBC comparator threshold", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "threshold", "t" );
 
+	cmd.defineOption( "pedestal", "scan the CBC pedestals in addition with the threshold scan", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "pedestal", "p" );
+
 	cmd.defineOption( "output", "Output Directory . Default value: Results/", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "output", "o" );
 
@@ -62,6 +65,7 @@ int main( int argc, char* argv[] )
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Commissioning.xml";
 	bool cLatency = ( cmd.foundOption( "latency" ) ) ? true : false;
 	bool cThreshold = ( cmd.foundOption( "threshold" ) ) ? true : false;
+	bool cScanPedestal = ( cmd.foundOption( "pedestal" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	cDirectory += "Commissioning";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
@@ -69,7 +73,6 @@ int main( int argc, char* argv[] )
 
 	uint8_t cStartLatency = ( cmd.foundOption( "start" ) ) ? convertAnyInt( cmd.optionValue( "start" ).c_str() ) :  0;
 	uint8_t cLatencyRange = ( cmd.foundOption( "range" ) ) ?  convertAnyInt( cmd.optionValue( "range" ).c_str() ) :  10;
-
 
 
 	TApplication cApp( "Root Application", &argc, argv );
@@ -89,7 +92,7 @@ int main( int argc, char* argv[] )
 
 	// Here comes our Part:
 	if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
-	if ( cThreshold ) cCommissioning.ScanThreshold();
+	if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
 	cCommissioning.SaveResults();
 
 

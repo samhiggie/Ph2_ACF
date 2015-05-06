@@ -117,124 +117,49 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 }
 
 
-void Commissioning::ScanThreshold()
+void Commissioning::ScanThreshold( bool pScanPedestal )
 {
 	//method to scan thresholds with actual particles - this will not stop but continue through the whole Vcth range
-	std::cout << "Scanning the Threshold ... " << std::endl;
+	std::cout << "Scanning the Threshold ... " ;
+	if ( pScanPedestal ) std::cout << "including pedestals!";
+	std::cout << std::endl;
 
-	// Necessary variables
-	// uint32_t cEventsperVcth = 50;
-	bool cNonZero = false;
-	// bool cAllOne = false;
-	bool cSlopeZero = false;
-	// uint32_t cAllOneCounter = 0;
-	uint32_t cSlopeZeroCounter = 0;
-	uint32_t cOldHitCounter = 0;
-	uint8_t  cDoubleVcth;
-	int cVcth = ( fHoleMode ) ?  0xFF :  0x00;
-	int cStep = ( fHoleMode ) ? -10 : 10;
+	std::cout << "with external triggers ... " << std::endl;
 
+	BeBoardRegWriter cWriter_ext( fBeBoardInterface, "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL", 1 );
+	this->accept( cWriter_ext );
+	measureScurve( "module_threshold_ext", fNevents );
 
-
-	// Adaptive VCth loop
-	while ( 0x00 <= cVcth && cVcth <= 0xFF )
+	if ( pScanPedestal )
 	{
-		// if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
-		if ( cVcth == cDoubleVcth )
-		{
-			cVcth +=  cStep;
-			continue;
-		}
-		// Set current Vcth value on all Cbc's
-		CbcRegWriter cWriter( fCbcInterface, "VCth", static_cast<uint8_t>( cVcth ) );
-		accept( cWriter );
 
-		uint32_t cN = 1;
-		uint32_t cNthAcq = 0;
-		uint32_t cHitCounter = 0;
+		std::cout << "and with internal triggers ... turn off particles and press Enter!" << std::endl;
+		mypause();
 
-		// maybe restrict to pBoard? instead of looping?
-		for ( auto& cShelve : fShelveVector )
-		{
-			// if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
-			for ( BeBoard* pBoard : cShelve->fBoardVector )
-			{
-
-				fBeBoardInterface->Start( pBoard );
-
-				while ( cN <=  fNevents )
-				{
-					if ( cN > fNevents ) break;
-					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-
-					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-
-					// Loop over Events from this Acquisition
-					while ( cEvent )
-					{
-						if ( cN > fNevents )
-							break;
-
-						for ( auto cFe : pBoard->fModuleVector )
-							cHitCounter += countHits( cFe, cEvent, "module_threshold", static_cast<uint8_t>( cVcth ) );
-
-						cN++;
-
-						if ( cN < fNevents )
-							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						else break;
-					}
-					cNthAcq++;
-				}
-				fBeBoardInterface->Stop( pBoard, cNthAcq );
-
-				std::cout << "Threshold " << +cVcth << " Hits " << cHitCounter << " Events " << cN << std::endl;
-				// now update the Histograms
-				updateHists( "module_threshold", false );
-
-				// check if the hitcounter is all ones
-
-				if ( cNonZero == false && cHitCounter > fNevents / 10 )
-				{
-					cDoubleVcth = cVcth;
-					cNonZero = true;
-					cVcth -= 2 * cStep;
-					cStep /= 10;
-					continue;
-				}
-				if ( cNonZero && cHitCounter > NCHANNELS * fNCbc * fNevents * 0.95 )
-				{
-					// check if all Cbcs have reached full occupancy
-					// if ( cHitCounter > 0.95 * fNevents * fNCbc * NCHANNELS ) cAllOneCounter++;
-					// if the number of hits does not change any more,  increase stepsize by a factor of 10
-					if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
-				}
-				// if ( cSlopeZeroCounter >= 10 ) cAllOne = true;
-				if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
-
-				// if ( cAllOne )
-				// {
-				//  std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
-				//  break;
-				// }
-				if ( cSlopeZero )
-					cStep *= 10;
-
-				cOldHitCounter = cHitCounter;
-				cVcth += cStep;
-			}
-		}
+		BeBoardRegWriter cWriter_int( fBeBoardInterface, "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL", 0 );
+		this->accept( cWriter_int );
+		measureScurve( "module_threshold_int", fNevents );
 	}
-	// finished scanning the comparator threshold range
-	// need to see what range to fit and what threshold to extract automatically!!
-	updateHists( "module_threshold", true );
+
+	std::cout << "Done scanning threshold!" << std::endl;
+
+	// analyze
 	for ( auto cFe : fModuleHistMap )
 	{
-		TH1F* cTmpHist = ( TH1F* )getHist( cFe.first, "module_threshold" );
+		// find the apropriate canvas
+		auto cCanvas = fCanvasMap.find( cFe.first );
+		if ( cCanvas == fCanvasMap.end() ) std::cout << "ERROR: Courld not find the right canvas!" << std::endl;
+		else cCanvas->second->cd();
+
+		// get the SCurve with internal & external trigger
+		TH1F* cTmpHist_ext = ( TH1F* )getHist( cFe.first, "module_threshold_ext" );
+		if ( pScanPedestal ) TH1F* cTmpHist_int = ( TH1F* )getHist( cFe.first, "module_threshold_int" );
+
+		// subtract
+
 
 		// cLatencyMap[cFe.first] = static_cast<uint8_t>( cTmpHist->GetMaxBin() );
 
-		std::cout << "Done scanning threshold!" << std::endl;
 	}
 }
 
@@ -309,68 +234,68 @@ void Commissioning::updateHists( std::string pHistName, bool pFinal )
 			TH1F* cTmpHist = ( TH1F* )getHist( cCanvas.first, pHistName );
 			cTmpHist->Draw( );
 		}
-		else if ( pHistName == "module_threshold" )
+		else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
 		{
 			TH1F* cTmpHist = ( TH1F* )getHist( cCanvas.first, pHistName );
-			cTmpHist->Draw( "P" );
+			cTmpHist->Draw( "P same" );
 
 			if ( pFinal )
 			{
-				cTmpHist->Scale( double( 1 / ( NCHANNELS * fNCbc * fNevents ) ) );
-				cTmpHist->Draw( "P" );
+				// cTmpHist->Scale( double( 1 / ( NCHANNELS * fNCbc * fNevents ) ) );
+				cTmpHist->Draw( "P same" );
 				// get the fit and draw that too
-				TF1* cFit = ( TF1* )getHist( cCanvas.first, "module_fit" );
+				// TF1* cFit = ( TF1* )getHist( cCanvas.first, "module_fit" );
 
-				// TODO: figure something smart out to restrict the range!
+				// // TODO: figure something smart out to restrict the range!
 
-				// Estimate parameters for the Fit
-				double cFirstNon0( 0 );
-				double cFirst1( 0 );
+				// // Estimate parameters for the Fit
+				// double cFirstNon0( 0 );
+				// double cFirst1( 0 );
 
-				// Not Hole Mode
-				if ( !fHoleMode )
-				{
-					for ( Int_t cBin = 1; cBin <= cTmpHist->GetNbinsX(); cBin++ )
-					{
-						double cContent = cTmpHist->GetBinContent( cBin );
-						if ( !cFirstNon0 )
-						{
-							if ( cContent ) cFirstNon0 = cTmpHist->GetBinCenter( cBin );
-						}
-						else if ( cContent == 1 )
-						{
-							cFirst1 = cTmpHist->GetBinCenter( cBin );
-							break;
-						}
-					}
-				}
-				// Hole mode
-				else
-				{
-					for ( Int_t cBin = cTmpHist->GetNbinsX(); cBin >= 1; cBin-- )
-					{
-						double cContent = cTmpHist->GetBinContent( cBin );
-						if ( !cFirstNon0 )
-						{
-							if ( cContent ) cFirstNon0 = cTmpHist->GetBinCenter( cBin );
-						}
-						else if ( cContent == 1 )
-						{
-							cFirst1 = cTmpHist->GetBinCenter( cBin );
-							break;
-						}
-					}
-				}
+				// // Not Hole Mode
+				// if ( !fHoleMode )
+				// {
+				// 	for ( Int_t cBin = 1; cBin <= cTmpHist->GetNbinsX(); cBin++ )
+				// 	{
+				// 		double cContent = cTmpHist->GetBinContent( cBin );
+				// 		if ( !cFirstNon0 )
+				// 		{
+				// 			if ( cContent ) cFirstNon0 = cTmpHist->GetBinCenter( cBin );
+				// 		}
+				// 		else if ( cContent == 1 )
+				// 		{
+				// 			cFirst1 = cTmpHist->GetBinCenter( cBin );
+				// 			break;
+				// 		}
+				// 	}
+				// }
+				// // Hole mode
+				// else
+				// {
+				// 	for ( Int_t cBin = cTmpHist->GetNbinsX(); cBin >= 1; cBin-- )
+				// 	{
+				// 		double cContent = cTmpHist->GetBinContent( cBin );
+				// 		if ( !cFirstNon0 )
+				// 		{
+				// 			if ( cContent ) cFirstNon0 = cTmpHist->GetBinCenter( cBin );
+				// 		}
+				// 		else if ( cContent == 1 )
+				// 		{
+				// 			cFirst1 = cTmpHist->GetBinCenter( cBin );
+				// 			break;
+				// 		}
+				// 	}
+				// }
 
-				// Get rough midpoint & width
-				double cMid = ( cFirst1 + cFirstNon0 ) * 0.5;
-				double cWidth = ( cFirst1 - cFirstNon0 ) * 0.5;
+				// // Get rough midpoint & width
+				// double cMid = ( cFirst1 + cFirstNon0 ) * 0.5;
+				// double cWidth = ( cFirst1 - cFirstNon0 ) * 0.5;
 
-				cFit->SetParameter( 0, cMid );
-				cFit->SetParameter( 1, cWidth );
+				// cFit->SetParameter( 0, cMid );
+				// cFit->SetParameter( 1, cWidth );
 
-				cTmpHist->Fit( cFit, "RNQ+" );
-				cFit->Draw( "same" );
+				// cTmpHist->Fit( cFit, "RNQ+" );
+				// cFit->Draw( "same" );
 
 			}
 		}
@@ -381,6 +306,116 @@ void Commissioning::updateHists( std::string pHistName, bool pFinal )
 		}
 		cCanvas.second->Update();
 	}
+}
+
+void Commissioning::measureScurve( std::string pHistName, uint32_t pNEvents )
+{
+	// Necessary variables
+	// uint32_t cEventsperVcth = 50;
+	bool cNonZero = false;
+	// bool cAllOne = false;
+	bool cSlopeZero = false;
+	// uint32_t cAllOneCounter = 0;
+	uint32_t cSlopeZeroCounter = 0;
+	uint32_t cOldHitCounter = 0;
+	uint8_t  cDoubleVcth;
+	int cVcth = ( fHoleMode ) ?  0xFF : 0x00;
+	int cStep = ( fHoleMode ) ? -10 : 10;
+
+
+
+	// Adaptive VCth loop
+	while ( 0x00 <= cVcth && cVcth <= 0xFF )
+	{
+		// if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
+		if ( cVcth == cDoubleVcth )
+		{
+			cVcth +=  cStep;
+			continue;
+		}
+		// Set current Vcth value on all Cbc's
+		CbcRegWriter cWriter( fCbcInterface, "VCth", static_cast<uint8_t>( cVcth ) );
+		accept( cWriter );
+
+		uint32_t cN = 1;
+		uint32_t cNthAcq = 0;
+		uint32_t cHitCounter = 0;
+
+		// maybe restrict to pBoard? instead of looping?
+		for ( auto& cShelve : fShelveVector )
+		{
+			// if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
+			for ( BeBoard* pBoard : cShelve->fBoardVector )
+			{
+
+				fBeBoardInterface->Start( pBoard );
+
+				while ( cN <=  pNEvents )
+				{
+					if ( cN > pNEvents ) break;
+					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+
+					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+
+					// Loop over Events from this Acquisition
+					while ( cEvent )
+					{
+						if ( cN > pNEvents )
+							break;
+
+						for ( auto cFe : pBoard->fModuleVector )
+							cHitCounter += countHits( cFe, cEvent, pHistName, static_cast<uint8_t>( cVcth ) );
+
+						cN++;
+
+						if ( cN < pNEvents )
+							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+						else break;
+					}
+					cNthAcq++;
+				}
+				fBeBoardInterface->Stop( pBoard, cNthAcq );
+
+				std::cout << "Threshold " << +cVcth << " Hits " << cHitCounter << " Events " << cN << std::endl;
+				// now update the Histograms
+				updateHists( pHistName, false );
+
+				// check if the hitcounter is all ones
+
+				if ( cNonZero == false && cHitCounter > pNEvents / 10 )
+				{
+					cDoubleVcth = cVcth;
+					cNonZero = true;
+					cVcth -= 2 * cStep;
+					cStep /= 10;
+					continue;
+				}
+				if ( cNonZero && cHitCounter > NCHANNELS * fNCbc * pNEvents * 0.95 )
+				{
+					// check if all Cbcs have reached full occupancy
+					// if ( cHitCounter > 0.95 * pNEvents * fNCbc * NCHANNELS ) cAllOneCounter++;
+					// if the number of hits does not change any more,  increase stepsize by a factor of 10
+					if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
+				}
+				// if ( cSlopeZeroCounter >= 10 ) cAllOne = true;
+				if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
+
+				// if ( cAllOne )
+				// {
+				//  std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
+				//  break;
+				// }
+				if ( cSlopeZero )
+					cStep *= 10;
+
+				cOldHitCounter = cHitCounter;
+				cVcth += cStep;
+			}
+		}
+	}
+	// finished scanning the comparator threshold range
+	// need to see what range to fit and what threshold to extract automatically!!
+	updateHists( pHistName, true );
 }
 
 // TObject* Commissioning::getHist( Cbc* pCbc, std::string pName )
@@ -456,12 +491,20 @@ void Commissioning::initializeHists()
 				cLatHist->SetFillStyle( 3001 );
 				cModuleMap["module_latency"] = cLatHist;
 
-				cName =  Form( "h_module_threshold_Fe%d", cFeId );
+				cName =  Form( "h_module_threshold_ext_Fe%d", cFeId );
 				cObj = gROOT->FindObject( cName );
 				if ( cObj ) delete cObj;
-				TH1F* cThresHist = new TH1F( cName, Form( "Threshold FE%d; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
-				cThresHist->SetMarkerStyle( 2 );
-				cModuleMap["module_threshold"] = cThresHist;
+				TH1F* cThresHist_ext = new TH1F( cName, Form( "Threshold FE%d w external trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
+				cThresHist_ext->SetMarkerStyle( 2 );
+				cModuleMap["module_threshold_ext"] = cThresHist_ext;
+
+				cName =  Form( "h_module_threshold_int_Fe%d", cFeId );
+				cObj = gROOT->FindObject( cName );
+				if ( cObj ) delete cObj;
+				TH1F* cThresHist_int = new TH1F( cName, Form( "Threshold FE%d w internal trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
+				cThresHist_int->SetMarkerStyle( 2 );
+				cThresHist_int->SetMarkerColor( 2 );
+				cModuleMap["module_threshold_int"] = cThresHist_int;
 
 				cName =  Form( "f_module_threshold_Fit_Fe%d", cFeId );
 				cObj = gROOT->FindObject( cName );

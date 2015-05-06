@@ -42,7 +42,7 @@ class Commissioning : public Tool
 
   public:
 	void Initialize();
-	void ScanThreshold();
+	void ScanThreshold( bool pScanPedestal );
 	std::map<Module*, uint8_t> ScanLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	// void ScanLatencyThreshold();
 	// void ScanStubLatency();
