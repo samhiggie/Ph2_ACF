@@ -50,6 +50,7 @@ class Commissioning : public Tool
 
   private:
 	void initializeHists();
+	void measureScurve( std::string pHistName, uint32_t pNEvents );
 	int countHits( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	void updateHists( std::string pHistName, bool pFinal );
 	void parseSettings();

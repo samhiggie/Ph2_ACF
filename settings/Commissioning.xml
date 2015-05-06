@@ -1,15 +1,15 @@
 <?xml version='1.0' encoding = 'UTF-8' ?>
 <HwDescription>
-    <Connections name="file://settings/connections_2CBC.xml"/>
+    <Connections name="file://settings/connections_slc6.xml"/>
 
     <Shelve Id="0" >
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <Global_CBC_Register name="VCth"> 0x92 </Global_CBC_Register>
-                <!-- <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register -->
-	 
-                <CBC_Files path="./CalibrationResults/mod03_h/"/>
+                <!-- <Global_CBC_Register name="VCth"> 0x92 </Global_CBC_Register> -->
+                <Global_CBC_Register name="TriggerLatency"> 0x05 </Global_CBC_Register>
+     
+                <CBC_Files path="./CalibrationResults/module/"/>
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
             </Module>
@@ -25,7 +25,7 @@
 
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
-	    <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL"> 1 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ"> 10 </Register>
             <!-- DIO5 threshold: [v]/3.3*256 -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in"> 40 </Register>
@@ -35,6 +35,8 @@
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
             <!-- set to 1 to output L1A signal, 0 for input pulse -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
+            <!-- set to 1 for active low or 1 for active high -->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar"> 1 </Register>
 
             <!-- Clock -->
             <!-- set to 1 for external clocking -->
@@ -61,6 +63,7 @@
 </HwDescription>
 
 <Settings>
-    <Setting name="Nevents"> 100 </Setting>
+    <Setting name="Nevents"> 200 </Setting>
     <Setting name="HoleMode"> 1 </Setting>
+    <Setting name="TargetVcth"> 0x78 </Setting>
 </Settings>
