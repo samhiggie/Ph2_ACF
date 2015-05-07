@@ -42,8 +42,8 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 	cVcth += cVcthStep;
 
 	//  Set that VCth Value on all FEs
-	CbcRegWriter cVcthWriter( fCbcInterface, "VCth", cVcth );
-	this->accept( cVcthWriter );
+	CbcRegWriter cWriter( fCbcInterface, "VCth", cVcth );
+	this->accept( cWriter );
 	this->accept( cReader );
 
 	// Now the actual scan
@@ -52,8 +52,8 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 	for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
 	{
 		//  Set a Latency Value on all FEs
-		CbcRegWriter cLatWriter( fCbcInterface, "TriggerLatency", cLat );
-		this->accept( cLatWriter );
+		cWriter.setRegister( "TriggerLatency", cLat );
+		this->accept( cWriter );
 
 		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
@@ -107,13 +107,105 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 		TH1F* cTmpHist = ( TH1F* )getHist( cFe.first, "module_latency" );
 		uint8_t cLatency =  static_cast<uint8_t>( cTmpHist->GetMaximumBin() - 1 );
 		cLatencyMap[cFe.first] = cLatency;
-		CbcRegWriter cFinalLatWriter( fCbcInterface, "TriggerLatency", cLatency );
-		this->accept( cFinalLatWriter );
+		cWriter.setRegister( "TriggerLatency", cLatency );
+		this->accept( cWriter );
 
 		std::cout << "	FE " << +cFe.first->getModuleId()  << ": " << +cLatency << " clock cycles!" << std::endl;
 	}
 
 	return cLatencyMap;
+}
+
+std::map<Module*, uint8_t> Commissioning::ScanStubLatency( uint8_t pStartLatency, uint8_t pLatencyRange )
+{
+	// This is not super clean but should work
+	// Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
+	// CbcRegReader cReader( fCbcInterface, "VCth" );
+	// this->accept( cReader );
+	// uint8_t cVcth = cReader.fRegValue;
+
+	// int cVcthStep = ( fHoleMode == 1 ) ? +20 : -20;
+	// std::cout << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << +( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" << std::endl;
+	// cVcth += cVcthStep;
+
+	// //  Set that VCth Value on all FEs
+	// CbcRegWriter cVcthWriter( fCbcInterface, "VCth", cVcth );
+	// this->accept( cVcthWriter );
+	// this->accept( cReader );
+
+	// Now the actual scan
+	std::cout << "Scanning Stub Latency ... " << std::endl;
+
+	for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
+	{
+		//  Set a Latency Value on all FEs
+		BeBoardRegWriter cLatWriter( fBeBoardInterface, "cbc_stubdata_latency_adjust_fe1", cLat );
+		this->accept( cLatWriter );
+		cLatWriter.setRegister( "cbc_stubdata_latency_adjust_fe2", cLat );
+		this->accept( cLatWriter );
+
+		uint32_t cN = 1;
+		uint32_t cNthAcq = 0;
+		int cNStubs = 0;
+
+		// Take Data for all Modules
+		for ( auto& cShelve : fShelveVector )
+		{
+			for ( BeBoard* pBoard : cShelve->fBoardVector )
+			{
+				fBeBoardInterface->Start( pBoard );
+
+				while ( cN <= fNevents )
+				{
+					if ( cN > fNevents ) break;
+					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+
+					// Loop over Events from this Acquisition
+					while ( cEvent )
+					{
+						if ( cN > fNevents )
+							break;
+						for ( auto cFe : pBoard->fModuleVector )
+							cNStubs += countStubs( cFe, cEvent, "module_stub_latency", cLat );
+						cN++;
+
+						if ( cN < fNevents )
+							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+						else break;
+					}
+					cNthAcq++;
+				}
+				fBeBoardInterface->Stop( pBoard, cNthAcq );
+				std::cout << "Stub Latency " << +cLat << " Stubs " << cNStubs  << " Events " << cN << std::endl;
+
+			}
+		}
+
+		// done counting hits for all FE's, now update the Histograms
+		updateHists( "module_stub_latency", false );
+	}
+
+	// analyze the Histograms
+	std::map<Module*, uint8_t> cStubLatencyMap;
+
+	std::cout << "Identified the Latency with the maximum number of Stubs at: " << std::endl;
+
+	for ( auto cFe : fModuleHistMap )
+	{
+		TH1F* cTmpHist = ( TH1F* )getHist( cFe.first, "module_stub_latency" );
+		uint8_t cStubLatency =  static_cast<uint8_t>( cTmpHist->GetMaximumBin() - 1 );
+		cStubLatencyMap[cFe.first] = cStubLatency;
+
+		BeBoardRegWriter cLatWriter( fBeBoardInterface, "", 0 );
+		if ( cFe.first->getFeId() == 0 ) cLatWriter.setRegister( "cbc_stubdata_latency_adjust_fe1", cStubLatency );
+		else if ( cFe.first->getFeId() == 1 ) cLatWriter.setRegister( "cbc_stubdata_latency_adjust_fe2", cStubLatency );
+		this->accept( cLatWriter );
+
+		std::cout << "Stub Latency FE " << +cFe.first->getModuleId()  << ": " << +cStubLatency << " clock cycles!" << std::endl;
+	}
+
+	return cStubLatencyMap;
 }
 
 
@@ -222,6 +314,25 @@ int Commissioning::countHits( Module* pFe,  const Event* pEvent, std::string pHi
 	return cHitCounter;
 }
 
+int Commissioning::countStubs( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter )
+{
+	// loop over Modules & Cbcs and count hits separately
+	int cStubCounter = 0;
+
+	//  get histogram to fill
+	TH1F* cTmpHist = ( TH1F* )getHist( pFe, pHistName );
+
+	for ( auto cCbc : pFe->fCbcVector )
+	{
+		if ( pEvent->StubBit( cCbc->getFeId(), cCbc->getCbcId() ) )
+		{
+			cTmpHist->Fill( pParameter );
+			cStubCounter++;
+		}
+	}
+	return cStubCounter;
+}
+
 void Commissioning::updateHists( std::string pHistName, bool pFinal )
 {
 	for ( auto& cCanvas : fCanvasMap )
@@ -232,7 +343,12 @@ void Commissioning::updateHists( std::string pHistName, bool pFinal )
 		if ( pHistName == "module_latency" )
 		{
 			TH1F* cTmpHist = ( TH1F* )getHist( cCanvas.first, pHistName );
-			cTmpHist->Draw( );
+			cTmpHist->Draw( "same" );
+		}
+		else if ( pHistName == "module_stub_latency" )
+		{
+			TH1F* cTmpHist = ( TH1F* )getHist( cCanvas.first, pHistName );
+			cTmpHist->Draw( "same" );
 		}
 		else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
 		{
@@ -299,12 +415,12 @@ void Commissioning::updateHists( std::string pHistName, bool pFinal )
 
 			}
 		}
-		else if ( pHistName == "module_lat_threshold" )
-		{
-			TH2F* cTmpHist = ( TH2F* )getHist( cCanvas.first, pHistName );
-			cTmpHist->Draw( "box" );
-		}
-		cCanvas.second->Update();
+		// else if ( pHistName == "module_lat_threshold" )
+		// {
+		// 	TH2F* cTmpHist = ( TH2F* )getHist( cCanvas.first, pHistName );
+		// 	cTmpHist->Draw( "box" );
+		// }
+		// cCanvas.second->Update();
 	}
 }
 
@@ -490,6 +606,13 @@ void Commissioning::initializeHists()
 				cLatHist->SetFillColor( 4 );
 				cLatHist->SetFillStyle( 3001 );
 				cModuleMap["module_latency"] = cLatHist;
+
+				cName =  Form( "h_module_stub_latency_Fe%d", cFeId );
+				cObj = gROOT->FindObject( cName );
+				if ( cObj ) delete cObj;
+				TH1F* cStubHist = new TH1F( cName, Form( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), 256, -0.5, 255.5 );
+				cStubHist->SetMarkerStyle( 2 );
+				cModuleMap["module_stub_latency"] = cStubHist;
 
 				cName =  Form( "h_module_threshold_ext_Fe%d", cFeId );
 				cObj = gROOT->FindObject( cName );

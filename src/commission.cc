@@ -33,14 +33,17 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "latency", "scan the trigger latency", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "latency", "l" );
 
-	cmd.defineOption( "start", "start value for latency scan", ArgvParser::OptionRequiresValue );
-	cmd.defineOptionAlternative( "start", "s" );
+	cmd.defineOption( "threshold", "scan the CBC comparator threshold", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "threshold", "t" );
+
+	cmd.defineOption( "stublatency", "scan the stub latency", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "stublatency", "s" );
+
+	cmd.defineOption( "minimum", "minimum value for latency scan", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "minimum", "m" );
 
 	cmd.defineOption( "range", "range in clock cycles for latency scan", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "range", "r" );
-
-	cmd.defineOption( "threshold", "scan the CBC comparator threshold", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "threshold", "t" );
 
 	cmd.defineOption( "pedestal", "scan the CBC pedestals in addition with the threshold scan", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "pedestal", "p" );
@@ -64,6 +67,7 @@ int main( int argc, char* argv[] )
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Commissioning.xml";
 	bool cLatency = ( cmd.foundOption( "latency" ) ) ? true : false;
+	bool cStubLatency = ( cmd.foundOption( "stublatency" ) ) ? true : false;
 	bool cThreshold = ( cmd.foundOption( "threshold" ) ) ? true : false;
 	bool cScanPedestal = ( cmd.foundOption( "pedestal" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
@@ -71,7 +75,7 @@ int main( int argc, char* argv[] )
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 	bool gui = ( cmd.foundOption( "gui" ) ) ? true : false;
 
-	uint8_t cStartLatency = ( cmd.foundOption( "start" ) ) ? convertAnyInt( cmd.optionValue( "start" ).c_str() ) :  0;
+	uint8_t cStartLatency = ( cmd.foundOption( "minimum" ) ) ? convertAnyInt( cmd.optionValue( "minimum" ).c_str() ) :  0;
 	uint8_t cLatencyRange = ( cmd.foundOption( "range" ) ) ?  convertAnyInt( cmd.optionValue( "range" ).c_str() ) :  10;
 
 
@@ -84,14 +88,15 @@ int main( int argc, char* argv[] )
 	cCommissioning.Initialize( );
 	cCommissioning.CreateResultDirectory( cDirectory );
 	std::string cResultfile;
-	if ( cLatency ) cResultfile = "Latency";
+	if ( cLatency || cStubLatency ) cResultfile = "Latency";
 	else if ( cThreshold ) cResultfile = "Threshold";
-	else if ( cThreshold && cLatency ) cResultfile = "Commissioning";
+	else cResultfile = "Commissioning";
 	cCommissioning.InitResultFile( cResultfile );
 	if ( !gui ) cCommissioning.ConfigureHw();
 
 	// Here comes our Part:
 	if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
+	if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
 	if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
 	cCommissioning.SaveResults();
 

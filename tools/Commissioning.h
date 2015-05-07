@@ -44,14 +44,15 @@ class Commissioning : public Tool
 	void Initialize();
 	void ScanThreshold( bool pScanPedestal );
 	std::map<Module*, uint8_t> ScanLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
+	std::map<Module*, uint8_t> ScanStubLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	// void ScanLatencyThreshold();
-	// void ScanStubLatency();
 	void SaveResults();
 
   private:
 	void initializeHists();
 	void measureScurve( std::string pHistName, uint32_t pNEvents );
 	int countHits( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
+	int countStubs( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	void updateHists( std::string pHistName, bool pFinal );
 	void parseSettings();
 	void dumpConfigFiles();
