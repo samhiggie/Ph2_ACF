@@ -67,6 +67,11 @@ On this Repo, you can find different version of the software :
     - New functions BeBoardInterface::StartThread, StopThread, getNumAcqThread, isRunningThread. Abstract class HwInterfaceVisitor.
     - datatest -p option to perform an acquisition in a separate thread
     - datatest -i option to ignore CBC configuration. Can be run on a bare GLIB board without CBC
+- 07/05/15: merged Commissioning branch:
+    - contains class for Commissioning: latency scan, threshold scan, stub latency scan
+    - some additions to the Utils/CommonVisitors
+    - added a stub bit method to the Event class
+    - restructured the ostream operator of the Event class
 
 
 ### Setup
