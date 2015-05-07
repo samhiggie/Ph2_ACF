@@ -101,9 +101,13 @@ namespace Ph2_HwInterface
 		 */
 		int SetEvent( const char* pEvent );
 		/*! \brief Get raw data */
-		char* GetEventData() const {return fBuf;}
+		char* GetEventData() const {
+			return fBuf;
+		}
 		/*! \brief Get the event size in bytes */
-		uint32_t GetSize() const {return fEventSize;}
+		uint32_t GetSize() const {
+			return fEventSize;
+		}
 		//user interface
 		/*!
 		 * \brief Get an event contained in a Cbc
@@ -245,12 +249,12 @@ namespace Ph2_HwInterface
 		 */
 		std::string GlibFlagString( uint8_t pFeId, uint8_t pCbcId ) const;
 		/*!
-		 * \brief Function to get bit string for CBC STUB data
+		 * \brief Function to get Stub bit
 		 * \param pFeId : FE Id
 		 * \param pCbcId : Cbc Id
-		 * \return Stub Bit string
+		 * \return stub bit?
 		 */
-		std::string StubBitString( uint8_t pFeId, uint8_t pCbcId ) const;
+		bool StubBit( uint8_t pFeId, uint8_t pCbcId ) const;
 		/*!
 		 * \brief Function to get char at the global data string at position 8*i
 		 * \param pFeId : FE Id

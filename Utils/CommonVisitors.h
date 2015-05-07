@@ -31,6 +31,11 @@ struct CbcRegWriter : public HwDescriptionVisitor
 	CbcRegWriter( CbcInterface* pInterface, std::string pRegName, uint8_t pRegValue ): fInterface( pInterface ), fRegName( pRegName ), fRegValue( pRegValue ) {}
 	CbcRegWriter( const CbcRegWriter& writer ) : fInterface( writer.fInterface ), fRegName( writer.fRegName ), fRegValue( writer.fRegValue ) {}
 
+	void setRegister( std::string pRegName, uint8_t pRegValue ) {
+		fRegName = pRegName;
+		fRegValue = pRegValue;
+	}
+
 	void visit( Ph2_HwDescription::Cbc& pCbc ) {
 		fInterface->WriteCbcReg( &pCbc, fRegName, fRegValue );
 	}
@@ -45,6 +50,11 @@ struct BeBoardRegWriter : public HwDescriptionVisitor
 	BeBoardRegWriter( BeBoardInterface* pInterface, std::string pRegName, uint32_t pRegValue ) : fInterface( pInterface ), fRegName( pRegName ), fRegValue( pRegValue ) {}
 
 	BeBoardRegWriter( const BeBoardRegWriter& writer ) : fInterface( writer.fInterface ), fRegName( writer.fRegName ), fRegValue( writer.fRegValue ) {}
+
+	void setRegister( std::string pRegName, uint8_t pRegValue ) {
+		fRegName = pRegName;
+		fRegValue = pRegValue;
+	}
 
 	void visit( Ph2_HwDescription::BeBoard& pBoard ) {
 		fInterface->WriteBoardReg( &pBoard, fRegName, fRegValue );
@@ -130,6 +140,9 @@ struct CbcRegReader : public HwDescriptionVisitor
 	CbcRegReader( CbcInterface* pInterface, std::string pRegName ): fInterface( pInterface ), fRegName( pRegName ) {}
 	CbcRegReader( const CbcRegReader& reader ): fInterface( reader.fInterface ), fRegName( reader.fRegName ) {}
 
+	void setRegister( std::string pRegName ) {
+		fRegName = pRegName;
+	}
 	void visit( Cbc& pCbc ) {
 		fRegValue = pCbc.getReg( fRegName );
 		fInterface->ReadCbcReg( &pCbc, fRegName );

@@ -90,7 +90,7 @@ namespace Ph2_HwInterface
 	{
 		int vsize = sizeof( uint32_t );
 
-		fBuf = const_cast<char*>(pEvent);
+		fBuf = const_cast<char*>( pEvent );
 
 		fBunch = 0x00FFFFFF & swap_bytes( &fBuf[0 * vsize] );
 
@@ -132,7 +132,7 @@ namespace Ph2_HwInterface
 
 		if ( cIt == fEventMap.end() )
 		{
-		        std::cout << "Event: FE " << +pFeId << " is not found." << std::endl;
+			std::cout << "Event: FE " << +pFeId << " is not found." << std::endl;
 			return nullptr;
 		}
 
@@ -140,7 +140,7 @@ namespace Ph2_HwInterface
 
 		if ( cJt == cIt->second.end() )
 		{
-		        std::cout << "Event: CBC " << +pCbcId << " is not found." << std::endl;
+			std::cout << "Event: CBC " << +pCbcId << " is not found." << std::endl;
 			return nullptr;
 		}
 
@@ -186,7 +186,7 @@ namespace Ph2_HwInterface
 
 		for ( uint32_t i = 0; i < cWidth; i++ )
 		{
-		        val <<= 1;
+			val <<= 1;
 			val |= Error( pFeId, pCbcId, i );
 		}
 
@@ -202,7 +202,7 @@ namespace Ph2_HwInterface
 
 		for ( uint32_t i = 0; i < cWidth; i++ )
 		{
-		        val <<= 1;
+			val <<= 1;
 			val |= Bit( pFeId, pCbcId, cOffset + i );
 		}
 
@@ -276,7 +276,7 @@ namespace Ph2_HwInterface
 
 		for ( uint32_t i = 0; i < cMaskWidth; i++ )
 		{
-		        cMask <<= 1;
+			cMask <<= 1;
 			cMask |= 1;
 		}
 
@@ -298,7 +298,7 @@ namespace Ph2_HwInterface
 
 		for ( uint32_t i = 0; i < cMaskWidth; i++ )
 		{
-		        cMask <<= 1;
+			cMask <<= 1;
 			cMask |= 1;
 		}
 
@@ -314,9 +314,9 @@ namespace Ph2_HwInterface
 	}
 
 
-	std::string Event::StubBitString( uint8_t pFeId, uint8_t pCbcId ) const
+	bool Event::StubBit( uint8_t pFeId, uint8_t pCbcId ) const
 	{
-		return BitString( pFeId, pCbcId, OFFSET_CBCSTUBDATA, WIDTH_CBCSTUBDATA );
+		return Bit( pFeId, pCbcId, OFFSET_CBCSTUBDATA );
 	}
 
 	std::ostream& operator<<( std::ostream& os, const Event& ev )
