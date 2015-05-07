@@ -120,18 +120,18 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency( uint8_t pStartLatency
 {
 	// This is not super clean but should work
 	// Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
-	// CbcRegReader cReader( fCbcInterface, "VCth" );
-	// this->accept( cReader );
-	// uint8_t cVcth = cReader.fRegValue;
+	CbcRegReader cReader( fCbcInterface, "VCth" );
+	this->accept( cReader );
+	uint8_t cVcth = cReader.fRegValue;
 
-	// int cVcthStep = ( fHoleMode == 1 ) ? +20 : -20;
-	// std::cout << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << +( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" << std::endl;
-	// cVcth += cVcthStep;
+	int cVcthStep = ( fHoleMode == 1 ) ? +20 : -20;
+	std::cout << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << +( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" << std::endl;
+	cVcth += cVcthStep;
 
-	// //  Set that VCth Value on all FEs
-	// CbcRegWriter cVcthWriter( fCbcInterface, "VCth", cVcth );
-	// this->accept( cVcthWriter );
-	// this->accept( cReader );
+	//  Set that VCth Value on all FEs
+	CbcRegWriter cVcthWriter( fCbcInterface, "VCth", cVcth );
+	this->accept( cVcthWriter );
+	this->accept( cReader );
 
 	// Now the actual scan
 	std::cout << "Scanning Stub Latency ... " << std::endl;
@@ -160,6 +160,8 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency( uint8_t pStartLatency
 					if ( cN > fNevents ) break;
 					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+
+					// if(cN <3 ) std::cout << *cEvent << std::endl;
 
 					// Loop over Events from this Acquisition
 					while ( cEvent )
@@ -420,7 +422,7 @@ void Commissioning::updateHists( std::string pHistName, bool pFinal )
 		// 	TH2F* cTmpHist = ( TH2F* )getHist( cCanvas.first, pHistName );
 		// 	cTmpHist->Draw( "box" );
 		// }
-		// cCanvas.second->Update();
+		cCanvas.second->Update();
 	}
 }
 

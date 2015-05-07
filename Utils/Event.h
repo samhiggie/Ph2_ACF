@@ -13,9 +13,11 @@
 #define __EVENT_H__
 
 #include <string>
+#include <bitset>
 #include <sstream>
 #include <cstring>
 #include <iomanip>
+#include "ConsoleColor.h"
 #include "../HWDescription/Definition.h"
 #include "../HWDescription/BeBoard.h"
 
