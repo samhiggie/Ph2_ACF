@@ -310,12 +310,23 @@ namespace Ph2_HwInterface
 
 		WriteReg( fStrReadout, 0 );
 
+#if 0
+		std::cout << "GlibFWInterface::ReadData start "<< std::endl; 
+                for (auto word: cData) {
+		  std::cout << std::setw(4) << ((word >> 24) & 0xFF) 
+			    <<std::setw(4) << ((word >> 16) & 0xFF)
+			    <<std::setw(4) << ((word >> 8) & 0xFF)
+			    <<std::setw(4) << (word & 0xFF)
+			    << std::endl;
+                }
+		std::cout << "GlibFWInterface::ReadData end "<< std::endl; 
+#endif
 		// just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
 		if ( fData ) delete fData;
 		fData = new Data();
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
-		fData->Set( &cData , cNPackets );
+		fData->Set( pBoard, cData , cNPackets );
 	}
 	/** compute the block size according to the number of CBC's on this board
 	 * this will have to change with a more generic FW */ 
@@ -375,15 +386,18 @@ namespace Ph2_HwInterface
 	}
 
 
-	const Event* GlibFWInterface::GetNextEvent( const BeBoard* pBoard )
+	const Event* GlibFWInterface::GetNextEvent( const BeBoard* pBoard ) const
 	{
 		return fData->GetNextEvent( pBoard );
 	}
-
-
-	const char* GlibFWInterface::GetBuffer( uint32_t& pBufSize ) const
+        const Event* GlibFWInterface::GetEvent( const BeBoard* pBoard, int i ) const
 	{
-		return fData->GetBuffer( pBufSize );
+	        return fData->GetEvent( pBoard, i );
+	}
+
+        const std::vector<Event*>& GlibFWInterface::GetEvents( const BeBoard* pBoard ) const
+	{
+	        return fData->GetEvents( pBoard );
 	}
 
 

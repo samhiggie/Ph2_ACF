@@ -155,13 +155,9 @@ namespace Ph2_HwInterface
 		 * \brief Get next event from data buffer
 		 * \return Next event
 		 */
-		virtual const Event* GetNextEvent( const BeBoard* pBoard ) = 0;
-		/*!
-		 * \brief Get the data buffer
-		 * \param pBufSize : recovers the data buffer size
-		 * \return Data buffer
-		 */
-		virtual const char* GetBuffer( uint32_t& pBufSize ) const = 0;
+		virtual const Event* GetNextEvent( const BeBoard* pBoard ) const = 0;
+		virtual const Event* GetEvent( const BeBoard* pBoard, int i ) const = 0;
+	        virtual const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const = 0;
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 

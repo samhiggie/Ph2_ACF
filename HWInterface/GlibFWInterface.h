@@ -99,13 +99,9 @@ namespace Ph2_HwInterface
 		 * \brief Get next event from data buffer
 		 * \return Next event
 		 */
-		const Event* GetNextEvent( const BeBoard* pBoard );
-		/*!
-		* \brief Get the data buffer
-		* \param pBufSize : recovers the data buffer size
-		* \return Data buffer
-		*/
-		const char* GetBuffer( uint32_t& pBufSize ) const;
+		const Event* GetNextEvent( const BeBoard* pBoard ) const override;
+		const Event* GetEvent( const BeBoard* pBoard, int i ) const override;
+	        const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const override;
 
 		/*! \brief Read a block of a given size
 		 * \param pRegNode Param Node name
