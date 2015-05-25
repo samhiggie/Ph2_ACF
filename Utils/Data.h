@@ -56,9 +56,9 @@ namespace Ph2_HwInterface
 		 * \brief Destructor of the Data class
 		 */
 		~Data() {
-		  for ( auto ievt: fEventList ) 
-		        delete ievt;
-                  fEventList.clear();  
+		      for ( auto ievt: fEventList ) 
+		           delete ievt;
+                      fEventList.clear();  
 		}
 		/*!
 		 * \brief Set the data in the data map

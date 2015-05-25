@@ -89,7 +89,7 @@ namespace Ph2_HwInterface
 		 * \brief Clear the Event Map
 		 */
 		void Clear() {
-			fEventMap.clear();
+		     fEventMap.clear();
 		}
 		/*!
 		 * \brief Add a board structure in the map
@@ -104,11 +104,11 @@ namespace Ph2_HwInterface
 	        int SetEvent( const std::vector<uint8_t>& list );
 		/*! \brief Get raw data */
 	        const std::vector<unsigned char>& GetEventData() const {
-			return fEventData;
+		      return fEventData;
 		}
 		/*! \brief Get the event size in bytes */
 		uint32_t GetSize() const {
-			return fEventSize;
+		      return fEventSize;
 		}
 		//user interface
 		/*!

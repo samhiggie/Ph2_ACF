@@ -26,7 +26,7 @@ uint32_t swap_bytes( const std::vector<uint8_t>& list, uint32_t indx )
 namespace Ph2_HwInterface
 {
 
-	//Event implementation
+	// Event implementation
         Event::Event( uint32_t pNbCbc, const std::vector<uint8_t>& list )
 	{
 		SetSize( pNbCbc );
@@ -39,16 +39,6 @@ namespace Ph2_HwInterface
 		SetSize( pNbCbc );
 		AddBoard( pBoard );
 		SetEvent( list );
-#if 0
-		int nx = 0;
-		for (auto v: fEventData) {
-		  ++nx;
-		  if (nx == 4) {
-		    std::cout << std::endl;
-		    nx = 0; 
-		  }
-		} 
-#endif
 	}
 
 	Event::Event( const Event& pEvent ) :
@@ -98,22 +88,17 @@ namespace Ph2_HwInterface
 
         int Event::SetEvent( const std::vector<uint8_t>& list )
 	{
-                
 	        int vsize = sizeof( uint32_t );
-                fEventData = list;
 
-		fBunch = 0x00FFFFFF & swap_bytes( fEventData, 0 );
+		fBunch = 0x00FFFFFF & swap_bytes( list, 0 );
+		fOrbit = 0x00FFFFFF & swap_bytes( list, vsize );
+		fLumi = 0x00FFFFFF & swap_bytes( list, 2*vsize );
+		fEventCount = 0x00FFFFFF & swap_bytes( list, 3*vsize );
+		fEventCountCBC = 0x00FFFFFF & swap_bytes( list, 4*vsize );
 
-		fOrbit = 0x00FFFFFF & swap_bytes( fEventData, vsize );
+                uint32_t event_size = EVENT_HEADER_SIZE_CHAR;
 
-		fLumi = 0x00FFFFFF & swap_bytes( fEventData, 2*vsize );
-
-		fEventCount = 0x00FFFFFF & swap_bytes( fEventData, 3*vsize );
-
-		fEventCountCBC = 0x00FFFFFF & swap_bytes( fEventData, 4*vsize );
-               
-
-		fTDC = 0x000000FF & swap_bytes( fEventData, (list.size() - vsize) ); // ***
+		fTDC = 0x000000FF & swap_bytes( list, list.size() - vsize );
 
 		uint32_t begin = EVENT_HEADER_SIZE_CHAR;
 		uint32_t end = 0; 
@@ -121,13 +106,14 @@ namespace Ph2_HwInterface
 		{
 			uint8_t cFeId = static_cast<uint8_t>( it.first );
 			uint8_t cNCbc = static_cast<uint8_t>( it.second.size() );
-
+                        event_size += cNCbc * CBC_EVENT_SIZE_CHAR;
 			for ( auto& jt : it.second )
 			{
 				uint8_t cCbcId = static_cast<uint8_t>( jt.first );
                                 begin += cFeId * CBC_EVENT_SIZE_CHAR * cNCbc + cCbcId * CBC_EVENT_SIZE_CHAR;
                                 end = begin + CBC_EVENT_SIZE_CHAR -1; 
                                 jt.second = {begin, end};
+
 #ifdef __CBCDAQ_DEV__
 				std::cout << "DEBUG FE " << +cFeId << "  with " << +cNCbc << " cbcs on CBC " << +cCbcId 
 					  << " and the start and end indices of CBC data: {"  
@@ -136,31 +122,29 @@ namespace Ph2_HwInterface
 #endif
 			}
 		}
-		
+		fEventData.reserve( event_size + vsize );
+                fEventData.assign( list.begin(), list.begin() + event_size );
+                for (uint8_t i = vsize; i > 0; i--) 
+		     fEventData.push_back( list[list.size() - i] );
+
 		return 0;
 	}
 
-        void Event::GetCbcEvent( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData)  const
+        void Event::GetCbcEvent( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData )  const
 	{
 	        cbcData.clear();
 
 		EventMap::const_iterator cIt = fEventMap.find( pFeId );
-           
 		if ( cIt != fEventMap.end() )
 		{
-		  FeEventMap::const_iterator cJt = cIt->second.find( pCbcId );
-		  if ( cJt != cIt->second.end() )
-		  {
-		    if (0) 
-		      std::cout << "GetCbcEvent: " << cJt->second.first 
-				<< "," <<  cJt->second.second 
-				<< ", " << cJt->second.second - cJt->second.first + 1 
-				<< std::endl;
-		    cbcData.reserve( cJt->second.second - cJt->second.first + 1);
-                    cbcData.assign(fEventData.begin()+cJt->second.first-1, fEventData.begin()+cJt->second.second);
-		  } 
-		  else 
-		    std::cout << "Event: CBC " << +pCbcId << " is not found." << std::endl;
+		       FeEventMap::const_iterator cJt = cIt->second.find( pCbcId );
+		       if ( cJt != cIt->second.end() )
+		       {
+		               cbcData.reserve( cJt->second.second - cJt->second.first + 1 );
+                               cbcData.assign( fEventData.begin()+cJt->second.first, fEventData.begin()+cJt->second.second+1 );
+		       } 
+		       else 
+		               std::cout << "Event: CBC " << +pCbcId << " is not found." << std::endl;
 		}
                 else     
    	            std::cout << "Event: FE " << +pFeId << " is not found." << std::endl;
@@ -272,7 +256,8 @@ namespace Ph2_HwInterface
 	}
 
 
-  /*	std::string Event::DataHexString( uint8_t pFeId, uint8_t pCbcId ) const
+#if 0
+  	std::string Event::DataHexString( uint8_t pFeId, uint8_t pCbcId ) const
 	{
 		std::stringbuf tmp;
 		std::ostream os( &tmp );
@@ -307,7 +292,8 @@ namespace Ph2_HwInterface
 		//Second to the second last byte
 		if ( cFirstByteP != cLastByteP - 1 )
 		{
-			for ( uint32_t j = cFirstByteP + 1; j < cLastByteP; j++ ) os << std::uppercase << std::setw( 2 ) << std::setfill( '0' ) << ( GetCbcEvent( pFeId, pCbcId )[j] & 0xFF );
+			for ( uint32_t j = cFirstByteP + 1; j < cLastByteP; j++ ) 
+			      os << std::uppercase << std::setw( 2 ) << std::setfill( '0' ) << ( GetCbcEvent( pFeId, pCbcId )[j] & 0xFF );
 		}
 
 		//Last byte
@@ -324,7 +310,8 @@ namespace Ph2_HwInterface
 		os << std::uppercase << std::setw( 2 ) << std::setfill( '0' ) << ( GetCbcEvent( pFeId, pCbcId )[cFirstByteP]&cMask );
 
 		return tmp.str();
-		}*/
+	}
+#endif
 
 
 	std::string Event::GlibFlagString( uint8_t pFeId, uint8_t pCbcId ) const

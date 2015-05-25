@@ -40,7 +40,6 @@ namespace Ph2_HwInterface
 		    flist.push_back((word >>  8) & 0xFF);
 		    flist.push_back(word  & 0xFF);
 		}
-
 		// initialize the buffer data array and the buffer size (one 32 bit word is 4 char!)
 		fNevents = static_cast<uint32_t>( pNevents );
 		fEventSize = static_cast<uint32_t>( flist.size() / fNevents );
@@ -60,8 +59,7 @@ namespace Ph2_HwInterface
                     lvec.push_back(flist[i]);
                     if ( i > 0 && ((i+1) % fEventSize) == 0 ) 
 		    {
-		      fEventList.push_back(new Event( pBoard, fNCbc, lvec ));
-			//std::cout << "nEvent: " << fEventList.size() << ", lvec.size(): " << lvec.size() << ", fEventSize: " << fEventSize << std::endl;
+		        fEventList.push_back(new Event( pBoard, fNCbc, lvec ));
 			lvec.clear(); 
 		    }
 		}

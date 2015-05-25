@@ -310,17 +310,6 @@ namespace Ph2_HwInterface
 
 		WriteReg( fStrReadout, 0 );
 
-#if 0
-		std::cout << "GlibFWInterface::ReadData start "<< std::endl; 
-                for (auto word: cData) {
-		  std::cout << std::setw(4) << ((word >> 24) & 0xFF) 
-			    <<std::setw(4) << ((word >> 16) & 0xFF)
-			    <<std::setw(4) << ((word >> 8) & 0xFF)
-			    <<std::setw(4) << (word & 0xFF)
-			    << std::endl;
-                }
-		std::cout << "GlibFWInterface::ReadData end "<< std::endl; 
-#endif
 		// just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
 		if ( fData ) delete fData;
 		fData = new Data();
