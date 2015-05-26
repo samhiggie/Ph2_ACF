@@ -44,8 +44,6 @@ namespace Ph2_HwInterface
 	  public:
 		unsigned int fNTotalAcq;
 
-		Data* fData; /*!< Data read storage*/
-
 		static const uint32_t cMask1 = 0xff;
 		static const uint32_t cMask2 = 0xff00;
 		static const uint32_t cMask3 = 0xff0000;
@@ -62,7 +60,7 @@ namespace Ph2_HwInterface
 		/*!
 		* \brief Destructor of the BeBoardFWInterface class
 		*/
-		virtual ~BeBoardFWInterface();
+	        virtual ~BeBoardFWInterface() {}
 		/*!
 		* \brief Get the board type
 		*/
@@ -74,7 +72,7 @@ namespace Ph2_HwInterface
 
 		//These two methods will be implemented soon
 		virtual void FlashProm(uint16_t numConfig, const char* pstrFile) {}
-		virtual const FpgaConfig* getConfiguringFpga(){ return NULL; }
+		virtual const FpgaConfig* getConfiguringFpga(){ return nullptr; }
 		virtual void ProgramCdce() {}
 
 		//Encode/Decode Cbc values

@@ -38,6 +38,8 @@ namespace Ph2_HwInterface
 	{
 
 	  private:
+		Data* fData; /*!< Data read storage*/
+
 		struct timeval fStartVeto;
 		std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
 		std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
@@ -61,6 +63,7 @@ namespace Ph2_HwInterface
 		 * \brief Destructor of the GlibFWInterface class
 		 */
 		~GlibFWInterface() {
+	                 if (fData) delete fData;
 		}
 
 		/*!
