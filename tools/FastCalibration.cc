@@ -319,7 +319,7 @@ void FastCalibration::setOffset( uint8_t pOffset, int  pTGrpId )
 			//Here the loop will be over channels in the test group
 			for ( auto& cChannel : fTestGrpChannelIdVec ) {
 				TString cRegName = Form( "Channel%03d", cChannel + 1 );
-				fRegVec.push_back( std::make_pair( cRegName.Data(), fOffset ) );
+				fRegVec.push_back( { cRegName.Data(), fOffset } );
 			}
 		}
 		void visit( Cbc& pCbc ) {
@@ -364,7 +364,7 @@ void FastCalibration::toggleOffsetBit( uint8_t pBit, int  pTGrpId )
 				//std::cout << "DEBUG " << cRegName.Data() << " was " << std::hex << "0x" << int( cOffset );
 				cOffset  ^= ( 1 << fBit );
 				//std::cout << " is 0x" << int( cOffset ) << std::dec << std::endl;
-				fRegVec.push_back( std::make_pair( cRegName.Data(), cOffset ) );
+				fRegVec.push_back( { cRegName.Data(), cOffset } );
 			}
 			fInterface->WriteCbcMultReg( &pCbc, fRegVec );
 		}
@@ -593,7 +593,7 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 					cOffsetVal = ( fHoleMode ) ? 0xFF : 0x00;
 					std::cout << RED << "Error: Failed to extract Offset for Channel " << int( cChan.fChannelId ) << " on CBC " << int( cChan.fCbcId ) << "  -- disabling! (Fit: " <<  int( cChan.getPedestal() ) << ")" <<  RESET << std::endl;
 				}
-				cRegVec.push_back( std::make_pair( Form( "Channel%03d", cChan.fChannelId + 1 ), cOffsetVal ) );
+				cRegVec.push_back( { Form( "Channel%03d", cChan.fChannelId + 1 ), cOffsetVal } );
 			}
 			//Draw
 			if ( pDraw )
@@ -664,7 +664,7 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 					( !fHoleMode && int( cChan.getPedestal() + 0.5 ) > fTargetVcth ) ) cCurrentOffset ^= ( 1 << pTargetBit );
 			std::cout <<  "Pedestal is " << int( cChan.getPedestal() + 0.5 ) << " and target Vcth is " << int( fTargetVcth ) << " Offset Value " << +cCurrentOffset << std::endl;
 			cChan.setOffset( cCurrentOffset );
-			cRegVec.push_back( std::make_pair( Form( "Channel%03d", cChan.fChannelId + 1 ), cCurrentOffset ) );
+			cRegVec.push_back( { Form( "Channel%03d", cChan.fChannelId + 1 ), cCurrentOffset } );
 
 
 			//Draw
@@ -722,8 +722,8 @@ void FastCalibration::findVplus( bool pDraw )
 		std::cout << BOLDBLUE << "TargetVCth = " << int( fTargetVcth ) << " -> Vplus = " << int( cVplusResult ) << RESET << std::endl;
 
 		RegisterVector cRegVec;
-		cRegVec.push_back( std::make_pair( "VCth", fTargetVcth ) );
-		cRegVec.push_back( std::make_pair( "Vplus", cVplusResult ) );
+		cRegVec.push_back( { "VCth", fTargetVcth } );
+		cRegVec.push_back( { "Vplus", cVplusResult } );
 		fCbcInterface->WriteCbcMultReg( cGraph.first, cRegVec );
 	}
 
