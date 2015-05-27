@@ -67,8 +67,8 @@ namespace Ph2_HwInterface
 
 	void Data::Reset()
 	{
-	        for ( auto ievt: fEventList ) 
-		      delete ievt;
+	        for ( auto pevt: fEventList ) 
+		      delete pevt;
                 fEventList.clear();
 		fCurrentEvent = 0;
 	}

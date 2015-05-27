@@ -70,7 +70,7 @@ namespace Ph2_HwInterface
 		 * \brief Configure the board with its Config File
 		 * \param pBoard
 		 */
-		void ConfigureBoard( const BeBoard* pBoard );
+		void ConfigureBoard( const BeBoard* pBoard ) override;
 		/*!
 		 * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
 		 */
@@ -78,26 +78,26 @@ namespace Ph2_HwInterface
 		/*!
 		 * \brief Start a DAQ
 		 */
-		void Start();
+		void Start() override;
 		/*!
 		 * \brief Stop a DAQ
 		 * \param pNthAcq : actual number of acquisitions
 		 */
-		void Stop( uint32_t pNthAcq );
+		void Stop( uint32_t pNthAcq ) override;
 		/*!
 		 * \brief Pause a DAQ
 		 */
-		void Pause();
+		void Pause() override;
 		/*!
 		 * \brief Unpause a DAQ
 		 */
-		void Resume();
+		void Resume() override;
 		/*!
 		 * \brief Read data from DAQ
 		 * \param pNthAcq : actual number of acquisitions
 		 * \param pBreakTrigger : if true, enable the break trigger
 		 */
-		void ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger );
+		void ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger ) override;
 		/*!
 		 * \brief Get next event from data buffer
 		 * \return Next event
@@ -111,11 +111,11 @@ namespace Ph2_HwInterface
 		 * \param pBlocksize Number of 32-bit words to read
 		 * \return Vector of validated 32-bit values
 		 */
-		std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize );
+		std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) override;
 
-		bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues );
+		bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues ) override;
 
-		void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor);
+		void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) override;
 		//Methods for the Cbc's:
 
 	  private:

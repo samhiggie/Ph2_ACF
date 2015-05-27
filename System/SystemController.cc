@@ -24,8 +24,8 @@ namespace Ph2_System
 
 	SystemController::~SystemController()
 	{
-		for ( std::vector<Shelve*>::iterator cShelveIt = fShelveVector.begin(); cShelveIt != fShelveVector.end(); cShelveIt++ )
-			delete *cShelveIt;
+	        for ( auto& el: fShelveVector )
+			delete el;
 		fShelveVector.clear();
 	}
 

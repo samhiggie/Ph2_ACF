@@ -173,8 +173,7 @@ namespace Ph2_HwInterface
 		std::vector< uint8_t > vTemp;
                 GetCbcEvent( pFeId, pCbcId, vTemp);
                 if ( cByteP >= vTemp.size() ) return 0;  
-		bool b = vTemp[cByteP] & ( 1 << ( 7 - cBitP ) );
-		return b;
+		return ( vTemp[cByteP] & ( 1 << ( 7 - cBitP ) ) );
 	}
 
 
@@ -225,14 +224,45 @@ namespace Ph2_HwInterface
 
 	std::string Event::BitString( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const
 	{
+	        std::vector< uint8_t > cbcData;
+                GetCbcEvent( pFeId, pCbcId, cbcData);
+
+		std::ostringstream os;
+		for ( uint32_t i = 0; i < pWidth; ++i ) {
+		        uint32_t pos = i + pOffset;
+		        uint32_t cByteP = pos / 8;
+		        uint32_t cBitP = pos % 8;
+                        if ( cByteP >= cbcData.size() ) break;
+		        os << (cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ));
+		}
+		return os.str();
+	}
+#if 0
+	std::string Event::BitString( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const
+	{
 		std::ostringstream os;
 		for ( uint32_t i = 0; i < pWidth; i++ )
 			os << Bit( pFeId, pCbcId, i + pOffset );
 
 		return os.str();
 	}
+#endif
+	std::vector<bool> Event::BitVector( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const
+	{
+	        std::vector< uint8_t > cbcData;
+                GetCbcEvent( pFeId, pCbcId, cbcData);
 
-
+		std::vector<bool> blist;
+		for ( uint32_t i = 0; i < pWidth; ++i ) {
+		        uint32_t pos = i + pOffset;
+		        uint32_t cByteP = pos / 8;
+		        uint32_t cBitP = pos % 8;
+                        if ( cByteP >= cbcData.size() ) break;
+		        blist.push_back(cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ));
+		}
+		return blist;
+	}
+#if 0
 	std::vector<bool> Event::BitVector( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const
 	{
 		std::vector<bool> tmp;
@@ -242,8 +272,8 @@ namespace Ph2_HwInterface
 
 		return tmp;
 	}
-
-
+#endif
+ 
 	std::string Event::DataBitString( uint8_t pFeId, uint8_t pCbcId ) const
 	{
 		return BitString( pFeId, pCbcId, OFFSET_CBCDATA, WIDTH_CBCDATA );
@@ -327,7 +357,7 @@ namespace Ph2_HwInterface
 
         bool Event::StubBit( uint8_t pFeId, uint8_t pCbcId ) const
 	{
-	  return Bit( pFeId, pCbcId, OFFSET_CBCSTUBDATA );
+	        return Bit( pFeId, pCbcId, OFFSET_CBCSTUBDATA );
 	}
 
 	std::ostream& operator<<( std::ostream& os, const Event& ev )

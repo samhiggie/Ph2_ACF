@@ -56,8 +56,8 @@ namespace Ph2_HwInterface
 		 * \brief Destructor of the Data class
 		 */
 		~Data() {
-		      for ( auto ievt: fEventList ) 
-		           delete ievt;
+		      for ( auto pevt: fEventList ) 
+		           delete pevt;
                       fEventList.clear();  
 		}
 		/*!

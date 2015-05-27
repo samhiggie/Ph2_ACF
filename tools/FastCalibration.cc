@@ -149,19 +149,13 @@ void FastCalibration::Validate()
 			uint32_t cNthAcq = 0;
 
 			fBeBoardInterface->Start( pBoard );
-
 			while ( cN <=  cTotalEvents )
 			{
 				// Run( pBoard, cNthAcq );
 				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 				// Loop over Events from this Acquisition
-				while ( cEvent )
-				{
-
-					if ( cN > cTotalEvents )
-						break;
-
+				for (auto& ev: events) {
 					uint32_t cHitCounter = 0;
 					for ( auto cFe : pBoard->fModuleVector )
 					{
@@ -172,22 +166,27 @@ void FastCalibration::Validate()
 							if ( cHitProfile == std::end( cProfileMap ) ) std::cout << "Error: could not find the profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
 							else
 							{
+#if 1
+							        const std::vector<bool>& list = ev->DataBitVector(cFe->getFeId(), cCbc->getCbcId());   
+							        int cChannel = 0;    
+							        for (const auto& b: list) {
+							                cHitProfile->second->Fill( cChannel++, ((b)?1:0) );
+							        }
+#endif
+#if 0
 								for ( uint8_t cChannel = 0; cChannel < 254; cChannel++ )
 								{
-									uint32_t cFillValue  = ( cEvent->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChannel ) )  ? 1 : 0;
+									uint32_t cFillValue  = ( ev->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChannel ) )  ? 1 : 0;
 									cHitProfile->second->Fill( cChannel, cFillValue );
 								}
+#endif
 							}
 						}
 					}
 					cN++;
-
-					if ( cN <= cTotalEvents )
-						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-					else break;
 				}
 				cNthAcq++;
-			} // End of Analyze Events of last Acquistion loop
+			} 
 			fBeBoardInterface->Stop( pBoard, cNthAcq );
 		}
 	}
@@ -439,28 +438,19 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 
 				fBeBoardInterface->Start( pBoard );
 
-				while ( cN <=  fEventsPerPoint )
+				while ( cN <= fEventsPerPoint )
 				{
 					// Run( pBoard, cNthAcq );
 					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					while ( cEvent )
-					{
-						if ( cN > fEventsPerPoint )
-							break;
-
-						cHitCounter += fillSCurves( pBoard, cEvent, cValue, pTGrpId ); //pass test group here
-
+					for (auto& ev: events) {
+						cHitCounter += fillSCurves( pBoard, ev, cValue, pTGrpId ); //pass test group here
 						cN++;
-
-						if ( cN <= fEventsPerPoint )
-							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						else break;
 					}
 					cNthAcq++;
-				} // done with this acquisition
+				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
 
 				if ( pOffset ) std::cout << "Offset " << int( cValue ) << " Hits: " << cHitCounter << std::endl;

@@ -20,7 +20,7 @@ Channel::~Channel()
 double Channel::getPedestal() const
 {
 
-	if ( fFit != NULL )
+	if ( fFit != nullptr )
 		return fabs( fFit->GetParameter( 0 ) );
 	else return -1;
 }
@@ -28,7 +28,7 @@ double Channel::getPedestal() const
 double Channel::getNoise() const
 {
 
-	if ( fFit != NULL )
+	if ( fFit != nullptr )
 		// return fabs( fFit->GetParError( 0 ) );
 		return fabs( fFit->GetParameter( 1 ) );
 
@@ -74,7 +74,7 @@ void Channel::fillHist( uint8_t pVcth )
 void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TString pParameter, TFile* pResultfile )
 {
 
-	if ( fScurve != NULL && fFit != NULL )
+	if ( fScurve != nullptr && fFit != nullptr )
 	{
 
 		// Normalize first
@@ -152,8 +152,8 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 void Channel::resetHist()
 {
 
-	// fScurve = NULL;
-	// fFit = NULL;
+	// fScurve = nullptr;
+	// fFit = nullptr;
 
 }
 
@@ -170,7 +170,7 @@ TestGroup::TestGroup( uint8_t pShelveId, uint8_t pBeId, uint8_t pFeId, uint8_t p
 
 TestGroupGraph::TestGroupGraph()
 {
-	fVplusVcthGraph = NULL;
+	fVplusVcthGraph = nullptr;
 }
 
 
@@ -186,7 +186,7 @@ TestGroupGraph::TestGroupGraph( uint8_t pBeId, uint8_t pFeId, uint8_t pCbcId, ui
 void TestGroupGraph::FillVplusVcthGraph( uint8_t& pVplus, double pPedestal, double pNoise )
 {
 
-	if ( fVplusVcthGraph != NULL )
+	if ( fVplusVcthGraph != nullptr )
 	{
 		fVplusVcthGraph->SetPoint( fVplusVcthGraph->GetN(), pPedestal, pVplus );
 		fVplusVcthGraph->SetPointError( fVplusVcthGraph->GetN() - 1, pNoise, 0 );

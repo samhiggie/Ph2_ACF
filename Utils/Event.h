@@ -49,6 +49,7 @@ namespace Ph2_HwInterface
 		uint32_t fEventCount;           /*!< Event Counter */
 		uint32_t fEventCountCBC;        /*!< Cbc Event Counter */
 		uint32_t fTDC;                  /*!< TDC value*/
+
       	        std::vector<uint8_t> fEventData;
 
 	  public:
@@ -103,7 +104,7 @@ namespace Ph2_HwInterface
 		 */
 	        int SetEvent( const std::vector<uint8_t>& list );
 		/*! \brief Get raw data */
-	        const std::vector<unsigned char>& GetEventData() const {
+	        const std::vector<uint8_t>& GetEventData() const {
 		      return fEventData;
 		}
 		/*! \brief Get the event size in bytes */

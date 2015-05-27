@@ -130,7 +130,7 @@ namespace Ph2_System
                 const Event* GetEvent( const BeBoard* pBoard, int i ) const {
                      return fBeBoardInterface->GetEvent( pBoard, i );
                 }	
-	        const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) {
+	        const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const {
                      return fBeBoardInterface->GetEvents( pBoard );
                 }
 
