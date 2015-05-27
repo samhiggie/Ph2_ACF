@@ -237,16 +237,6 @@ namespace Ph2_HwInterface
 		}
 		return os.str();
 	}
-#if 0
-	std::string Event::BitString( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const
-	{
-		std::ostringstream os;
-		for ( uint32_t i = 0; i < pWidth; i++ )
-			os << Bit( pFeId, pCbcId, i + pOffset );
-
-		return os.str();
-	}
-#endif
 	std::vector<bool> Event::BitVector( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const
 	{
 	        std::vector< uint8_t > cbcData;
@@ -262,18 +252,6 @@ namespace Ph2_HwInterface
 		}
 		return blist;
 	}
-#if 0
-	std::vector<bool> Event::BitVector( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const
-	{
-		std::vector<bool> tmp;
-
-		for ( uint32_t i = 0; i < pWidth; i++ )
-			tmp.push_back( Bit( pFeId, pCbcId, i + pOffset ) );
-
-		return tmp;
-	}
-#endif
- 
 	std::string Event::DataBitString( uint8_t pFeId, uint8_t pCbcId ) const
 	{
 		return BitString( pFeId, pCbcId, OFFSET_CBCDATA, WIDTH_CBCDATA );
@@ -284,6 +262,25 @@ namespace Ph2_HwInterface
 	{
 		return BitVector( pFeId, pCbcId, OFFSET_CBCDATA, WIDTH_CBCDATA );
 	}
+ 
+        std::vector<bool> Event::DataBitVector( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const
+        {
+	        uint32_t pOffset = OFFSET_CBCDATA;
+
+	        std::vector< uint8_t > cbcData;
+                GetCbcEvent( pFeId, pCbcId, cbcData);
+
+		std::vector<bool> blist;
+		for ( auto i:  channelList ) {
+		        uint32_t pos = i + pOffset;
+		        uint32_t cByteP = pos / 8;
+		        uint32_t cBitP = pos % 8;
+                        if ( cByteP >= cbcData.size() ) break;
+		        blist.push_back(cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ));
+		}
+		return blist;
+        }
+
 
 
 #if 0

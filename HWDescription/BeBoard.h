@@ -63,8 +63,8 @@ namespace Ph2_HwDescription
 		* \brief Destructor
 		*/
 		~BeBoard() {
-			for ( std::vector<Module*>::iterator cModuleIt = fModuleVector.begin(); cModuleIt != fModuleVector.end(); cModuleIt++ )
-				delete *cModuleIt;
+		        for ( auto& pModule: fModuleVector )
+				delete pModule;
 			fModuleVector.clear();
 		}
 

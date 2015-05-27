@@ -166,20 +166,11 @@ void FastCalibration::Validate()
 							if ( cHitProfile == std::end( cProfileMap ) ) std::cout << "Error: could not find the profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
 							else
 							{
-#if 1
 							        const std::vector<bool>& list = ev->DataBitVector(cFe->getFeId(), cCbc->getCbcId());   
 							        int cChannel = 0;    
 							        for (const auto& b: list) {
 							                cHitProfile->second->Fill( cChannel++, ((b)?1:0) );
 							        }
-#endif
-#if 0
-								for ( uint8_t cChannel = 0; cChannel < 254; cChannel++ )
-								{
-									uint32_t cFillValue  = ( ev->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChannel ) )  ? 1 : 0;
-									cHitProfile->second->Fill( cChannel, cFillValue );
-								}
-#endif
 							}
 						}
 					}
@@ -502,7 +493,7 @@ uint32_t FastCalibration::fillSCurves( BeBoard* pBoard,  const Event* pEvent, ui
 			CbcChannelMap::iterator cChanVec = fCbcChannelMap.find( cCbc );
 			if ( cChanVec != fCbcChannelMap.end() )
 			{
-				std::vector<uint8_t> cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
+				const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
 				for ( auto& cChanId : cTestGrpChannelVec )
 				{
 					if ( pEvent->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChanVec->second.at( cChanId ).fChannelId ) )

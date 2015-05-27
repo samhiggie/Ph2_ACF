@@ -375,19 +375,6 @@ namespace Ph2_HwInterface
 	}
 
 
-	const Event* GlibFWInterface::GetNextEvent( const BeBoard* pBoard ) const
-	{
-		return fData->GetNextEvent( pBoard );
-	}
-        const Event* GlibFWInterface::GetEvent( const BeBoard* pBoard, int i ) const
-	{
-	        return fData->GetEvent( pBoard, i );
-	}
-
-        const std::vector<Event*>& GlibFWInterface::GetEvents( const BeBoard* pBoard ) const
-	{
-	        return fData->GetEvents( pBoard );
-	}
 
 
 	//Methods for Cbc's:

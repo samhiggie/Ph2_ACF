@@ -102,10 +102,18 @@ namespace Ph2_HwInterface
 		 * \brief Get next event from data buffer
 		 * \return Next event
 		 */
-		const Event* GetNextEvent( const BeBoard* pBoard ) const override;
-		const Event* GetEvent( const BeBoard* pBoard, int i ) const override;
-	        const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const override;
-
+  	        const Event* GetNextEvent( const BeBoard* pBoard ) const override
+	        {
+		       return fData->GetNextEvent( pBoard );
+	        }
+                const Event* GetEvent( const BeBoard* pBoard, int i ) const override 
+	        {
+	               return fData->GetEvent( pBoard, i );
+	        }
+                const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const override
+ 	        {
+	                return fData->GetEvents( pBoard );
+	        }
 		/*! \brief Read a block of a given size
 		 * \param pRegNode Param Node name
 		 * \param pBlocksize Number of 32-bit words to read

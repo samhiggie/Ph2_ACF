@@ -237,6 +237,7 @@ namespace Ph2_HwInterface
 		 * \return Data Bit vector
 		 */
 		std::vector<bool> DataBitVector( uint8_t pFeId, uint8_t pCbcId ) const;
+	        std::vector<bool> DataBitVector( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const;
 		/*!
 		 * \brief Function to get bit string in hexadecimal format for CBC data
 		 * \param pFeId : FE Id
