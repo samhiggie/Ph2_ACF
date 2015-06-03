@@ -224,8 +224,8 @@ namespace Ph2_HwInterface
 
 	std::string Event::BitString( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const
 	{
-	        std::vector< uint8_t > cbcData;
-                GetCbcEvent( pFeId, pCbcId, cbcData);
+	        std::vector<uint8_t> cbcData;
+                GetCbcEvent( pFeId, pCbcId, cbcData );
 
 		std::ostringstream os;
 		for ( uint32_t i = 0; i < pWidth; ++i ) {
@@ -233,7 +233,7 @@ namespace Ph2_HwInterface
 		        uint32_t cByteP = pos / 8;
 		        uint32_t cBitP = pos % 8;
                         if ( cByteP >= cbcData.size() ) break;
-		        os << (cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ));
+		        os << ((cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ))?"1":"0");
 		}
 		return os.str();
 	}
