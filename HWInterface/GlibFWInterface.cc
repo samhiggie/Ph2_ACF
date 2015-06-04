@@ -284,7 +284,7 @@ namespace Ph2_HwInterface
 		while ( cVal == 0 );
 
 		//break trigger
-		//if ( pBreakTrigger ) WriteReg( BREAK_TRIGGER, 1 );
+		if ( pBreakTrigger ) WriteReg( BREAK_TRIGGER, 1 );
 
 		//Set read mode to SRAM
 		WriteReg( fStrSramUserLogic, 0 );
@@ -309,6 +309,7 @@ namespace Ph2_HwInterface
 		//Wait for the non SRAM full condition ends.
 
 		WriteReg( fStrReadout, 0 );
+		if ( pBreakTrigger ) WriteReg( BREAK_TRIGGER, 0 );
 
 		// just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
 		if ( fData ) delete fData;

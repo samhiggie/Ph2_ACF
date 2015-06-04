@@ -141,7 +141,7 @@ int main( int argc, char* argv[] )
 		{
 			if ( cN > pEventsperVcth ) break;
 			//cSystemController.Run( pBoard, cNthAcq );
-			cSystemController.fBeBoardInterface->ReadData(pBoard, cNthAcq, false);
+			cSystemController.fBeBoardInterface->ReadData(pBoard, cNthAcq, true);
 			const Event* cEvent = cSystemController.fBeBoardInterface->GetNextEvent( pBoard );
 
 			while ( cEvent )
