@@ -142,7 +142,7 @@ int main( int argc, char* argv[] )
 			//cSystemController.Run( pBoard, cNthAcq );
 			cSystemController.fBeBoardInterface->ReadData(pBoard, cNthAcq, false);
 			const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
-
+			if(cN + events.size() >= pEventsperVcth) cSystemController.fBeBoardInterface->Stop(pBoard, cNthAcq);
 			std::cout << " cVcth = " << cVcth << std::endl;
 			for (auto& ev: events)
 			{
@@ -151,7 +151,7 @@ int main( int argc, char* argv[] )
 			}
 			cNthAcq++;
 		}
-		cSystemController.fBeBoardInterface->Stop(pBoard, cNthAcq);
+		// cSystemController.fBeBoardInterface->Stop(pBoard, cNthAcq);
 	}
 }
 
