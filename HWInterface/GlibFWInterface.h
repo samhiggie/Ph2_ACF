@@ -93,8 +93,9 @@ namespace Ph2_HwInterface
 		 * \brief Read data from DAQ
 		 * \param pNthAcq : actual number of acquisitions
 		 * \param pBreakTrigger : if true, enable the break trigger
+		 * \return cNPackets: the number of packets read
 		 */
-		void ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger );
+		uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger );
 		/*!
 		 * \brief Get next event from data buffer
 		 * \return Next event
@@ -116,7 +117,7 @@ namespace Ph2_HwInterface
 
 		bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues );
 
-		void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor);
+		void StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor );
 		//Methods for the Cbc's:
 
 	  private:
@@ -151,8 +152,8 @@ namespace Ph2_HwInterface
 
 		/*! Compute the size of an acquisition data block
 		 * \return Number of 32-bit words to be read at each iteration */
-		uint32_t computeBlockSize(BeBoard* pBoard);
-		
+		uint32_t computeBlockSize( BeBoard* pBoard );
+
 
 	  public:
 
@@ -172,11 +173,13 @@ namespace Ph2_HwInterface
 		 * \param numConfig FPGA configuration number (1 or 2)
 		 * \param pstrFile path to MCS file
 		 */
-		void FlashProm(uint16_t numConfig, const char* pstrFile);
+		void FlashProm( uint16_t numConfig, const char* pstrFile );
 		/*! \brief Is the FPGA being configured ?
 		 * \return FPGA configuring process or NULL if configuration occurs */
-		const FpgaConfig* getConfiguringFpga(){ return fpgaConfig; }
-		void threadAcquisitionLoop(BeBoard* pBoard, HwInterfaceVisitor* visitor);
+		const FpgaConfig* getConfiguringFpga() {
+			return fpgaConfig;
+		}
+		void threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor );
 
 	};
 }

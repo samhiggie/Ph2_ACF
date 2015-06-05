@@ -144,14 +144,14 @@ namespace Ph2_HwInterface
 		 * \param uNbAcq Number of acquisition iterations (each iteration will get CBC_DATA_PACKET_NUMBER + 1 events)
 		 * \param visitor override the visit() method of this object to process each event
 		 */
-		void StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor);
+		void StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor );
 		/*! \brief Stop a running parallel acquisition
 		 */
-		void StopThread( BeBoard* pBoard);
+		void StopThread( BeBoard* pBoard );
 		/*! \brief Get the parallel acquisition iteration number */
-		int getNumAcqThread( BeBoard* pBoard);
+		int getNumAcqThread( BeBoard* pBoard );
 		/*! \brief Is a parallel acquisition running ? */
-		bool isRunningThread( BeBoard* pBoard);
+		bool isRunningThread( BeBoard* pBoard );
 		/*!
 		 * \brief Start a DAQ
 		 * \param pBoard
@@ -178,8 +178,9 @@ namespace Ph2_HwInterface
 		 * \param pBoard
 		 * \param pNthAcq : actual number of acquisitions
 		 * \param pBreakTrigger : if true, enable the break trigger
+		 * \return cNPackets: the number of packets read
 		 */
-		void ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger );
+		uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger );
 		/*!
 		 * \brief Get next event from data buffer
 		 * \param pBoard
@@ -207,12 +208,12 @@ namespace Ph2_HwInterface
 		 * \param numConfig FPGA configuration number to be uploaded
 		 * \param pstrFile path to MCS file containing the FPGA configuration
 		 */
-		void FlashProm( BeBoard* pBoard, uint16_t numConfig, const char* pstrFile);
+		void FlashProm( BeBoard* pBoard, uint16_t numConfig, const char* pstrFile );
 		/*! \brief Current FPGA configuration
 		 * \param pBoard pointer to a board description
 		 * \return const pointer to an FPGA uploading process. NULL means that no upload is been processed.
 		 */
-		const FpgaConfig* getConfiguringFpga(BeBoard* pBoard);
+		const FpgaConfig* getConfiguringFpga( BeBoard* pBoard );
 
 	};
 }

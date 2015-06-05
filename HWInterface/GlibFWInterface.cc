@@ -258,7 +258,7 @@ namespace Ph2_HwInterface
 		WriteReg( BREAK_TRIGGER, 0 );
 	}
 
-	void GlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
+	uint32_t GlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
 	{
 		//Readout settings
 		std::chrono::milliseconds cWait( 1 );
@@ -317,6 +317,7 @@ namespace Ph2_HwInterface
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
 		fData->Set( &cData , cNPackets );
+		return cNPackets;
 	}
 	/** compute the block size according to the number of CBC's on this board
 	 * this will have to change with a more generic FW */ 

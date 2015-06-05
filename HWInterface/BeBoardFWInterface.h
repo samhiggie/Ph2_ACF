@@ -73,8 +73,10 @@ namespace Ph2_HwInterface
 		virtual void getBoardInfo();
 
 		//These two methods will be implemented soon
-		virtual void FlashProm(uint16_t numConfig, const char* pstrFile) {}
-		virtual const FpgaConfig* getConfiguringFpga(){ return NULL; }
+		virtual void FlashProm( uint16_t numConfig, const char* pstrFile ) {}
+		virtual const FpgaConfig* getConfiguringFpga() {
+			return NULL;
+		}
 		virtual void ProgramCdce() {}
 
 		//Encode/Decode Cbc values
@@ -119,14 +121,16 @@ namespace Ph2_HwInterface
 		 * \param uNbAcq Number of acquisition iterations (each iteration will get CBC_DATA_PACKET_NUMBER + 1 events)
 		 * \param visitor override the visit() method of this object to process each event
 		 */
-		virtual void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) = 0;
+		virtual void StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) = 0;
 		/*! \brief Stop a running parallel acquisition
 		 */
 		virtual void StopThread();
 		/*! \brief Get the parallel acquisition iteration number */
 		int getNumAcqThread();
 		/*! \brief Is a parallel acquisition running ? */
-		bool isRunningThread() const {return runningAcquisition;}
+		bool isRunningThread() const {
+			return runningAcquisition;
+		}
 		/*!
 		 * \brief Start a DAQ
 		 */
@@ -149,8 +153,9 @@ namespace Ph2_HwInterface
 		 * \param pBoard
 		 * \param pNthAcq : actual number of acquisitions
 		 * \param pBreakTrigger : if true, enable the break trigger
+		 * \return cNPackets: the number of packets read
 		 */
-		virtual void ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger ) = 0;
+		virtual uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger ) = 0;
 		/*!
 		 * \brief Get next event from data buffer
 		 * \return Next event
@@ -165,7 +170,7 @@ namespace Ph2_HwInterface
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-	protected:
+	  protected:
 
 		bool runningAcquisition;
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
