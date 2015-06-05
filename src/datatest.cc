@@ -22,14 +22,15 @@ using namespace Ph2_System;
 using namespace CommandLineProcessing;
 
 //Class used to process events acquired by a parallel acquisition
-class AcqVisitor: public HwInterfaceVisitor{
+class AcqVisitor: public HwInterfaceVisitor
+{
 	int cN;
-public:
-	AcqVisitor(){
-		cN=0;
+  public:
+	AcqVisitor() {
+		cN = 0;
 	}
 	//void init(std::ofstream* pfSave, bool bText);
-	virtual void visit ( const Ph2_HwInterface::Event& pEvent ){
+	virtual void visit( const Ph2_HwInterface::Event& pEvent ) {
 		cN++;
 		std::cout << ">>> Event #" << cN << std::endl;
 		std::cout << pEvent << std::endl;
@@ -60,7 +61,7 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC.");
+	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC." );
 	cmd.defineOptionAlternative( "ignoreI2c", "i" );
 
 	cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
@@ -91,7 +92,7 @@ int main( int argc, char* argv[] )
 	t.start();
 
 	cSystemController.InitializeHw( cHWFile );
-	cSystemController.ConfigureHw(std::cout, cmd.foundOption("ignoreI2c"));
+	cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
 
 	t.stop();
 	t.show( "Time to Initialize/configure the system: " );
@@ -120,17 +121,20 @@ int main( int argc, char* argv[] )
 	}
 
 	BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
-	if (cmd.foundOption("parallel")){
-		uint32_t nbPacket=pBoard->getReg(CBC_PACKET_NB), nbAcq = pEventsperVcth/(nbPacket+1) + (pEventsperVcth%(nbPacket+1)!=0 ? 1 : 0);
-		std::cout<<"Packet number="<<nbPacket<<", Nb events="<<pEventsperVcth<<" -> Nb acquisition iterations="<<nbAcq<<std::endl;
+	if ( cmd.foundOption( "parallel" ) )
+	{
+		uint32_t nbPacket = pBoard->getReg( CBC_PACKET_NB ), nbAcq = pEventsperVcth / ( nbPacket + 1 ) + ( pEventsperVcth % ( nbPacket + 1 ) != 0 ? 1 : 0 );
+		std::cout << "Packet number=" << nbPacket << ", Nb events=" << pEventsperVcth << " -> Nb acquisition iterations=" << nbAcq << std::endl;
 
 		AcqVisitor visitor;
-		std::cout<<"Press Enter to start the acquisition, press Enter again to stop it."<<std::endl;
+		std::cout << "Press Enter to start the acquisition, press Enter again to stop it." << std::endl;
 		std::cin.ignore();
-		cSystemController.fBeBoardInterface->StartThread(pBoard, nbAcq, &visitor);
+		cSystemController.fBeBoardInterface->StartThread( pBoard, nbAcq, &visitor );
 		std::cin.ignore();
-		cSystemController.fBeBoardInterface->StopThread(pBoard);
-	} else {
+		cSystemController.fBeBoardInterface->StopThread( pBoard );
+	}
+	else
+	{
 
 		// make event counter start at 1 as does the L1A counter
 		uint32_t cN = 1;
@@ -141,7 +145,9 @@ int main( int argc, char* argv[] )
 		{
 			if ( cN > pEventsperVcth ) break;
 			//cSystemController.Run( pBoard, cNthAcq );
-			cSystemController.fBeBoardInterface->ReadData(pBoard, cNthAcq, true);
+			uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+			std::cout << cPacketSize << " " << cN << " " << cN + cPacketSize << " " << pEventsperVcth << std::endl;
+			if ( cN + cPacketSize >= pEventsperVcth ) cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
 			const Event* cEvent = cSystemController.fBeBoardInterface->GetNextEvent( pBoard );
 
 			while ( cEvent )
@@ -159,7 +165,7 @@ int main( int argc, char* argv[] )
 			}
 			cNthAcq++;
 		}
-		cSystemController.fBeBoardInterface->Stop(pBoard, cNthAcq);
+		// cSystemController.fBeBoardInterface->Stop(pBoard, cNthAcq);
 	}
 
 }
