@@ -157,10 +157,9 @@ void FastCalibration::Validate()
 				// Loop over Events from this Acquisition
 				for (auto& ev: events) {
 					uint32_t cHitCounter = 0;
-					for ( auto cFe : pBoard->fModuleVector )
+					for ( auto& cFe : pBoard->fModuleVector )
 					{
-
-						for ( auto cCbc : cFe->fCbcVector )
+						for ( auto& cCbc : cFe->fCbcVector )
 						{
 							auto cHitProfile = cProfileMap.find( cCbc );
 							if ( cHitProfile == std::end( cProfileMap ) ) std::cout << "Error: could not find the profile for CBC " << int( cCbc->getCbcId() ) << std::endl;

@@ -68,22 +68,15 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 
 				while ( cN <= fNevents )
 				{
-					if ( cN > fNevents ) break;
 					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					while ( cEvent )
+					for (auto& cEvent: events)
 					{
-						if ( cN > fNevents )
-							break;
 						for ( auto cFe : pBoard->fModuleVector )
 							cNHits += countHits( cFe, cEvent, "module_latency", cLat );
 						cN++;
-
-						if ( cN < fNevents )
-							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						else break;
 					}
 					cNthAcq++;
 				}
@@ -157,24 +150,17 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency( uint8_t pStartLatency
 
 				while ( cN <= fNevents )
 				{
-					if ( cN > fNevents ) break;
 					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// if(cN <3 ) std::cout << *cEvent << std::endl;
 
 					// Loop over Events from this Acquisition
-					while ( cEvent )
+					for (auto& cEvent: events)
 					{
-						if ( cN > fNevents )
-							break;
 						for ( auto cFe : pBoard->fModuleVector )
 							cNStubs += countStubs( cFe, cEvent, "module_stub_latency", cLat );
 						cN++;
-
-						if ( cN < fNevents )
-							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						else break;
 					}
 					cNthAcq++;
 				}
@@ -195,7 +181,7 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency( uint8_t pStartLatency
 
 	for ( auto cFe : fModuleHistMap )
 	{
-		TH1F* cTmpHist = ( TH1F* )getHist( cFe.first, "module_stub_latency" );
+	        TH1F* cTmpHist = dynamic_cast<TH1F*>(getHist( cFe.first, "module_stub_latency" ));
 		uint8_t cStubLatency =  static_cast<uint8_t>( cTmpHist->GetMaximumBin() - 1 );
 		cStubLatencyMap[cFe.first] = cStubLatency;
 
@@ -246,8 +232,8 @@ void Commissioning::ScanThreshold( bool pScanPedestal )
 		else cCanvas->second->cd();
 
 		// get the SCurve with internal & external trigger
-		TH1F* cTmpHist_ext = ( TH1F* )getHist( cFe.first, "module_threshold_ext" );
-		if ( pScanPedestal ) TH1F* cTmpHist_int = ( TH1F* )getHist( cFe.first, "module_threshold_int" );
+		TH1F* cTmpHist_ext = dynamic_cast<TH1F*>(getHist( cFe.first, "module_threshold_ext" ));
+		if ( pScanPedestal ) TH1F* cTmpHist_int = dynamic_cast<TH1F*>(getHist( cFe.first, "module_threshold_int" ));
 
 		// subtract
 
@@ -300,7 +286,7 @@ int Commissioning::countHits( Module* pFe,  const Event* pEvent, std::string pHi
 	int cHitCounter = 0;
 
 	//  get histogram to fill
-	TH1F* cTmpHist = ( TH1F* )getHist( pFe, pHistName );
+	TH1F* cTmpHist = dynamic_cast<TH1F*>(getHist( pFe, pHistName ));
 
 	for ( auto cCbc : pFe->fCbcVector )
 	{
@@ -322,7 +308,7 @@ int Commissioning::countStubs( Module* pFe,  const Event* pEvent, std::string pH
 	int cStubCounter = 0;
 
 	//  get histogram to fill
-	TH1F* cTmpHist = ( TH1F* )getHist( pFe, pHistName );
+	TH1F* cTmpHist = dynamic_cast<TH1F*>(getHist( pFe, pHistName ));
 
 	for ( auto cCbc : pFe->fCbcVector )
 	{
@@ -344,17 +330,17 @@ void Commissioning::updateHists( std::string pHistName, bool pFinal )
 		// maybe need to declare temporary pointers outside the if condition?
 		if ( pHistName == "module_latency" )
 		{
-			TH1F* cTmpHist = ( TH1F* )getHist( cCanvas.first, pHistName );
+		        TH1F* cTmpHist = dynamic_cast<TH1F*>(getHist( cCanvas.first, pHistName ));
 			cTmpHist->Draw( "same" );
 		}
 		else if ( pHistName == "module_stub_latency" )
 		{
-			TH1F* cTmpHist = ( TH1F* )getHist( cCanvas.first, pHistName );
+		        TH1F* cTmpHist = dynamic_cast<TH1F*>(getHist( cCanvas.first, pHistName ));
 			cTmpHist->Draw( "same" );
 		}
 		else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
 		{
-			TH1F* cTmpHist = ( TH1F* )getHist( cCanvas.first, pHistName );
+		        TH1F* cTmpHist = dynamic_cast<TH1F*>(getHist( cCanvas.first, pHistName ));
 			cTmpHist->Draw( "P same" );
 
 			if ( pFinal )
@@ -470,25 +456,19 @@ void Commissioning::measureScurve( std::string pHistName, uint32_t pNEvents )
 
 				while ( cN <=  pNEvents )
 				{
-					if ( cN > pNEvents ) break;
 					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 
-					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					while ( cEvent )
+					for (auto& cEvent: events )
 					{
-						if ( cN > pNEvents )
-							break;
 
 						for ( auto cFe : pBoard->fModuleVector )
 							cHitCounter += countHits( cFe, cEvent, pHistName, static_cast<uint8_t>( cVcth ) );
 
 						cN++;
 
-						if ( cN < pNEvents )
-							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						else break;
 					}
 					cNthAcq++;
 				}

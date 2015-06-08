@@ -56,32 +56,25 @@ void CMTester::ScanNoiseChannels()
 
 			while ( cN <=  cTotalEvents )
 			{
-				// Run( pBoard, cNthAcq );
-				if ( cN > cTotalEvents ) break;
 				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 				// Loop over Events from this Acquisition
-				while ( cEvent )
+				for (auto& cEvent: events) 
 				{
-
-					if ( cN > cTotalEvents )
-						break;
-
-					for ( auto& cFe : pBoard->fModuleVector )
+				        for ( auto& cFe : pBoard->fModuleVector )
 					{
 						for ( auto& cCbc : cFe->fCbcVector )
 						{
 							// just re-use the hitprobability histogram here?
 							// this has to go into a dedicated method
-							TProfile* cNoiseStrips = ( TProfile* ) getHist( cCbc, "hitprob" );
+						        TProfile* cNoiseStrips = dynamic_cast<TProfile*>(getHist( cCbc, "hitprob" ));
 
-							for ( int cChan = 0; cChan < 254; cChan++ )
-							{
-								int fillvalue = 0;
-								if ( cEvent->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChan ) ) fillvalue = 1;
-								cNoiseStrips->Fill( cChan, fillvalue );
-
+							const std::vector<bool>& list = cEvent->DataBitVector(cFe->getFeId(), cCbc->getCbcId());   
+                                                        int cChan = 0;
+							for (const auto& b: list) {
+							      int fillvalue = ( b ) ? 1 : 0;
+							      cNoiseStrips->Fill( cChan++, fillvalue );
 							}
 						}
 					}
@@ -91,10 +84,6 @@ void CMTester::ScanNoiseChannels()
 						std::cout << "Acquired " << cN << " Events for Noise Strip Scan!" << std::endl;
 
 					cN++;
-
-					if ( cN <= cTotalEvents )
-						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-					else break;
 				}
 				cNthAcq++;
 			} // End of Analyze Events of last Acquistion loop
@@ -106,7 +95,7 @@ void CMTester::ScanNoiseChannels()
 	for ( const auto& cCbc : fCbcHistoMap )
 	{
 
-		TProfile* cNoiseStrips = ( TProfile* ) getHist( cCbc.first,  "hitprob" );
+	        TProfile* cNoiseStrips = dynamic_cast<TProfile*>( getHist( cCbc.first,  "hitprob" ) );
 
 		auto cNoiseSet  =  fNoiseStripMap.find( cCbc.first );
 		if ( cNoiseSet == std::end( fNoiseStripMap ) ) std::cerr << " Error: Could not find noisy strip container for CBC " << int( cCbc.first->getCbcId() ) << std::endl;
@@ -150,19 +139,13 @@ void CMTester::TakeData()
 			while ( cN <=  fNevents )
 			{
 				// Run( pBoard, cNthAcq );
-				if ( cN > fNevents ) break;
 				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 				// Loop over Events from this Acquisition
 
-				while ( cEvent )
-					// while ( cN < fNevents )
+				for (auto& cEvent: events)
 				{
-
-					if ( cN > fNevents )
-						break;
-
 					analyze( pBoard, cEvent );
 
 					if ( cN % 100 == 0 )
@@ -172,10 +155,6 @@ void CMTester::TakeData()
 					}
 
 					cN++;
-
-					if ( cN <= fNevents )
-						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-					else break;
 				}
 				cNthAcq++;
 			} // End of Analyze Events of last Acquistion loop
@@ -197,9 +176,9 @@ void CMTester::FinishRun()
 	for ( auto cCbc : fCbcHistoMap )
 	{
 
-		TH1F* cTmpNHits = ( TH1F* )getHist( cCbc.first, "nhits" );
-		TH1F* cNoCM = ( TH1F* )getHist( cCbc.first, "nocm" );
-		TF1* cNHitsFit = ( TF1* )getHist( cCbc.first, "nhitsfit" );
+	        TH1F* cTmpNHits = dynamic_cast<TH1F*>(getHist( cCbc.first, "nhits" ));
+	        TH1F* cNoCM = dynamic_cast<TH1F*>(getHist( cCbc.first, "nocm" ));
+		TF1* cNHitsFit = dynamic_cast<TF1*>(getHist( cCbc.first, "nhitsfit" ));
 
 		// here I need the number of active channels which i can get from the noise strip set
 		auto cNoiseStrips = fNoiseStripMap.find( cCbc.first );
@@ -210,10 +189,10 @@ void CMTester::FinishRun()
 		createNoiseDistribution( cNoCM, cNHitsFit->GetParameter( 0 ), 0, cNHitsFit->GetParameter( 2 ), cNHitsFit->GetParameter( 3 ) );
 
 		// now compute the correlation coefficient and the uncorrelated probability
-		TProfile2D* cTmpOccProfile = ( TProfile2D* )getHist( cCbc.first, "combinedoccupancy" );
-		TProfile* cUncorrHitProb = ( TProfile* ) getHist( cCbc.first, "uncorr_occupancyprojection" );
-		TH2F* cCorrelation2D = ( TH2F* ) getHist( cCbc.first, "correlation" );
-		TProfile* cCorrProjection = ( TProfile* ) getHist( cCbc.first,  "correlationprojection" );
+		TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*>(getHist( cCbc.first, "combinedoccupancy" ));
+		TProfile* cUncorrHitProb = dynamic_cast<TProfile*> (getHist( cCbc.first, "uncorr_occupancyprojection" ));
+		TH2F* cCorrelation2D = dynamic_cast<TH2F*>(getHist( cCbc.first, "correlation" ));
+		TProfile* cCorrProjection = dynamic_cast<TProfile*> (getHist( cCbc.first,  "correlationprojection" ));
 
 
 		for ( int cIdx = 0; cIdx < cTmpOccProfile->GetNbinsX(); cIdx++ )
@@ -243,10 +222,10 @@ void CMTester::FinishRun()
 		TString cName = Form( "FE%d", cFe.first->getFeId() );
 
 		// get histograms
-		TProfile2D* cTmpOccProfile = ( TProfile2D* )getHist( cFe.first, "module_combinedoccupancy" );
-		TProfile* cUncorrHitProb = ( TProfile* ) getHist( cFe.first, "module_uncorr_occupancyprojection" );
-		TH2F* cCorrelation2D = ( TH2F* ) getHist( cFe.first, "module_correlation" );
-		TProfile* cCorrProjection = ( TProfile* ) getHist( cFe.first,  "module_correlationprojection" );
+		TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*>(getHist( cFe.first, "module_combinedoccupancy" ));
+		TProfile* cUncorrHitProb = dynamic_cast<TProfile*>( getHist( cFe.first, "module_uncorr_occupancyprojection" ) );
+		TH2F* cCorrelation2D = dynamic_cast<TH2F*>(getHist( cFe.first, "module_correlation" ));
+		TProfile* cCorrProjection = dynamic_cast<TProfile*>( getHist( cFe.first,  "module_correlationprojection" ));
 
 		for ( int cIdx = 0; cIdx < cTmpOccProfile->GetNbinsX(); cIdx++ )
 		{
@@ -333,10 +312,10 @@ void CMTester::analyze( BeBoard* pBoard, const Event* pEvent )
 
 			// here loop over the channels and fill the histograms
 			// dont forget to get them first
-			TH1F* cTmpNHits = ( TH1F* )getHist( cCbc, "nhits" );
-			TProfile* cTmpHitProb = ( TProfile* ) getHist( cCbc, "hitprob" );
-			TProfile2D* cTmpOccProfile = ( TProfile2D* )getHist( cCbc, "combinedoccupancy" );
-			TProfile* cTmpCombinedOcc = ( TProfile* )getHist( cCbc, "occupancyprojection" );
+		        TH1F* cTmpNHits = dynamic_cast<TH1F*>(getHist( cCbc, "nhits" ));
+		        TProfile* cTmpHitProb = dynamic_cast<TProfile*>( getHist( cCbc, "hitprob" ));
+		        TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*>(getHist( cCbc, "combinedoccupancy" ));
+			TProfile* cTmpCombinedOcc = dynamic_cast<TProfile*>(getHist( cCbc, "occupancyprojection" ));
 
 			int cNHits = 0;
 
@@ -390,8 +369,8 @@ void CMTester::analyze( BeBoard* pBoard, const Event* pEvent )
 		}
 
 		// Here deal with per-module Histograms
-		TProfile2D* cTmpOccProfile = ( TProfile2D* )getHist( cFe,  "module_combinedoccupancy" );
-		TProfile* cTmpCombinedOcc = ( TProfile* )getHist( cFe, "module_occupancyprojection" );
+		TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*>(getHist( cFe,  "module_combinedoccupancy" ));
+		TProfile* cTmpCombinedOcc = dynamic_cast<TProfile*>(getHist( cFe, "module_occupancyprojection" ));
 
 		uint32_t cChanCt1 = 0;
 
@@ -426,9 +405,9 @@ void CMTester::updateHists( bool pFinal )
 		if ( cCanvas == fCanvasMap.end() ) std::cout << "Error: could not find the canvas for Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
 		else
 		{
-			TH1F* cTmpNHits = ( TH1F* )getHist( cCbc.first, "nhits" );
-			TProfile2D* cTmpOccProfile = ( TProfile2D* )getHist( cCbc.first, "combinedoccupancy" );
-			TProfile* cTmpCombinedOcc = ( TProfile* )getHist( cCbc.first, "occupancyprojection" );
+		        TH1F* cTmpNHits = dynamic_cast<TH1F*>(getHist( cCbc.first, "nhits" ));
+		        TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*>(getHist( cCbc.first, "combinedoccupancy" ));
+		        TProfile* cTmpCombinedOcc = dynamic_cast<TProfile*>(getHist( cCbc.first, "occupancyprojection" ));
 			TProfile* cUncorrHitProb;
 			TH1F* cNoCM;
 			TF1* cCMFit;
@@ -437,10 +416,10 @@ void CMTester::updateHists( bool pFinal )
 
 			if ( pFinal )
 			{
-				cUncorrHitProb = ( TProfile* ) getHist( cCbc.first, "uncorr_occupancyprojection" );
-				cNoCM = ( TH1F* )getHist( cCbc.first, "nocm" );
-				cCMFit = ( TF1* )getHist( cCbc.first, "nhitsfit" );
-				cCorrProjection = ( TProfile* ) getHist( cCbc.first,  "correlationprojection" );
+			        cUncorrHitProb = dynamic_cast<TProfile*>(getHist( cCbc.first, "uncorr_occupancyprojection" ));
+			        cNoCM = dynamic_cast<TH1F*>(getHist( cCbc.first, "nocm" ));
+			        cCMFit = dynamic_cast<TF1*>(getHist( cCbc.first, "nhitsfit" ));
+			        cCorrProjection = dynamic_cast<TProfile*>(getHist( cCbc.first,  "correlationprojection" ));
 			}
 			// Get the 4 things I want to draw and draw it!
 			// 1. NHits
