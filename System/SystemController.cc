@@ -172,7 +172,7 @@ namespace Ph2_System
 					if ( static_cast<std::string>( cModuleNode.name() ) == "Module" )
 					{
 						bool cStatus = cModuleNode.attribute( "Status" ).as_bool();
-						std::cout << cStatus << std::endl;
+						//std::cout << cStatus << std::endl;
 						if ( cStatus )
 						{
 							os << BOLDCYAN << "|" << "	" << "|" << "----" << cModuleNode.name() << "  " << cModuleNode.first_attribute().name() << " :" << cModuleNode.attribute( "ModuleId" ).value() << RESET << std:: endl;

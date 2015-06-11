@@ -174,7 +174,7 @@ namespace Ph2_HwInterface
                 GetCbcEvent( pFeId, pCbcId, vTemp);
                 if ( cByteP >= vTemp.size() ) return 0;  
 		//return ( vTemp[cByteP] & ( 1 << ( 7 - cBitP ) ) );
-		return ( (vTemp[cByteP] >> ( 7 - cBitP ) & 0x1 ) );
+		return ( (vTemp[cByteP] >> ( 7 - cBitP )) & 0x1 );
 	}
 
 
@@ -235,7 +235,7 @@ namespace Ph2_HwInterface
 		        uint32_t cBitP = pos % 8;
                         if ( cByteP >= cbcData.size() ) break;
 		        //os << ((cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ))?"1":"0");
-                        os << ( (cbcData[cByteP] >> ( 7 - cBitP ) & 0x1 )); 
+                        os << ( (cbcData[cByteP] >> ( 7 - cBitP )) & 0x1 ); 
 		}
 		return os.str();
 	}
@@ -251,7 +251,7 @@ namespace Ph2_HwInterface
 		        uint32_t cBitP = pos % 8;
                         if ( cByteP >= cbcData.size() ) break;
 		        //blist.push_back(cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ));
-		        blist.push_back((cbcData[cByteP] >> ( 7 - cBitP ) & 0x1 ));
+		        blist.push_back((cbcData[cByteP] >> ( 7 - cBitP )) & 0x1 );
 		}
 		return blist;
 	}
@@ -279,7 +279,8 @@ namespace Ph2_HwInterface
 		        uint32_t cByteP = pos / 8;
 		        uint32_t cBitP = pos % 8;
                         if ( cByteP >= cbcData.size() ) break;
-		        blist.push_back(cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ));
+		        blist.push_back((cbcData[cByteP] >> ( 7 - cBitP )) & 0x1 );
+		        //blist.push_back(cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ));
 		}
 		return blist;
         }
