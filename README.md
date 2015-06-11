@@ -62,12 +62,12 @@ On this Repo, you can find different version of the software :
 - 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading. 
     - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog. 
     - BeBoardInterface::FlashProm(...) uploads an MCS file into the FPGA
-- 15/04/15 : Acquisition in a separate thread
+- 15/04/15 : Acquisition in a separate thread (v1-11)
     - Start() should be called when acquisition begins, Stop() when it ends and ReadData(...) at each iteration.
     - New functions BeBoardInterface::StartThread, StopThread, getNumAcqThread, isRunningThread. Abstract class HwInterfaceVisitor.
     - datatest -p option to perform an acquisition in a separate thread
     - datatest -i option to ignore CBC configuration. Can be run on a bare GLIB board without CBC
-- 07/05/15: merged Commissioning branch:
+- 07/05/15: merged Commissioning branch (v1-12)
     - contains class for Commissioning: latency scan, threshold scan, stub latency scan
     - some additions to the Utils/CommonVisitors
     - added a stub bit method to the Event class
