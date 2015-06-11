@@ -72,6 +72,8 @@ On this Repo, you can find different version of the software :
     - some additions to the Utils/CommonVisitors
     - added a stub bit method to the Event class
     - restructured the ostream operator of the Event class
+- 05/06/2015: minor modifications
+    - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks. 
 
 
 ### Setup
