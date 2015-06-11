@@ -19,7 +19,7 @@ namespace Ph2_HwInterface
 {
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		BeBoardFWInterface( puHalConfigFileName, pBoardId )
+	       BeBoardFWInterface( puHalConfigFileName, pBoardId ), fData(nullptr)
 	{
 
 	}
@@ -316,7 +316,7 @@ namespace Ph2_HwInterface
 		fData = new Data();
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
-		fData->Set( &cData , cNPackets );
+		fData->Set( pBoard, cData , cNPackets );
 		return cNPackets;
 	}
 	/** compute the block size according to the number of CBC's on this board
@@ -377,17 +377,6 @@ namespace Ph2_HwInterface
 	}
 
 
-	const Event* GlibFWInterface::GetNextEvent( const BeBoard* pBoard )
-	{
-		return fData->GetNextEvent( pBoard );
-	}
-
-
-	const char* GlibFWInterface::GetBuffer( uint32_t& pBufSize ) const
-	{
-		return fData->GetBuffer( pBufSize );
-	}
-
 
 	//Methods for Cbc's:
 
@@ -415,7 +404,7 @@ namespace Ph2_HwInterface
 			Start( );
 			cBlockSize = computeBlockSize(pBoard);
 			while (runningAcquisition && (nbMaxAcq==0 || numAcq<nbMaxAcq)) {
-				ReadData( NULL, numAcq, true );
+				ReadData( nullptr, numAcq, true );
 				for (const Ph2_HwInterface::Event *cEvent = GetNextEvent( pBoard ); cEvent; cEvent = GetNextEvent( pBoard ))
 					visitor->visit(*cEvent);
 				

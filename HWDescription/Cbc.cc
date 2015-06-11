@@ -131,7 +131,7 @@ namespace Ph2_HwDescription
 			std::set<CbcRegPair, RegItemComparer> fSetRegItem;
 
 			for ( auto& it : fRegMap )
-				fSetRegItem.insert( std::make_pair( it.first, it.second ) );
+			        fSetRegItem.insert( {it.first, it.second} );
 
 			for ( const auto& v: fSetRegItem )
 			{

@@ -121,7 +121,7 @@ int main( int argc, char* argv[] )
 		std::string cRegName = (boost::format("Channel%03d")%cChannel ).str();
 		uint8_t cRegValue = 0x50;
 
-		std::pair<std::string, uint8_t> cRegPair = std::make_pair( cRegName, cRegValue );
+		std::pair<std::string, uint8_t> cRegPair = { cRegName, cRegValue };
 		cRegVec.push_back( cRegPair );
 	}
 

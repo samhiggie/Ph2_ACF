@@ -24,8 +24,8 @@ namespace Ph2_System
 
 	SystemController::~SystemController()
 	{
-		for ( std::vector<Shelve*>::iterator cShelveIt = fShelveVector.begin(); cShelveIt != fShelveVector.end(); cShelveIt++ )
-			delete *cShelveIt;
+	        for ( auto& el: fShelveVector )
+			delete el;
 		fShelveVector.clear();
 	}
 
@@ -172,7 +172,7 @@ namespace Ph2_System
 					if ( static_cast<std::string>( cModuleNode.name() ) == "Module" )
 					{
 						bool cStatus = cModuleNode.attribute( "Status" ).as_bool();
-						std::cout << cStatus << std::endl;
+						//std::cout << cStatus << std::endl;
 						if ( cStatus )
 						{
 							os << BOLDCYAN << "|" << "	" << "|" << "----" << cModuleNode.name() << "  " << cModuleNode.first_attribute().name() << " :" << cModuleNode.attribute( "ModuleId" ).value() << RESET << std:: endl;

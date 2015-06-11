@@ -18,99 +18,59 @@ namespace Ph2_HwInterface
 
 	// copy constructor
         Data::Data( const Data& pD ) :
-	        fBuf( nullptr ),
+
 		// Initialise( pD.fNevents );
-		fBufSize( pD.fBufSize ),
 		fNevents( pD.fNevents ),
 		fCurrentEvent(pD.fCurrentEvent ),
 		fNCbc( pD.fNCbc ),
-		fEvent(  pD.fEvent ),
 		fEventSize( pD.fEventSize )
 	{
 	}
 
 
-	void Data::Set( const std::vector<uint32_t>* pData, uint32_t pNevents )
+        void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents )
 	{
+	        Reset();
 
+		std::vector<uint8_t> flist;
+		for ( auto word: pData )
+		{
+		    flist.push_back((word >> 24) & 0xFF);
+		    flist.push_back((word >> 16) & 0xFF);
+		    flist.push_back((word >>  8) & 0xFF);
+		    flist.push_back(word  & 0xFF);
+		}
 		// initialize the buffer data array and the buffer size (one 32 bit word is 4 char!)
-		fBufSize = pData->size() * 4;
 		fNevents = static_cast<uint32_t>( pNevents );
-		fEventSize = static_cast<uint32_t>( fBufSize / fNevents );
+		fEventSize = static_cast<uint32_t>( flist.size() / fNevents );
 		fNCbc = ( fEventSize - ( EVENT_HEADER_TDC_SIZE_CHAR ) ) / ( CBC_EVENT_SIZE_CHAR );
 
 #ifdef __CBCDAQ_DEV__
-		std::cout << "Initializing buffer with " << pData->size() << " 32 bit words and " << fBufSize << " chars containing data from " << fNevents << "  Events with an eventbuffer size of " << fEventSize << " and " << fNCbc << " CBCs each! " << EVENT_HEADER_TDC_SIZE_CHAR << " " << CBC_EVENT_SIZE_CHAR << std::endl;
+		std::cout << "Initializing list with " << flist.size() << ", i.e 4 * " << pData.size()
+			  << " chars containing data from " 
+                          << fNevents << "  Events with an eventbuffer size of " << fEventSize << " and " << fNCbc 
+                          << " CBCs each! " << EVENT_HEADER_TDC_SIZE_CHAR << " " << CBC_EVENT_SIZE_CHAR << std::endl;
 #endif
 
-		//if ( fBuf ) free( fBuf );
-		//fBuf = ( char* )malloc( pData->size() * 4 );
-		if ( fBuf ) delete fBuf;
-		fBuf = new char[ pData->size() * 4 ];
-
-		Reset();
-
-		for ( unsigned int i = 0; i < pData->size(); i++ )
+		// Fill fEventList
+		std::vector<uint8_t> lvec;
+                for (auto i = 0; i < flist.size(); ++i)
 		{
-
-			char  cSwapped[4];
-			uint32_t cVal = pData->at( i );
-			// char buf[4];
-			// buf[0] = pData->at( i ) >> 24;
-			// buf[1] = pData->at( i ) >> 16;
-			// buf[2] = pData->at( i ) >> 8;
-			// buf[3] = pData->at( i );
-			swapByteOrder( ( const char* )  &cVal , cSwapped, 4 );
-
-			for ( int j = 0; j < 4; j++ )
-				fBuf[i * 4 + j] = cSwapped[j];
+                    lvec.push_back(flist[i]);
+                    if ( i > 0 && ((i+1) % fEventSize) == 0 ) 
+		    {
+		        fEventList.push_back(new Event( pBoard, fNCbc, lvec ));
+			lvec.clear(); 
+		    }
 		}
 	}
 
 	void Data::Reset()
 	{
+	        for ( auto pevt: fEventList ) 
+		      delete pevt;
+                fEventList.clear();
 		fCurrentEvent = 0;
-
-		for ( uint32_t i = 0; i < fBufSize; i++ )
-			fBuf[i] = 0;
 	}
-
-
-	void Data::CopyBuffer( const Data& pData )
-	{
-		memcpy( fBuf, pData.fBuf, pData.fBufSize );
-	}
-
-	void Data::swapByteOrder( const char* org, char* swapped, unsigned int nbyte )
-	{
-		swapped[0] = org[3];
-		swapped[1] = org[2];
-		swapped[2] = org[1];
-		swapped[3] = org[0];
-	}
-
-
-	const char* Data::GetBuffer( uint32_t& pBufSize ) const
-	{
-		pBufSize = fBufSize;
-		return fBuf;
-	}
-
-
-	const Event* Data::GetNextEvent( const BeBoard* pBoard )
-	{
-		if ( fCurrentEvent >= fNevents ) return nullptr;
-		else
-		{
-#ifdef __CBCDAQ_DEV__
-			std::cout << "Get Next Event Event " << fCurrentEvent << " and position in buffer " << fCurrentEvent* fEvent->fEventSize << std::endl;
-#endif
-
-			if ( fEvent ) delete fEvent;
-			fEvent = new Event( pBoard, fNCbc, &fBuf[ fCurrentEvent * fEventSize ] );
-			fCurrentEvent++;
-			return fEvent;
-		}
-	}
-
 }
+

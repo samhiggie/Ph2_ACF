@@ -61,7 +61,7 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC." );
+	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC.");
 	cmd.defineOptionAlternative( "ignoreI2c", "i" );
 
 	cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
@@ -143,30 +143,18 @@ int main( int argc, char* argv[] )
 		cSystemController.fBeBoardInterface->Start( pBoard );
 		while ( cN <= pEventsperVcth )
 		{
-			if ( cN > pEventsperVcth ) break;
-			//cSystemController.Run( pBoard, cNthAcq );
 			uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-			std::cout << cPacketSize << " " << cN << " " << cN + cPacketSize << " " << pEventsperVcth << std::endl;
+
 			if ( cN + cPacketSize >= pEventsperVcth ) cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
-			const Event* cEvent = cSystemController.fBeBoardInterface->GetNextEvent( pBoard );
+			const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
 
-			while ( cEvent )
+			for (auto& ev: events)
 			{
-				std::cout << " cVcth = " << cVcth << std::endl;
-				std::cout << ">>> Event #" << cN << std::endl;
-				std::cout << *cEvent << std::endl;
-				if ( cN > pEventsperVcth )
-					break;
-				cN++;
-
-				if ( cN <= pEventsperVcth )
-					cEvent = cSystemController.fBeBoardInterface->GetNextEvent( pBoard );
-				else break;
+				std::cout << ">>> Event #" << cN++ << std::endl;
+				std::cout << *ev << std::endl;
 			}
 			cNthAcq++;
 		}
-		// cSystemController.fBeBoardInterface->Stop(pBoard, cNthAcq);
 	}
-
 }
 

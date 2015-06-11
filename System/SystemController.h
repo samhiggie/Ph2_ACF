@@ -119,6 +119,21 @@ namespace Ph2_System
 
 		}
 
+		/*!
+		 * \brief Get next event from data buffer
+		 * \param pBoard
+		 * \return Next event
+		 */
+	        const Event* GetNextEvent( const BeBoard* pBoard ) {
+		     return fBeBoardInterface->GetNextEvent( pBoard );
+                }    
+                const Event* GetEvent( const BeBoard* pBoard, int i ) const {
+                     return fBeBoardInterface->GetEvent( pBoard, i );
+                }	
+	        const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const {
+                     return fBeBoardInterface->GetEvents( pBoard );
+                }
+
 	  protected:
 		/*!
 		 * \convert a voltage level to it's 8bit DAC value

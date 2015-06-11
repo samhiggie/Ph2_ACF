@@ -21,20 +21,12 @@ namespace Ph2_HwInterface
 
 	//Constructor, makes the board map
 	BeBoardFWInterface::BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		RegManager( puHalConfigFileName, pBoardId )
+	          RegManager( puHalConfigFileName, pBoardId ),
+	          fNTotalAcq(0),
+	          runningAcquisition(false),
+	          numAcq(0) 
 	{
-		fNTotalAcq=0;
-		runningAcquisition=false;
-		numAcq=0; 
-		fData = new Data( );
 	}
-
-
-	BeBoardFWInterface::~BeBoardFWInterface()
-	{
-	        if (fData) delete fData;
-	}
-
 
 	std::string BeBoardFWInterface::getBoardType()
 	{
@@ -57,7 +49,6 @@ namespace Ph2_HwInterface
 		return cBoardTypeString;
 
 	}
-
 
 	void BeBoardFWInterface::getBoardInfo()
 	{
