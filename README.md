@@ -74,6 +74,11 @@ On this Repo, you can find different version of the software :
     - restructured the ostream operator of the Event class
 - 05/06/2015: minor modifications
     - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks. 
+- 11/06/2015: merging a new design for Data and Event classes (v1-20)
+    - Data class now holds a vector of Events and the events are directly decoded after acquisition - the char* databuffer does not exist any longer
+    - added methods: std::vector<Event*> GetEvents(); Event* GetEvent()
+    - updated all scripts
+    
 
 
 ### Setup
