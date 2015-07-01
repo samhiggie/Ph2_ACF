@@ -85,6 +85,7 @@
 		<node id="sram2_user_logic" mask="0x00010000" />
 		<node id="sram2_bist_run" mask="0x00020000" />
 		<node id="flash_select" mask="0x00100000" />
+		<node id="flash_select"	mask="0x00100000"/>
 	</node>
 
 	    <!--SRAM MEMORY SPACE -->
@@ -92,6 +93,9 @@
 	<node id="sram1_256" address="0x020000ff" permission="rw" mode="single" description="SRAM1 256th word" />
 	<node id="sram2" address="0x04000000" permission="rw" mode="block" size="0x02000000" />
 	<node id="sram2_256" address="0x040000ff" permission="rw" mode="single" description="SRAM2 256th word" />
+
+    <node id="flash_block" address="0x08000000"     mode="block" size="0x00800000" permission="rw" description="FLASH memory for FPGA configuration"/>
+
 	
 	<!-- CBC I2C REGISTERS -->
 	<node id="cbc_i2c_cmd_ack" address="0x80000008" mask="0x0000000C" permission="rw" />
@@ -220,4 +224,5 @@
 		</node>
 	
 	</node>
+	  <node id="flash_async_read_cmd"	address="0x0800bddf"  mask="0xFFFFFFFF" description="FLASH memory asynchronous read mode"/>
 </node>

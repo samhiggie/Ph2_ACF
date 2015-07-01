@@ -6,6 +6,7 @@
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
+#include "../HWInterface/FpgaConfig.h"
 //#include "../tools/Calibration.h"
 #include "../Utils/Timer.h"
 //#include <TApplication.h>
@@ -61,8 +62,8 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC." );
-	cmd.defineOptionAlternative( "ignoreI2c", "i" );
+
+	
 
 	cmd.defineOption( "file", "FPGA Bitstream (*.mcs format)", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
@@ -71,41 +72,67 @@ int main( int argc, char* argv[] )
 	cmd.defineOptionAlternative("image","i");
 
 	int result = cmd.parse( argc, argv );
+
 	if ( result != ArgvParser::NoParserError )
 	{
 		std::cout << cmd.parseErrorDescription( result );
 		exit( 1 );
 	}
 
-	// now query the parsing results
-	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_2CBC.xml";
-	uint16_t cNImage = (cmd.foundOption("image")) ? cmd.optionValue("image") : 1;
+
+        std::string cFWFile;
+	std::string cHWFile = "settings/HWDescription_2CBC.xml";
+        if(cmd.foundOption("file")){
+ 		cFWFile=cmd.optionValue("file");
+		std::size_t found = cFWFile.find(".mcs");
+		if(found == std::string::npos){
+			std::cout << "Error, the specified file is not an .mcs file" << std::endl;
+			exit(1);
+		}
+	}
+    
+        else
+	{
+		cFWFile="";
+		std::cout << "Error, no FW image specified" << std::endl;
+		exit(1);
+	}
+
+
+	uint16_t cNImage = (cmd.foundOption("image")) ? std::stoi(cmd.optionValue("image")) : 1;
 	Timer t;
 	t.start();
 
 	cSystemController.InitializeHw( cHWFile );
-	cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
-
+	//cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
+	
 	BeBoard* pBoard = cSystemController.fShelveVector.at(0)->fBoardVector.at(0);
-		
+
 	t.stop();
 	t.show( "Time to Initialize/configure the system: " );
 
 	bool cUploadDone = 0;	
 
+     
+	cSystemController.fBeBoardInterface->FlashProm(pBoard, cNImage, cFWFile.c_str());
+      uint32_t progress;
 
-	cSystemController.fBeBoardInterface->FlashProm(pBoard, cNImage, cHWFile);
- 	
 	while (cUploadDone == 0)
 	{
 		
-                uint32_t progress= cSystemController.fBeBoardInterface->getConfiguringFpga(pBoard)->getProgressValue();
-                
-                std::cout << "\r" + progress;
-         
-               if(progress==100)
+               progress= cSystemController.fBeBoardInterface->getConfiguringFpga(pBoard)->getProgressValue();
+             
+           	
+		
+            
+          
+         	
+               if(progress==100){
                 cUploadDone = 1;
-        
+		std::cout << "\n 100% Done" << std::endl;
+               
+               	 
+		}
 	}
 
 		
