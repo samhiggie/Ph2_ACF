@@ -21,8 +21,8 @@ ExtObjectsRoot= -lPh2_Tools
 # %.o: %.cc %.h
 # 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-binaries=systemtest datatest interfacetest hybridtest cmtest calibrate commission
-binariesNoRoot=systemtest datatest interfacetest
+binaries=systemtest datatest interfacetest hybridtest cmtest calibrate commission fpgaconfig
+binariesNoRoot=systemtest datatest interfacetest fpgaconfig
 
 all: rootflags clean $(binaries) 
 
@@ -57,6 +57,10 @@ cmtest: cmtest.cc
 	cp $@ ../bin
 
 commission: commission.cc
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+
+fpgaconfig: fpgaconfig.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
