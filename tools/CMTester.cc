@@ -25,15 +25,142 @@ void CMTester::Initialize()
 				{
 					uint32_t cCbcId = cCbc->getCbcId();
 
+					// Fill Canvas Map
 					TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%d_cbc%d", cFeId, cCbcId ), Form( "FE%d CBC%d Online Canvas", cFeId, cCbcId ), 800, 800 );
 					ctmpCanvas->Divide( 2, 2 );
 					fCanvasMap[cCbc] = ctmpCanvas;
+
+					// here create an empty std::set<int> for noisy strips
+					std::set<int> cTmpSet;
+					fNoiseStripMap[cCbc] = cTmpSet;
+
+					// here create the CBC-wise histos
+
+					// histogram for the number of hits
+					TString cName = Form( "h_nhits_Fe%dCbc%d", cFeId, cCbcId ) ;
+					TObject* cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					TH1F* cHist = new TH1F( cName, Form( "Number of Hits FE%d CBC%d; Hits; Count", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					cHist->SetLineColor( 9 );
+					cHist->SetLineWidth( 2 );
+					bookHistogram(cCbc, "nhits", cHist);
+
+					// 2D profile for the combined odccupancy
+					cName = Form( "p_combinedoccupancy_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = ( TProfile2D* ) gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					//  no clue why i can not call it cName but when I do, it produces a segfault!!
+					TProfile2D* c2DOccProfile = new TProfile2D( cName, Form( "Combined Occupancy FE%d CBC%d; Strip; Strip; Occupancy", cFeId, cCbcId ),  NCHANNELS + 1, -0.5, NCHANNELS + 0.5, NCHANNELS + 1, -0.5, NCHANNELS + 0.5 );
+
+					c2DOccProfile->SetMarkerColor( 1 );
+					bookHistogram(cCbc, "combinedoccupancy",c2DOccProfile);
+
+					// 2D Profile for correlation coefficient
+					cName =  Form( "p_correlation_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					TH2F* c2DHist = new TH2F( cName, Form( "Correlation FE%d CBC%d; Strip; Strip; Correlation coefficient", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5, NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					bookHistogram(cCbc, "correlation", c2DHist);
+
+					// 1D projection of the combined odccupancy
+					cName =  Form( "p_occupancyprojection_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					TProfile* cProfile = new TProfile( cName, Form( "Projection of combined Occupancy FE%d CBC%d;  NNeighbors; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					cProfile->SetLineColor( 9 );
+					cProfile->SetLineWidth( 2 );
+					bookHistogram(cCbc, "occupancyprojection", cProfile);
+
+					// 1D projection of the uncorrelated odccupancy
+					cName = Form( "p_uncorr_occupancyprojection_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					cProfile = new TProfile( cName, Form( "Projection of uncorrelated Occupancy FE%d CBC%d;  NNeighbors; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					cProfile->SetLineColor( 2 );
+					cProfile->SetLineWidth( 2 );
+					bookHistogram(cCbc, "uncorr_occupancyprojection", cProfile);
+
+					// 1D projection of the correlation
+					cName =  Form( "p_correlationprojection_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					cProfile = new TProfile( cName, Form( "Projection of Correlation FE%d CBC%d;  NNeighbors; Correlation", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					cProfile->SetLineColor( 9 );
+					cProfile->SetLineWidth( 2 );
+					bookHistogram(cCbc, "correlationprojection", cProfile);
+
+					// 1D hit probability profile
+					cName = Form( "p_hitprob_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					cProfile = new TProfile( cName, Form( "Hit Probability FE%d CBC%d;  Strip; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					cProfile->SetLineColor( 9 );
+					cProfile->SetLineWidth( 2 );
+					bookHistogram(cCbc, "hitprob", cProfile);
+
+					// dummy TF1* for fit & dummy TH1F* for 0CM
+					cName = Form( "f_nhitsfit_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					TF1* cCmFit = new TF1( cName, hitProbFunction, 0, 255, 4 );
+					bookHistogram(cCbc, "nhitsfit", cCmFit);
+
+					cName = Form( "h_nocm_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					TH1F* cNoCM = new TH1F( cName, "Noise hit distributtion", NCHANNELS + 1, -0.5, NCHANNELS + 0.5 );
+					cNoCM->SetLineColor( 16 );
+					bookHistogram(cCbc,"nocm", cNoCM);
 				}
+
+				// PER MODULE PLOTS
+				uint32_t cNCbc = cFe->getNCbc();
+
+				// 2D profile for the combined odccupancy
+				TString cName =  Form( "p_module_combinedoccupancy_Fe%d", cFeId ) ;
+				TObject* cObj = gROOT->FindObject( cName );
+				if ( cObj ) delete cObj;
+				TProfile2D* c2DProfile = new TProfile2D( cName, Form( "Combined Occupancy FE%d; Strip; Strip; Occupancy", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5, cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+				bookHistogram(cFe, "module_combinedoccupancy", c2DProfile);
+
+				// 2D Hist for correlation coefficient
+				cName =  Form( "p_module_correlation_Fe%d", cFeId );
+				cObj = gROOT->FindObject( cName );
+				if ( cObj ) delete cObj;
+				TH2F* c2DHist = new TH2F( cName, Form( "Correlation FE%d CBC%d; Strip; Strip; Correlation coefficient", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5, cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+				bookHistogram(cFe, "module_correlation", c2DHist);
+
+				// 1D projection of the combined odccupancy
+				cName =  Form( "p_module_occupancyprojection_Fe%d", cFeId );
+				cObj = gROOT->FindObject( cName );
+				if ( cObj ) delete cObj;
+				TProfile* cProfile = new TProfile( cName, Form( "Projection of combined Occupancy FE%d;  NNeighbors; Probability", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+				cProfile->SetLineColor( 9 );
+				cProfile->SetLineWidth( 2 );
+				bookHistogram(cFe, "module_occupancyprojection", cProfile);
+
+				// 1D projection of the uncorrelated occupancy
+				cName = Form( "p_module_uncorr_occupancyprojection_Fe%d", cFeId );
+				cObj = gROOT->FindObject( cName );
+				if ( cObj ) delete cObj;
+				cProfile = new TProfile( cName, Form( "Projection of uncorrelated Occupancy FE%d;  NNeighbors; Probability", cFeId ),  cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+				cProfile->SetLineColor( 2 );
+				cProfile->SetLineWidth( 2 );
+				bookHistogram(cFe, "module_uncorr_occupancyprojection", cProfile);
+
+				// 1D projection of the correlation
+				cName =  Form( "p_module_correlationprojection_Fe%d", cFeId );
+				cObj = gROOT->FindObject( cName );
+				if ( cObj ) delete cObj;
+				cProfile = new TProfile( cName, Form( "Projection of Correlation FE%d;  NNeighbors; Correlation", cFeId ),  cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+				cProfile->SetLineColor( 9 );
+				cProfile->SetLineWidth( 2 );
+				bookHistogram(cFe, "module_correlationprojection", cProfile);
 			}
 		}
 	}
 
-	initializeHists();
+	// initializeHists();
 
 	std::cout << "Histograms and Settings initialised." << std::endl;
 }
@@ -92,7 +219,7 @@ void CMTester::ScanNoiseChannels()
 	}
 
 	// done taking data, now iterate over p_noisestrips and find out the bad strips, push them into the fNoiseStripMap, then clear the histogram
-	for ( const auto& cCbc : fCbcHistoMap )
+	for ( const auto& cCbc : fCbcHistMap )
 	{
 
 	        TProfile* cNoiseStrips = dynamic_cast<TProfile*>( getHist( cCbc.first,  "hitprob" ) );
@@ -173,7 +300,7 @@ void CMTester::FinishRun()
 	std::cout << "Fitting and computing aditional histograms ... " << std::endl;
 	// first CBCs
 	std::cout << "per CBC ..";
-	for ( auto cCbc : fCbcHistoMap )
+	for ( auto cCbc : fCbcHistMap )
 	{
 
 	        TH1F* cTmpNHits = dynamic_cast<TH1F*>(getHist( cCbc.first, "nhits" ));
@@ -217,7 +344,7 @@ void CMTester::FinishRun()
 	std::cout << " done!" << std::endl;
 	std::cout << "per module ... ";
 	// now module wise
-	for ( auto& cFe : fModuleHistoMap )
+	for ( auto& cFe : fModuleHistMap )
 	{
 		TString cName = Form( "FE%d", cFe.first->getFeId() );
 
@@ -251,48 +378,48 @@ void CMTester::FinishRun()
 	updateHists( true );
 }
 
-void CMTester::SaveResults()
-{
-	// Iterate through maps, create a directory for each first key
-	// first per CBC
-	for ( const auto& cCbc : fCbcHistoMap )
-	{
-		TString cDirName = Form( "FE%d_CBC%d", cCbc.first->getFeId(), cCbc.first->getCbcId() );
-		TObject* cObj = gROOT->FindObject( cDirName );
-		if ( cObj ) delete cObj;
-		fResultFile->mkdir( cDirName );
-		fResultFile->cd( cDirName );
+// void CMTester::SaveResults()
+// {
+// 	// Iterate through maps, create a directory for each first key
+// 	// first per CBC
+// 	for ( const auto& cCbc : fCbcHistMap )
+// 	{
+// 		TString cDirName = Form( "FE%d_CBC%d", cCbc.first->getFeId(), cCbc.first->getCbcId() );
+// 		TObject* cObj = gROOT->FindObject( cDirName );
+// 		if ( cObj ) delete cObj;
+// 		fResultFile->mkdir( cDirName );
+// 		fResultFile->cd( cDirName );
 
-		for ( const auto& cHist : cCbc.second )
-			cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
-		fResultFile->cd();
-	}
-	// Now per FE
-	for ( const auto& cFe : fModuleHistoMap )
-	{
-		TString cDirName = Form( "FE%d", cFe.first->getFeId() );
-		TObject* cObj = gROOT->FindObject( cDirName );
-		if ( cObj ) delete cObj;
-		fResultFile->mkdir( cDirName );
-		fResultFile->cd( cDirName );
+// 		for ( const auto& cHist : cCbc.second )
+// 			cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
+// 		fResultFile->cd();
+// 	}
+// 	// Now per FE
+// 	for ( const auto& cFe : fModuleHistMap )
+// 	{
+// 		TString cDirName = Form( "FE%d", cFe.first->getFeId() );
+// 		TObject* cObj = gROOT->FindObject( cDirName );
+// 		if ( cObj ) delete cObj;
+// 		fResultFile->mkdir( cDirName );
+// 		fResultFile->cd( cDirName );
 
-		for ( const auto& cHist : cFe.second )
-			cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
-		fResultFile->cd();
-	}
-	// Save Canvasses too
-	for ( const auto& cCanvas : fCanvasMap )
-	{
-		cCanvas.second->Write( cCanvas.second->GetName(), TObject::kOverwrite );
-		std::string cPdfName = fDirectoryName + "/" + cCanvas.second->GetName() + ".pdf";
-		cCanvas.second->SaveAs( cPdfName.c_str() );
-	}
+// 		for ( const auto& cHist : cFe.second )
+// 			cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
+// 		fResultFile->cd();
+// 	}
+// 	// Save Canvasses too
+// 	for ( const auto& cCanvas : fCanvasMap )
+// 	{
+// 		cCanvas.second->Write( cCanvas.second->GetName(), TObject::kOverwrite );
+// 		std::string cPdfName = fDirectoryName + "/" + cCanvas.second->GetName() + ".pdf";
+// 		cCanvas.second->SaveAs( cPdfName.c_str() );
+// 	}
 
-	fResultFile->Write();
-	fResultFile->Close();
+// 	fResultFile->Write();
+// 	fResultFile->Close();
 
-	std::cout << "Results saved!" << std::endl;
-}
+// 	std::cout << "Results saved!" << std::endl;
+// }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -399,7 +526,7 @@ void CMTester::analyze( BeBoard* pBoard, const Event* pEvent )
 void CMTester::updateHists( bool pFinal )
 {
 	// method to iterate over the histograms that I want to draw and update the canvases
-	for ( auto& cCbc : fCbcHistoMap )
+	for ( auto& cCbc : fCbcHistMap )
 	{
 		auto cCanvas = fCanvasMap.find( cCbc.first );
 		if ( cCanvas == fCanvasMap.end() ) std::cout << "Error: could not find the canvas for Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
@@ -468,30 +595,30 @@ void CMTester::updateHists( bool pFinal )
 }
 
 
-TObject* CMTester::getHist( Cbc* pCbc, std::string pName )
-{
-	auto cCbcHistMap = fCbcHistoMap.find( pCbc );
-	if ( cCbcHistMap == std::end( fCbcHistoMap ) ) std::cerr << RED << "Error: could not find the Histograms for CBC " << int( pCbc->getCbcId() ) <<  " (FE " << int( pCbc->getFeId() ) << ")" << RESET << std::endl;
-	else
-	{
-		auto cHisto = cCbcHistMap->second.find( pName );
-		if ( cHisto == std::end( cCbcHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
-		else
-			return cHisto->second;
-	}
-}
+// TObject* CMTester::getHist( Cbc* pCbc, std::string pName )
+// {
+// 	auto cCbcHistMap = fCbcHistMap.find( pCbc );
+// 	if ( cCbcHistMap == std::end( fCbcHistMap ) ) std::cerr << RED << "Error: could not find the Histograms for CBC " << int( pCbc->getCbcId() ) <<  " (FE " << int( pCbc->getFeId() ) << ")" << RESET << std::endl;
+// 	else
+// 	{
+// 		auto cHisto = cCbcHistMap->second.find( pName );
+// 		if ( cHisto == std::end( cCbcHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
+// 		else
+// 			return cHisto->second;
+// 	}
+// }
 
-TObject* CMTester::getHist( Module* pModule, std::string pName )
-{
-	auto cModuleHistMap = fModuleHistoMap.find( pModule );
-	if ( cModuleHistMap == std::end( fModuleHistoMap ) ) std::cerr << RED << "Error: could not find the Histograms for Module " << int( pModule->getFeId() ) << RESET << std::endl;
-	else
-	{
-		auto cHisto = cModuleHistMap->second.find( pName );
-		if ( cHisto == std::end( cModuleHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
-		else return cHisto->second;
-	}
-}
+// TObject* CMTester::getHist( Module* pModule, std::string pName )
+// {
+// 	auto cModuleHistMap = fModuleHistMap.find( pModule );
+// 	if ( cModuleHistMap == std::end( fModuleHistMap ) ) std::cerr << RED << "Error: could not find the Histograms for Module " << int( pModule->getFeId() ) << RESET << std::endl;
+// 	else
+// 	{
+// 		auto cHisto = cModuleHistMap->second.find( pName );
+// 		if ( cHisto == std::end( cModuleHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
+// 		else return cHisto->second;
+// 	}
+// }
 
 
 bool CMTester::randHit( float pProbability )
@@ -565,164 +692,164 @@ void CMTester::parseSettings()
 
 }
 
-void CMTester::initializeHists()
-{
-	// method to loop over all Modules / Cbcs and creating histograms for each
+// void CMTester::initializeHists()
+// {
+// 	// method to loop over all Modules / Cbcs and creating histograms for each
 
-	for ( auto& cShelve : fShelveVector )
-	{
-		uint32_t cShelveId = cShelve->getShelveId();
+// 	for ( auto& cShelve : fShelveVector )
+// 	{
+// 		uint32_t cShelveId = cShelve->getShelveId();
 
-		for ( auto& cBoard : cShelve->fBoardVector )
-		{
-			uint32_t cBoardId = cBoard->getBeId();
+// 		for ( auto& cBoard : cShelve->fBoardVector )
+// 		{
+// 			uint32_t cBoardId = cBoard->getBeId();
 
-			for ( auto& cFe : cBoard->fModuleVector )
-			{
-				uint32_t cFeId = cFe->getFeId();
+// 			for ( auto& cFe : cBoard->fModuleVector )
+// 			{
+// 				uint32_t cFeId = cFe->getFeId();
 
-				for ( auto& cCbc : cFe->fCbcVector )
-				{
+// 				for ( auto& cCbc : cFe->fCbcVector )
+// 				{
 
-					// here create an empty std::set<int> for noisy strips
-					std::set<int> cTmpSet;
-					fNoiseStripMap[cCbc] = cTmpSet;
+					// // here create an empty std::set<int> for noisy strips
+					// std::set<int> cTmpSet;
+					// fNoiseStripMap[cCbc] = cTmpSet;
 
-					// here create the CBC-wise histos
+					// // here create the CBC-wise histos
 
-					uint32_t cCbcId = cCbc->getCbcId();
+					// uint32_t cCbcId = cCbc->getCbcId();
 
-					std::map<std::string, TObject*> cMap;
+					// std::map<std::string, TObject*> cMap;
 
-					// histogram for the number of hits
-					TString cName = Form( "h_nhits_Fe%dCbc%d", cFeId, cCbcId ) ;
-					TObject* cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					TH1F* cHist = new TH1F( cName, Form( "Number of Hits FE%d CBC%d; Hits; Count", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
-					cHist->SetLineColor( 9 );
-					cHist->SetLineWidth( 2 );
-					cMap["nhits"] = cHist;
+					// // histogram for the number of hits
+					// TString cName = Form( "h_nhits_Fe%dCbc%d", cFeId, cCbcId ) ;
+					// TObject* cObj = gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// TH1F* cHist = new TH1F( cName, Form( "Number of Hits FE%d CBC%d; Hits; Count", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					// cHist->SetLineColor( 9 );
+					// cHist->SetLineWidth( 2 );
+					// cMap["nhits"] = cHist;
 
-					// 2D profile for the combined odccupancy
-					cName = Form( "p_combinedoccupancy_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = ( TProfile2D* ) gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					//  no clue why i can not call it cName but when I do, it produces a segfault!!
-					TProfile2D* c2DOccProfile = new TProfile2D( cName, Form( "Combined Occupancy FE%d CBC%d; Strip; Strip; Occupancy", cFeId, cCbcId ),  NCHANNELS + 1, -0.5, NCHANNELS + 0.5, NCHANNELS + 1, -0.5, NCHANNELS + 0.5 );
+					// // 2D profile for the combined odccupancy
+					// cName = Form( "p_combinedoccupancy_Fe%dCbc%d", cFeId, cCbcId );
+					// cObj = ( TProfile2D* ) gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// //  no clue why i can not call it cName but when I do, it produces a segfault!!
+					// TProfile2D* c2DOccProfile = new TProfile2D( cName, Form( "Combined Occupancy FE%d CBC%d; Strip; Strip; Occupancy", cFeId, cCbcId ),  NCHANNELS + 1, -0.5, NCHANNELS + 0.5, NCHANNELS + 1, -0.5, NCHANNELS + 0.5 );
 
-					c2DOccProfile->SetMarkerColor( 1 );
-					cMap["combinedoccupancy"] = c2DOccProfile;
+					// c2DOccProfile->SetMarkerColor( 1 );
+					// cMap["combinedoccupancy"] = c2DOccProfile;
 
-					// 2D Profile for correlation coefficient
-					cName =  Form( "p_correlation_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					TH2F* c2DHist = new TH2F( cName, Form( "Correlation FE%d CBC%d; Strip; Strip; Correlation coefficient", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5, NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
-					cMap["correlation"] = c2DHist;
+					// // 2D Profile for correlation coefficient
+					// cName =  Form( "p_correlation_Fe%dCbc%d", cFeId, cCbcId );
+					// cObj = gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// TH2F* c2DHist = new TH2F( cName, Form( "Correlation FE%d CBC%d; Strip; Strip; Correlation coefficient", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5, NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					// cMap["correlation"] = c2DHist;
 
-					// 1D projection of the combined odccupancy
-					cName =  Form( "p_occupancyprojection_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					TProfile* cProfile = new TProfile( cName, Form( "Projection of combined Occupancy FE%d CBC%d;  NNeighbors; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
-					cProfile->SetLineColor( 9 );
-					cProfile->SetLineWidth( 2 );
-					cMap["occupancyprojection"] = cProfile;
+					// // 1D projection of the combined odccupancy
+					// cName =  Form( "p_occupancyprojection_Fe%dCbc%d", cFeId, cCbcId );
+					// cObj = gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// TProfile* cProfile = new TProfile( cName, Form( "Projection of combined Occupancy FE%d CBC%d;  NNeighbors; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					// cProfile->SetLineColor( 9 );
+					// cProfile->SetLineWidth( 2 );
+					// cMap["occupancyprojection"] = cProfile;
 
-					// 1D projection of the uncorrelated odccupancy
-					cName = Form( "p_uncorr_occupancyprojection_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					cProfile = new TProfile( cName, Form( "Projection of uncorrelated Occupancy FE%d CBC%d;  NNeighbors; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
-					cProfile->SetLineColor( 2 );
-					cProfile->SetLineWidth( 2 );
-					cMap["uncorr_occupancyprojection"] = cProfile;
+					// // 1D projection of the uncorrelated odccupancy
+					// cName = Form( "p_uncorr_occupancyprojection_Fe%dCbc%d", cFeId, cCbcId );
+					// cObj = gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// cProfile = new TProfile( cName, Form( "Projection of uncorrelated Occupancy FE%d CBC%d;  NNeighbors; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					// cProfile->SetLineColor( 2 );
+					// cProfile->SetLineWidth( 2 );
+					// cMap["uncorr_occupancyprojection"] = cProfile;
 
-					// 1D projection of the correlation
-					cName =  Form( "p_correlationprojection_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					cProfile = new TProfile( cName, Form( "Projection of Correlation FE%d CBC%d;  NNeighbors; Correlation", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
-					cProfile->SetLineColor( 9 );
-					cProfile->SetLineWidth( 2 );
-					cMap["correlationprojection"] = cProfile;
+					// // 1D projection of the correlation
+					// cName =  Form( "p_correlationprojection_Fe%dCbc%d", cFeId, cCbcId );
+					// cObj = gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// cProfile = new TProfile( cName, Form( "Projection of Correlation FE%d CBC%d;  NNeighbors; Correlation", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					// cProfile->SetLineColor( 9 );
+					// cProfile->SetLineWidth( 2 );
+					// cMap["correlationprojection"] = cProfile;
 
-					// 1D hit probability profile
-					cName = Form( "p_hitprob_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					cProfile = new TProfile( cName, Form( "Hit Probability FE%d CBC%d;  Strip; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
-					cProfile->SetLineColor( 9 );
-					cProfile->SetLineWidth( 2 );
-					cMap["hitprob"] = cProfile;
+					// // 1D hit probability profile
+					// cName = Form( "p_hitprob_Fe%dCbc%d", cFeId, cCbcId );
+					// cObj = gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// cProfile = new TProfile( cName, Form( "Hit Probability FE%d CBC%d;  Strip; Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+					// cProfile->SetLineColor( 9 );
+					// cProfile->SetLineWidth( 2 );
+					// cMap["hitprob"] = cProfile;
 
-					// dummy TF1* for fit & dummy TH1F* for 0CM
-					cName = Form( "f_nhitsfit_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					TF1* cCmFit = new TF1( cName, hitProbFunction, 0, 255, 4 );
-					cMap["nhitsfit"] = cCmFit;
+					// // dummy TF1* for fit & dummy TH1F* for 0CM
+					// cName = Form( "f_nhitsfit_Fe%dCbc%d", cFeId, cCbcId );
+					// cObj = gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// TF1* cCmFit = new TF1( cName, hitProbFunction, 0, 255, 4 );
+					// cMap["nhitsfit"] = cCmFit;
 
-					cName = Form( "h_nocm_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					TH1F* cNoCM = new TH1F( cName, "Noise hit distributtion", NCHANNELS + 1, -0.5, NCHANNELS + 0.5 );
-					cNoCM->SetLineColor( 16 );
-					cMap["nocm"] = cNoCM;
+					// cName = Form( "h_nocm_Fe%dCbc%d", cFeId, cCbcId );
+					// cObj = gROOT->FindObject( cName );
+					// if ( cObj ) delete cObj;
+					// TH1F* cNoCM = new TH1F( cName, "Noise hit distributtion", NCHANNELS + 1, -0.5, NCHANNELS + 0.5 );
+					// cNoCM->SetLineColor( 16 );
+					// cMap["nocm"] = cNoCM;
 
-					// now add the map of string vs TObject to fCbcHistoMap
-					fCbcHistoMap[cCbc] = cMap;
-				}
+					// now add the map of string vs TObject to fCbcHistMap
+					// fCbcHistMap[cCbc] = cMap;
+				// }
 
 				// Here create the Module-wise histos
 
-				std::map<std::string, TObject*> cModuleMap;
-				uint32_t cNCbc = cFe->getNCbc();
+// 				std::map<std::string, TObject*> cModuleMap;
+// 				uint32_t cNCbc = cFe->getNCbc();
 
-				// 2D profile for the combined odccupancy
-				TString cName =  Form( "p_module_combinedoccupancy_Fe%d", cFeId ) ;
-				TObject* cObj = gROOT->FindObject( cName );
-				if ( cObj ) delete cObj;
-				TProfile2D* c2DProfile = new TProfile2D( cName, Form( "Combined Occupancy FE%d; Strip; Strip; Occupancy", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5, cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
-				cModuleMap["module_combinedoccupancy"] = c2DProfile;
+// 				// 2D profile for the combined odccupancy
+// 				TString cName =  Form( "p_module_combinedoccupancy_Fe%d", cFeId ) ;
+// 				TObject* cObj = gROOT->FindObject( cName );
+// 				if ( cObj ) delete cObj;
+// 				TProfile2D* c2DProfile = new TProfile2D( cName, Form( "Combined Occupancy FE%d; Strip; Strip; Occupancy", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5, cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+// 				cModuleMap["module_combinedoccupancy"] = c2DProfile;
 
-				// 2D Hist for correlation coefficient
-				cName =  Form( "p_module_correlation_Fe%d", cFeId );
-				cObj = gROOT->FindObject( cName );
-				if ( cObj ) delete cObj;
-				TH2F* c2DHist = new TH2F( cName, Form( "Correlation FE%d CBC%d; Strip; Strip; Correlation coefficient", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5, cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
-				cModuleMap["module_correlation"] = c2DHist;
+// 				// 2D Hist for correlation coefficient
+// 				cName =  Form( "p_module_correlation_Fe%d", cFeId );
+// 				cObj = gROOT->FindObject( cName );
+// 				if ( cObj ) delete cObj;
+// 				TH2F* c2DHist = new TH2F( cName, Form( "Correlation FE%d CBC%d; Strip; Strip; Correlation coefficient", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5, cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+// 				cModuleMap["module_correlation"] = c2DHist;
 
-				// 1D projection of the combined odccupancy
-				cName =  Form( "p_module_occupancyprojection_Fe%d", cFeId );
-				cObj = gROOT->FindObject( cName );
-				if ( cObj ) delete cObj;
-				TProfile* cProfile = new TProfile( cName, Form( "Projection of combined Occupancy FE%d;  NNeighbors; Probability", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
-				cProfile->SetLineColor( 9 );
-				cProfile->SetLineWidth( 2 );
-				cModuleMap["module_occupancyprojection"] = cProfile;
+// 				// 1D projection of the combined odccupancy
+// 				cName =  Form( "p_module_occupancyprojection_Fe%d", cFeId );
+// 				cObj = gROOT->FindObject( cName );
+// 				if ( cObj ) delete cObj;
+// 				TProfile* cProfile = new TProfile( cName, Form( "Projection of combined Occupancy FE%d;  NNeighbors; Probability", cFeId ), cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+// 				cProfile->SetLineColor( 9 );
+// 				cProfile->SetLineWidth( 2 );
+// 				cModuleMap["module_occupancyprojection"] = cProfile;
 
-				// 1D projection of the uncorrelated occupancy
-				cName = Form( "p_module_uncorr_occupancyprojection_Fe%d", cFeId );
-				cObj = gROOT->FindObject( cName );
-				if ( cObj ) delete cObj;
-				cProfile = new TProfile( cName, Form( "Projection of uncorrelated Occupancy FE%d;  NNeighbors; Probability", cFeId ),  cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
-				cProfile->SetLineColor( 2 );
-				cProfile->SetLineWidth( 2 );
-				cModuleMap["module_uncorr_occupancyprojection"] = cProfile;
+// 				// 1D projection of the uncorrelated occupancy
+// 				cName = Form( "p_module_uncorr_occupancyprojection_Fe%d", cFeId );
+// 				cObj = gROOT->FindObject( cName );
+// 				if ( cObj ) delete cObj;
+// 				cProfile = new TProfile( cName, Form( "Projection of uncorrelated Occupancy FE%d;  NNeighbors; Probability", cFeId ),  cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+// 				cProfile->SetLineColor( 2 );
+// 				cProfile->SetLineWidth( 2 );
+// 				cModuleMap["module_uncorr_occupancyprojection"] = cProfile;
 
-				// 1D projection of the correlation
-				cName =  Form( "p_module_correlationprojection_Fe%d", cFeId );
-				cObj = gROOT->FindObject( cName );
-				if ( cObj ) delete cObj;
-				cProfile = new TProfile( cName, Form( "Projection of Correlation FE%d;  NNeighbors; Correlation", cFeId ),  cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
-				cProfile->SetLineColor( 9 );
-				cProfile->SetLineWidth( 2 );
-				cModuleMap["module_correlationprojection"] = cProfile;
+// 				// 1D projection of the correlation
+// 				cName =  Form( "p_module_correlationprojection_Fe%d", cFeId );
+// 				cObj = gROOT->FindObject( cName );
+// 				if ( cObj ) delete cObj;
+// 				cProfile = new TProfile( cName, Form( "Projection of Correlation FE%d;  NNeighbors; Correlation", cFeId ),  cNCbc * NCHANNELS + 1, -.5, cNCbc * NCHANNELS + 0.5 );
+// 				cProfile->SetLineColor( 9 );
+// 				cProfile->SetLineWidth( 2 );
+// 				cModuleMap["module_correlationprojection"] = cProfile;
 
-				// now add to fModuleHistoMap
-				fModuleHistoMap[cFe] = cModuleMap;
-			}
-		}
-	}
-}
+// 				// now add to fModuleHistMap
+// 				fModuleHistMap[cFe] = cModuleMap;
+// 			}
+// 		}
+// 	}
+// }

@@ -91,7 +91,7 @@ class FastCalibration : public Tool
 
   private:
 	CbcChannelMap fCbcChannelMap;
-	CanvasMap fCanvasMap;
+	// CanvasMap fCanvasMap;
 	GraphMap fGraphMap;
 	FitMap fFitMap;
 	HistMap fHistMap;

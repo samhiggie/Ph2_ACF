@@ -53,24 +53,24 @@ class CMTester : public Tool
 	void ScanNoiseChannels();
 	void TakeData();
 	void FinishRun();
-	void SaveResults();
+	// void SaveResults();
 
   private:
-	void initializeHists();
+	// void initializeHists();
 	void updateHists( bool pFinal = false );
 	void parseSettings();
 	void analyze( BeBoard* pBoard, const Event* pEvent );
-	TObject* getHist( Cbc* pCbc, std::string pName );
-	TObject* getHist( Module* pModule, std::string pName );
+	// TObject* getHist( Cbc* pCbc, std::string pName );
+	// TObject* getHist( Module* pModule, std::string pName );
 	bool randHit( float pProbability );
 	bool isMasked( Cbc* pCbc, int pChan );
 	bool isMasked( int pGlobalChannel );
 
 	uint32_t fNevents, fDoSimulate, fSimOccupancy;
 
-	CanvasMap fCanvasMap;
-	CbcHistogramMap fCbcHistoMap;
-	ModuleHistogramMap fModuleHistoMap;
+	// CanvasMap fCanvasMap;
+	// CbcHistogramMap fCbcHistoMap;
+	// ModuleHistogramMap fModuleHistoMap;
 	std::map<Cbc*, std::set<int> > fNoiseStripMap;
 
 };

@@ -46,7 +46,7 @@ class Commissioning : public Tool
 	std::map<Module*, uint8_t> ScanLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	std::map<Module*, uint8_t> ScanStubLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	// void ScanLatencyThreshold();
-	void SaveResults();
+	// void SaveResults();
 
   private:
 	void initializeHists();
@@ -59,12 +59,12 @@ class Commissioning : public Tool
 
 	// Histogram Methods
 	// TObject* getHist( Cbc* pCbc, std::string pName );
-	TObject* getHist( Module* pModule, std::string pName );
+	// TObject* getHist( Module* pModule, std::string pName );
 
 	//  Members
-	CanvasMap fCanvasMap;
+	// CanvasMap fCanvasMap;
 	// CbcHistogramMap fCbcHistMap;
-	ModuleHistogramMap fModuleHistMap;
+	// ModuleHistogramMap fModuleHistMap;
 	uint32_t fNevents;
 	uint32_t fInitialThreshold;
 	uint32_t fHoleMode;

@@ -42,7 +42,7 @@ class Tool : public SystemController
 
 
 
-  private:
+  protected:
 	CanvasMap fCanvasMap;
 	CbcHistogramMap fCbcHistMap;
 	ModuleHistogramMap fModuleHistMap;
