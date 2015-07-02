@@ -30,7 +30,7 @@ using namespace Ph2_HwDescription;
 
 typedef std::map<Cbc*, std::map<std::string, TObject*> >  CbcHistogramMap;
 typedef std::map<Module*, std::map<std::string, TObject*> > ModuleHistogramMap;
-typedef std::map<Module*, TCanvas*> CanvasMap;
+// typedef std::map<Module*, TCanvas*> CanvasMap;
 
 /*!
  * \class Commissioning

@@ -32,7 +32,7 @@ using namespace Ph2_System;
 
 
 typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
-typedef std::map<Cbc*, TCanvas*> CanvasMap;
+// typedef std::map<Cbc*, TCanvas*> CanvasMap;
 typedef std::map<Cbc*, TGraphErrors*> GraphMap;
 typedef std::map<Cbc*, TF1*> FitMap;
 typedef std::map<Cbc*, TH1F*> HistMap;

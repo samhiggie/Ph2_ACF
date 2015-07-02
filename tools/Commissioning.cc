@@ -142,7 +142,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 
 	for ( auto cFe : fModuleHistMap )
 	{
-		TH1F* cTmpHist = ( TH1F* )getHist( cFe.first, "module_latency" );
+		TH1F* cTmpHist = ( TH1F* )getHist( static_cast<Ph2_HwDescription::Module*>(cFe.first), "module_latency" );
 		uint8_t cLatency =  static_cast<uint8_t>( cTmpHist->GetMaximumBin() - 1 );
 		cLatencyMap[cFe.first] = cLatency;
 		cWriter.setRegister( "TriggerLatency", cLatency );
@@ -375,17 +375,17 @@ void Commissioning::updateHists( std::string pHistName, bool pFinal )
 		// maybe need to declare temporary pointers outside the if condition?
 		if ( pHistName == "module_latency" )
 		{
-			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( cCanvas.first, pHistName ) );
+			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
 			cTmpHist->Draw( "same" );
 		}
 		else if ( pHistName == "module_stub_latency" )
 		{
-			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( cCanvas.first, pHistName ) );
+			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
 			cTmpHist->Draw( "same" );
 		}
 		else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
 		{
-			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( cCanvas.first, pHistName ) );
+			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
 			cTmpHist->Draw( "P same" );
 
 			if ( pFinal )
