@@ -57,14 +57,7 @@ class Commissioning : public Tool
 	void parseSettings();
 	void dumpConfigFiles();
 
-	// Histogram Methods
-	// TObject* getHist( Cbc* pCbc, std::string pName );
-	// TObject* getHist( Module* pModule, std::string pName );
-
 	//  Members
-	// CanvasMap fCanvasMap;
-	// CbcHistogramMap fCbcHistMap;
-	// ModuleHistogramMap fModuleHistMap;
 	uint32_t fNevents;
 	uint32_t fInitialThreshold;
 	uint32_t fHoleMode;

@@ -289,39 +289,6 @@ void Commissioning::ScanThreshold( bool pScanPedestal )
 }
 
 
-// void Commissioning::SaveResults()
-// {
-// 	// Now per FE
-// 	for ( const auto& cFe : fModuleHistMap )
-// 	{
-// 		TString cDirName = Form( "FE%d", cFe.first->getFeId() );
-// 		TObject* cObj = gROOT->FindObject( cDirName );
-// 		if ( cObj ) delete cObj;
-// 		fResultFile->mkdir( cDirName );
-// 		fResultFile->cd( cDirName );
-
-// 		for ( const auto& cHist : cFe.second )
-// 			cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
-// 		fResultFile->cd();
-// 	}
-
-// 	// Save Canvasses too
-// 	// for ( const auto& cCanvas : fCanvasMap )
-// 	// {
-// 	//  cCanvas.second->Write( cCanvas.second->GetName(), TObject::kOverwrite );
-// 	//  std::string cPdfName = fDirectoryName + "/" + cCanvas.second->GetName() + ".pdf";
-// 	//  cCanvas.second->SaveAs( cPdfName.c_str() );
-// 	// }
-
-// 	fResultFile->Write();
-// 	fResultFile->Close();
-
-// 	// dumpConfigFiles();
-
-// 	std::cout << "Results saved!" << std::endl;
-// }
-
-
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
@@ -561,30 +528,6 @@ void Commissioning::measureScurve( std::string pHistName, uint32_t pNEvents )
 	updateHists( pHistName, true );
 }
 
-// TObject* Commissioning::getHist( Cbc* pCbc, std::string pName )
-// {
-//  auto cCbcHistMap = fCbcHistoMap.find( pCbc );
-//  if ( cCbcHistMap == std::end( fCbcHistoMap ) ) std::cerr << RED << "Error: could not find the Histograms for CBC " << int( pCbc->getCbcId() ) <<  " (FE " << int( pCbc->getFeId() ) << ")" << RESET << std::endl;
-//  else
-//  {
-//      auto cHisto = cCbcHistMap->second.find( pName );
-//      if ( cHisto == std::end( cCbcHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
-//      else
-//          return cHisto->second;
-//  }
-// }
-
-// TObject* Commissioning::getHist( Module* pModule, std::string pName )
-// {
-// 	auto cModuleHistMap = fModuleHistMap.find( pModule );
-// 	if ( cModuleHistMap == std::end( fModuleHistMap ) ) std::cerr << RED << "Error: could not find the Histograms for Module " << int( pModule->getFeId() ) << RESET << std::endl;
-// 	else
-// 	{
-// 		auto cHisto = cModuleHistMap->second.find( pName );
-// 		if ( cHisto == std::end( cModuleHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
-// 		else return cHisto->second;
-// 	}
-// }
 
 void Commissioning::parseSettings()
 {
@@ -604,76 +547,6 @@ void Commissioning::parseSettings()
 
 }
 
-// void Commissioning::initializeHists()
-// {
-// 	// method to loop over all Modules / Cbcs and creating histograms for each
-
-// 	for ( auto& cShelve : fShelveVector )
-// 	{
-// 		uint32_t cShelveId = cShelve->getShelveId();
-
-// 		for ( auto& cBoard : cShelve->fBoardVector )
-// 		{
-// 			uint32_t cBoardId = cBoard->getBeId();
-
-// 			for ( auto& cFe : cBoard->fModuleVector )
-// 			{
-// 				uint32_t cFeId = cFe->getFeId();
-
-// 				// Here create the Module-wise histos
-
-// 				std::map<std::string, TObject*> cModuleMap;
-// 				fNCbc = cFe->getNCbc();
-
-// 				// 1D Hist forlatency scan
-// 				TString cName =  Form( "h_module_latency_Fe%d", cFeId );
-// 				TObject* cObj = gROOT->FindObject( cName );
-// 				if ( cObj ) delete cObj;
-// 				TH1F* cLatHist = new TH1F( cName, Form( "Latency FE%d; Latency; # of Hits", cFeId ), 256, -.5, 255.5 );
-// 				cLatHist->SetFillColor( 4 );
-// 				cLatHist->SetFillStyle( 3001 );
-// 				cModuleMap["module_latency"] = cLatHist;
-
-// 				cName =  Form( "h_module_stub_latency_Fe%d", cFeId );
-// 				cObj = gROOT->FindObject( cName );
-// 				if ( cObj ) delete cObj;
-// 				TH1F* cStubHist = new TH1F( cName, Form( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), 256, -0.5, 255.5 );
-// 				cStubHist->SetMarkerStyle( 2 );
-// 				cModuleMap["module_stub_latency"] = cStubHist;
-
-// 				cName =  Form( "h_module_threshold_ext_Fe%d", cFeId );
-// 				cObj = gROOT->FindObject( cName );
-// 				if ( cObj ) delete cObj;
-// 				TH1F* cThresHist_ext = new TH1F( cName, Form( "Threshold FE%d w external trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
-// 				cThresHist_ext->SetMarkerStyle( 2 );
-// 				cModuleMap["module_threshold_ext"] = cThresHist_ext;
-
-// 				cName =  Form( "h_module_threshold_int_Fe%d", cFeId );
-// 				cObj = gROOT->FindObject( cName );
-// 				if ( cObj ) delete cObj;
-// 				TH1F* cThresHist_int = new TH1F( cName, Form( "Threshold FE%d w internal trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
-// 				cThresHist_int->SetMarkerStyle( 2 );
-// 				cThresHist_int->SetMarkerColor( 2 );
-// 				cModuleMap["module_threshold_int"] = cThresHist_int;
-
-// 				cName =  Form( "f_module_threshold_Fit_Fe%d", cFeId );
-// 				cObj = gROOT->FindObject( cName );
-// 				if ( cObj ) delete cObj;
-// 				TF1* cThresFit = new TF1( cName, MyErf, 0, 255, 2 );
-// 				cModuleMap["module_fit"] = cThresFit;
-
-// 				cName =  Form( "h_module_lat_threshold_Fe%d", cFeId );
-// 				cObj = gROOT->FindObject( cName );
-// 				if ( cObj ) delete cObj;
-// 				TH2F* cThresLatHist = new TH2F( cName, Form( " Threshold/Latency FE%d; Latency; Threshold; # of Hits", cFeId ), 9, -4.5, 4.5, 256, -0.5, 255.5 );
-// 				cModuleMap["module_lat_threshold"] = cThresLatHist;
-
-// 				// now add to fModuleHistoMap
-// 				fModuleHistMap[cFe] = cModuleMap;
-// 			}
-// 		}
-// 	}
-// }
 
 void Commissioning::dumpConfigFiles()
 {
