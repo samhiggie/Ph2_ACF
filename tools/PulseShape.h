@@ -35,16 +35,22 @@ using namespace Ph2_HwDescription;
  * \brief Class to reconstruct pulse shape
  */
 
-
+typedef std::map<Cbc*, Channel> ChannelMap;
 
 class PulseShape : public Tool
 {
   public:
 	void Initialize();
-	void SaveResults();
+	// method to scan the test pulse delay 
+	std::pair<uint8_t, uint8_t> ScanTestPulseDelay(uint8_t pVcth, uint8_t pChannelId);
+
   private:
 	void parseSettings();
+	void setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId);
+	// return number of events process = vector.size()
+	uint32_t fillDelayHist(std::vector<Event*> pEventVector, uint8_t pChannelId, uint32_t pTPDelay);
 
+	ChannelMap fChannelMap;
 
 	uint32_t fNevents;
 	uint32_t fHoleMode;

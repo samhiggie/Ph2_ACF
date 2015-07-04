@@ -1,5 +1,6 @@
 #include "PulseShape.h"
 
+
 void PulseShape::Initialize()
 {
 	// gStyle->SetOptStat( 000000 );
@@ -47,45 +48,63 @@ void PulseShape::Initialize()
 	std::cout << "Histograms and Settings initialised." << std::endl;
 }
 
+	std::pair<uint8_t, uint8_t> PulseShape::ScanTestPulseDelay(uint8_t pVcth, uint8_t pChannelId){
+
+		for(uint8_t cTestPulseDelay = 0 ; cTestPulseDelay < 256; cTestPulseDelay++)
+		{
+			
+			// set test pulse delay: not sure yet if beBoard register or CbcRegister
+			CbcRegWriter cWriter( fCbcInterface, "VCth", pVcth );
+			this->accept( cWriter );
+			// CbcRegWriter cWriter( fCbcInterface, "", cTestPulseDelay);
+			// this->accept( cWriter);
+
+			// then we take fNEvents
+			uint32_t cN = 1;
+			uint32_t cNthAcq = 0;
+			int cNHits = 0;
+
+			// Take Data for all Modules
+			for ( auto& cShelve : fShelveVector )
+			{
+				for ( BeBoard* pBoard : cShelve->fBoardVector )
+				{
+					fBeBoardInterface->Start( pBoard );
+
+					while ( cN <= fNevents )
+					{
+						fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+						const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+
+						// Loop over Events from this Acquisition
+						for ( auto& cEvent : events )
+						{
+							for ( auto cFe : pBoard->fModuleVector )
+								cNHits += countHits( cFe, cEvent, "Delay", cTestPulseDelay );
+							cN++;
+						}
+						cNthAcq++;
+					}
+					fBeBoardInterface->Stop( pBoard, cNthAcq );
+					std::cout << "Delay " << +cTestPulseDelay << " Hits " << cNHits  << " Events " << cN << std::endl;
+
+				}
+			}
+
+			// done counting hits for all FE's, now update the Histograms
+			updateHists( "Delay", false );
+			// for each event, we check if Channel pChannelId has a hit (this can go in a separate method that also fills the histogram)
 
 
+		}
 
-
-
-
-
-
-
+	}
 
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
 
-// TObject* Commissioning::getHist( Cbc* pCbc, std::string pName )
-// {
-// 	auto cCbcHistMap = fCbcHistoMap.find( pCbc );
-// 	if ( cCbcHistMap == std::end( fCbcHistoMap ) ) std::cerr << RED << "Error: could not find the Histograms for CBC " << int( pCbc->getCbcId() ) <<  " (FE " << int( pCbc->getFeId() ) << ")" << RESET << std::endl;
-// 	else
-// 	{
-// 		auto cHisto = cCbcHistMap->second.find( pName );
-// 		if ( cHisto == std::end( cCbcHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
-// 		else
-// 			return cHisto->second;
-// 	}
-// }
-
-// TObject* Commissioning::getHist( Module* pModule, std::string pName )
-// {
-// 	auto cModuleHistMap = fModuleHistMap.find( pModule );
-// 	if ( cModuleHistMap == std::end( fModuleHistMap ) ) std::cerr << RED << "Error: could not find the Histograms for Module " << int( pModule->getFeId() ) << RESET << std::endl;
-// 	else
-// 	{
-// 		auto cHisto = cModuleHistMap->second.find( pName );
-// 		if ( cHisto == std::end( cModuleHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
-// 		else return cHisto->second;
-// 	}
-// }
 
 
-void Commissioning::parseSettings()
+void PulseShape::parseSettings()
 {
 	// now read the settings from the map
 	auto cSetting = fSettingsMap.find( "Nevents" );
@@ -103,51 +122,30 @@ void Commissioning::parseSettings()
 
 }
 
-// void Commissioning::initializeHists()
-// {
-// 	// method to loop over all Modules / Cbcs and creating histograms for each
+void PulseShape::setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId)
+{
+	// translate the channel id to a test group
+	TestGroup cTestGroup = new TestGroup()
 
-// 	for ( auto& cShelve : fShelveVector )
-// 	{
-// 		uint32_t cShelveId = cShelve->getShelveId();
+	// set the TestPulsePot register on the CBC to the correct amplituede
+	// CbcRegWriter cWriter(fCbcInterface, "TestPulsePot", pTPAmpliude);
+	// this->accept(cWriter);
 
-// 		for ( auto& cBoard : cShelve->fBoardVector )
-// 		{
-// 			uint32_t cBoardId = cBoard->getBeId();
+	// BeBoardRegWriter cBoardWriter();
+	// this->accept(cBoardWriter);
 
-// 			for ( auto& cFe : cBoard->fModuleVector )
-// 			{
-// 				uint32_t cFeId = cFe->getFeId();
+	// initialize the CBC vs Channel map
+	struct initMapVisitor : public HWDescriptionVisitor {
+		ChannelMap cChannelMap;
+		uint8_t cChannelId;
+		initMapVisitor(ChannelMap pChannelMap, uint8_t pChannelId): cChannelMap(pChannelMap), cChannelId(pChannelId);
 
-// 				for ( auto& cCbcID = cFe->fCbcVector )
-// 				{
-// 					uint32_t cCbcId = cCbc->getCbcId();
+		void visit(Cbc* pCbc){
+			Channel cChannel(pCbc->getBeId(), pCbc->getFeId(), pCbc->getCbcId(), cChannelId);
+			cChannelMap[pCbc] = cChannel;
+		}
+	};
 
-// 					// Here create the CBC-wise histos
-
-// 					std::map<std::string, TObject*> cCbcMap;
-
-// 					// 1D Hist forlatency scan
-// 					TString cName =  Form( "g_cbc_pulseshape_Fe%dCbc%d", cFeId, cCbcId );
-// 					TObject* cObj = gROOT->FindObject( cName );
-// 					if ( cObj ) delete cObj;
-// 					TMultiGraph* cPulseGraph = new TMultiGraph();
-// 					cPulseGraph->GetXaxis()->SetTitle( "TestPulseDelay [ns]" );
-// 					cPulseGraph->GetYaxis()->SetTitle( "TestPulseAmplitue [VCth]" );
-// 					cCbcMap["cbc_pulseshape"] = cPulseGraph;
-
-// 					// cName =  Form( "h_module_stub_latency_Fe%d", cFeId );
-// 					// cObj = gROOT->FindObject( cName );
-// 					// if ( cObj ) delete cObj;
-// 					// TH1F* cStubHist = new TH1F( cName, Form( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), 256, -0.5, 255.5 );
-// 					// cStubHist->SetMarkerStyle( 2 );
-// 					// cCbcMap["module_stub_latency"] = cStubHist;
-
-
-// 					// now add to fModuleHistoMap
-// 					fModuleHistMap[cCbc] = cModuleMap;
-// 				}
-// 			}
-// 		}
-// 	}
-// }
+	initMapVisitor cInitMapVisitor(fChannelMap, pChannelId);
+	this->accept(cInitMapVisitor);
+}
