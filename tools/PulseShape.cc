@@ -20,7 +20,7 @@ void PulseShape::Initialize()
 
 				for ( auto& cCbc : cFe->fCbcVector )
 				{
-					uint32_t cCbcId = cCbc = getCbcId();
+					uint32_t cCbcId = cCbc->getCbcId();
 
 					// Create the Canvas to draw
 					TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%dcbc%d", cFeId, cCbcId ), Form( "FE%dCBC%d  Online Canvas", cFeId, cCbcId ) );
@@ -48,7 +48,9 @@ void PulseShape::Initialize()
 	std::cout << "Histograms and Settings initialised." << std::endl;
 }
 
-	std::pair<uint8_t, uint8_t> PulseShape::ScanTestPulseDelay(uint8_t pVcth, uint8_t pChannelId){
+std::map<Cbc*,std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay(uint8_t pVcth, uint8_t pChannelId){
+		
+		std::map<Cbc*,std::pair<uint8_t,uint8_t>> cFWHMpoints;
 
 		for(uint8_t cTestPulseDelay = 0 ; cTestPulseDelay < 256; cTestPulseDelay++)
 		{
@@ -56,6 +58,8 @@ void PulseShape::Initialize()
 			// set test pulse delay: not sure yet if beBoard register or CbcRegister
 			CbcRegWriter cWriter( fCbcInterface, "VCth", pVcth );
 			this->accept( cWriter );
+			// initialize the historgram for the channel map
+			for(auto& cChannel : fChannelMap) cChannel.second.initializeHist(pVcth, "VCth");
 			// CbcRegWriter cWriter( fCbcInterface, "", cTestPulseDelay);
 			// this->accept( cWriter);
 
@@ -75,14 +79,8 @@ void PulseShape::Initialize()
 					{
 						fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 						const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-						// Loop over Events from this Acquisition
-						for ( auto& cEvent : events )
-						{
-							for ( auto cFe : pBoard->fModuleVector )
-								cNHits += countHits( cFe, cEvent, "Delay", cTestPulseDelay );
-							cN++;
-						}
+						// everything from here will got into fillHistograms method
+						cN+=fillDelayHist(pBoard, events, cTestPulseDelay);
 						cNthAcq++;
 					}
 					fBeBoardInterface->Stop( pBoard, cNthAcq );
@@ -92,15 +90,92 @@ void PulseShape::Initialize()
 			}
 
 			// done counting hits for all FE's, now update the Histograms
-			updateHists( "Delay", false );
-			// for each event, we check if Channel pChannelId has a hit (this can go in a separate method that also fills the histogram)
-
-
+			updateHists("", false);
 		}
+		uint8_t cMin;
+		uint8_t cMax;
+		
+		for (auto& cChannel : fChannelMap) {
+      
+			cChannel.second.fScurve->Scale (1/double(fNevents));
+			cMin = cChannel.second.fScurve->GetBinCenter(cChannel.second.fScurve->FindFirstBinAbove(0.5));
+			cMax = cChannel.second.fScurve->GetBinCenter(cChannel.second.fScurve->FindLastBinAbove(0.5));
+			std::pair<uint8_t,uint8_t> cPair(cMin,cMax); 
+			cFWHMpoints[cChannel.first] = cPair;
+ 			
 
-	}
+			// here we have measured the complete curve, now we need to extract the FWHM points
+
+
+			// iterate over the channel map, get the histogram of each channel, normailze it to 1 (->Scale (1/double(fNevents)))
+
+			// insert the points in a map <cbc, pair> and return
+		}	
+
+		return cFWHMpoints;
+}
 
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
+// void PulseShape::updateHists( std::string pHistName, bool pFinal )
+// {
+// 	for ( auto& cCanvas : fCanvasMap )
+// 	{
+// 		cCanvas.second->cd();
+
+// 		// maybe need to declare temporary pointers outside the if condition?
+// 		if ( pHistName == "module_latency" )
+// 		{
+// 			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
+// 			cTmpHist->Draw( "same" );
+// 		}
+// 		else if ( pHistName == "module_stub_latency" )
+// 		{
+// 			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
+// 			cTmpHist->Draw( "same" );
+// 		}
+// 		else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
+// 		{
+// 			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
+// 			cTmpHist->Draw( "P same" );
+
+// 			if ( pFinal )
+// 			{
+				
+// 				cTmpHist->Draw( "P same" );
+				
+
+	
+
+// 			}
+// 		}
+		
+// 		cCanvas.second->Update();
+// 	}
+// }
+
+uint32_t PulseShape::fillDelayHist(BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay){
+	// Loop over Events from this Acquisition
+	for ( auto& cEvent : pEventVector )
+	{
+		for ( auto cFe : pBoard->fModuleVector )
+		{
+				for (auto cCbc : cFe->fCbcVector)
+				{
+					//  get histogram to fill
+					
+					auto cChannel = fChannelMap.find(cCbc);
+					if(cChannel == std::end(fChannelMap)) std::cout << "Error, no channel mapped to this CBC ( " << +cCbc->getCbcId() << " )" << std::endl;
+					else{
+							if (cEvent->DataBit(cFe->getFeId(), cCbc->getCbcId(), cChannel->second.fChannelId)){
+							// if the channel is hit, fill the histogram
+							cChannel->second.fillHist(pTPDelay);
+						}
+					}
+				}
+		}
+	}
+	return pEventVector.size();
+}
 
 
 
@@ -125,7 +200,7 @@ void PulseShape::parseSettings()
 void PulseShape::setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId)
 {
 	// translate the channel id to a test group
-	TestGroup cTestGroup = new TestGroup()
+	// TestGroup cTestGroup = new TestGroup()
 
 	// set the TestPulsePot register on the CBC to the correct amplituede
 	// CbcRegWriter cWriter(fCbcInterface, "TestPulsePot", pTPAmpliude);
@@ -135,10 +210,14 @@ void PulseShape::setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId)
 	// this->accept(cBoardWriter);
 
 	// initialize the CBC vs Channel map
-	struct initMapVisitor : public HWDescriptionVisitor {
+	struct initMapVisitor : public HwDescriptionVisitor {
 		ChannelMap cChannelMap;
 		uint8_t cChannelId;
-		initMapVisitor(ChannelMap pChannelMap, uint8_t pChannelId): cChannelMap(pChannelMap), cChannelId(pChannelId);
+		initMapVisitor(ChannelMap pChannelMap, uint8_t pChannelId){ 
+			cChannelMap=pChannelMap;
+			cChannelId=pChannelId;
+
+		}
 
 		void visit(Cbc* pCbc){
 			Channel cChannel(pCbc->getBeId(), pCbc->getFeId(), pCbc->getCbcId(), cChannelId);
@@ -148,4 +227,27 @@ void PulseShape::setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId)
 
 	initMapVisitor cInitMapVisitor(fChannelMap, pChannelId);
 	this->accept(cInitMapVisitor);
+}
+
+void PulseShape::updateHists( std::string pHistName, bool pFinal )
+{
+	for ( auto& cCanvas : fCanvasMap )
+	{
+		cCanvas.second->cd();
+
+		// now iterate over the channels in the channel map and draw
+		auto cChannel = fChannelMap.find(static_cast<Ph2_HwDescription::Cbc*>(cCanvas.first));
+		if(cChannel == std::end(fChannelMap)) std::cout << "Error, no channel mapped to this CBC ( " << +cChannel->first->getCbcId() << " )" << std::endl;
+		else
+		{
+			cCanvas.second->cd(1);
+			cChannel->second.fScurve->Draw("same");
+		}
+		// maybe need to declare temporary pointers outside the if condition?
+		if ( pHistName == "cbc_pulseshape" )
+		{
+			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Cbc*>(cCanvas.first), pHistName ) );
+			cTmpHist->Draw( "same" );
+		}
+	}
 }

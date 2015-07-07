@@ -42,13 +42,15 @@ class PulseShape : public Tool
   public:
 	void Initialize();
 	// method to scan the test pulse delay 
-	std::pair<uint8_t, uint8_t> ScanTestPulseDelay(uint8_t pVcth, uint8_t pChannelId);
+	std::map<Cbc*,std::pair<uint8_t, uint8_t>> ScanTestPulseDelay(uint8_t pVcth, uint8_t pChannelId);
 
   private:
 	void parseSettings();
 	void setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId);
+	void updateHists( std::string pHistName, bool pFinal );
 	// return number of events process = vector.size()
 	uint32_t fillDelayHist(std::vector<Event*> pEventVector, uint8_t pChannelId, uint32_t pTPDelay);
+	uint32_t fillDelayHist(BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay);
 
 	ChannelMap fChannelMap;
 
