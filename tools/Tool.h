@@ -16,8 +16,14 @@
 #include "../System/SystemController.h"
 #include "TROOT.h"
 #include "TFile.h"
+#include "TObject.h"
+#include "TCanvas.h"
 
 using namespace Ph2_System;
+
+typedef std::map<Cbc*, std::map<std::string, TObject*> >  CbcHistogramMap;
+typedef std::map<Module*, std::map<std::string, TObject*> > ModuleHistogramMap;
+typedef std::map<Ph2_HwDescription::FrontEndDescription*, TCanvas*> CanvasMap;
 
 
 /*!
@@ -34,11 +40,114 @@ class Tool : public SystemController
 
 	~Tool() {}
 
+
+
+  protected:
+	CanvasMap fCanvasMap;
+	CbcHistogramMap fCbcHistMap;
+	ModuleHistogramMap fModuleHistMap;
+
+
 	/*!
 	 * \brief Create a result directory at the specified path + ChargeMode + Timestamp
 	 * \param pDirectoryname : the name of the directory to create
 	 * \param pDate : apend the current date and time to the directoryname
 	 */
+  public:
+
+	void bookHistogram( Cbc* pCbc, std::string pName, TObject* pObject ) {
+		// find or create map<string,TOBject> for specific CBC
+		auto cCbcHistMap = fCbcHistMap.find( pCbc );
+		if ( cCbcHistMap == std::end( fCbcHistMap ) ) {
+			std::cerr << "Histo Map for CBC " << int( pCbc->getCbcId() ) <<  " (FE " << int( pCbc->getFeId() ) << ") does not exist - creating " << std::endl;
+			std::map<std::string, TObject*> cTempCbcMap;
+
+			fCbcHistMap[pCbc] = cTempCbcMap;
+			cCbcHistMap = fCbcHistMap.find( pCbc );
+		}
+		// find histogram with given name: if it exists, delete the object, if not create
+		auto cHisto = cCbcHistMap->second.find( pName );
+		if ( cHisto != std::end( cCbcHistMap->second ) ) cCbcHistMap->second.erase(cHisto);
+		cCbcHistMap->second[pName] = pObject;
+	}
+
+	void bookHistogram( Module* pModule, std::string pName, TObject* pObject ) {
+		// find or create map<string,TOBject> for specific CBC
+		auto cModuleHistMap = fModuleHistMap.find( pModule );
+		if ( cModuleHistMap == std::end( fModuleHistMap ) ) {
+			std::cerr << "Histo Map for Module " << int( pModule->getFeId() ) << " does not exist - creating " << std::endl;
+			std::map<std::string, TObject*> cTempModuleMap;
+
+			fModuleHistMap[pModule] = cTempModuleMap;
+			cModuleHistMap = fModuleHistMap.find( pModule );
+		}
+		// find histogram with given name: if it exists, delete the object, if not create
+		auto cHisto = cModuleHistMap->second.find( pName );
+		if ( cHisto != std::end( cModuleHistMap->second ) ) cModuleHistMap->second.erase(cHisto);
+		cModuleHistMap->second[pName] = pObject;
+	}
+
+	TObject* getHist( Cbc* pCbc, std::string pName ) {
+		auto cCbcHistMap = fCbcHistMap.find( pCbc );
+		if ( cCbcHistMap == std::end( fCbcHistMap ) ) std::cerr << RED << "Error: could not find the Histograms for CBC " << int( pCbc->getCbcId() ) <<  " (FE " << int( pCbc->getFeId() ) << ")" << RESET << std::endl;
+		else {
+			auto cHisto = cCbcHistMap->second.find( pName );
+			if ( cHisto == std::end( cCbcHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
+			else
+				return cHisto->second;
+		}
+	}
+
+	TObject* getHist( Module* pModule, std::string pName ) {
+		auto cModuleHistMap = fModuleHistMap.find( pModule );
+		if ( cModuleHistMap == std::end( fModuleHistMap ) ) std::cerr << RED << "Error: could not find the Histograms for Module " << int( pModule->getFeId() ) << RESET << std::endl;
+		else {
+			auto cHisto = cModuleHistMap->second.find( pName );
+			if ( cHisto == std::end( cModuleHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;
+			else return cHisto->second;
+		}
+	}
+
+	void SaveResults() {
+		// Now per FE
+		for ( const auto& cFe : fModuleHistMap ) {
+			TString cDirName = Form( "FE%d", cFe.first->getFeId() );
+			TObject* cObj = gROOT->FindObject( cDirName );
+			if ( cObj ) delete cObj;
+			fResultFile->mkdir( cDirName );
+			fResultFile->cd( cDirName );
+
+			for ( const auto& cHist : cFe.second )
+				cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
+			fResultFile->cd();
+		}
+		for ( const auto& cCbc : fCbcHistMap ) {
+			TString cDirName = Form( "FE%dCBC%d", cCbc.first->getFeId(), cCbc.first->getCbcId() );
+			TObject* cObj = gROOT->FindObject( cDirName );
+			if ( cObj ) delete cObj;
+			fResultFile->mkdir( cDirName );
+			fResultFile->cd( cDirName );
+
+			for ( const auto& cHist : cCbc.second )
+				cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
+			fResultFile->cd();
+		}
+
+		// Save Canvasses too
+		for ( const auto& cCanvas : fCanvasMap ) {
+			cCanvas.second->Write( cCanvas.second->GetName(), TObject::kOverwrite );
+			std::string cPdfName = fDirectoryName + "/" + cCanvas.second->GetName() + ".pdf";
+			cCanvas.second->SaveAs( cPdfName.c_str() );
+		}
+
+		fResultFile->Write();
+		fResultFile->Close();
+
+		// dumpConfigFiles();
+
+		std::cout << "Results saved!" << std::endl;
+	}
+
 	void CreateResultDirectory( const std::string& pDirname, bool pDate = true ) {
 		bool cCheck;
 		bool cHoleMode;
