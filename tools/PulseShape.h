@@ -44,6 +44,7 @@ class PulseShape : public Tool
 	void Initialize();
 	// method to scan the test pulse delay 
 	std::map<Cbc*,std::pair<uint8_t, uint8_t>> ScanTestPulseDelay(uint8_t pVcth);
+	//method to print the step pulse delay where pStepSize are the steps of Vcth
 	void printScanTestPulseDelay(uint8_t pStepSize);
 
   private:
