@@ -95,10 +95,9 @@ namespace Ph2_HwInterface
 		fLumi = 0x00FFFFFF & swap_bytes( list, 2*vsize );
 		fEventCount = 0x00FFFFFF & swap_bytes( list, 3*vsize );
 		fEventCountCBC = 0x00FFFFFF & swap_bytes( list, 4*vsize );
+		fTDC = 0x000000FF & swap_bytes( list, list.size() - vsize );
 
                 uint32_t event_size = EVENT_HEADER_SIZE_CHAR;
-
-		fTDC = 0x000000FF & swap_bytes( list, list.size() - vsize );
 
 		uint32_t begin = EVENT_HEADER_SIZE_CHAR;
 		uint32_t end = 0; 
