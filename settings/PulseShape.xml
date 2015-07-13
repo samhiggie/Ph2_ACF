@@ -10,8 +10,8 @@
                 <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
 	 
                 <CBC_Files path="./settings/"/>
-                <CBC Id="0" configfile="Cbc_default_hole.txt"/>
-                <CBC Id="1" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="0" configfile="FE0CBC0.txt"/>
+                <CBC Id="1" configfile="FE0CBC0.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->

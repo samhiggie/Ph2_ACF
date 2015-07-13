@@ -55,7 +55,7 @@ class PulseShape : public Tool
 	// return number of events process = vector.size()
 	uint32_t fillDelayHist(BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay);
     //convert the delay before concet to test group number
-    void setDelayAndTesGroup(uint32_t pDelay, uint32_t fTestGroup, CbcRegWriter cWriter);
+    void setDelayAndTesGroup(uint8_t pDelay, uint8_t pTestGroup);
 
 	ChannelMap fChannelMap;
 	uint32_t fNevents;

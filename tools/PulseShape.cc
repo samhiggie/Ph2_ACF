@@ -71,7 +71,7 @@ std::map<Cbc*,std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay(uint8_
 			// set test pulse delay: not sure yet if beBoard register or CbcRegister
 //			BeBoardRegWriter cBeBoardWriter(fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cTestPulseDelay);
 //			this->accept( cBeBoardWriter);
-			setDelayAndTesGroup(cTestPulseDelay, fTestGroup, cWriter);
+			setDelayAndTesGroup(cTestPulseDelay, fTestGroup);
 			// cWriter.setRegister("SelTestPulseDel&ChanGroup", cDelayAndTestGroup );
 			// this->accept(cWriter);
 
@@ -170,21 +170,23 @@ void PulseShape::printScanTestPulseDelay(uint8_t pStepSize){
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
 
 //convert in uint 32 reprasanting 5 bit delay concat with 3 bit test group
- void PulseShape::setDelayAndTesGroup(uint32_t pDelay, uint32_t fTestGroup, CbcRegWriter cWriter){
+ void PulseShape::setDelayAndTesGroup(uint8_t pDelay, uint8_t pTestGroup){
 	
-	uint32_t cFineDelay = pDelay%25;
-	uint32_t cCoarseDelay = pDelay/25; // Trigger Latency
+	uint8_t cFineDelay = pDelay%25;
+	uint8_t cCoarseDelay = pDelay/25; // Trigger Latency
 	
 	std::string cBitSetFineDelay = std::bitset<5>( cFineDelay ).to_string();
 	std::string cBitSetTestGroup = std::bitset<3>(fTestGroup).to_string();
 	std::string cResult = std::bitset<8> (cBitSetFineDelay + cBitSetTestGroup).to_string();
 	
-	std::string cBitSetCoarseDelay = std::bitset<8>(cCoarseDelay).to_string();
 
-	std::cout << "Total Delay of " << pDelay << " ns  Trigger Latency = " << cCoarseDelay << "  Fine Delay = " << cFineDelay << " ns" << std:endl;
-	
-	cWriter.setRegister("SelTestPulseDel&ChanGroup", atoi(cResult.c_str()) );
-	cWriter.setRegister("TriggerLatency", atoi(cBitSetCoarseDelay.c_str())); // after first write?
+	std::cout << "Total Delay of " << +pDelay << " ns  Trigger Latency = " << +cCoarseDelay << "  Fine Delay = " << +cFineDelay << " ns" << std::endl;
+	std::vector<std::pair<std::string, uint8_t> > cRegVec;
+	cRegVec.push_back(std::make_pair("SelTestPulseDel&ChanGroup", atoi(cResult.c_str())));
+	cRegVec.push_back(std::make_pair("TriggerLatency", cCoarseDelay));
+	CbcMultiRegWriter cWriter(fCbcInterface, cRegVec);
+	// cWriter.setRegister("SelTestPulseDel&ChanGroup", atoi(cResult.c_str()) );
+	// cWriter.setRegister("TriggerLatency", cCoarseDelay); // after first write?
 	this->accept(cWriter);
 }
 
@@ -204,10 +206,11 @@ uint32_t PulseShape::fillDelayHist(BeBoard* pBoard, std::vector<Event*> pEventVe
 					if(cChannel == std::end(fChannelMap)) std::cout << "Error, no channel mapped to this CBC ( " << +cCbc->getCbcId() << " )" << std::endl;
 					else{
 							if (cEvent->DataBit(cFe->getFeId(), cCbc->getCbcId(), cChannel->second->fChannelId)){
-							// if the channel is hit, fill the histogram
-							cChannel->second->fillHist(pTPDelay);
+								std::cout << "TPDELAY " << pTPDelay << "hit" << cChannel->second->fScurve << " CBC " << +cCbc->getCbcId() << std::endl;
+								// if the channel is hit, fill the histogram
+								cChannel->second->fillHist(pTPDelay);
+							}
 						}
-					}
 				}
 		}
 	}
