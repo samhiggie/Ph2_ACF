@@ -33,7 +33,7 @@ int main( int argc, char* argv[] )
 	cmd.defineOption("step","Scan the delay with treshold scan step size, default value: 1",ArgvParser::OptionRequiresValue);
 	cmd.defineOptionAlternative("step","s");
 
-	// cmd.defineOption("delay","Scan the delay ", ArgvParser::NoOptionAttribute);
+	//cmd.defineOption("delay","Scan the delay ", ArgvParser::NoOptionAttribute);
 	// cmd.defineOptionAlternative("delay","d");
     
     cmd.defineOption("channel","Scan the channel",ArgvParser::OptionRequiresValue);
@@ -74,9 +74,9 @@ int main( int argc, char* argv[] )
 
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/PulseShape.xml";
-	bool cStep = (cmd.foundOption("step")) ? true : false;
-	bool cDelay = (cmd.foundOption("delay")) ? true : false;
-	bool cChannel = (cmd.foundOption("channel")) ? true : false;
+	//uint8_t cStep = (cmd.foundOption("step")) ? cmd.optionValue( "step" ) : 1;
+	//uint8_t cDelay = (cmd.foundOption("delay")) ? cmd.optionValue( "delay" ) : false;
+	//uint32_t cChannel = (cmd.foundOption("channel")) ? cmd.optionValue( "channel" ) : false;
 	// bool cLatency = ( cmd.foundOption( "latency" ) ) ? true : false;
 	// bool cStubLatency = ( cmd.foundOption( "stublatency" ) ) ? true : false;
 	// bool cThreshold = ( cmd.foundOption( "threshold" ) ) ? true : false;
@@ -105,7 +105,7 @@ int main( int argc, char* argv[] )
      cPulseShape.ConfigureHw();
 
 	// Here comes our Part:
-	if ( cStep ) cPulseShape.printScanTestPulseDelay( cScanStep );
+	cPulseShape.printScanTestPulseDelay( cScanStep );
 
 	//if ( cChannel ) .......
 	

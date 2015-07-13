@@ -5,27 +5,33 @@ void PulseShape::Initialize()
 {
 	// gStyle->SetOptStat( 000000 );
 	// gStyle->SetTitleOffset( 1.3, "Y" );
+	std::cerr << "void PulseShape::Initialize()"  << std::endl;
 	for ( auto& cShelve : fShelveVector )
 	{
 		uint32_t cShelveId = cShelve->getShelveId();
+                std::cerr << "cShelveId = " << cShelveId << std::endl;
 
 		for ( auto& cBoard : cShelve->fBoardVector )
 		{
 			uint32_t cBoardId = cBoard->getBeId();
+			std::cerr << "cBoardId = " << cBoardId << std::endl;
 
 			for ( auto& cFe : cBoard->fModuleVector )
 			{
 				uint32_t cFeId = cFe->getFeId();
+				std::cerr << "cFeId = " << cFeId << std::endl;
 				// fNCbc = cFe->getNCbc();
 
 				for ( auto& cCbc : cFe->fCbcVector )
 				{
 					uint32_t cCbcId = cCbc->getCbcId();
+					std::cerr << "cCbcId = " << cCbcId << std::endl;
 
 					// Create the Canvas to draw
 					TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%dcbc%d", cFeId, cCbcId ), Form( "FE%dCBC%d  Online Canvas", cFeId, cCbcId ) );
 					ctmpCanvas->Divide( 2, 1 );
 					fCanvasMap[cCbc] = ctmpCanvas;
+					std::cerr << "Initializing map fCanvasMap[" << Form("0x%x", cCbc) << "] = " << Form("0x%x", ctmpCanvas) << std::endl;
 
 					//Create graphs for each CBC
 					TString cName =  Form( "g_cbc_pulseshape_Fe%dCbc%d", cFeId, cCbcId );
@@ -36,6 +42,12 @@ void PulseShape::Initialize()
 					cPulseGraph->GetYaxis()->SetTitle( "TestPulseAmplitue [VCth]" );
 
 					bookHistogram( cCbc, "cbc_pulseshape", cPulseGraph );
+
+
+//					Channel* cChannel = new Channel(cBoardId, cFeId, cCbcId, pChannelId);
+//					fChannelMap[cCbc] = cChannel;
+// 					std::cerr << "Initializing map fChannelMap[" << Form("0x%x", cCbc) << "] = " << Form("0x%x", cChannel) << std::endl;
+
 				}
 
 			}
@@ -53,12 +65,16 @@ std::map<Cbc*,std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay(uint8_
 		CbcRegWriter cWriter( fCbcInterface, "VCth", pVcth );
 		this->accept( cWriter );		
 
-		for(uint32_t cTestPulseDelay = 0 ; cTestPulseDelay < 256; cTestPulseDelay++)
+		for(uint32_t cTestPulseDelay = 0 ; cTestPulseDelay < 200; cTestPulseDelay++)
 		{
 			
 			// set test pulse delay: not sure yet if beBoard register or CbcRegister
-			BeBoardRegWriter cBeBoardWriter(fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cTestPulseDelay);
-			this->accept( cBeBoardWriter);
+//			BeBoardRegWriter cBeBoardWriter(fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cTestPulseDelay);
+//			this->accept( cBeBoardWriter);
+			setDelayAndTesGroup(cTestPulseDelay, fTestGroup, cWriter);
+			// cWriter.setRegister("SelTestPulseDel&ChanGroup", cDelayAndTestGroup );
+			// this->accept(cWriter);
+
 
 			// initialize the historgram for the channel map
 			for(auto& cChannel : fChannelMap) cChannel.second->initializeHist(pVcth, "VCth");
@@ -123,8 +139,9 @@ std::map<Cbc*,std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay(uint8_
 void PulseShape::printScanTestPulseDelay(uint8_t pStepSize){
 
 		std::map<Cbc*, std::pair<uint8_t, uint8_t>> cCollectedPoints;
-		
-		for(uint8_t cVcth=0;cVcth<=0xFF; cVcth += pStepSize){		
+		setSystemTestPulse(0x80, 9); // we look at channel 9
+		for(uint8_t cVcth=0;cVcth<=0xFF; cVcth += pStepSize){	
+			std::cout << "Threshold " << +cVcth << " : " << std::endl;	
 			//add the channel id
 			cCollectedPoints = ScanTestPulseDelay(cVcth);
 			for (auto& cPoint : cCollectedPoints) {
@@ -151,42 +168,27 @@ void PulseShape::printScanTestPulseDelay(uint8_t pStepSize){
 }
 
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
-// void PulseShape::updateHists( std::string pHistName, bool pFinal )
-// {
-// 	for ( auto& cCanvas : fCanvasMap )
-// 	{
-// 		cCanvas.second->cd();
 
-// 		// maybe need to declare temporary pointers outside the if condition?
-// 		if ( pHistName == "module_latency" )
-// 		{
-// 			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
-// 			cTmpHist->Draw( "same" );
-// 		}
-// 		else if ( pHistName == "module_stub_latency" )
-// 		{
-// 			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
-// 			cTmpHist->Draw( "same" );
-// 		}
-// 		else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
-// 		{
-// 			TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( static_cast<Ph2_HwDescription::Module*>(cCanvas.first), pHistName ) );
-// 			cTmpHist->Draw( "P same" );
-
-// 			if ( pFinal )
-// 			{
-				
-// 				cTmpHist->Draw( "P same" );
-				
-
+//convert in uint 32 reprasanting 5 bit delay concat with 3 bit test group
+ void PulseShape::setDelayAndTesGroup(uint32_t pDelay, uint32_t fTestGroup, CbcRegWriter cWriter){
 	
+	uint32_t cFineDelay = pDelay%25;
+	uint32_t cCoarseDelay = pDelay/25; // Trigger Latency
+	
+	std::string cBitSetFineDelay = std::bitset<5>( cFineDelay ).to_string();
+	std::string cBitSetTestGroup = std::bitset<3>(fTestGroup).to_string();
+	std::string cResult = std::bitset<8> (cBitSetFineDelay + cBitSetTestGroup).to_string();
+	
+	std::string cBitSetCoarseDelay = std::bitset<8>(cCoarseDelay).to_string();
 
-// 			}
-// 		}
-		
-// 		cCanvas.second->Update();
-// 	}
-// }
+	std::cout << "Total Delay of " << pDelay << " ns  Trigger Latency = " << cCoarseDelay << "  Fine Delay = " << cFineDelay << " ns" << std:endl;
+	
+	cWriter.setRegister("SelTestPulseDel&ChanGroup", atoi(cResult.c_str()) );
+	cWriter.setRegister("TriggerLatency", atoi(cBitSetCoarseDelay.c_str())); // after first write?
+	this->accept(cWriter);
+}
+
+
 
 uint32_t PulseShape::fillDelayHist(BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay){
 	// Loop over Events from this Acquisition
@@ -236,12 +238,13 @@ void PulseShape::setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId)
 {
 	// translate the channel id to a test group
 	// TestGroup cTestGroup = new TestGroup()
+	this->fTestGroup = pChannelId%8;
 
 	// set the TestPulsePot register on the CBC to the correct amplituede
 	CbcRegWriter cWriter(fCbcInterface, "TestPulsePot", pTPAmplitude);
 	this->accept(cWriter);
-	cWriter.setRegister("SelTestPulseDel&ChanGroup", 0xF1 );
-	this->accept(cWriter);
+
+	std::cout << "Channel Id " << +pChannelId << " TestGroup " << +fTestGroup << std::endl;
 
 	// BeBoardRegWriter cBoardWriter();
 	// this->accept(cBoardWriter);
@@ -265,6 +268,7 @@ void PulseShape::setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId)
 	// initMapVisitor cInitMapVisitor(fChannelMap, pChannelId);
 	// this->accept(cInitMapVisitor);
 
+
 	for ( auto& cShelve : fShelveVector )
 	{
 		uint32_t cShelveId = cShelve->getShelveId();
@@ -283,10 +287,12 @@ void PulseShape::setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId)
 					uint32_t cCbcId = cCbc->getCbcId();
 					Channel* cChannel = new Channel(cBoardId, cFeId, cCbcId, pChannelId);
 					fChannelMap[cCbc] = cChannel;
+                                        std::cout << "Settung/updating map fChannelMap[" << Form("0x%x", cCbc) << "] = " << Form("0x%x", cChannel) << std::endl;
 				}
 			}
 		}
 	}
+
 }
 
 void PulseShape::updateHists( std::string pHistName, bool pFinal )
@@ -295,15 +301,15 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 	{
 		cCanvas.second->cd();
 		if (pHistName == ""){
-		// now iterate over the channels in the channel map and draw
-		auto cChannel = fChannelMap.find(static_cast<Ph2_HwDescription::Cbc*>(cCanvas.first));
-		if(cChannel == std::end(fChannelMap)) std::cout << "Error, no channel mapped to this CBC ( " << +cChannel->first->getCbcId() << " )" << std::endl;
-		else
-		{
-			cCanvas.second->cd(1);
-			cChannel->second->fScurve->Draw("same");
+			// now iterate over the channels in the channel map and draw
+			auto cChannel = fChannelMap.find(static_cast<Ph2_HwDescription::Cbc*>(cCanvas.first));
+			if(cChannel == std::end(fChannelMap)) std::cout << "Error, no channel mapped to this CBC ( " << +cCanvas.first << " )" << std::endl;
+			else
+			{
+				cCanvas.second->cd(1);
+				cChannel->second->fScurve->Draw();
+			}
 		}
-	}
 		// maybe need to declare temporary pointers outside the if condition?
 		else if ( pHistName == "cbc_pulseshape" )
 		{
@@ -311,5 +317,7 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 			TGraph* cTmpGraph = dynamic_cast<TGraph*>( getHist( static_cast<Ph2_HwDescription::Cbc*>(cCanvas.first), pHistName ) );
 			cTmpGraph->Draw( "same" );
 		}
+
+		cCanvas.second->Update();
 	}
 }

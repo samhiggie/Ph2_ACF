@@ -51,13 +51,17 @@ class PulseShape : public Tool
 	void parseSettings();
 	void setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId);
 	void updateHists( std::string pHistName, bool pFinal );
+
 	// return number of events process = vector.size()
 	uint32_t fillDelayHist(BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay);
+    //convert the delay before concet to test group number
+    void setDelayAndTesGroup(uint32_t pDelay, uint32_t fTestGroup, CbcRegWriter cWriter);
 
 	ChannelMap fChannelMap;
 	uint32_t fNevents;
 	uint32_t fHoleMode;
 	uint32_t fNCbc;
+    uint32_t fTestGroup;
 
 };
 
