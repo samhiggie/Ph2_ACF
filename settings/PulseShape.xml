@@ -66,4 +66,5 @@
 <Settings>
     <Setting name="RunNumber"> 1 </Setting>
     <Setting name="HoleMode"> 1 </Setting>
+    <Setting name="Nevents" > 200 </Setting>
 </Settings>
