@@ -28,17 +28,25 @@ namespace Ph2_HwInterface
 	}
 
 
-        void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents )
+        void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes )
 	{
 	        Reset();
 
 		std::vector<uint8_t> flist;
 		for ( auto word: pData )
 		{
-		    flist.push_back((word >> 24) & 0xFF);
-		    flist.push_back((word >> 16) & 0xFF);
-		    flist.push_back((word >>  8) & 0xFF);
-		    flist.push_back(word  & 0xFF);
+                    if( swapBytes ) {
+		        flist.push_back((word >> 24) & 0xFF);
+		        flist.push_back((word >> 16) & 0xFF);
+		        flist.push_back((word >>  8) & 0xFF);
+		        flist.push_back(word  & 0xFF);
+                    }
+                    else {
+                        flist.push_back(word  & 0xFF);
+                        flist.push_back((word >>  8) & 0xFF);
+                        flist.push_back((word >> 16) & 0xFF);
+                        flist.push_back((word >> 24) & 0xFF);
+                    }
 		}
 		// initialize the buffer data array and the buffer size (one 32 bit word is 4 char!)
 		fNevents = static_cast<uint32_t>( pNevents );
@@ -67,7 +75,7 @@ namespace Ph2_HwInterface
 
 	void Data::Reset()
 	{
-	        for ( auto pevt: fEventList ) 
+	        for ( auto& pevt: fEventList ) 
 		      delete pevt;
                 fEventList.clear();
 		fCurrentEvent = 0;
