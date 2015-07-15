@@ -12,9 +12,9 @@
 #ifndef PULSESHAPE_H__
 #define PULSESHAPE_H__
 
-#include "Tool.h"        
+#include "Tool.h"
 #include "Channel.h"
-#include "../Utils/Visitor.h"        
+#include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/CommonVisitors.h"
 
@@ -42,26 +42,27 @@ class PulseShape : public Tool
 {
   public:
 	void Initialize();
-	// method to scan the test pulse delay 
-	std::map<Cbc*,std::pair<uint8_t, uint8_t>> ScanTestPulseDelay(uint8_t pVcth);
+	// method to scan the test pulse delay
+	std::map<Cbc*, std::pair<uint8_t, uint8_t>> ScanTestPulseDelay( uint8_t pVcth );
 	//method to print the step pulse delay where pStepSize are the steps of Vcth
-	void printScanTestPulseDelay(uint8_t pStepSize);
+	void printScanTestPulseDelay( uint8_t pStepSize );
 
   private:
 	void parseSettings();
-	void setSystemTestPulse(uint8_t pTPAmplitude, uint8_t pChannelId);
+	void setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId );
 	void updateHists( std::string pHistName, bool pFinal );
 
 	// return number of events process = vector.size()
-	uint32_t fillDelayHist(BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay);
-    //convert the delay before concet to test group number
-    void setDelayAndTesGroup(uint8_t pDelay, uint8_t pTestGroup);
-
+	uint32_t fillDelayHist( BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay );
+	//convert the delay before concet to test group number
+	void setDelayAndTesGroup( BeBoard* pBoard, uint8_t pDelay, uint8_t pTestGroup );
+	void enableChannel( uint8_t pChannelId );
 	ChannelMap fChannelMap;
 	uint32_t fNevents;
 	uint32_t fHoleMode;
 	uint32_t fNCbc;
-    uint32_t fTestGroup;
+	uint32_t fTestGroup;
+	uint8_t  fTPAmplitude;
 
 };
 

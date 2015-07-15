@@ -6,13 +6,13 @@
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <Global_CBC_Register name="VCth"> 0x75 </Global_CBC_Register>
+                <Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register>
                 <!--Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
 
                 <CBC_Files path="./settings/"/>
 
-                <CBC Id="0" configfile="Cbc_default_hole.txt"/>
-                <CBC Id="1" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="0" configfile="FE0CBC0.txt"/>
+                <CBC Id="1" configfile="FE0CBC1.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->
