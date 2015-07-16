@@ -26,7 +26,7 @@
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
             <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL"> 0 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ"> 10 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ"> 4 </Register>
             <!-- DIO5 threshold: [v]/3.3*256 -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in"> 40 </Register>
             <!-- set to 0 for rising edge, 1 for falling -->
@@ -66,6 +66,6 @@
 <Settings>
     <Setting name="RunNumber"> 1 </Setting>
     <Setting name="HoleMode"> 1 </Setting>
-    <Setting name="Nevents" > 200 </Setting>
-    <Setting name="TPAmplitude" > 0x20 </Setting>
+    <Setting name="Nevents" > 20 </Setting>
+    <Setting name="TPAmplitude" > 0xF0 </Setting>
 </Settings>

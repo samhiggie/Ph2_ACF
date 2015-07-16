@@ -61,10 +61,14 @@ std::map<Cbc*, std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay( uint
 	this->accept( cWriter );
 
 	// initialize the historgram for the channel map
-	for ( auto& cChannel : fChannelMap ) cChannel.second->initializeHist( pVcth, "VCth" );
+	int cLow = 3000;
+	int cHigh = 7000;
+	for ( auto& cChannel : fChannelMap )
+		cChannel.second->initializeHistTiming( pVcth, "VCth", 4000, cLow, cHigh );
 
-	for ( uint32_t cTestPulseDelay = 0 ; cTestPulseDelay < 350; cTestPulseDelay += 10 )
+	for ( uint32_t cTestPulseDelay = cLow ; cTestPulseDelay < cHigh; cTestPulseDelay += 10 )
 	{
+		setDelayAndTesGroup( cTestPulseDelay );
 
 		// set test pulse delay: not sure yet if beBoard register or CbcRegister
 		// BeBoardRegWriter cBeBoardWriter(fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cTestPulseDelay);
@@ -82,7 +86,6 @@ std::map<Cbc*, std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay( uint
 			for ( BeBoard* pBoard : cShelve->fBoardVector )
 			{
 				fBeBoardInterface->Start( pBoard );
-				setDelayAndTesGroup( pBoard, cTestPulseDelay, fTestGroup );
 				while ( cN <= fNevents )
 				{
 					cN += fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
@@ -128,8 +131,8 @@ void PulseShape::printScanTestPulseDelay( uint8_t pStepSize )
 	std::map<Cbc*, std::pair<uint8_t, uint8_t>> cCollectedPoints;
 	setSystemTestPulse( fTPAmplitude, 9 ); // we look at channel 9
 	uint8_t cVcth = ( fHoleMode ) ?  0xFF :  0x00;
-	int cStep = ( fHoleMode ) ? -10 : 10;
-
+	int cStep = ( fHoleMode ) ? -20 : 20;
+	// uint8_t cVcth = 0x87;
 	// Adaptive VCth loop
 	while ( 0x00 <= cVcth && cVcth <= 0xFF )
 	{
@@ -153,6 +156,26 @@ void PulseShape::printScanTestPulseDelay( uint8_t pStepSize )
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
 
 //convert in uint 32 reprasanting 5 bit delay concat with 3 bit test group
+
+
+
+int PulseShape::findTestGroup( uint32_t pChannelId )
+{
+
+	int cGrp = -1;
+	for ( int cChIndex = 0; cChIndex < 16; cChIndex++ )
+	{
+		uint32_t cResult = pChannelId / 2 - cChIndex * 8;
+		if ( cResult < 8 )
+			cGrp = cResult;
+	}
+	return cGrp;
+
+}
+
+
+
+
 void PulseShape::enableChannel( uint8_t pChannelId )
 {
 	uint8_t cOffset = 0xFF;
@@ -161,7 +184,7 @@ void PulseShape::enableChannel( uint8_t pChannelId )
 
 
 	if ( fHoleMode )
-		cOffset = 0;
+		cOffset = 0x00;
 
 	for ( uint8_t cChannelId = 1; cChannelId <= 254; cChannelId++ )
 	{
@@ -172,17 +195,15 @@ void PulseShape::enableChannel( uint8_t pChannelId )
 	}
 	CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
 	this->accept( cWriter );
-	CbcRegReader cReader( fCbcInterface, "Channel000" );
+	CbcRegReader cReader( fCbcInterface, "Channel001" );
 	this->accept( cReader );
-	cReader.setRegister( "Channel009" );
+	cReader.setRegister( Form( "Channel%03d", pChannelId + 1 ) );
 	this->accept( cReader );
-
-
 }
 
 
 
-void PulseShape::setDelayAndTesGroup( BeBoard* pBoard, uint8_t pDelay, uint8_t pTestGroup )
+void PulseShape::setDelayAndTesGroup( uint32_t pDelay )
 {
 
 	// uint8_t cFineDelay = pDelay % 25;
@@ -199,26 +220,24 @@ void PulseShape::setDelayAndTesGroup( BeBoard* pBoard, uint8_t pDelay, uint8_t p
 	// CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
 	// this->accept( cWriter );
 
-	uint8_t cFineDelay = pDelay % 25;
-	uint8_t cCoarseDelay = ( pDelay + cFineDelay - 24 ) / 25;
+	uint8_t cCoarseDelay = ( pDelay - 1 ) / 25;
+	uint8_t cFineDelay = pDelay - ( cCoarseDelay * 25 );
 
 	std::string cBitSetFineDelay = std::bitset<5>( cFineDelay ).to_string();
 	std::string cBitSetTestGroup = std::bitset<3>( fTestGroup ).to_string();
 	std::string cResult = std::bitset<8> ( cBitSetFineDelay + cBitSetTestGroup ).to_string();
+
+
+	std::cout << "cFineDelay: " << +cFineDelay << std::endl;
+	std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
+	std::cout << "Current Time: " << +pDelay << std::endl;
+
+	std::cout << "TestGroup: " << +fTestGroup << std::endl;
+	std::cout << "cByte: " << cResult << std::endl;
 	CbcRegWriter cWriter( fCbcInterface, "SelTestPulseDel&ChanGroup", atoi( cResult.c_str() ) );
 	this->accept( cWriter );
-
-	const char* cTriggerDelayString = "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE";
-	uint8_t cBaseDelay = fBeBoardInterface->ReadBoardReg( pBoard, cTriggerDelayString );
-	uint32_t cVal = ( uint32_t )( cBaseDelay + cCoarseDelay );
-	std::cout << "cBaseDelay: " << +cBaseDelay << std::endl;
-	std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
-	std::cout << "cVal: " << cVal << std::endl;
-	BeBoardRegWriter cBeBoardWriter( fBeBoardInterface, cTriggerDelayString, cVal );
+	BeBoardRegWriter cBeBoardWriter( fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cCoarseDelay );
 	this->accept( cBeBoardWriter );
-
-
-
 }
 
 
@@ -229,6 +248,7 @@ uint32_t PulseShape::fillDelayHist( BeBoard* pBoard, std::vector<Event*> pEventV
 	// Loop over Events from this Acquisition
 	for ( auto& cEvent : pEventVector )
 	{
+		std::cout << *cEvent << std::endl;
 		for ( auto cFe : pBoard->fModuleVector )
 		{
 			for ( auto cCbc : cFe->fCbcVector )
@@ -279,11 +299,26 @@ void PulseShape::parseSettings()
 void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
 {
 	// translate the channel id to a test group
-	// TestGroup cTestGroup = new TestGroup()
-	this->fTestGroup = pChannelId % 8;
+	std::vector<std::pair<std::string, uint8_t>> cRegVec;
 
-	// set the TestPulsePot register on the CBC to the correct amplituede
-	CbcRegWriter cWriter( fCbcInterface, "TestPulsePot", pTPAmplitude );
+	//calculate the right test group
+	this->fTestGroup = findTestGroup( pChannelId );
+	std::bitset<8> cTmpDelayValue =  fTestGroup ;
+	cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup", static_cast<uint8_t>( fTestGroup ) ) );
+	//set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
+	if ( fHoleMode )
+		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
+
+
+	else
+		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux ", 0x61 ) );
+
+
+	cRegVec.push_back( std::make_pair( "TestPulsePot", pTPAmplitude ) );
+
+	//multiregwriter and set tespulsedelay analogmux and test pulse pot
+
+	CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
 	this->accept( cWriter );
 
 	std::cout << "Channel Id " << +pChannelId << " TestGroup " << +fTestGroup << std::endl;
@@ -333,6 +368,7 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
 					std::cout << "Settung/updating map fChannelMap[" << Form( "0x%x", cCbc ) << "] = " << Form( "0x%x", cChannel ) << std::endl;
 				}
 				enableChannel( pChannelId );
+				std::cout << "Channel: " << +pChannelId << std::endl;
 			}
 		}
 	}

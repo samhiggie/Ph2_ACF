@@ -48,6 +48,8 @@ class PulseShape : public Tool
 	void printScanTestPulseDelay( uint8_t pStepSize );
 
   private:
+
+	int findTestGroup( uint32_t pChannelId );
 	void parseSettings();
 	void setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId );
 	void updateHists( std::string pHistName, bool pFinal );
@@ -55,7 +57,7 @@ class PulseShape : public Tool
 	// return number of events process = vector.size()
 	uint32_t fillDelayHist( BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay );
 	//convert the delay before concet to test group number
-	void setDelayAndTesGroup( BeBoard* pBoard, uint8_t pDelay, uint8_t pTestGroup );
+	void setDelayAndTesGroup( uint32_t pDelay );
 	void enableChannel( uint8_t pChannelId );
 	ChannelMap fChannelMap;
 	uint32_t fNevents;
