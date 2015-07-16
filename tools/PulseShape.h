@@ -63,7 +63,7 @@ class PulseShape : public Tool
 	uint32_t fNevents;
 	uint32_t fHoleMode;
 	uint32_t fNCbc;
-	uint32_t fTestGroup;
+	uint8_t fTestGroup;
 	uint8_t  fTPAmplitude;
 
 };

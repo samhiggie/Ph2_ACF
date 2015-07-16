@@ -61,10 +61,10 @@ std::map<Cbc*, std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay( uint
 	this->accept( cWriter );
 
 	// initialize the historgram for the channel map
-	int cLow = 3000;
-	int cHigh = 7000;
+	int cLow = 4800;
+	int cHigh = 5300;
 	for ( auto& cChannel : fChannelMap )
-		cChannel.second->initializeHistTiming( pVcth, "VCth", 4000, cLow, cHigh );
+		cChannel.second->initializeHistTiming( pVcth, "VCth", cHigh - cLow, cLow, cHigh );
 
 	for ( uint32_t cTestPulseDelay = cLow ; cTestPulseDelay < cHigh; cTestPulseDelay += 10 )
 	{
@@ -130,11 +130,11 @@ void PulseShape::printScanTestPulseDelay( uint8_t pStepSize )
 
 	std::map<Cbc*, std::pair<uint8_t, uint8_t>> cCollectedPoints;
 	setSystemTestPulse( fTPAmplitude, 9 ); // we look at channel 9
-	uint8_t cVcth = ( fHoleMode ) ?  0xFF :  0x00;
-	int cStep = ( fHoleMode ) ? -20 : 20;
+	uint8_t cVcth = ( fHoleMode ) ?  0x96 :  0x00;
+	int cStep = ( fHoleMode ) ? -10 : 10;
 	// uint8_t cVcth = 0x87;
 	// Adaptive VCth loop
-	while ( 0x00 <= cVcth && cVcth <= 0xFF )
+	while ( 0x78 <= cVcth && cVcth <= 0xFF )
 	{
 		std::cout << "Threshold " << +cVcth << " : " << std::endl;
 		//add the channel id
@@ -223,6 +223,7 @@ void PulseShape::setDelayAndTesGroup( uint32_t pDelay )
 	uint8_t cCoarseDelay = ( pDelay - 1 ) / 25;
 	uint8_t cFineDelay = pDelay - ( cCoarseDelay * 25 );
 
+	// need to swap endianness for both sets individually
 	std::string cBitSetFineDelay = std::bitset<5>( cFineDelay ).to_string();
 	std::string cBitSetTestGroup = std::bitset<3>( fTestGroup ).to_string();
 	std::string cResult = std::bitset<8> ( cBitSetFineDelay + cBitSetTestGroup ).to_string();
@@ -303,8 +304,11 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
 
 	//calculate the right test group
 	this->fTestGroup = findTestGroup( pChannelId );
-	std::bitset<8> cTmpDelayValue =  fTestGroup ;
-	cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup", static_cast<uint8_t>( fTestGroup ) ) );
+	// swap endianness
+	std::cout << static_cast<std::bitset<8>>( fTestGroup ) << std::endl;
+
+	// std::bitset<8> cTmpDelayValue =  fTestGroup ;
+	cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup",  fTestGroup ) );
 	//set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
 	if ( fHoleMode )
 		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
