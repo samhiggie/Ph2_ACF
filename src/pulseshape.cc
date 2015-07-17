@@ -30,14 +30,14 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "file", "Hw Description File . Default value: settings/PulseShape.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
 
-	cmd.defineOption("step","Scan the delay with treshold scan step size, default value: 1",ArgvParser::OptionRequiresValue);
-	cmd.defineOptionAlternative("step","s");
+	cmd.defineOption( "step", "Scan the delay with treshold scan step size, default value: 1", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "step", "s" );
 
 	//cmd.defineOption("delay","Scan the delay ", ArgvParser::NoOptionAttribute);
 	// cmd.defineOptionAlternative("delay","d");
-    
-    cmd.defineOption("channel","Scan the channel",ArgvParser::OptionRequiresValue);
-  	cmd.defineOptionAlternative("channel","c");
+
+	cmd.defineOption( "channel", "Scan the channel", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "channel", "c" );
 	// cmd.defineOption( "latency", "scan the trigger latency", ArgvParser::NoOptionAttribute );
 	// cmd.defineOptionAlternative( "latency", "l" );
 
@@ -88,13 +88,13 @@ int main( int argc, char* argv[] )
 
 	// uint8_t cStartLatency = ( cmd.foundOption( "minimum" ) ) ? convertAnyInt( cmd.optionValue( "minimum" ).c_str() ) :  0;
 	// uint8_t cLatencyRange = ( cmd.foundOption( "range" ) ) ?  convertAnyInt( cmd.optionValue( "range" ).c_str() ) :  10;
-    uint8_t cScanStep = (cmd.foundOption("step")) ? convertAnyInt(cmd.optionValue("step").c_str() ) : 1;
-    uint8_t cSelectedChannel = (cmd.foundOption("channel")) ? convertAnyInt(cmd.optionValue("channel").c_str() ) : 1;
+	uint8_t cScanStep = ( cmd.foundOption( "step" ) ) ? convertAnyInt( cmd.optionValue( "step" ).c_str() ) : 1;
+	uint8_t cSelectedChannel = ( cmd.foundOption( "channel" ) ) ? convertAnyInt( cmd.optionValue( "channel" ).c_str() ) : 1;
 
 	TApplication cApp( "Root Application", &argc, argv );
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
-    
+
 	cPulseShape.InitializeHw( cHWFile );
 	cPulseShape.InitializeSettings( cHWFile );
 	cPulseShape.Initialize();
@@ -102,13 +102,13 @@ int main( int argc, char* argv[] )
 	std::string cResultfile;
 	cResultfile = "PulseShape";
 	cPulseShape.InitResultFile( cResultfile );
-     cPulseShape.ConfigureHw();
+	cPulseShape.ConfigureHw();
 
 	// Here comes our Part:
-	cPulseShape.printScanTestPulseDelay( cScanStep );
+	cPulseShape.ScanTestPulseDelay( cScanStep );
 
 	//if ( cChannel ) .......
-	
+
 	// if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
 	// if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
 	cPulseShape.SaveResults();

@@ -3,6 +3,7 @@
 
 void PulseShape::Initialize()
 {
+	fNCbc = 0;
 	// gStyle->SetOptStat( 000000 );
 	// gStyle->SetTitleOffset( 1.3, "Y" );
 	std::cerr << "void PulseShape::Initialize()"  << std::endl;
@@ -26,7 +27,7 @@ void PulseShape::Initialize()
 				{
 					uint32_t cCbcId = cCbc->getCbcId();
 					std::cerr << "cCbcId = " << cCbcId << std::endl;
-
+					fNCbc++;
 					// Create the Canvas to draw
 					TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%dcbc%d", cFeId, cCbcId ), Form( "FE%dCBC%d  Online Canvas", cFeId, cCbcId ) );
 					ctmpCanvas->Divide( 2, 1 );
@@ -54,26 +55,150 @@ void PulseShape::Initialize()
 	std::cout << "Histograms and Settings initialised." << std::endl;
 }
 
-std::map<Cbc*, std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay( uint8_t pVcth )
+// std::map<Cbc*, std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay( uint8_t pVcth )
+// {
+
+// 	CbcRegWriter cWriter( fCbcInterface, "VCth", pVcth );
+// 	this->accept( cWriter );
+
+// 	// initialize the historgram for the channel map
+// 	int cLow = 4800;
+// 	int cHigh = 5300;
+// 	for ( auto& cChannel : fChannelMap )
+// 		cChannel.second->initializeHistTiming( pVcth, "VCth", cHigh - cLow, cLow, cHigh );
+
+// 	for ( uint32_t cTestPulseDelay = cLow ; cTestPulseDelay < cHigh; cTestPulseDelay += 10 )
+// 	{
+// 		setDelayAndTesGroup( cTestPulseDelay );
+
+// 		// set test pulse delay: not sure yet if beBoard register or CbcRegister
+// 		// BeBoardRegWriter cBeBoardWriter(fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cTestPulseDelay);
+// 		// this->accept( cBeBoardWriter);
+// 		// setDelayAndTesGroup( cTestPulseDelay, fTestGroup );
+
+// 		// then we take fNEvents
+// 		uint32_t cN = 1;
+// 		uint32_t cNthAcq = 0;
+// 		int cNHits = 0;
+
+// 		// Take Data for all Modules
+// 		for ( auto& cShelve : fShelveVector )
+// 		{
+// 			for ( BeBoard* pBoard : cShelve->fBoardVector )
+// 			{
+// 				fBeBoardInterface->Start( pBoard );
+// 				while ( cN <= fNevents )
+// 				{
+// 					cN += fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+// 					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+// 					// everything from here will got into fillHistograms method
+// 					cNHits += fillDelayHist( pBoard, events, cTestPulseDelay );
+// 					cNthAcq++;
+// 				}
+// 				fBeBoardInterface->Stop( pBoard, cNthAcq );
+// 				std::cout << "Delay " << +cTestPulseDelay << " Hits " << cNHits  << " Events " << cN << std::endl;
+
+// 			}
+// 		}
+
+// 		// done counting hits for all FE's, now update the Histograms
+// 		updateHists( "", false );
+// 	}
+
+// 	std::map<Cbc*, std::pair<uint8_t, uint8_t>> cFWHMpoints;
+
+// 	uint8_t cMin;
+// 	uint8_t cMax;
+
+// 	for ( auto& cChannel : fChannelMap )
+// 	{
+
+// 		cChannel.second->fScurve->Scale( 1 / double( fNevents ) );
+// 		cMin = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindFirstBinAbove( 0.5 ) );
+// 		cMax = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindLastBinAbove( 0.5 ) );
+// 		std::pair<uint8_t, uint8_t> cPair( cMin, cMax );
+// 		cFWHMpoints[cChannel.first] = cPair;
+
+// 		// here we have measured the complete curve, now we need to extract the FWHM points
+// 		// iterate over the channel map, get the histogram of each channel, normailze it to 1 (->Scale (1/double(fNevents)))
+// 		// insert the points in a map <cbc, pair> and return
+// 	}
+// 	return cFWHMpoints;
+// }
+
+
+
+
+
+// void PulseShape::printScanTestPulseDelay( uint8_t pStepSize )
+// {
+
+// 	std::map<Cbc*, std::pair<uint8_t, uint8_t>> cCollectedPoints;
+// 	setSystemTestPulse( fTPAmplitude, 11 ); // we look at channel 9
+// 	uint8_t cVcth = ( fHoleMode ) ?  0x96 :  0x00;
+// 	int cStep = ( fHoleMode ) ? -10 : 10;
+// 	// uint8_t cVcth = 0x87;
+// 	// Adaptive VCth loop
+// 	while ( 0x78 <= cVcth && cVcth <= 0xFF )
+// 	{
+// 		std::cout << "Threshold " << +cVcth << " : " << std::endl;
+// 		//add the channel id
+// 		cCollectedPoints = ScanTestPulseDelay( cVcth );
+// 		for ( auto& cPoint : cCollectedPoints )
+// 		{
+// 			TGraph* cTmpGraph = static_cast<TGraph*>( getHist( cPoint.first, "cbc_pulseshape" ) );
+// 			cTmpGraph->SetPoint( cTmpGraph->GetN(), cPoint.second.first, cVcth );
+// 			cTmpGraph->SetPoint( cTmpGraph->GetN(), cPoint.second.second, cVcth );
+// 		}
+// 		updateHists( "cbc_pulseshape", false );
+// 		cVcth += cStep;
+// 	}
+// }
+
+
+void PulseShape::ScanTestPulseDelay( uint8_t pStepSize )
 {
-
-	CbcRegWriter cWriter( fCbcInterface, "VCth", pVcth );
-	this->accept( cWriter );
-
+	setSystemTestPulse( fTPAmplitude, 11 ); // we look at channel 9
 	// initialize the historgram for the channel map
 	int cLow = 4800;
 	int cHigh = 5300;
-	for ( auto& cChannel : fChannelMap )
-		cChannel.second->initializeHistTiming( pVcth, "VCth", cHigh - cLow, cLow, cHigh );
-
 	for ( uint32_t cTestPulseDelay = cLow ; cTestPulseDelay < cHigh; cTestPulseDelay += 10 )
 	{
 		setDelayAndTesGroup( cTestPulseDelay );
+		ScanVcth( cTestPulseDelay );
 
-		// set test pulse delay: not sure yet if beBoard register or CbcRegister
-		// BeBoardRegWriter cBeBoardWriter(fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cTestPulseDelay);
-		// this->accept( cBeBoardWriter);
-		// setDelayAndTesGroup( cTestPulseDelay, fTestGroup );
+	}
+	// std::map<Cbc*, std::pair<uint8_t, uint8_t>> cCollectedPoints;
+
+	// 	//add the channel id
+	// 	cCollectedPoints = ScanTestPulseDelay( cVcth );
+	// 	for ( auto& cPoint : cCollectedPoints )
+	// 	{
+	// 		TGraph* cTmpGraph = static_cast<TGraph*>( getHist( cPoint.first, "cbc_pulseshape" ) );
+	// 		cTmpGraph->SetPoint( cTmpGraph->GetN(), cPoint.second.first, cVcth );
+	// 		cTmpGraph->SetPoint( cTmpGraph->GetN(), cPoint.second.second, cVcth );
+	// 	}
+	// 	updateHists( "cbc_pulseshape", false );
+	// 	cVcth += cStep;
+}
+
+
+std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
+{
+
+	for ( auto& cChannel : fChannelMap )
+		cChannel.second->initializeHist( pDelay, "Delay" );
+
+	uint8_t cVcth = ( fHoleMode ) ?  0x96 :  0x00;
+	int cStep = ( fHoleMode ) ? -10 : 10;
+	uint32_t cAllOneCounter = 0;
+	// uint8_t cVcth = 0x87;
+	// Adaptive VCth loop
+	while ( 0x00 <= cVcth && cVcth <= 0xFF )
+	{
+		std::cout << "Threshold " << +cVcth << " : " << std::endl;
+		CbcRegWriter cWriter( fCbcInterface, "VCth", cVcth );
+		this->accept( cWriter );
 
 		// then we take fNEvents
 		uint32_t cN = 1;
@@ -91,71 +216,46 @@ std::map<Cbc*, std::pair<uint8_t, uint8_t>> PulseShape::ScanTestPulseDelay( uint
 					cN += fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 					// everything from here will got into fillHistograms method
-					cNHits += fillDelayHist( pBoard, events, cTestPulseDelay );
+					cNHits += fillVcthHist( pBoard, events, cVcth );
 					cNthAcq++;
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
-				std::cout << "Delay " << +cTestPulseDelay << " Hits " << cNHits  << " Events " << cN << std::endl;
+				std::cout << "Delay " << +pDelay << " Hits " << cNHits  << " Events " << cN - 1 << std::endl;
 
 			}
 		}
-
-		// done counting hits for all FE's, now update the Histograms
+		if ( cNHits >= fNevents * fNCbc ) cAllOneCounter++ ;
+		if ( cAllOneCounter > 3 ) break;
+		if ( fHoleMode && cVcth == 0x00 && cNHits == 0 ) break;
+		if ( !fHoleMode && cVcth == 0xFF && cNHits == 0 ) break;
+		cVcth += cStep;
 		updateHists( "", false );
 	}
 
-	std::map<Cbc*, std::pair<uint8_t, uint8_t>> cFWHMpoints;
-
-	uint8_t cMin;
-	uint8_t cMax;
-
-	for ( auto& cChannel : fChannelMap )
-	{
-
-		cChannel.second->fScurve->Scale( 1 / double( fNevents ) );
-		cMin = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindFirstBinAbove( 0.5 ) );
-		cMax = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindLastBinAbove( 0.5 ) );
-		std::pair<uint8_t, uint8_t> cPair( cMin, cMax );
-		cFWHMpoints[cChannel.first] = cPair;
-
-		// here we have measured the complete curve, now we need to extract the FWHM points
-		// iterate over the channel map, get the histogram of each channel, normailze it to 1 (->Scale (1/double(fNevents)))
-		// insert the points in a map <cbc, pair> and return
-	}
-	return cFWHMpoints;
+	// done counting hits for all FE's, now update the Histograms
 }
 
-void PulseShape::printScanTestPulseDelay( uint8_t pStepSize )
-{
+// std::map<Cbc*, std::pair<uint8_t, uint8_t>> cFWHMpoints;
 
-	std::map<Cbc*, std::pair<uint8_t, uint8_t>> cCollectedPoints;
-	setSystemTestPulse( fTPAmplitude, 9 ); // we look at channel 9
-	uint8_t cVcth = ( fHoleMode ) ?  0x96 :  0x00;
-	int cStep = ( fHoleMode ) ? -10 : 10;
-	// uint8_t cVcth = 0x87;
-	// Adaptive VCth loop
-	while ( 0x78 <= cVcth && cVcth <= 0xFF )
-	{
-		std::cout << "Threshold " << +cVcth << " : " << std::endl;
-		//add the channel id
-		cCollectedPoints = ScanTestPulseDelay( cVcth );
-		for ( auto& cPoint : cCollectedPoints )
-		{
-			TGraph* cTmpGraph = static_cast<TGraph*>( getHist( cPoint.first, "cbc_pulseshape" ) );
-			cTmpGraph->SetPoint( cTmpGraph->GetN(), cPoint.second.first, cVcth );
-			cTmpGraph->SetPoint( cTmpGraph->GetN(), cPoint.second.second, cVcth );
-		}
-		updateHists( "cbc_pulseshape", false );
-		cVcth += cStep;
-	}
-}
+// uint8_t cMin;
+// uint8_t cMax;
 
+// for ( auto& cChannel : fChannelMap )
+// {
 
+// 	cChannel.second->fScurve->Scale( 1 / double( fNevents ) );
+// 	cMin = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindFirstBinAbove( 0.5 ) );
+// 	cMax = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindLastBinAbove( 0.5 ) );
+// 	std::pair<uint8_t, uint8_t> cPair( cMin, cMax );
+// 	cFWHMpoints[cChannel.first] = cPair;
 
-
+// 	// here we have measured the complete curve, now we need to extract the FWHM points
+// 	// iterate over the channel map, get the histogram of each channel, normailze it to 1 (->Scale (1/double(fNevents)))
+// 	// insert the points in a map <cbc, pair> and return
+// }
+// return cFWHMpoints;
+// }
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
-
-//convert in uint 32 reprasanting 5 bit delay concat with 3 bit test group
 
 
 
@@ -178,78 +278,56 @@ int PulseShape::findTestGroup( uint32_t pChannelId )
 
 void PulseShape::enableChannel( uint8_t pChannelId )
 {
-	uint8_t cOffset = 0xFF;
-	std::vector<std::pair<std::string, uint8_t>> cRegVec;
-	std::string cReg;
+	uint8_t cOffset = 0x50;
+	// std::vector<std::pair<std::string, uint8_t>> cRegVec;
+	std::string cReg = Form( "Channel%03d", pChannelId + 1 );;
 
 
-	if ( fHoleMode )
-		cOffset = 0x00;
+	// if ( fHoleMode )
+	// cOffset =0x00;
 
-	for ( uint8_t cChannelId = 1; cChannelId <= 254; cChannelId++ )
-	{
-		cReg = Form( "Channel%03d", cChannelId );
-		//std::cout << cReg << std::endl;
-		if ( cChannelId != pChannelId + 1 )
-			cRegVec.push_back( std::make_pair( cReg, cOffset ) );
-	}
-	CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
+	// for ( uint8_t cChannelId = 1; cChannelId <= 254; cChannelId++ )
+	// {
+	// cReg
+	//std::cout << cReg << std::endl;
+	// if ( cChannelId != pChannelId + 1 )
+	// 	cRegVec.push_back( std::make_pair( cReg, cOffset ) );
+
+	// }
+	//now works with default hole
+	//if ( cChannelId == pChannelId + 1 )
+
+	//CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
+	CbcRegWriter cWriter( fCbcInterface, cReg, cOffset );
 	this->accept( cWriter );
-	CbcRegReader cReader( fCbcInterface, "Channel001" );
-	this->accept( cReader );
-	cReader.setRegister( Form( "Channel%03d", pChannelId + 1 ) );
-	this->accept( cReader );
+
 }
 
 
 
 void PulseShape::setDelayAndTesGroup( uint32_t pDelay )
 {
-
-	// uint8_t cFineDelay = pDelay % 25;
-	// uint8_t cCoarseDelay = pDelay / 25; // Trigger Latency
-
-	// std::string cBitSetFineDelay = std::bitset<5>( cFineDelay ).to_string();
-	// std::string cBitSetTestGroup = std::bitset<3>( fTestGroup ).to_string();
-	// std::string cResult = std::bitset<8> ( cBitSetFineDelay + cBitSetTestGroup ).to_string();
-	// // std::cout << "Total Delay of " << +pDelay << " ns  Trigger Latency = " << +cCoarseDelay << "  Fine Delay = " << +cFineDelay << " ns" << std::endl;
-
-	// std::vector<std::pair<std::string, uint8_t> > cRegVec;
-	// cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup", atoi( cResult.c_str() ) ) );
-	// cRegVec.push_back( std::make_pair( "TriggerLatency", cCoarseDelay ) );
-	// CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
-	// this->accept( cWriter );
-
 	uint8_t cCoarseDelay = ( pDelay - 1 ) / 25;
 	uint8_t cFineDelay = pDelay - ( cCoarseDelay * 25 );
 
-	// need to swap endianness for both sets individually
-	std::string cBitSetFineDelay = std::bitset<5>( cFineDelay ).to_string();
-	std::string cBitSetTestGroup = std::bitset<3>( fTestGroup ).to_string();
-	std::string cResult = std::bitset<8> ( cBitSetFineDelay + cBitSetTestGroup ).to_string();
+	// std::cout << "cFineDelay: " << +cFineDelay << std::endl;
+	// std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
+	// std::cout << "Current Time: " << +pDelay << std::endl;
 
-
-	std::cout << "cFineDelay: " << +cFineDelay << std::endl;
-	std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
-	std::cout << "Current Time: " << +pDelay << std::endl;
-
-	std::cout << "TestGroup: " << +fTestGroup << std::endl;
-	std::cout << "cByte: " << cResult << std::endl;
-	CbcRegWriter cWriter( fCbcInterface, "SelTestPulseDel&ChanGroup", atoi( cResult.c_str() ) );
+	CbcRegWriter cWriter( fCbcInterface, "SelTestPulseDel&ChanGroup", to_reg( cFineDelay, fTestGroup ) );
 	this->accept( cWriter );
-	BeBoardRegWriter cBeBoardWriter( fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cCoarseDelay );
+	BeBoardRegWriter cBeBoardWriter( fBeBoardInterface, DELAY_AF_TEST_PULSE, cCoarseDelay );
 	this->accept( cBeBoardWriter );
 }
 
 
 
-uint32_t PulseShape::fillDelayHist( BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pTPDelay )
+uint32_t PulseShape::fillVcthHist( BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pVcth )
 {
 	uint32_t cHits = 0;
 	// Loop over Events from this Acquisition
 	for ( auto& cEvent : pEventVector )
 	{
-		std::cout << *cEvent << std::endl;
 		for ( auto cFe : pBoard->fModuleVector )
 		{
 			for ( auto cCbc : cFe->fCbcVector )
@@ -264,7 +342,7 @@ uint32_t PulseShape::fillDelayHist( BeBoard* pBoard, std::vector<Event*> pEventV
 					{
 						// if the channel is hit, fill the histogram
 						// cChannel->second->fillHist( pTPDelay );
-						cChannel->second->fScurve->Fill( pTPDelay );
+						cChannel->second->fScurve->Fill( pVcth );
 						cHits++;
 					}
 				}
@@ -304,51 +382,20 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
 
 	//calculate the right test group
 	this->fTestGroup = findTestGroup( pChannelId );
-	// swap endianness
-	std::cout << static_cast<std::bitset<8>>( fTestGroup ) << std::endl;
 
-	// std::bitset<8> cTmpDelayValue =  fTestGroup ;
-	cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup",  fTestGroup ) );
+	uint8_t cRegValue =  to_reg( 0, fTestGroup );
+	cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup",  cRegValue ) );
+
 	//set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
 	if ( fHoleMode )
 		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
-
-
 	else
 		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux ", 0x61 ) );
 
-
 	cRegVec.push_back( std::make_pair( "TestPulsePot", pTPAmplitude ) );
-
-	//multiregwriter and set tespulsedelay analogmux and test pulse pot
 
 	CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
 	this->accept( cWriter );
-
-	std::cout << "Channel Id " << +pChannelId << " TestGroup " << +fTestGroup << std::endl;
-
-	// BeBoardRegWriter cBoardWriter();
-	// this->accept(cBoardWriter);
-
-	// initialize the CBC vs Channel map
-	// struct initMapVisitor : public HwDescriptionVisitor {
-	// 	ChannelMap cChannelMap;
-	// 	uint8_t cChannelId;
-	// 	initMapVisitor(ChannelMap pChannelMap, uint8_t pChannelId){
-	// 		cChannelMap=pChannelMap;
-	// 		cChannelId=pChannelId;
-
-	// 	}
-
-	// 	void visit(Cbc* pCbc){
-	// 		Channel cChannel = new Channel(pCbc->getBeId(), pCbc->getFeId(), pCbc->getCbcId(), cChannelId);
-	// 		cChannelMap[pCbc] = cChannel;
-	// 	}
-	// };
-
-	// initMapVisitor cInitMapVisitor(fChannelMap, pChannelId);
-	// this->accept(cInitMapVisitor);
-
 
 	for ( auto& cShelve : fShelveVector )
 	{
@@ -393,9 +440,9 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 			{
 				cCanvas.second->cd( 1 );
 				cChannel->second->fScurve->Draw( "P0" );
+				std::cout << "I happen " << std::endl;
 			}
 		}
-		// maybe need to declare temporary pointers outside the if condition?
 		else if ( pHistName == "cbc_pulseshape" )
 		{
 			cCanvas.second->cd( 2 );
