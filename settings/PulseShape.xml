@@ -64,8 +64,10 @@
 </HwDescription>
 
 <Settings>
-    <Setting name="RunNumber"> 1 </Setting>
     <Setting name="HoleMode"> 1 </Setting>
-    <Setting name="Nevents" > 20 </Setting>
-    <Setting name="TPAmplitude" > 0xF0 </Setting>
+    <Setting name="Nevents" > 10 </Setting>
+    <Setting name="TPAmplitude" > 0xA0 </Setting>
+    <Setting name="Channel" > 1 </Setting>
+    <Setting name="ChannelOffset" > 0x01 </Setting>
+    <Setting name="StepSize" > 3 </Setting>
 </Settings>

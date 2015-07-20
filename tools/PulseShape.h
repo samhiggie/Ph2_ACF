@@ -84,6 +84,9 @@ class PulseShape : public Tool
 	uint32_t fNCbc;
 	uint8_t fTestGroup;
 	uint8_t fTPAmplitude;
+	uint32_t fChannel;
+	uint8_t fOffset;
+	uint32_t fStepSize;
 	unsigned char fLookup[16] =
 	{
 		0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe,
