@@ -189,9 +189,12 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 	for ( auto& cChannel : fChannelMap )
 		cChannel.second->initializeHist( pDelay, "Delay" );
 
-	uint8_t cVcth = ( fHoleMode ) ?  0x96 :  0x00;
-	int cStep = ( fHoleMode ) ? -10 : 10;
-	uint32_t cAllOneCounter = 0;
+	uint8_t cVcth = ( fHoleMode ) ?  0x00 :  0xFF;
+	int cStep = ( fHoleMode ) ? 10 : -10;
+	uint32_t cAllZeroCounter = 0;
+	// uint8_t cDoubleVcth;
+	bool cAllZero = false;
+	bool cNonZero = false;
 	// uint8_t cVcth = 0x87;
 	// Adaptive VCth loop
 	while ( 0x00 <= cVcth && cVcth <= 0xFF )
@@ -220,20 +223,40 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 					cNthAcq++;
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
-				std::cout << "Delay " << +pDelay << " Hits " << cNHits  << " Events " << cN - 1 << std::endl;
-
+				std::cout << "Delay " << +pDelay << " Hits " << cNHits  << " Events " << cN   << std::endl;
+				if ( cNHits != 0 ) cNonZero = true;
 			}
 		}
-		if ( cNHits >= fNevents * fNCbc ) cAllOneCounter++ ;
-		if ( cAllOneCounter > 3 ) break;
-		if ( fHoleMode && cVcth == 0x00 && cNHits == 0 ) break;
-		if ( !fHoleMode && cVcth == 0xFF && cNHits == 0 ) break;
+		if ( cNonZero && cNHits == 0 && cAllZero == false )
+		{
+			std::cout << "No more hits!" << std::endl;
+			// cAllZeroCounter++ ;
+			cAllZero = true;
+			// cDoubleVcth = cVcth;
+			cVcth -= 4 * cStep;
+			cStep /= 10;
+			continue;
+		}
+		if ( cNHits == 0 &&  cAllZero )
+		{
+			cAllZeroCounter++;
+			std::cout << " all 0" << std::endl;
+		}
+
+		if ( cAllZeroCounter > 3 )
+		{
+			break;
+			std::cout << "stopping " << std::endl;
+		}
+		if ( fHoleMode && cVcth == 0xFF && cNHits == 0 ) break;
+		if ( !fHoleMode && cVcth == 0x00 && cNHits == 0 ) break;
 		cVcth += cStep;
 		updateHists( "", false );
 	}
-
-	// done counting hits for all FE's, now update the Histograms
 }
+
+// done counting hits for all FE's, now update the Histograms
+
 
 // std::map<Cbc*, std::pair<uint8_t, uint8_t>> cFWHMpoints;
 
@@ -342,8 +365,11 @@ uint32_t PulseShape::fillVcthHist( BeBoard* pBoard, std::vector<Event*> pEventVe
 					{
 						// if the channel is hit, fill the histogram
 						// cChannel->second->fillHist( pTPDelay );
-						cChannel->second->fScurve->Fill( pVcth );
+						TH1F* cTmpHist = cChannel->second->fScurve;
+						if ( cTmpHist->GetBinContent( cTmpHist->FindBin( pVcth ) ) < fNevents )
+							cChannel->second->fScurve->Fill( pVcth );
 						cHits++;
+
 					}
 				}
 			}
@@ -439,8 +465,7 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 			else
 			{
 				cCanvas.second->cd( 1 );
-				cChannel->second->fScurve->Draw( "P0" );
-				std::cout << "I happen " << std::endl;
+				cChannel->second->fScurve->Draw( "P" );
 			}
 		}
 		else if ( pHistName == "cbc_pulseshape" )
