@@ -19,7 +19,7 @@ namespace Ph2_HwInterface
 {
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		BeBoardFWInterface( puHalConfigFileName, pBoardId )
+		BeBoardFWInterface( puHalConfigFileName, pBoardId ), fpgaConfig(nullptr)
 	{
 
 	}

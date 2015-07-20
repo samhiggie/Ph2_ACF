@@ -277,22 +277,19 @@ namespace Ph2_HwInterface
 	void CbcInterface::ReadCbcMultReg( Cbc* pCbc, const std::vector<std::string>& pVecReg )
 	{
 
-		uint8_t cCbcId;
 		CbcRegItem cRegItem;
 		std::vector<uint32_t> cVecReq;
 
 		setBoard( pCbc->getBeBoardIdentifier() );
 
 		for ( const auto& v : pVecReg )
-		{
-			cRegItem = ( pCbc->getRegMap() )[v];
+			EncodeReg( pCbc->getRegMap()[v], pCbc->getCbcId(), cVecReq );
 
-			EncodeReg( cRegItem, pCbc->getCbcId(), cVecReq );
+		fBoardFW->ReadCbcBlockReg( pCbc->getFeId(), cVecReq );
 
-			fBoardFW->ReadCbcBlockReg( pCbc->getFeId(), cVecReq );
-
-			DecodeReg( cRegItem, cCbcId, cVecReq[0] );
-
+		int iReq=0;
+		for ( const auto& v : pVecReg ){
+			DecodeReg( cRegItem, 0, cVecReq[iReq++] ); 
 			pCbc->setReg( v, cRegItem.fValue );
 		}
 	}
