@@ -1,6 +1,6 @@
 * RegName                                    	Page	Addr	Defval	Value
 *--------------------------------------------------------------------------------
-FrontEndControl                              	0x00	0x00	0x7F	0x00
+FrontEndControl                              	0x00	0x00	0x7F	0x80
 TriggerLatency                               	0x00	0x01	0xC8	0xC8
 HitDetectSLVS                                	0x00	0x02	0xA8	0xE7
 Ipre1                                        	0x00	0x03	0x46	0xF0

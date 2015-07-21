@@ -39,6 +39,7 @@ void PulseShape::Initialize()
 					TObject* cObj = gROOT->FindObject( cName );
 					if ( cObj ) delete cObj;
 					TGraph* cPulseGraph = new TGraph();
+					cPulseGraph->SetName( cName );
 					cPulseGraph->SetMarkerStyle( 3 );
 					cPulseGraph->GetXaxis()->SetTitle( "TestPulseDelay [ns]" );
 					cPulseGraph->GetYaxis()->SetTitle( "TestPulseAmplitue [VCth]" );
@@ -67,7 +68,7 @@ void PulseShape::ScanTestPulseDelay( uint8_t pStepSize )
 	// initialize the historgram for the channel map
 	int cCoarseDefault = 201;
 	int cLow = ( cCoarseDefault - 1 ) * 25;
-	int cHigh = ( cCoarseDefault + 3 ) * 25;
+	int cHigh = ( cCoarseDefault + 6 ) * 25;
 	std::map<Cbc*, uint8_t> cCollectedPoints;
 	for ( uint32_t cTestPulseDelay = cLow ; cTestPulseDelay < cHigh; cTestPulseDelay += fStepSize )
 	{
@@ -171,7 +172,7 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 		cVal = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindLastBinAbove( 0.5 ) );
 		// std::pair<uint8_t, uint8_t> cPair( cMin, cMax );
 		if ( !cSaturate ) cHpoint[cChannel.first] = cVal;
-		else cHpoint[cChannel.first] = 0;
+		else cHpoint[cChannel.first] = 255;
 		std::cout << "Cbc Id " << +cChannel.first->getCbcId() << " Delay " << +pDelay << " VCth " << +cVal << std::endl;
 
 		// here we have measured the complete curve, now we need to extract the FWHM points
@@ -231,12 +232,15 @@ void PulseShape::enableChannel( uint8_t pChannelId )
 
 void PulseShape::setDelayAndTesGroup( uint32_t pDelay )
 {
-	uint8_t cCoarseDelay = ( pDelay - 1 ) / 25;
-	uint8_t cFineDelay = pDelay - ( cCoarseDelay * 25 );
+	// uint8_t cCoarseDelay = ( pDelay - 1 ) / 25;
+	// uint8_t cFineDelay = pDelay - ( cCoarseDelay * 25 );
 
-	// std::cout << "cFineDelay: " << +cFineDelay << std::endl;
-	// std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
-	// std::cout << "Current Time: " << +pDelay << std::endl;
+	uint8_t cCoarseDelay = floor( pDelay  / 25 );
+	uint8_t cFineDelay = ( cCoarseDelay * 25 ) + 24 - pDelay;
+
+	std::cout << "cFineDelay: " << +cFineDelay << std::endl;
+	std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
+	std::cout << "Current Time: " << +pDelay << std::endl;
 	BeBoardRegWriter cBeBoardWriter( fBeBoardInterface, DELAY_AF_TEST_PULSE, cCoarseDelay );
 	this->accept( cBeBoardWriter );
 	CbcRegWriter cWriter( fCbcInterface, "SelTestPulseDel&ChanGroup", to_reg( cFineDelay, fTestGroup ) );
@@ -250,30 +254,34 @@ uint32_t PulseShape::fillVcthHist( BeBoard* pBoard, std::vector<Event*> pEventVe
 {
 	uint32_t cHits = 0;
 	// Loop over Events from this Acquisition
-	for ( auto& cEvent : pEventVector )
-	{
-		std::cout << *cEvent << std::endl;
-		for ( auto cFe : pBoard->fModuleVector )
-		{
-			for ( auto cCbc : cFe->fCbcVector )
-			{
-				//  get histogram to fill
 
-				auto cChannel = fChannelMap.find( cCbc );
-				if ( cChannel == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCbc->getCbcId() << " )" << std::endl;
-				else
+	for ( auto cFe : pBoard->fModuleVector )
+	{
+		for ( auto cCbc : cFe->fCbcVector )
+		{
+			//  get histogram to fill
+
+			auto cChannel = fChannelMap.find( cCbc );
+			if ( cChannel == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCbc->getCbcId() << " )" << std::endl;
+			else
+			{
+				uint32_t cCbcHitCounter = 0;
+				for ( auto& cEvent : pEventVector )
 				{
 					if ( cEvent->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChannel->second->fChannelId ) )
 					{
+						cCbcHitCounter++;
 						// if the channel is hit, fill the histogram
 						// cChannel->second->fillHist( pTPDelay );
-						TH1F* cTmpHist = cChannel->second->fScurve;
+						// TH1F* cTmpHist = cChannel->second->fScurve;
 						// if ( cTmpHist->GetBinContent( cTmpHist->FindBin( pVcth ) ) < fNevents )
-						cChannel->second->fScurve->Fill( pVcth );
+						// cChannel->second->fScurve->Fill( pVcth );
 						cHits++;
 
 					}
 				}
+				TH1F* cTmpHist = cChannel->second->fScurve;
+				if ( cTmpHist->GetBinContent( cTmpHist->FindBin( pVcth ) ) == 0 ) cChannel->second->fScurve->SetBinContent( pVcth, cCbcHitCounter );
 			}
 		}
 	}
@@ -291,6 +299,9 @@ void PulseShape::parseSettings()
 	cSetting = fSettingsMap.find( "HoleMode" );
 	if ( cSetting != std::end( fSettingsMap ) )  fHoleMode = cSetting->second;
 	else fHoleMode = 1;
+	cSetting = fSettingsMap.find( "Vplus" );
+	if ( cSetting != std::end( fSettingsMap ) )  fVplus = cSetting->second;
+	else fVplus = 0x6F;
 	cSetting = fSettingsMap.find( "TPAmplitude" );
 	if ( cSetting != std::end( fSettingsMap ) ) fTPAmplitude = cSetting->second;
 	else fTPAmplitude = 0x78;
@@ -308,6 +319,7 @@ void PulseShape::parseSettings()
 	std::cout << "Parsed the following settings:" << std::endl;
 	std::cout << "	Nevents = " << fNevents << std::endl;
 	std::cout << "	HoleMode = " << int( fHoleMode ) << std::endl;
+	std::cout << "	Vplus = " << int( fVplus ) << std::endl;
 	std::cout << "	TPAmplitude = " << int( fTPAmplitude ) << std::endl;
 	std::cout << "	Channel = " << int( fChannel ) << std::endl;
 	std::cout << "	ChOffset = " << int( fOffset ) << std::endl;
@@ -333,6 +345,7 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
 		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux ", 0x61 ) );
 
 	cRegVec.push_back( std::make_pair( "TestPulsePot", pTPAmplitude ) );
+	cRegVec.push_back( std::make_pair( "Vplus",  fVplus ) );
 
 	CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
 	this->accept( cWriter );
