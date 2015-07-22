@@ -33,37 +33,14 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "step", "Scan the delay with treshold scan step size, default value: 1", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "step", "s" );
 
-	//cmd.defineOption("delay","Scan the delay ", ArgvParser::NoOptionAttribute);
-	// cmd.defineOptionAlternative("delay","d");
-
 	cmd.defineOption( "channel", "Scan the channel", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "channel", "c" );
-	// cmd.defineOption( "latency", "scan the trigger latency", ArgvParser::NoOptionAttribute );
-	// cmd.defineOptionAlternative( "latency", "l" );
-
-	// cmd.defineOption( "threshold", "scan the CBC comparator threshold", ArgvParser::NoOptionAttribute );
-	// cmd.defineOptionAlternative( "threshold", "t" );
-
-	// cmd.defineOption( "stublatency", "scan the stub latency", ArgvParser::NoOptionAttribute );
-	// cmd.defineOptionAlternative( "stublatency", "s" );
-
-	// cmd.defineOption( "minimum", "minimum value for latency scan", ArgvParser::OptionRequiresValue );
-	// cmd.defineOptionAlternative( "minimum", "m" );
-
-	// cmd.defineOption( "range", "range in clock cycles for latency scan", ArgvParser::OptionRequiresValue );
-	// cmd.defineOptionAlternative( "range", "r" );
-
-	// cmd.defineOption( "pedestal", "scan the CBC pedestals in addition with the threshold scan", ArgvParser::NoOptionAttribute );
-	// cmd.defineOptionAlternative( "pedestal", "p" );
 
 	cmd.defineOption( "output", "Output Directory . Default value: Results/", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "output", "o" );
 
 	cmd.defineOption( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "batch", "b" );
-
-	// cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
-	// cmd.defineOptionAlternative( "gui", "g" );
 
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
@@ -74,20 +51,9 @@ int main( int argc, char* argv[] )
 
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/PulseShape.xml";
-	//uint8_t cStep = (cmd.foundOption("step")) ? cmd.optionValue( "step" ) : 1;
-	//uint8_t cDelay = (cmd.foundOption("delay")) ? cmd.optionValue( "delay" ) : false;
-	//uint32_t cChannel = (cmd.foundOption("channel")) ? cmd.optionValue( "channel" ) : false;
-	// bool cLatency = ( cmd.foundOption( "latency" ) ) ? true : false;
-	// bool cStubLatency = ( cmd.foundOption( "stublatency" ) ) ? true : false;
-	// bool cThreshold = ( cmd.foundOption( "threshold" ) ) ? true : false;
-	// bool cScanPedestal = ( cmd.foundOption( "pedestal" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	cDirectory += "PulseShape";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
-	// bool gui = ( cmd.foundOption( "gui" ) ) ? true : false;
-
-	// uint8_t cStartLatency = ( cmd.foundOption( "minimum" ) ) ? convertAnyInt( cmd.optionValue( "minimum" ).c_str() ) :  0;
-	// uint8_t cLatencyRange = ( cmd.foundOption( "range" ) ) ?  convertAnyInt( cmd.optionValue( "range" ).c_str() ) :  10;
 	uint8_t cScanStep = ( cmd.foundOption( "step" ) ) ? convertAnyInt( cmd.optionValue( "step" ).c_str() ) : 1;
 	uint8_t cSelectedChannel = ( cmd.foundOption( "channel" ) ) ? convertAnyInt( cmd.optionValue( "channel" ).c_str() ) : 1;
 
@@ -104,15 +70,8 @@ int main( int argc, char* argv[] )
 	cPulseShape.InitResultFile( cResultfile );
 	cPulseShape.ConfigureHw();
 
-	// Here comes our Part:
 	cPulseShape.ScanTestPulseDelay( cScanStep );
-
-	//if ( cChannel ) .......
-
-	// if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
-	// if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
 	cPulseShape.SaveResults();
-
 
 	if ( !batchMode ) cApp.Run();
 

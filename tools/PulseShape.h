@@ -41,27 +41,36 @@ typedef std::map<Cbc*, Channel*> ChannelMap;
 class PulseShape : public Tool
 {
   public:
+	//initialize the istogram
 	void Initialize();
-	// method to scan the test pulse delay
-	// std::map<Cbc*, std::pair<uint8_t, uint8_t>> ScanTestPulseDelay( uint8_t pVcth );
+
 	std::map<Cbc*, uint8_t> ScanVcth( uint32_t pDelay );
+
+	// method to scan the test pulse delay with a given step size
 	void ScanTestPulseDelay( uint8_t pStepSize );
 
-	//method to print the step pulse delay where pStepSize are the steps of Vcth
-	// void printScanTestPulseDelay( uint8_t pStepSize );
 
   private:
+	//find the test group of a given channel ID
 	int findTestGroup( uint32_t pChannelId );
+
+
 	void parseSettings();
+
+	//set the system test pulse
 	void setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId );
+
+	//update the Histogram
 	void updateHists( std::string pHistName, bool pFinal );
 
 	// return number of events process = vector.size()
 	uint32_t fillVcthHist( BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pVcth );
-	//convert the delay before concet to test group number
+	//convert the delay before concat to the  test group number
 	void setDelayAndTesGroup( uint32_t pDelay );
-	void enableChannel( uint8_t pChannelId );
 
+
+	void enableChannel( uint8_t pChannelId );
+	//reverse the byte
 	uint8_t reverse( uint8_t n ) {
 
 
