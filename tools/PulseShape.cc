@@ -15,7 +15,9 @@ void PulseShape::Initialize()
 		{
 			uint32_t cBoardId = cBoard->getBeId();
 			std::cerr << "cBoardId = " << cBoardId << std::endl;
-
+			// we could read the Delay_after_TestPulse Register in a variable
+			uint32_t cDelayAfterPulse = fBeBoardInterface->ReadBoardReg( cBoard, DELAY_AF_TEST_PULSE );
+			std::cout << "actual Delay: " << +cDelayAfterPulse << std::endl;
 			for ( auto& cFe : cBoard->fModuleVector )
 			{
 				uint32_t cFeId = cFe->getFeId();
@@ -43,6 +45,13 @@ void PulseShape::Initialize()
 					cPulseGraph->GetYaxis()->SetTitle( "TestPulseAmplitue [VCth]" );
 
 					bookHistogram( cCbc, "cbc_pulseshape", cPulseGraph );
+
+					cName = Form( "f_cbc_pulse_Fe%dCbc%d", cFeId, cCbcId );
+					cObj = gROOT->FindObject( cName );
+					if ( cObj ) delete cObj;
+					TF1* cPulseFit = new TF1( cName, pulseshape, ( cDelayAfterPulse - 1 ) * 25, ( cDelayAfterPulse + 6 ) * 25, 4 );
+
+					bookHistogram( cCbc, "cbc_pulsefit", cPulseFit );
 				}
 
 			}
@@ -81,6 +90,7 @@ void PulseShape::ScanTestPulseDelay( uint8_t pStepSize )
 		updateHists( "cbc_pulseshape", false );
 
 	}
+	this->fitGraph( cLow );
 }
 
 
@@ -178,6 +188,46 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 	return cHpoint;
 }
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
+
+
+void PulseShape::fitGraph( int pLow )
+{
+	// iterate over fCbcHistMap
+	// for each Cbc
+	// 	TGraph* = get the graph using the method gethist(Cbc, name)
+	// 	TF1* = get the fit using the method gethist()
+	// 	TF1->SetParLimits() whatever
+	// 	TGraph->Fit()
+	for ( auto& cCbc : fCbcHistMap )
+	{
+		TGraph* cGraph = static_cast<TGraph*>( getHist( cCbc.first, "cbc_pulseshape" ) );
+		TF1* cFit = static_cast<TF1*>( getHist( cCbc.first, "cbc_pulsefit" ) );
+		//"scale_par"
+		cFit->SetParLimits( 0, 160, 2000 );
+		//"offset"
+		cFit->SetParLimits( 1, pLow, pLow + 300 );
+		//"time_constant"
+		cFit->SetParLimits( 2, 5, 12.5 );
+		//"y_offset"
+		cFit->SetParLimits( 3, 0, 40 );
+		cGraph->Fit( cFit );
+	}
+
+	// cleverly set the parameter limits as function of set delay
+	// TF1* cFitGraph = new TF1( "pulseshape", pulseshape, ( pCoarseDelay - 1 ) * 25, ( pCoarseDelay + 6 ) * 25, 4 );
+	// cFitGraph->SetParLimits( 0, 160, 2000 );
+	// cFitGraph->SetParLimits( 1, 5030, 5300 );
+	// cFitGraph->SetParLimits( 2, 5, 12.5 );
+	// cFitGraph->SetParLimits( 3, 0, 40 );
+	// TGraph* cGraph;
+	// for ( auto& cChannel : fChannelMap )
+	// {
+
+	// 	cGraph = static_cast<TGraph*>( getHist( cChannel.first, "cbc_pulseshape" ) );
+	// 	cGraph->Fit( cFitGraph, "VEMR" );
+	// }
+
+}
 
 
 
@@ -374,9 +424,27 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 			TGraph* cTmpGraph = dynamic_cast<TGraph*>( getHist( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ), pHistName ) );
 			cTmpGraph->Draw( "AP" );
 		}
+		else if ( pHistName == "cbc_pulseshape" && pFinal )
+		{
+
+			cCanvas.second->cd( 2 );
+			TGraph* cTmpGraph = dynamic_cast<TGraph*>( getHist( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ), pHistName ) );
+			TF1* cTmpFit = dynamic_cast<TF1*>( getHist( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ), "cbc_pulsefit" ) );
+			cTmpGraph->Draw( "AP" );
+			cTmpFit->Draw( "same" );
+		}
 
 		cCanvas.second->Update();
 	}
+}
+double pulseshape( double* x, double* par )
+{
+	double xx = x[0];
+	double temp = pow( ( xx - par[1] ) / par[2] , 3 );
+	double val = ( ( par[0] * temp * exp( -( ( xx - par[1] ) / par[2] ) ) ) ) + par[3];
+	if ( xx < par[1] )
+		val = par[3];
+	return val;
 }
 
 

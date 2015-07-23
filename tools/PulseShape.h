@@ -26,6 +26,7 @@
 #include "TH1F.h"
 #include "TF1.h"
 #include "TH2F.h"
+#include <math.h>
 
 using namespace Ph2_System;
 using namespace Ph2_HwInterface;
@@ -71,15 +72,9 @@ class PulseShape : public Tool
 
 	void enableChannel( uint8_t pChannelId );
 
+	void fitGraph( int pLow );
 
-	ouble pulseshape( double* x, double* par ) {
-		double xx = x[0];
-		double temp = pow( ( xx - par[1] ) / par[2] , 3 );
-		double val = ( ( par[0] * temp * exp( -( ( xx - par[1] ) / par[2] ) ) ) ) + par[3];
-		if ( xx < par[1] + 5 )
-			val = 40;
-		return val;
-	}
+
 	//reverse the byte
 	uint8_t reverse( uint8_t n ) {
 
@@ -116,5 +111,7 @@ class PulseShape : public Tool
 
 
 };
+//fitting function
+double pulseshape( double* x, double* par );
 
 #endif

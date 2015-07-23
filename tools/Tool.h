@@ -67,7 +67,7 @@ class Tool : public SystemController
 		}
 		// find histogram with given name: if it exists, delete the object, if not create
 		auto cHisto = cCbcHistMap->second.find( pName );
-		if ( cHisto != std::end( cCbcHistMap->second ) ) cCbcHistMap->second.erase(cHisto);
+		if ( cHisto != std::end( cCbcHistMap->second ) ) cCbcHistMap->second.erase( cHisto );
 		cCbcHistMap->second[pName] = pObject;
 	}
 
@@ -83,7 +83,7 @@ class Tool : public SystemController
 		}
 		// find histogram with given name: if it exists, delete the object, if not create
 		auto cHisto = cModuleHistMap->second.find( pName );
-		if ( cHisto != std::end( cModuleHistMap->second ) ) cModuleHistMap->second.erase(cHisto);
+		if ( cHisto != std::end( cModuleHistMap->second ) ) cModuleHistMap->second.erase( cHisto );
 		cModuleHistMap->second[pName] = pObject;
 	}
 
