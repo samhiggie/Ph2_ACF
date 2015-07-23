@@ -13,7 +13,8 @@ LibraryDirs = /opt/cactus/lib ../lib
 # /opt/xdaq/lib
 LibraryPaths = $(LibraryDirs:%=-L%)
 
-ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils
+ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
+                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils
 ExtObjectsRoot= -lPh2_Tools 
 
 # -lboost_thread -lboost_filesystem -lboost_regex -lboost_system -lboost_thread
@@ -66,6 +67,11 @@ fpgaconfig: fpgaconfig.cc
 
 pulseshape: pulseshape.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+
+datatestFromfile: datatestFromfile.cc
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects) \
+	-lboost_filesystem -lboost_program_options -L../RootWeb/lib -lRootWeb \
+
 	cp $@ ../bin
 
 .PHONY: clean
