@@ -35,9 +35,10 @@ namespace Ph2_HwInterface
 		std::thread cThreads[2];
 		for ( int i = 0; i < 2; ++i )
 		{
-			cThreads[0] = std::thread( writeFile, cVectorCopy, "outputfile" );
+			//cThreads[0] = std::thread( Data::writeFile, cVectorCopy, "outputfile" );
+			cThreads[0] = std::thread( &Data::writeFile, this, cVectorCopy, "outputfile" );
 
-			cThreads[1] = std::thread( SetSpecialized, pBoard, pData, pNevents, swapBytes );
+			cThreads[1] = std::thread( &Data::SetSpecialized, this, pBoard, pData, pNevents, swapBytes );
 			for ( int i = 0; i < 2; ++i )
 				cThreads[i].join();
 		}
