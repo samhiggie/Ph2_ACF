@@ -175,16 +175,19 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 	for ( auto& cChannel : fChannelMap )
 	{
 
-		cChannel.second->fScurve->Scale( 1 / double( fNevents ) );
+		// cChannel.second->fScurve->Scale( 1 / double( fNevents ) );
+		cChannel.second->fitHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
+		// cVal = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindLastBinAbove( 0.5 ) );
 
-		cVal = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindLastBinAbove( 0.5 ) );
-
+		// if ( !cSaturate ) cHpoint[cChannel.first] = cVal;
+		// else cHpoint[cChannel.first] = 255;
+		cVal = cChannel.second->getPedestal();
 		if ( !cSaturate ) cHpoint[cChannel.first] = cVal;
 		else cHpoint[cChannel.first] = 255;
 		std::cout << "Cbc Id " << +cChannel.first->getCbcId() << " Delay " << +pDelay << " VCth " << +cVal << std::endl;
 
 	}
-	updateHists( "", false );
+	updateHists( "", true );
 	return cHpoint;
 }
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
@@ -415,6 +418,18 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 			{
 				cCanvas.second->cd( 1 );
 				cChannel->second->fScurve->Draw( "P0" );
+			}
+		}
+		if ( pHistName == "" && pFinal )
+		{
+			// now iterate over the channels in the channel map and draw
+			auto cChannel = fChannelMap.find( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ) );
+			if ( cChannel == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCanvas.first << " )" << std::endl;
+			else
+			{
+				cCanvas.second->cd( 1 );
+				cChannel->second->fScurve->Draw( "P0" );
+				cChannel->second->fFit->Draw( "same" );
 			}
 		}
 		else if ( pHistName == "cbc_pulseshape" )
