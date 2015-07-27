@@ -43,6 +43,7 @@ namespace Ph2_HwInterface
 		uint32_t fNCbc  ;               /*! Number of CBCs in the setup <*/
 		uint32_t fEventSize  ;          /*! Size of 1 Event <*/
 
+
 		std::vector<Event*> fEventList;
 
 	  private:
@@ -52,10 +53,9 @@ namespace Ph2_HwInterface
 		//compute deep copy of a vector
 		std::vector<uint32_t> deepCopy( std::vector<uint32_t> pVector ) {
 
-			std::vector<uint32_t> cVectorCopy;
+			std::vector<uint32_t> cVectorCopy = pVector;
 
-			for ( uint32_t i : pVector )
-				cVectorCopy.insert( cVectorCopy.begin() , pVector[i] ) ;
+
 
 			return cVectorCopy;
 
@@ -67,7 +67,6 @@ namespace Ph2_HwInterface
 		 * \brief Constructor of the Data class
 		 * \param pNbCbc
 		 */
-		void writeFile( std::vector<uint32_t> pData , std::string pFileName );
 		Data( ) :  fCurrentEvent( 0 ), fEventSize( 0 ) {
 		}
 		/*!
@@ -89,7 +88,7 @@ namespace Ph2_HwInterface
 		 * \param pNevents : The number of events in this acquisiton
 		 */
 		void Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
-		void SetSpecialized( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
+		void DecodeEvents( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
 		/*!
 		 * \brief Reset the data structure
 		 */
@@ -99,6 +98,8 @@ namespace Ph2_HwInterface
 		 * \param pBoard: pointer to BeBoard
 		 * \return Next Event
 		 */
+
+		void writeFile( std::vector<uint32_t> pData , std::string pFileName );
 		// cannot be const as fCurrentEvent is incremented
 		const Event* GetNextEvent( const BeBoard* pBoard ) {
 			return ( ( fCurrentEvent >= fEventList.size() ) ? nullptr : fEventList.at( fCurrentEvent++ ) );

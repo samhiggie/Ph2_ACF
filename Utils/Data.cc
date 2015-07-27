@@ -31,14 +31,16 @@ namespace Ph2_HwInterface
 	{
 		std::vector<uint32_t> cVectorCopy;
 		cVectorCopy = deepCopy( pData );
+		this->DecodeEvents( pBoard, pData, pNevents, swapBytes );
 
 		std::thread cThreads[2];
 		for ( int i = 0; i < 2; ++i )
 		{
-			//cThreads[0] = std::thread( Data::writeFile, cVectorCopy, "outputfile" );
+
+
 			cThreads[0] = std::thread( &Data::writeFile, this, cVectorCopy, "outputfile" );
 
-			cThreads[1] = std::thread( &Data::SetSpecialized, this, pBoard, pData, pNevents, swapBytes );
+			cThreads[1] = std::thread( &Data::DecodeEvents, this, pBoard, pData, pNevents, swapBytes );
 			for ( int i = 0; i < 2; ++i )
 				cThreads[i].join();
 		}
@@ -49,7 +51,7 @@ namespace Ph2_HwInterface
 	}
 
 
-	void Data::SetSpecialized( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes )
+	void Data::DecodeEvents( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes )
 	{
 		Reset();
 
@@ -132,5 +134,7 @@ namespace Ph2_HwInterface
 
 
 	}
+
+
 }
 
