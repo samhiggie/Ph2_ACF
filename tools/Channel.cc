@@ -53,20 +53,46 @@ void Channel::initializeHist( uint8_t pValue, TString pParameter )
 	fitname += pParameter;
 
 
-	fScurve = dynamic_cast<TH1F*>( gROOT->FindObject( histname ));
+	fScurve = dynamic_cast<TH1F*>( gROOT->FindObject( histname ) );
 	if ( fScurve ) delete fScurve;
 	fScurve = new TH1F( histname, Form( "Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 256, -0.5, 255.5 );
 
 	fScurve->SetMarkerStyle( 7 );
 	fScurve->SetMarkerSize( 2 );
 
-	fFit = dynamic_cast< TF1* >( gROOT->FindObject( fitname ));
+	fFit = dynamic_cast< TF1* >( gROOT->FindObject( fitname ) );
 	if ( fFit ) delete fFit;
 	// TF1 *f1=gROOT->GetFunction("myfunc");
 	fFit = new TF1( fitname, MyErf, 0, 255, 2 );
 }
 
-void Channel::fillHist( uint8_t pVcth )
+void Channel::initializeHistTiming( uint8_t pValue, TString pParameter, int pNbins, int pMinrange,  int pMaxrange )
+{
+
+	TString histname;
+	// TString fitname;
+
+	pParameter += Form( "%d", pValue );
+	histname = Form( "Delay_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId );
+	histname += pParameter;
+	// fitname = Form( "Fit_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId );
+	// fitname += pParameter;
+
+
+	fScurve = dynamic_cast<TH1F*>( gROOT->FindObject( histname ) );
+	if ( fScurve ) delete fScurve;
+	fScurve = new TH1F( histname, Form( "Delay_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), pNbins, pMinrange, pMaxrange );
+
+	fScurve->SetMarkerStyle( 7 );
+	fScurve->SetMarkerSize( 2 );
+
+	// fFit = dynamic_cast< TF1* >( gROOT->FindObject( fitname ));
+	// if ( fFit ) delete fFit;
+	// // TF1 *f1=gROOT->GetFunction("myfunc");
+	// fFit = new TF1( fitname, MyErf, 0, 255, 2 );
+}
+
+void Channel::fillHist( uint32_t pVcth )
 {
 	fScurve->Fill( float( pVcth ) );
 }
@@ -139,7 +165,7 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 		pResultfile->cd( cDirName );
 
 		fScurve->SetDirectory( cDir );
-		fFit->Write(fFit->GetName(), TObject::kOverwrite);
+		fFit->Write( fFit->GetName(), TObject::kOverwrite );
 		// pResultfile->Flush();
 
 		pResultfile->cd();
@@ -177,7 +203,7 @@ TestGroupGraph::TestGroupGraph()
 TestGroupGraph::TestGroupGraph( uint8_t pBeId, uint8_t pFeId, uint8_t pCbcId, uint8_t pGroupId )
 {
 	TString graphname = Form( "VplusVcthGraph_Fe%d_Cbc%d_Group%d", pFeId, pCbcId, pGroupId );
-	fVplusVcthGraph = dynamic_cast<TGraphErrors*>( gROOT->FindObject( graphname ));
+	fVplusVcthGraph = dynamic_cast<TGraphErrors*>( gROOT->FindObject( graphname ) );
 	if ( fVplusVcthGraph ) delete fVplusVcthGraph;
 	fVplusVcthGraph = new TGraphErrors();
 	fVplusVcthGraph->SetName( graphname );

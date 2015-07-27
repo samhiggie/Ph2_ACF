@@ -66,7 +66,7 @@ namespace Ph2_HwInterface
 		 * \param *pData : Data from the Cbc
 		 * \param pNevents : The number of events in this acquisiton
 		 */
-                void Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents );
+                void Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
 		/*!
 		 * \brief Reset the data structure
 		 */

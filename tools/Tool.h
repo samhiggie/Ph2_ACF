@@ -16,12 +16,14 @@
 #include "../System/SystemController.h"
 #include "TROOT.h"
 #include "TFile.h"
+#include "TObject.h"
+#include "TCanvas.h"
 
 using namespace Ph2_System;
 
 typedef std::map<Cbc*, std::map<std::string, TObject*> >  CbcHistogramMap;
 typedef std::map<Module*, std::map<std::string, TObject*> > ModuleHistogramMap;
-typedef std::map<Module*, TCanvas*> CanvasMap;
+typedef std::map<Ph2_HwDescription::FrontEndDescription*, TCanvas*> CanvasMap;
 
 
 /*!
@@ -40,7 +42,7 @@ class Tool : public SystemController
 
 
 
-  private:
+  protected:
 	CanvasMap fCanvasMap;
 	CbcHistogramMap fCbcHistMap;
 	ModuleHistogramMap fModuleHistMap;
@@ -65,29 +67,29 @@ class Tool : public SystemController
 		}
 		// find histogram with given name: if it exists, delete the object, if not create
 		auto cHisto = cCbcHistMap->second.find( pName );
-		if ( cHisto != std::end( cCbcHistMap->second ) ) delete cHisto->second;
-		cCbcHistMap[pName] = pObject;
+		if ( cHisto != std::end( cCbcHistMap->second ) ) cCbcHistMap->second.erase( cHisto );
+		cCbcHistMap->second[pName] = pObject;
 	}
 
 	void bookHistogram( Module* pModule, std::string pName, TObject* pObject ) {
 		// find or create map<string,TOBject> for specific CBC
-		auto cModuleHistMap = fModuleHistMap.find( pCbc );
-		if ( cCbcHistMap == std::end( fModuleHistMap ) ) {
+		auto cModuleHistMap = fModuleHistMap.find( pModule );
+		if ( cModuleHistMap == std::end( fModuleHistMap ) ) {
 			std::cerr << "Histo Map for Module " << int( pModule->getFeId() ) << " does not exist - creating " << std::endl;
 			std::map<std::string, TObject*> cTempModuleMap;
 
-			fModuleHistMap[pCbc] = cTempCbcMap;
-			cCbcHistMap = fModuleHistMap.find( pModule );
+			fModuleHistMap[pModule] = cTempModuleMap;
+			cModuleHistMap = fModuleHistMap.find( pModule );
 		}
 		// find histogram with given name: if it exists, delete the object, if not create
 		auto cHisto = cModuleHistMap->second.find( pName );
-		if ( cHisto != std::end( cModuleHistMap->second ) ) delete cHisto->second;
-		cModuleHistMap[pName] = pObject;
+		if ( cHisto != std::end( cModuleHistMap->second ) ) cModuleHistMap->second.erase( cHisto );
+		cModuleHistMap->second[pName] = pObject;
 	}
 
 	TObject* getHist( Cbc* pCbc, std::string pName ) {
-		auto cCbcHistMap = fCbcHistoMap.find( pCbc );
-		if ( cCbcHistMap == std::end( fCbcHistoMap ) ) std::cerr << RED << "Error: could not find the Histograms for CBC " << int( pCbc->getCbcId() ) <<  " (FE " << int( pCbc->getFeId() ) << ")" << RESET << std::endl;
+		auto cCbcHistMap = fCbcHistMap.find( pCbc );
+		if ( cCbcHistMap == std::end( fCbcHistMap ) ) std::cerr << RED << "Error: could not find the Histograms for CBC " << int( pCbc->getCbcId() ) <<  " (FE " << int( pCbc->getFeId() ) << ")" << RESET << std::endl;
 		else {
 			auto cHisto = cCbcHistMap->second.find( pName );
 			if ( cHisto == std::end( cCbcHistMap->second ) ) std::cerr << RED << "Error: could not find the Histogram with the name " << pName << RESET << std::endl;

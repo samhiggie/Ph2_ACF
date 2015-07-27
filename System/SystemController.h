@@ -134,6 +134,13 @@ namespace Ph2_System
                      return fBeBoardInterface->GetEvents( pBoard );
                 }
 
+		/*!
+		 * \brief Initialize the hardware via  XML config file
+		 * \param pFilename : HW Description file
+		 *\param os : ostream to dump output
+		 */
+		void parseHWxml( const std::string& pFilename, std::ostream& os = std::cout );
+
 	  protected:
 		/*!
 		 * \convert a voltage level to it's 8bit DAC value
@@ -145,12 +152,6 @@ namespace Ph2_System
 		}
 
 	  private:
-		/*!
-		 * \brief Initialize the hardware via  XML config file
-		 * \param pFilename : HW Description file
-		 *\param os : ostream to dump output
-		 */
-		void parseHWxml( const std::string& pFilename, std::ostream& os );
 		/*!
 		 * \brief Initialize the hardware via JSON config file
 		 * \param pFilename : HW Description file

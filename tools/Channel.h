@@ -79,10 +79,16 @@ struct Channel
 	*/
 	void initializeHist( uint8_t pValue, TString pParameter );
 	/*!
+	* \brief Initialize the Histogram and Fit for the Channel
+	* \param pParameter: the current parameter that is being varied for storing in file
+	* \param pValue: the value of pParameter
+	*/
+	void initializeHistTiming( uint8_t pValue, TString pParameter, int pNbins, int pMinrange,  int pMaxrange );
+	/*!
 	* \brief fill the histogram
 	* \param pVcth: the bin at which to fill the histogram (normally Vcth value)
 	*/
-	void fillHist( uint8_t pVcth );
+	void fillHist( uint32_t pVcth );
 	/*!
 	* \brief fit the SCurve Histogram with the Fit object
 	* \param pEventsperVcth: the number of Events taken for each Vcth setting, used to normalize SCurve
