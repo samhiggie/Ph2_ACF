@@ -128,6 +128,8 @@ namespace Ph2_HwInterface
 		for ( auto& cElements : fData )
 			ofile.write( ( char* ) &cElements, sizeof( uint8_t ) );
 
+		ofile.close();
+
 
 
 

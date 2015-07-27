@@ -65,10 +65,14 @@ fpgaconfig: fpgaconfig.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
+# datatestFromfile: datatestFromfile.cc
+# 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects) \
+# 	-lboost_filesystem -lboost_program_options -L../RootWeb/lib -lRootWeb \
+# 	# cp $@ ../bin
+
 datatestFromfile: datatestFromfile.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects) \
-	-lboost_filesystem -lboost_program_options -L../RootWeb/lib -lRootWeb \
-	# cp $@ ../bin
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects) 
+	cp $@ ../bin
 
 .PHONY: clean
 

@@ -15,7 +15,7 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 
-#include "../RootWeb/include/publisher.h"
+// #include "../RootWeb/include/publisher.h"
 
 #include "TROOT.h"
 #include "TH1.h"
@@ -28,156 +28,170 @@ using namespace Ph2_System;
 
 using namespace CommandLineProcessing;
 
-void tokenize(const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters) {
-  // Skip delimiters at beginning.
-  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+void tokenize( const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters )
+{
+	// Skip delimiters at beginning.
+	std::string::size_type lastPos = str.find_first_not_of( delimiters, 0 );
 
-  // Find first "non-delimiter".
-  std::string::size_type pos = str.find_first_of(delimiters, lastPos);
+	// Find first "non-delimiter".
+	std::string::size_type pos = str.find_first_of( delimiters, lastPos );
 
-  while (std::string::npos != pos || std::string::npos != lastPos)  {
-    // Found a token, add it to the vector.
-    tokens.push_back(str.substr(lastPos, pos - lastPos));
+	while ( std::string::npos != pos || std::string::npos != lastPos )
+	{
+		// Found a token, add it to the vector.
+		tokens.push_back( str.substr( lastPos, pos - lastPos ) );
 
-    // Skip delimiters.  Note the "not_of"
-    lastPos = str.find_first_not_of(delimiters, pos);
+		// Skip delimiters.  Note the "not_of"
+		lastPos = str.find_first_not_of( delimiters, pos );
 
-    // Find next "non-delimiter"
-    pos = str.find_first_of(delimiters, lastPos);
-  }
+		// Find next "non-delimiter"
+		pos = str.find_first_of( delimiters, lastPos );
+	}
 }
 
-void readDataFile( const std::string infile, std::vector<uint32_t>& list ) {
-   uint32_t word;
-   std::ifstream fin(infile, std::ios::in | std::ios::binary);
-   if (fin.is_open()) {
-     while (!fin.eof()) {
-       char buffer[4];
-       fin.read(buffer, 4);
-       uint32_t word;
-       memcpy(&word, buffer, 4);
-       list.push_back(word);
-     }
-     fin.close();
-   }
-   else {
-     std::cerr << "Failed to open " << infile << "!" << std::endl;
-   }
+void readDataFile( const std::string infile, std::vector<uint32_t>& list )
+{
+	uint32_t word;
+	std::ifstream fin( infile, std::ios::in | std::ios::binary );
+	if ( fin.is_open() )
+	{
+		while ( !fin.eof() )
+		{
+			char buffer[4];
+			fin.read( buffer, 4 );
+			uint32_t word;
+			memcpy( &word, buffer, 4 );
+			list.push_back( word );
+		}
+		fin.close();
+	}
+	else
+		std::cerr << "Failed to open " << infile << "!" << std::endl;
 }
 
-void fillDQMhisto( const std::vector<Event*>& elist, const std::string& outFileName ) {
-  std::map<std::string, TH1I*> herrbitmap;
-  std::map<std::string, TH1I*> hnstubsmap;
-  std::map<std::string, std::vector<TH1I*>> hchdatamap;
+void fillDQMhisto( const std::vector<Event*>& elist, const std::string& outFileName )
+{
+	std::map<std::string, TH1I*> herrbitmap;
+	std::map<std::string, TH1I*> hnstubsmap;
+	std::map<std::string, std::vector<TH1I*>> hchdatamap;
 
-  TH1I* hl1A = new TH1I("l1A", "L1A Counter", 10000, 0, 10000);
-  TH1I* htdc = new TH1I("tdc", "TDC counter", 256, -0.5, 255.5);
-  for ( const auto& ev: elist) {
-    htdc->Fill(ev->GetTDC());
-    hl1A->Fill(ev->GetEventCount());
-    const EventMap& evmap = ev->GetEventMap();
-    for ( auto const& it : evmap ) {
-      uint32_t feId = it.first;
-      for ( auto const& jt : it.second ){
-	uint32_t cbcId = jt.first;
+	TH1I* hl1A = new TH1I( "l1A", "L1A Counter", 10000, 0, 10000 );
+	TH1I* htdc = new TH1I( "tdc", "TDC counter", 256, -0.5, 255.5 );
+	for ( const auto& ev : elist )
+	{
+		htdc->Fill( ev->GetTDC() );
+		hl1A->Fill( ev->GetEventCount() );
+		const EventMap& evmap = ev->GetEventMap();
+		for ( auto const& it : evmap )
+		{
+			uint32_t feId = it.first;
+			for ( auto const& jt : it.second )
+			{
+				uint32_t cbcId = jt.first;
 
-	// create histogram name tags
-	std::stringstream ss;
-	ss << "fed" << feId << "cbc" << cbcId;
-	std::string key = ss.str();
+				// create histogram name tags
+				std::stringstream ss;
+				ss << "fed" << feId << "cbc" << cbcId;
+				std::string key = ss.str();
 
-	// Error bit histogram
-	if ( herrbitmap.find(key) == herrbitmap.end() ) {
-	  herrbitmap[key] = new TH1I(TString("errbit"+key),"Error bit", 3, -0.5, 2.5);
-	}
-	herrbitmap[key]->Fill(static_cast<int>(ev->Error(feId, cbcId)));
-	
-	// #Stubs info
-	int nstubs = std::stoi(ev->StubBitString(feId, cbcId ),nullptr,10);
-	if ( hnstubsmap.find(key) == hnstubsmap.end() ) {
-	  hnstubsmap[key] = new TH1I(TString("nstubs"+key),"Number of stubs", 21, -0.5, 20.5);
-	}
-	hnstubsmap[key]->Fill(nstubs);
-	    
-	// channel data
-	const std::vector<bool>& dataVec = ev->DataBitVector(feId, cbcId);
-	if ( hchdatamap.find(key) == hchdatamap.end() ) {
-	  hchdatamap[key].push_back(new TH1I(TString("chOccupancy_even"+key),"Even channel occupancy", 127, 0.5, 127.5));
-	  hchdatamap[key].push_back(new TH1I(TString("chOccupancy_odd"+key),"Odd channel occupancy", 127, 0.5, 127.5));
-	}
-	for ( unsigned int ch = 0; ch < dataVec.size(); ch++) {
-	  if (dataVec[ch]) {
-	    if (ch%2 == 0) {
-	      hchdatamap[key][0]->Fill( ch/2 + 1 );
-	    }
-	    else {
-	      hchdatamap[key][1]->Fill( ch/2 + 1 );
-	    }
-	  }
-	}
-      } 
-    }
-  }
-  TFile* fout = TFile::Open(outFileName.c_str(), "RECREATE");
-  for ( auto& he: herrbitmap ) {
-    fout->mkdir(he.first.c_str());
-    fout->cd(he.first.c_str());
-    he.second->Write();
-  }
-  for ( auto& he: hnstubsmap ) {
-    fout->cd(he.first.c_str());
-    he.second->Write();
-  }
+				// Error bit histogram
+				if ( herrbitmap.find( key ) == herrbitmap.end() )
+					herrbitmap[key] = new TH1I( TString( "errbit" + key ), "Error bit", 3, -0.5, 2.5 );
+				herrbitmap[key]->Fill( static_cast<int>( ev->Error( feId, cbcId ) ) );
 
-  for ( auto& hVec: hchdatamap ) {
-    fout->cd(hVec.first.c_str());
-    hVec.second.at(0)->Write();
-    hVec.second.at(1)->Write();
-  }
-   
-  fout->cd();
-  hl1A->Write();
-  htdc->Write();
-  fout->Close();
+				// #Stubs info
+				int nstubs = std::stoi( ev->StubBitString( feId, cbcId ), nullptr, 10 );
+				if ( hnstubsmap.find( key ) == hnstubsmap.end() )
+					hnstubsmap[key] = new TH1I( TString( "nstubs" + key ), "Number of stubs", 21, -0.5, 20.5 );
+				hnstubsmap[key]->Fill( nstubs );
+
+				// channel data
+				const std::vector<bool>& dataVec = ev->DataBitVector( feId, cbcId );
+				if ( hchdatamap.find( key ) == hchdatamap.end() )
+				{
+					hchdatamap[key].push_back( new TH1I( TString( "chOccupancy_even" + key ), "Even channel occupancy", 127, 0.5, 127.5 ) );
+					hchdatamap[key].push_back( new TH1I( TString( "chOccupancy_odd" + key ), "Odd channel occupancy", 127, 0.5, 127.5 ) );
+				}
+				for ( unsigned int ch = 0; ch < dataVec.size(); ch++ )
+				{
+					if ( dataVec[ch] )
+					{
+						if ( ch % 2 == 0 )
+							hchdatamap[key][0]->Fill( ch / 2 + 1 );
+						else
+							hchdatamap[key][1]->Fill( ch / 2 + 1 );
+					}
+				}
+			}
+		}
+	}
+	TFile* fout = TFile::Open( outFileName.c_str(), "RECREATE" );
+	for ( auto& he : herrbitmap )
+	{
+		fout->mkdir( he.first.c_str() );
+		fout->cd( he.first.c_str() );
+		he.second->Write();
+	}
+	for ( auto& he : hnstubsmap )
+	{
+		fout->cd( he.first.c_str() );
+		he.second->Write();
+	}
+
+	for ( auto& hVec : hchdatamap )
+	{
+		fout->cd( hVec.first.c_str() );
+		hVec.second.at( 0 )->Write();
+		hVec.second.at( 1 )->Write();
+	}
+
+	fout->cd();
+	hl1A->Write();
+	htdc->Write();
+	fout->Close();
 }
 
-void dumpEvents(const std::vector<Event*>& elist) { 
-  for ( int i = 0; i < elist.size(); i++) {
-    std::cout << "Event index: " << i << std::endl;
-    std::cout << *elist[i] << std::endl;
-  }
+void dumpEvents( const std::vector<Event*>& elist )
+{
+	for ( int i = 0; i < elist.size(); i++ )
+	{
+		std::cout << "Event index: " << i << std::endl;
+		std::cout << *elist[i] << std::endl;
+	}
 }
-int main( int argc, char* argv[] ) {
-  std::string rawFilename = argv[1];
-  std::vector<uint32_t> dataVec;
-  readDataFile(rawFilename, dataVec);
-  
-  SystemController cSystemController;
-  std::string cHWFile = getenv("BASE_DIR");
-  cHWFile += "/settings/HWDescription_2CBC.xml";
-  cSystemController.parseHWxml(cHWFile);
-  BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
-  
-  Data d;
-  int nEvents = dataVec.size()/42;
-  d.Set(pBoard, dataVec, nEvents, false);
-  const std::vector<Event*>& elist = d.GetEvents(pBoard);
-  //dumpEvents(elist); 
-  
-  // Create the DQM plots and generate the root file
-  // first of all strip the folder name
-  std::vector<std::string> tokens;
-  tokenize(rawFilename, tokens, "/");
-  std::string fname = tokens.back();
+int main( int argc, char* argv[] )
+{
+	std::string rawFilename = argv[1];
+	std::vector<uint32_t> dataVec;
+	readDataFile( rawFilename, dataVec );
 
-  // now form the output Root filename
-  tokens.clear();
-  tokenize(fname, tokens, ".");
-  std::string runLabel = tokens[0];
-  std::string dqmFilename = runLabel + "_dqm.root";
+	SystemController cSystemController;
+	std::string cHWFile = getenv( "BASE_DIR" );
+	cHWFile += "/settings/HWDescription_2CBC.xml";
+	cSystemController.parseHWxml( cHWFile );
+	BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
 
-  fillDQMhisto(elist, dqmFilename);
-  RootWeb::makeDQMmonitor(dqmFilename, runLabel);
+	Data d;
+	int nEvents = dataVec.size() / 42;
+	d.Set( pBoard, dataVec, nEvents, false );
+	const std::vector<Event*>& elist = d.GetEvents( pBoard );
+	//dumpEvents(elist);
 
-  return 0;  
+	// Create the DQM plots and generate the root file
+	// first of all strip the folder name
+	std::vector<std::string> tokens;
+	tokenize( rawFilename, tokens, "/" );
+	std::string fname = tokens.back();
+
+	// now form the output Root filename
+	tokens.clear();
+	tokenize( fname, tokens, "." );
+	std::string runLabel = tokens[0];
+	std::string dqmFilename = runLabel + "_dqm.root";
+
+	dumpEvents( elist );
+	// fillDQMhisto(elist, dqmFilename);
+	// RootWeb::makeDQMmonitor(dqmFilename, runLabel);
+
+	return 0;
 }
