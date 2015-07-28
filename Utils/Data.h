@@ -45,7 +45,7 @@ namespace Ph2_HwInterface
 
 
 		std::vector<Event*> fEventList;
-
+		std::ofstream fBinaryFile;
 	  private:
 
 
@@ -81,13 +81,19 @@ namespace Ph2_HwInterface
 				delete pevt;
 			fEventList.clear();
 		}
+
+		void setFile( std::ofstream& pBinaryFile = std::move( pBinaryFile ) ) {
+
+
+		}
+
 		/*!
 		 * \brief Set the data in the data map
 		         * \param *pBoard : pointer to Boat
 		 * \param *pData : Data from the Cbc
 		 * \param pNevents : The number of events in this acquisiton
 		 */
-		void Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
+		void Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true, bool pWriteFile = false );
 		void DecodeEvents( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
 		/*!
 		 * \brief Reset the data structure
@@ -99,7 +105,7 @@ namespace Ph2_HwInterface
 		 * \return Next Event
 		 */
 
-		void writeFile( std::vector<uint32_t> pData , std::string pFileName );
+		void writeFile( std::vector<uint32_t> pData );
 		// cannot be const as fCurrentEvent is incremented
 		const Event* GetNextEvent( const BeBoard* pBoard ) {
 			return ( ( fCurrentEvent >= fEventList.size() ) ? nullptr : fEventList.at( fCurrentEvent++ ) );

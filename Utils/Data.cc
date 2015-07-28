@@ -27,23 +27,31 @@ namespace Ph2_HwInterface
 	{
 	}
 
-	void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes )
+	void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes, bool pWriteFile )
 	{
 		std::vector<uint32_t> cVectorCopy;
 		cVectorCopy = deepCopy( pData );
 		this->DecodeEvents( pBoard, pData, pNevents, swapBytes );
 
-		std::thread cThreads[2];
-		for ( int i = 0; i < 2; ++i )
+		if ( pWriteFile )
 		{
-
-
-			cThreads[0] = std::thread( &Data::writeFile, this, cVectorCopy, "outputfile" );
-
-			cThreads[1] = std::thread( &Data::DecodeEvents, this, pBoard, pData, pNevents, swapBytes );
-			for ( int i = 0; i < 2; ++i )
-				cThreads[i].join();
+			std::thread cThread( &Data::writeFile, this, cVectorCopy ) ;
+			cThread.join();
 		}
+
+
+
+		// std::thread cThreads[2];
+		// for ( int i = 0; i < 2; ++i )
+		// {
+
+
+		// 	cThreads[0] = std::thread( &Data::writeFile, this, cVectorCopy );
+
+		// 	cThreads[1] = std::thread( &Data::DecodeEvents, this, pBoard, pData, pNevents, swapBytes );
+		// 	for ( int i = 0; i < 2; ++i )
+		// 		cThreads[i].join();
+		// }
 
 
 
@@ -112,31 +120,11 @@ namespace Ph2_HwInterface
 		fCurrentEvent = 0;
 	}
 
-	void Data::writeFile( std::vector<uint32_t> fData , std::string fFileName )
+	void Data::writeFile( std::vector<uint32_t> fData )
 	{
-
-		//check if the file already exists
-		if ( boost::filesystem::exists( fFileName + ".bin" ) )
-			remove( ( fFileName + ".bin" ).c_str() );
-
-
-
-
-		std::ofstream ofile( ( fFileName + ".bin" ).c_str(), std::ios::binary );
-
 		//write the bin file
 		for ( auto& cElements : fData )
-			ofile.write( ( char* ) &cElements, sizeof( uint8_t ) );
-
-		ofile.close();
-
-
-
-
-
-
+			fBinaryFile.write( ( char* ) &cElements, sizeof( uint8_t ) );
 	}
-
-
 }
 

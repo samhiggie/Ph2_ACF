@@ -24,7 +24,7 @@ namespace Ph2_System
 
 	SystemController::~SystemController()
 	{
-	        for ( auto& el: fShelveVector )
+		for ( auto& el : fShelveVector )
 			delete el;
 		fShelveVector.clear();
 	}
@@ -49,7 +49,7 @@ namespace Ph2_System
 			std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
 	}
 
-	void SystemController::ConfigureHw( std::ostream& os , bool bIgnoreI2c)
+	void SystemController::ConfigureHw( std::ostream& os , bool bIgnoreI2c )
 	{
 
 		bool cHoleMode, cCheck;
@@ -84,10 +84,10 @@ namespace Ph2_System
 			}
 
 			void visit( Cbc& pCbc ) {
-				if (!fIgnoreI2c){
+				if ( !fIgnoreI2c ) {
 					fCbcInterface->ConfigureCbc( &pCbc );
 					los_ << GREEN <<  "Successfully configured Cbc " << int( pCbc.getCbcId() ) << RESET << std::endl;
-				} 
+				}
 			}
 		};
 
@@ -161,6 +161,10 @@ namespace Ph2_System
 				if ( std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "Glib" ) ) )
 				{
 					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId );
+					// call EnableFileIO of cBeBoardFWInterface if desired
+					// if(fileIO)
+					cBeBoardFWInterface->enableWritetoFile( "testfile" );
+
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}
 				/*else

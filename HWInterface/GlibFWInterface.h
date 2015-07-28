@@ -63,8 +63,14 @@ namespace Ph2_HwInterface
 		 * \brief Destructor of the GlibFWInterface class
 		 */
 		~GlibFWInterface() {
-	                 if (fData) delete fData;
+			if ( fData ) delete fData;
+			if ( file_open() ) closeFile();
 		}
+		/*!
+		* \brief Enables file IO for mini DAQ
+		* \param pFilename : binary file name
+		*/
+		void enableWritetoFile( std::string pFilename );
 
 		/*!
 		 * \brief Configure the board with its Config File
@@ -103,18 +109,15 @@ namespace Ph2_HwInterface
 		 * \brief Get next event from data buffer
 		 * \return Next event
 		 */
-  	        const Event* GetNextEvent( const BeBoard* pBoard ) const override
-	        {
-		       return fData->GetNextEvent( pBoard );
-	        }
-            const Event* GetEvent( const BeBoard* pBoard, int i ) const override 
-	        {
-	           return fData->GetEvent( pBoard, i );
-	        }
-            const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const override
- 	        {
-	           return fData->GetEvents( pBoard );
-	        }
+		const Event* GetNextEvent( const BeBoard* pBoard ) const override {
+			return fData->GetNextEvent( pBoard );
+		}
+		const Event* GetEvent( const BeBoard* pBoard, int i ) const override {
+			return fData->GetEvent( pBoard, i );
+		}
+		const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const override {
+			return fData->GetEvents( pBoard );
+		}
 		/*! \brief Read a block of a given size
 		 * \param pRegNode Param Node name
 		 * \param pBlocksize Number of 32-bit words to read
@@ -124,7 +127,7 @@ namespace Ph2_HwInterface
 
 		bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues ) override;
 
-		void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) override;
+		void StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) override;
 		//Methods for the Cbc's:
 
 	  private:
@@ -159,8 +162,8 @@ namespace Ph2_HwInterface
 
 		/*! Compute the size of an acquisition data block
 		 * \return Number of 32-bit words to be read at each iteration */
-		uint32_t computeBlockSize(BeBoard* pBoard);
-		
+		uint32_t computeBlockSize( BeBoard* pBoard );
+
 
 	  public:
 
@@ -180,11 +183,13 @@ namespace Ph2_HwInterface
 		 * \param numConfig FPGA configuration number (1 or 2)
 		 * \param pstrFile path to MCS file
 		 */
-		void FlashProm(uint16_t numConfig, const char* pstrFile);
+		void FlashProm( uint16_t numConfig, const char* pstrFile );
 		/*! \brief Is the FPGA being configured ?
 		 * \return FPGA configuring process or NULL if configuration occurs */
-		const FpgaConfig* getConfiguringFpga(){ return fpgaConfig; }
-		void threadAcquisitionLoop(BeBoard* pBoard, HwInterfaceVisitor* visitor);
+		const FpgaConfig* getConfiguringFpga() {
+			return fpgaConfig;
+		}
+		void threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor );
 
 	};
 }
