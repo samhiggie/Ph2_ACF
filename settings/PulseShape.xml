@@ -67,8 +67,8 @@
     <Setting name="HoleMode"> 1 </Setting>
     <Setting name="Nevents" > 10 </Setting>
     <Setting name="Vplus" > 0x26 </Setting>
-    <Setting name="TPAmplitude" > 0xD3 </Setting>
+    <Setting name="TPAmplitude" > 0xD0 </Setting>
     <Setting name="Channel" > 1 </Setting>
     <Setting name="ChannelOffset" > 0x04 </Setting>
-    <Setting name="StepSize" > 7 </Setting>
+    <Setting name="StepSize" > 2 </Setting>
 </Settings>
