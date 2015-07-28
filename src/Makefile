@@ -68,7 +68,7 @@ fpgaconfig: fpgaconfig.cc
 
 datatestFromfile: datatestFromfile.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects) \
-	-lboost_filesystem -lboost_program_options -L../RootWeb/lib -lRootWeb \
+	-lboost_filesystem -lboost_program_options -L../RootWeb/lib -lRootWeb 
 	cp $@ ../bin
 
 .PHONY: clean
