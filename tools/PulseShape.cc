@@ -75,7 +75,7 @@ void PulseShape::ScanTestPulseDelay( uint8_t pStepSize )
 	// initialize the historgram for the channel map
 	int cCoarseDefault = 201;
 	int cLow = ( cCoarseDefault - 1 ) * 25;
-	int cHigh = ( cCoarseDefault + 6 ) * 25;
+	int cHigh = ( cCoarseDefault + 8 ) * 25;
 	std::map<Cbc*, uint8_t> cCollectedPoints;
 	for ( uint32_t cTestPulseDelay = cLow ; cTestPulseDelay < cHigh; cTestPulseDelay += fStepSize )
 	{
