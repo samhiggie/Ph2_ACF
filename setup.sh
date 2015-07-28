@@ -11,8 +11,8 @@ export QMAKESPEC=
 export QTROOTSYSDIR=/usr/local/qtRoot/root
 
 # BOOST
-export BOOST_LIB=/opt/cactus/lib/boost
-export BOOST_INCLUDE=/opt/cactus/include/boost
+export BOOST_LIB=/opt/cactus/lib
+export BOOST_INCLUDE=/opt/cactus/include
 
 # QT if installed
 export QTDIR=/usr/local/Trolltech/Qt-4.8.5
