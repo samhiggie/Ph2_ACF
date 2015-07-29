@@ -61,6 +61,13 @@ namespace Ph2_HwInterface
 		 * \param pBoardId
 		 */
 		GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
+		/*!
+		 * \brief Constructor of the GlibFWInterface class
+		 * \param puHalConfigFileName : path of the uHal Config File
+		 * \param pBoardId
+		 * \param pFileHandler : pointer to file handler for saving Raw Data
+		 */
+		GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
 
 		/*!
 		 * \brief Destructor of the GlibFWInterface class

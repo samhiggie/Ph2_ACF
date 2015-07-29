@@ -47,8 +47,7 @@ namespace Ph2_HwInterface
 
 
 		std::vector<Event*> fEventList;
-		std::ofstream fBinaryFile;
-
+		FileHandler* fFileHandler;
 
 	  private:
 

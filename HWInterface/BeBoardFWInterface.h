@@ -39,6 +39,7 @@ using namespace Ph2_HwDescription;
 namespace Ph2_HwInterface
 {
 	class FpgaConfig;
+	// class FileHandler;
 	/*!
 	 * \class BeBoardFWInterface
 	 * \brief Class separating board system FW interface from uHal wrapper
@@ -48,6 +49,7 @@ namespace Ph2_HwInterface
 
 	  public:
 		unsigned int fNTotalAcq;
+		FileHandler* fFileHandler;
 
 		static const uint32_t cMask1 = 0xff;
 		static const uint32_t cMask2 = 0xff00;
@@ -62,6 +64,13 @@ namespace Ph2_HwInterface
 		* \param puHalConfigFileName : path of the uHal Config File
 		*/
 		BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
+		/*!
+		* \brief Constructor of the BeBoardFWInterface class
+		* \param puHalConfigFileName : path of the uHal Config File
+		* \param pFileHandler : pointer to file handler for saving Raw Data
+		*/
+		BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+
 		/*!
 		* \brief Destructor of the BeBoardFWInterface class
 		*/
@@ -174,41 +183,6 @@ namespace Ph2_HwInterface
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-		// std::ofstream& getFile() {
-		// 	return fBinaryFile;
-		// }
-
-		// void setFile( std::ofstream& pBinaryFile ) {
-		// 	fBinaryFile = pBinaryFile;
-		// }
-
-		// std::string getFilename() {
-		// 	return fBinaryFileName;
-		// }
-
-		// void setFilename( std::string pFilename ) {
-		// 	fBinaryFileName = pFilename;
-		// }
-
-		// bool openFile() {
-		// 	if ( ! file_open() ) {
-		// 		if ( !boost::filesystem::exists( fBinaryFileName + ".raw" ) )
-		// 			fBinaryFile( ( fBinaryFileName + ".raw" ).c_str(), std::ios::binary | std::ios::app );
-		// 		else
-		// 			fBinaryFile.open( fBinaryFileName + ".raw" ).c_str(), std::ios::binary | std::ios::app );
-		// 		}
-
-		// 	return file_open();
-		// }
-
-		// bool closeFile() {
-		// 	fBinaryFile.close();
-		// 	return fBinaryFile.is_close()
-		// }
-
-		// bool file_open() {
-		// 	return fBinaryFile.is_open();
-		// }
 
 	  protected:
 
@@ -216,8 +190,8 @@ namespace Ph2_HwInterface
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
 		boost::thread thrAcq;
 		// for mini DAQ file IO
-		bool fSaveToFile = false;
-		FileHandler* fFileHandler ;
+		bool fSaveToFile;
+
 	};
 }
 

@@ -17,8 +17,19 @@ namespace Ph2_HwInterface
 	BeBoardInterface::BeBoardInterface( const BeBoardFWMap& pBoardMap ) :
 		fBoardMap( pBoardMap ),
 		fBoardFW( nullptr ),
-		prevBoardIdentifier( 65535 )
+		prevBoardIdentifier( 65535 ),
+		fFileHandler( nullptr ),
+		fSaveToFile( false )
 	{
+	}
+
+	BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
+		fBoardMap( pBoardMap ),
+		fBoardFW( nullptr ),
+		prevBoardIdentifier( 65535 ),
+		fFileHandler( pFileHandler )
+	{
+		if ( pFileHandler != nullptr ) fSaveToFile = true;
 	}
 
 	BeBoardInterface::~BeBoardInterface()
@@ -108,7 +119,7 @@ namespace Ph2_HwInterface
 	}
 
 
-	void BeBoardInterface::StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor)
+	void BeBoardInterface::StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
 		fBoardFW->StartThread( pBoard, uNbAcq, visitor );
@@ -172,12 +183,12 @@ namespace Ph2_HwInterface
 		fBoardFW->GetNextEvent( pBoard );
 	}
 
-        const Event* BeBoardInterface::GetEvent( const BeBoard* pBoard, int i )
+	const Event* BeBoardInterface::GetEvent( const BeBoard* pBoard, int i )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
 		return fBoardFW->GetEvent( pBoard, i );
 	}
-        const std::vector<Event*>& BeBoardInterface::GetEvents( const BeBoard* pBoard )
+	const std::vector<Event*>& BeBoardInterface::GetEvents( const BeBoard* pBoard )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
 		return fBoardFW->GetEvents( pBoard );
