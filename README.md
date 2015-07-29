@@ -78,6 +78,11 @@ On this Repo, you can find different version of the software :
     - Data class now holds a vector of Events and the events are directly decoded after acquisition - the char* databuffer does not exist any longer
     - added methods: std::vector<Event*> GetEvents(); Event* GetEvent()
     - updated all scripts
+- 17/07/2015: including a new executable flashfpga to upload .mcs files to the EPROM, updated tool base-class, included DQM code from the Beamtest
+    - fpgaconfig binary allows to upload FW images to EPROM (2 separate images)
+    - tool base class now contains containers for histograms along with bookHisto(), getHisto(), saveHisto() methods
+    - modified all other tools accordingly
+    - merged the DQM code from the June '15 beamtest
     
 
 
