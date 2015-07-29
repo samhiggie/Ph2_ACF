@@ -16,9 +16,11 @@
 #include <memory>
 #include <ios>
 #include <istream>
-#include "../Utils/Event.h"
+#include "Event.h"
 #include "../HWDescription/BeBoard.h"
+#include "../HWInterface/GlibFWInterface.h"
 #include "../HWDescription/Definition.h"
+#include "FileHandler.h"
 #include <thread>
 #include <iostream>
 #include <fstream>
@@ -46,6 +48,8 @@ namespace Ph2_HwInterface
 
 		std::vector<Event*> fEventList;
 		std::ofstream fBinaryFile;
+
+
 	  private:
 
 
@@ -82,10 +86,7 @@ namespace Ph2_HwInterface
 			fEventList.clear();
 		}
 
-		void setFile( std::ofstream& pBinaryFile = std::move( pBinaryFile ) ) {
 
-
-		}
 
 		/*!
 		 * \brief Set the data in the data map

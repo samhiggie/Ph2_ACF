@@ -15,9 +15,11 @@
 #include <uhal/uhal.hpp>
 #include "RegManager.h"
 #include "../Utils/Event.h"
+#include "../Utils/FileHandler.h"
 #include "../Utils/Data.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/Exception.h"
+#include "../Utils/FileHandler.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWDescription/Definition.h"
 #include "../HWDescription/CbcRegItem.h"
@@ -172,41 +174,41 @@ namespace Ph2_HwInterface
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-		std::ofstream& getFile() {
-			return fBinaryFile;
-		}
+		// std::ofstream& getFile() {
+		// 	return fBinaryFile;
+		// }
 
-		void setFile( std::ofstream& pBinaryFile ) {
-			fBinaryFile = pBinaryFile;
-		}
+		// void setFile( std::ofstream& pBinaryFile ) {
+		// 	fBinaryFile = pBinaryFile;
+		// }
 
-		std::string getFilename() {
-			return fBinaryFileName;
-		}
+		// std::string getFilename() {
+		// 	return fBinaryFileName;
+		// }
 
-		void setFilename( std::string pFilename ) {
-			fBinaryFileName = pFilename;
-		}
+		// void setFilename( std::string pFilename ) {
+		// 	fBinaryFileName = pFilename;
+		// }
 
-		bool openFile() {
-			if ( ! file_open() ) {
-				if ( !boost::filesystem::exists( fBinaryFileName + ".raw" ) )
-					fBinaryFile( ( fBinaryFileName + ".raw" ).c_str(), std::ios::binary | std::ios::app );
-				else
-					fBinaryFile.open( fBinaryFileName + ".raw" ).c_str(), std::ios::binary | std::ios::app );
-				}
+		// bool openFile() {
+		// 	if ( ! file_open() ) {
+		// 		if ( !boost::filesystem::exists( fBinaryFileName + ".raw" ) )
+		// 			fBinaryFile( ( fBinaryFileName + ".raw" ).c_str(), std::ios::binary | std::ios::app );
+		// 		else
+		// 			fBinaryFile.open( fBinaryFileName + ".raw" ).c_str(), std::ios::binary | std::ios::app );
+		// 		}
 
-			return file_open();
-		}
+		// 	return file_open();
+		// }
 
-		bool closeFile() {
-			fBinaryFile.close();
-			return fBinaryFile.is_close()
-		}
+		// bool closeFile() {
+		// 	fBinaryFile.close();
+		// 	return fBinaryFile.is_close()
+		// }
 
-		bool file_open() {
-			return fBinaryFile.is_open();
-		}
+		// bool file_open() {
+		// 	return fBinaryFile.is_open();
+		// }
 
 	  protected:
 
@@ -214,9 +216,8 @@ namespace Ph2_HwInterface
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
 		boost::thread thrAcq;
 		// for mini DAQ file IO
-		bool fSaveToFile;
-		std::string fBinaryFileName;
-		std::ofstream fBinaryFile;
+		bool fSaveToFile = false;
+		FileHandler* fFileHandler ;
 	};
 }
 

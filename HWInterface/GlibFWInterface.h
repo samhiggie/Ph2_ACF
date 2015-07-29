@@ -21,6 +21,7 @@
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
 
+
 using namespace Ph2_HwDescription;
 
 /*!
@@ -44,6 +45,7 @@ namespace Ph2_HwInterface
 		std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
 		std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
 		FpgaConfig* fpgaConfig;
+		FileHandler* fFileHandler ;
 
 	  private:
 		/*!
@@ -59,18 +61,25 @@ namespace Ph2_HwInterface
 		 * \param pBoardId
 		 */
 		GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
+
 		/*!
 		 * \brief Destructor of the GlibFWInterface class
 		 */
 		~GlibFWInterface() {
-			if ( fData ) delete fData;
-			if ( file_open() ) closeFile();
+			if ( fData )
+
+				delete fData;
+
+
+
+
 		}
 		/*!
 		* \brief Enables file IO for mini DAQ
 		* \param pFilename : binary file name
 		*/
 		void enableWritetoFile( std::string pFilename );
+		void enableWritetoFile( std::ofstream* pBinaryFile );
 
 		/*!
 		 * \brief Configure the board with its Config File

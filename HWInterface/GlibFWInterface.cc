@@ -19,24 +19,34 @@ namespace Ph2_HwInterface
 {
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
+		BeBoardFWInterface( puHalConfigFileName, pBoardId ), fData( nullptr ) ,  fFileHandler( nullptr )
+	{
+
+	}
+
+
+	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, std::string pBinaryFileName ) :
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ), fData( nullptr )
 	{
-
-	}
-
-	void GlibFWInterface::enableWritetoFile( std::string pFilename )
-	{
+		fFileHandler( pBinaryFileName );
+		// if ( fFileHandler != nullptr )
 		fSaveToFile = true;
-		setFilename( pFilename );
-		open_file();
-	}
 
-	void GlibFWInterface::enableWritetoFile( std::ofstream pBinaryFile )
-	{
-		fSaveToFile = true;
-		setFile( pBinaryFile );
-		open_file();
 	}
+	// void GlibFWInterface::enableWritetoFile( std::string pFilename )
+	// {
+	// 	fSaveToFile = true;
+
+	// 	fData->fFileHandler.setFilename( pFilename );
+	// 	fData->fFileHandler.openFile();
+	// }
+
+	// void GlibFWInterface::enableWritetoFile( std::ofstream* pBinaryFile )
+	// {
+	// 	fSaveToFile = true;
+	// 	fData->fFileHandler.setFile( pBinaryFile );
+	// 	fData->fFileHandler.openFile();
+	// }
 
 	void GlibFWInterface::ConfigureBoard( const BeBoard* pBoard )
 	{
@@ -327,11 +337,11 @@ namespace Ph2_HwInterface
 		if ( fData ) delete fData;
 		fData = new Data();
 		if ( fSaveToFile )
-			fData->setFile( fBinaryFile );
+			// fData->fFileHandler.setFile( fBinaryFile );
 
-		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
-		// if fSaveToFile, pass file and bool to data constructor
-		fData->Set( pBoard, cData , cNPackets, true, fSaveToFile );
+			// set the vector<uint32_t> as event buffer and let him know how many packets it contains
+			// if fSaveToFile, pass file and bool to data constructor
+			fData->Set( pBoard, cData , cNPackets, true, fSaveToFile, this );
 		return cNPackets;
 	}
 	/** compute the block size according to the number of CBC's on this board

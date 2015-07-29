@@ -9,7 +9,7 @@
 
  */
 
-#include "../Utils/Data.h"
+#include "Data.h"
 #include <iostream>
 
 namespace Ph2_HwInterface
@@ -27,7 +27,7 @@ namespace Ph2_HwInterface
 	{
 	}
 
-	void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes, bool pWriteFile )
+	void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes, bool pWriteFile, GlibFWInterface cGlibFWInterface )
 	{
 		std::vector<uint32_t> cVectorCopy;
 		cVectorCopy = deepCopy( pData );
@@ -35,7 +35,7 @@ namespace Ph2_HwInterface
 
 		if ( pWriteFile )
 		{
-			std::thread cThread( &Data::writeFile, this, cVectorCopy ) ;
+			std::thread cThread( &Data::writeFile, this, cVectorCopy , cGlibFWInterface ) ;
 			cThread.join();
 		}
 
@@ -120,11 +120,17 @@ namespace Ph2_HwInterface
 		fCurrentEvent = 0;
 	}
 
-	void Data::writeFile( std::vector<uint32_t> fData )
+	void Data::writeFile( std::vector<uint32_t> fData , GlibFWInterface cGlibFWInterface )
 	{
 		//write the bin file
 		for ( auto& cElements : fData )
-			fBinaryFile.write( ( char* ) &cElements, sizeof( uint8_t ) );
+
+
+			// how can I take the ofstream without method getFile in FileHandler?
+			//from where can I take the FileHandler object???
+
+
+			cGlibFWInterface.fFileHandler->fBinaryFile.write( ( char* ) &cElements, sizeof( uint8_t ) );
 	}
 }
 
