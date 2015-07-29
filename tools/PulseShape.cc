@@ -59,8 +59,6 @@ void PulseShape::Initialize()
 	}
 
 	parseSettings();
-
-
 	std::cout << "Histograms and Settings initialised." << std::endl;
 }
 
@@ -100,16 +98,17 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 	for ( auto& cChannel : fChannelMap )
 		cChannel.second->initializeHist( pDelay, "Delay" );
 
-	uint8_t cVcth = ( fHoleMode ) ?  0x00 :  0xFF;
-	int cStep = ( fHoleMode ) ? 10 : -10;
-	uint32_t cAllZeroCounter = 0;
+	uint8_t cVcth = ( fHoleMode ) ?  0xFF :  0x00;
+	int cStep = ( fHoleMode ) ? -10 : +10;
+	uint32_t cAllOneCounter = 0;
 	// uint8_t cDoubleVcth;
-	bool cAllZero = false;
+	bool cAllOne = false;
 	bool cNonZero = false;
 	bool cSaturate = false;
 	// Adaptive VCth loop
 	while ( 0x00 <= cVcth && cVcth <= 0xFF )
 	{
+		if ( cAllOne ) break;
 		CbcRegWriter cWriter( fCbcInterface, "VCth", cVcth );
 		this->accept( cWriter );
 
@@ -136,18 +135,18 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 				if ( cNHits != 0 ) cNonZero = true;
 			}
 		}
-		if ( cNonZero && cNHits == 0 && cAllZero == false )
+		if ( !cNonZero && cNHits != 0 )
 		{
-			cAllZero = true;
+			cNonZero = true;
 			cVcth -= 5 * cStep;
 			cStep /= 10;
 			continue;
 		}
-		if ( cNHits == 0 &&  cAllZero )
-			cAllZeroCounter++;
+		if ( cNHits > 0.95 * fNCbc * fNevents )
+			cAllOneCounter++;
 
-		if ( cAllZeroCounter > 3 )
-			break;
+		if ( cAllOneCounter > 6 ) cAllOne = true;
+		if ( cAllOne ) break;
 		if ( fHoleMode && cVcth >= 0xFE && cNHits != 0 )
 		{
 			cSaturate = true;
@@ -163,10 +162,6 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 
 	}
 
-	// done counting hits for all FE's, now update the Histograms
-
-
-
 	std::map<Cbc*, uint8_t > cHpoint;
 
 	uint8_t cVal;
@@ -174,13 +169,7 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 
 	for ( auto& cChannel : fChannelMap )
 	{
-
-		// cChannel.second->fScurve->Scale( 1 / double( fNevents ) );
 		cChannel.second->fitHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
-		// cVal = cChannel.second->fScurve->GetBinCenter( cChannel.second->fScurve->FindLastBinAbove( 0.5 ) );
-
-		// if ( !cSaturate ) cHpoint[cChannel.first] = cVal;
-		// else cHpoint[cChannel.first] = 255;
 		cVal = cChannel.second->getPedestal();
 		if ( !cSaturate ) cHpoint[cChannel.first] = cVal;
 		else cHpoint[cChannel.first] = 255;
@@ -190,6 +179,8 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 	updateHists( "", true );
 	return cHpoint;
 }
+
+
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
 
 
@@ -197,9 +188,6 @@ void PulseShape::fitGraph( int pLow )
 {
 	// iterate over fCbcHistMap
 	// for each Cbc
-	// 	TGraph* = get the graph using the method gethist(Cbc, name)
-	// 	TF1* = get the fit using the method gethist()
-	// 	TF1->SetParLimits() whatever
 	// 	TGraph->Fit()
 	for ( auto& cCbc : fCbcHistMap )
 	{
@@ -215,28 +203,10 @@ void PulseShape::fitGraph( int pLow )
 		cFit->SetParLimits( 3, 0, 40 );
 		cGraph->Fit( cFit );
 	}
-
-	// cleverly set the parameter limits as function of set delay
-	// TF1* cFitGraph = new TF1( "pulseshape", pulseshape, ( pCoarseDelay - 1 ) * 25, ( pCoarseDelay + 6 ) * 25, 4 );
-	// cFitGraph->SetParLimits( 0, 160, 2000 );
-	// cFitGraph->SetParLimits( 1, 5030, 5300 );
-	// cFitGraph->SetParLimits( 2, 5, 12.5 );
-	// cFitGraph->SetParLimits( 3, 0, 40 );
-	// TGraph* cGraph;
-	// for ( auto& cChannel : fChannelMap )
-	// {
-
-	// 	cGraph = static_cast<TGraph*>( getHist( cChannel.first, "cbc_pulseshape" ) );
-	// 	cGraph->Fit( cFitGraph, "VEMR" );
-	// }
-
 }
-
-
 
 int PulseShape::findTestGroup( uint32_t pChannelId )
 {
-
 	int cGrp = -1;
 	for ( int cChIndex = 0; cChIndex < 16; cChIndex++ )
 	{
@@ -245,11 +215,7 @@ int PulseShape::findTestGroup( uint32_t pChannelId )
 			cGrp = cResult;
 	}
 	return cGrp;
-
 }
-
-
-
 
 void PulseShape::enableChannel( uint8_t pChannelId )
 {
@@ -257,10 +223,7 @@ void PulseShape::enableChannel( uint8_t pChannelId )
 	std::string cReg = Form( "Channel%03d", pChannelId + 1 );;
 	CbcRegWriter cWriter( fCbcInterface, cReg, fOffset );
 	this->accept( cWriter );
-
 }
-
-
 
 void PulseShape::setDelayAndTesGroup( uint32_t pDelay )
 {
@@ -276,8 +239,6 @@ void PulseShape::setDelayAndTesGroup( uint32_t pDelay )
 	this->accept( cWriter );
 
 }
-
-
 
 uint32_t PulseShape::fillVcthHist( BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pVcth )
 {
@@ -313,8 +274,6 @@ uint32_t PulseShape::fillVcthHist( BeBoard* pBoard, std::vector<Event*> pEventVe
 	return cHits;
 }
 
-
-
 void PulseShape::parseSettings()
 {
 	// now read the settings from the map
@@ -349,7 +308,6 @@ void PulseShape::parseSettings()
 	std::cout << "	Channel = " << int( fChannel ) << std::endl;
 	std::cout << "	ChOffset = " << int( fOffset ) << std::endl;
 	std::cout << "	StepSize = " << int( fStepSize ) << std::endl;
-
 }
 
 void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
@@ -393,8 +351,6 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
 					uint32_t cCbcId = cCbc->getCbcId();
 					Channel* cChannel = new Channel( cBoardId, cFeId, cCbcId, pChannelId );
 					fChannelMap[cCbc] = cChannel;
-
-
 				}
 				// enableChannel( pChannelId );
 				std::cout << "Channel: " << +pChannelId << std::endl;
@@ -452,6 +408,7 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 		cCanvas.second->Update();
 	}
 }
+
 double pulseshape( double* x, double* par )
 {
 	double xx = x[0];
