@@ -36,9 +36,12 @@ using namespace Ph2_HwDescription;
  * \namespace Ph2_HwInterface
  * \brief Namespace regrouping all the interfaces to the hardware
  */
+class FileHandler;
+
 namespace Ph2_HwInterface
 {
 	class FpgaConfig;
+
 	// class FileHandler;
 	/*!
 	 * \class BeBoardFWInterface
@@ -49,7 +52,9 @@ namespace Ph2_HwInterface
 
 	  public:
 		unsigned int fNTotalAcq;
+
 		FileHandler* fFileHandler;
+		bool fSaveToFile;
 
 		static const uint32_t cMask1 = 0xff;
 		static const uint32_t cMask2 = 0xff00;
@@ -75,11 +80,6 @@ namespace Ph2_HwInterface
 		* \brief Destructor of the BeBoardFWInterface class
 		*/
 		virtual ~BeBoardFWInterface() {}
-		/*!
-		* \brief Enables file IO for mini DAQ
-		* \param pFilename : binary file name
-		*/
-		virtual void enableWritetoFile( std::string pFilename );
 		/*!
 		* \brief Get the board type
 		*/
@@ -190,8 +190,6 @@ namespace Ph2_HwInterface
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
 		boost::thread thrAcq;
 		// for mini DAQ file IO
-		bool fSaveToFile;
-
 	};
 }
 

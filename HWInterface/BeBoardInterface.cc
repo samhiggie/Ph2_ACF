@@ -17,20 +17,12 @@ namespace Ph2_HwInterface
 	BeBoardInterface::BeBoardInterface( const BeBoardFWMap& pBoardMap ) :
 		fBoardMap( pBoardMap ),
 		fBoardFW( nullptr ),
-		prevBoardIdentifier( 65535 ),
-		fFileHandler( nullptr ),
-		fSaveToFile( false )
+		prevBoardIdentifier( 65535 )
+
 	{
 	}
 
-	BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
-		fBoardMap( pBoardMap ),
-		fBoardFW( nullptr ),
-		prevBoardIdentifier( 65535 ),
-		fFileHandler( pFileHandler )
-	{
-		if ( pFileHandler != nullptr ) fSaveToFile = true;
-	}
+
 
 	BeBoardInterface::~BeBoardInterface()
 	{

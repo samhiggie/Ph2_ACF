@@ -9,7 +9,7 @@
 
  */
 
-#include "Data.h"
+#include "../Utils/Data.h"
 #include <iostream>
 
 namespace Ph2_HwInterface
@@ -17,75 +17,36 @@ namespace Ph2_HwInterface
 	//Data Class
 
 	// copy constructor
-	Data::Data( const Data& pD ) :
+        Data::Data( const Data& pD ) :
 
 		// Initialise( pD.fNevents );
 		fNevents( pD.fNevents ),
-		fCurrentEvent( pD.fCurrentEvent ),
+		fCurrentEvent(pD.fCurrentEvent ),
 		fNCbc( pD.fNCbc ),
 		fEventSize( pD.fEventSize )
 	{
 	}
 
-	void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes, bool pWriteFile, GlibFWInterface cGlibFWInterface )
+
+        void Data::Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes )
 	{
-		std::vector<uint32_t> cVectorCopy;
-		cVectorCopy = deepCopy( pData );
-		this->DecodeEvents( pBoard, pData, pNevents, swapBytes );
-
-		if ( pWriteFile )
-		{
-			std::thread cThread( &Data::writeFile, this, cVectorCopy , cGlibFWInterface ) ;
-			cThread.join();
-		}
-
-
-
-		// std::thread cThreads[2];
-		// for ( int i = 0; i < 2; ++i )
-		// {
-
-
-		// 	cThreads[0] = std::thread( &Data::writeFile, this, cVectorCopy );
-
-		// 	cThreads[1] = std::thread( &Data::DecodeEvents, this, pBoard, pData, pNevents, swapBytes );
-		// 	for ( int i = 0; i < 2; ++i )
-		// 		cThreads[i].join();
-		// }
-
-
-
-
-	}
-
-
-	void Data::DecodeEvents( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes )
-	{
-		Reset();
+	        Reset();
 
 		std::vector<uint8_t> flist;
-		// std::vector<uint32_t> cVectorCopy;
-
-		// //mettere questa parte in un thread separato
-		// cVectorCopy = deepCopy( pData );
-		// writeFile( cVectorCopy, "outputfile" );
-
-		for ( auto word : pData )
+		for ( auto word: pData )
 		{
-			if ( swapBytes )
-			{
-				flist.push_back( ( word >> 24 ) & 0xFF );
-				flist.push_back( ( word >> 16 ) & 0xFF );
-				flist.push_back( ( word >>  8 ) & 0xFF );
-				flist.push_back( word  & 0xFF );
-			}
-			else
-			{
-				flist.push_back( word  & 0xFF );
-				flist.push_back( ( word >>  8 ) & 0xFF );
-				flist.push_back( ( word >> 16 ) & 0xFF );
-				flist.push_back( ( word >> 24 ) & 0xFF );
-			}
+                    if( swapBytes ) {
+		        flist.push_back((word >> 24) & 0xFF);
+		        flist.push_back((word >> 16) & 0xFF);
+		        flist.push_back((word >>  8) & 0xFF);
+		        flist.push_back(word  & 0xFF);
+                    }
+                    else {
+                        flist.push_back(word  & 0xFF);
+                        flist.push_back((word >>  8) & 0xFF);
+                        flist.push_back((word >> 16) & 0xFF);
+                        flist.push_back((word >> 24) & 0xFF);
+                    }
 		}
 		// initialize the buffer data array and the buffer size (one 32 bit word is 4 char!)
 		fNevents = static_cast<uint32_t>( pNevents );
@@ -94,43 +55,30 @@ namespace Ph2_HwInterface
 
 #ifdef __CBCDAQ_DEV__
 		std::cout << "Initializing list with " << flist.size() << ", i.e 4 * " << pData.size()
-				  << " chars containing data from "
-				  << fNevents << "  Events with an eventbuffer size of " << fEventSize << " and " << fNCbc
-				  << " CBCs each! " << EVENT_HEADER_TDC_SIZE_CHAR << " " << CBC_EVENT_SIZE_CHAR << std::endl;
+			  << " chars containing data from " 
+                          << fNevents << "  Events with an eventbuffer size of " << fEventSize << " and " << fNCbc 
+                          << " CBCs each! " << EVENT_HEADER_TDC_SIZE_CHAR << " " << CBC_EVENT_SIZE_CHAR << std::endl;
 #endif
 
 		// Fill fEventList
 		std::vector<uint8_t> lvec;
-		for ( auto i = 0; i < flist.size(); ++i )
+                for (auto i = 0; i < flist.size(); ++i)
 		{
-			lvec.push_back( flist[i] );
-			if ( i > 0 && ( ( i + 1 ) % fEventSize ) == 0 )
-			{
-				fEventList.push_back( new Event( pBoard, fNCbc, lvec ) );
-				lvec.clear();
-			}
+                    lvec.push_back(flist[i]);
+                    if ( i > 0 && ((i+1) % fEventSize) == 0 ) 
+		    {
+		        fEventList.push_back(new Event( pBoard, fNCbc, lvec ));
+			lvec.clear(); 
+		    }
 		}
 	}
 
 	void Data::Reset()
 	{
-		for ( auto& pevt : fEventList )
-			delete pevt;
-		fEventList.clear();
+	        for ( auto& pevt: fEventList ) 
+		      delete pevt;
+                fEventList.clear();
 		fCurrentEvent = 0;
-	}
-
-	void Data::writeFile( std::vector<uint32_t> fData , GlibFWInterface cGlibFWInterface )
-	{
-		//write the bin file
-		for ( auto& cElements : fData )
-
-
-			// how can I take the ofstream without method getFile in FileHandler?
-			//from where can I take the FileHandler object???
-
-
-			cGlibFWInterface.fFileHandler->fBinaryFile.write( ( char* ) &cElements, sizeof( uint8_t ) );
 	}
 }
 

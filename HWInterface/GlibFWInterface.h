@@ -22,6 +22,7 @@
 #include "../Utils/Visitor.h"
 
 
+
 using namespace Ph2_HwDescription;
 
 /*!
@@ -31,6 +32,7 @@ using namespace Ph2_HwDescription;
 namespace Ph2_HwInterface
 {
 	class FpgaConfig;
+
 	/*!
 	 * \class GlibFWInterface
 	 * \brief init/config of the Glib and its Cbc's
@@ -46,6 +48,7 @@ namespace Ph2_HwInterface
 		std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
 		FpgaConfig* fpgaConfig;
 		FileHandler* fFileHandler ;
+
 
 	  private:
 		/*!
@@ -73,21 +76,8 @@ namespace Ph2_HwInterface
 		 * \brief Destructor of the GlibFWInterface class
 		 */
 		~GlibFWInterface() {
-			if ( fData )
-
-				delete fData;
-
-
-
-
+			delete fData;
 		}
-		/*!
-		* \brief Enables file IO for mini DAQ
-		* \param pFilename : binary file name
-		*/
-		void enableWritetoFile( std::string pFilename );
-		void enableWritetoFile( std::ofstream* pBinaryFile );
-
 		/*!
 		 * \brief Configure the board with its Config File
 		 * \param pBoard

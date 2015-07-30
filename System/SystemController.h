@@ -21,7 +21,7 @@
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/picojson.h"
-
+#include "../Utils/FileHandler.h"
 #include "../Utils/pugixml.hpp"
 #include "../Utils/ConsoleColor.h"
 #include <iostream>
@@ -100,7 +100,7 @@ namespace Ph2_System
 		/*!
 		 * \brief Configure the Hardware with XML file indicated values
 		 */
-		void ConfigureHw( std::ostream& os = std::cout , bool bIgnoreI2c = false);
+		void ConfigureHw( std::ostream& os = std::cout , bool bIgnoreI2c = false );
 		/*!
 		 * \brief Run a DAQ
 		 * \param pBeBoard
@@ -124,15 +124,15 @@ namespace Ph2_System
 		 * \param pBoard
 		 * \return Next event
 		 */
-	        const Event* GetNextEvent( const BeBoard* pBoard ) {
-		     return fBeBoardInterface->GetNextEvent( pBoard );
-                }    
-                const Event* GetEvent( const BeBoard* pBoard, int i ) const {
-                     return fBeBoardInterface->GetEvent( pBoard, i );
-                }	
-	        const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const {
-                     return fBeBoardInterface->GetEvents( pBoard );
-                }
+		const Event* GetNextEvent( const BeBoard* pBoard ) {
+			return fBeBoardInterface->GetNextEvent( pBoard );
+		}
+		const Event* GetEvent( const BeBoard* pBoard, int i ) const {
+			return fBeBoardInterface->GetEvent( pBoard, i );
+		}
+		const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const {
+			return fBeBoardInterface->GetEvents( pBoard );
+		}
 
 		/*!
 		 * \brief Initialize the hardware via  XML config file

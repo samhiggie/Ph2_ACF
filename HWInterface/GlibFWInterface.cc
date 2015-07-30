@@ -19,13 +19,15 @@ namespace Ph2_HwInterface
 {
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		BeBoardFWInterface( puHalConfigFileName, pBoardId ), fData( nullptr ) )
+		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
+		fData( nullptr )
 	{
 	}
 
 
-	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, fFileHandler* pFileHandler ) :
-		BeBoardFWInterface( puHalConfigFileName, pBoardId ), fData( nullptr ),  pFileHandler )
+	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
+		BeBoardFWInterface( puHalConfigFileName, pBoardId, pFileHandler ),
+		fData( nullptr )
 	{
 	}
 	// void GlibFWInterface::enableWritetoFile( std::string pFilename )
@@ -330,13 +332,16 @@ namespace Ph2_HwInterface
 
 		// just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
 		if ( fData ) delete fData;
-		if ( fSaveToFile )
-			fData = new Data( fFileHandler );
-		else fData = new Data();
+
+		fData = new Data();
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
-		// if fSaveToFile, pass file and bool to data constructor
-		fData->Set( pBoard, cData , cNPackets, true, fSaveToFile, this );
+		fData->Set( pBoard, cData , cNPackets, true );
+
+		if ( fSaveToFile )
+
+			fFileHandler->write( cData );
+
 		return cNPackets;
 	}
 	/** compute the block size according to the number of CBC's on this board

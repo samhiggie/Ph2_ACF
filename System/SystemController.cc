@@ -160,10 +160,12 @@ namespace Ph2_System
 
 				if ( std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "Glib" ) ) )
 				{
-					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId );
+					FileHandler* f = new FileHandler( "testfile" );
+
+					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId,  f );
 					// call EnableFileIO of cBeBoardFWInterface if desired
 					// if(fileIO)
-					cBeBoardFWInterface->enableWritetoFile( "testfile" );
+					//cBeBoardFWInterface->enableWritetoFile( "testfile" );
 
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}

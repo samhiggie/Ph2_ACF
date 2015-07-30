@@ -16,17 +16,9 @@
 #include <memory>
 #include <ios>
 #include <istream>
-#include "Event.h"
+#include "../Utils/Event.h"
 #include "../HWDescription/BeBoard.h"
-#include "../HWInterface/GlibFWInterface.h"
 #include "../HWDescription/Definition.h"
-#include "FileHandler.h"
-#include <thread>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <boost/filesystem.hpp>
-
 
 
 using namespace Ph2_HwDescription;
@@ -45,25 +37,9 @@ namespace Ph2_HwInterface
 		uint32_t fNCbc  ;               /*! Number of CBCs in the setup <*/
 		uint32_t fEventSize  ;          /*! Size of 1 Event <*/
 
-
 		std::vector<Event*> fEventList;
-		FileHandler* fFileHandler;
 
 	  private:
-
-
-
-		//compute deep copy of a vector
-		std::vector<uint32_t> deepCopy( std::vector<uint32_t> pVector ) {
-
-			std::vector<uint32_t> cVectorCopy = pVector;
-
-
-
-			return cVectorCopy;
-
-		}
-
 
 	  public:
 		/*!
@@ -84,17 +60,13 @@ namespace Ph2_HwInterface
 				delete pevt;
 			fEventList.clear();
 		}
-
-
-
 		/*!
 		 * \brief Set the data in the data map
 		         * \param *pBoard : pointer to Boat
 		 * \param *pData : Data from the Cbc
 		 * \param pNevents : The number of events in this acquisiton
 		 */
-		void Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true, bool pWriteFile = false );
-		void DecodeEvents( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
+		void Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
 		/*!
 		 * \brief Reset the data structure
 		 */
@@ -104,8 +76,6 @@ namespace Ph2_HwInterface
 		 * \param pBoard: pointer to BeBoard
 		 * \return Next Event
 		 */
-
-		void writeFile( std::vector<uint32_t> pData );
 		// cannot be const as fCurrentEvent is incremented
 		const Event* GetNextEvent( const BeBoard* pBoard ) {
 			return ( ( fCurrentEvent >= fEventList.size() ) ? nullptr : fEventList.at( fCurrentEvent++ ) );
