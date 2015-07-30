@@ -82,7 +82,8 @@ On this Repo, you can find different version of the software :
     - fpgaconfig binary allows to upload FW images to EPROM (2 separate images)
     - tool base class now contains containers for histograms along with bookHisto(), getHisto(), saveHisto() methods
     - modified all other tools accordingly
-    - merged the DQM code from the June '15 beamtest
+    - merged the DQM code from the June '15 beamtest into miniDQM binary
+    - updated Makefiles to build RootWeb & miniDQM
     
 
 
