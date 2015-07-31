@@ -74,7 +74,7 @@ namespace Ph2_HwInterface
 		* \param puHalConfigFileName : path of the uHal Config File
 		* \param pFileHandler : pointer to file handler for saving Raw Data
 		*/
-		BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+		// BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
 
 		/*!
 		* \brief Destructor of the BeBoardFWInterface class

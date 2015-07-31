@@ -61,7 +61,7 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC.");
+	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC." );
 	cmd.defineOptionAlternative( "ignoreI2c", "i" );
 
 	cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
@@ -90,6 +90,28 @@ int main( int argc, char* argv[] )
 
 	Timer t;
 	t.start();
+	cSystemController.addFileHandler( "testfile" );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	cSystemController.InitializeHw( cHWFile );
 	cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
@@ -148,7 +170,7 @@ int main( int argc, char* argv[] )
 			if ( cN + cPacketSize >= pEventsperVcth ) cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
 			const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
 
-			for (auto& ev: events)
+			for ( auto& ev : events )
 			{
 				std::cout << ">>> Event #" << cN++ << std::endl;
 				std::cout << *ev << std::endl;

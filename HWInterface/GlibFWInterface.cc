@@ -22,13 +22,20 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
 		fData( nullptr )
 	{
+		std::cout <<  " " << fFileHandler << std::endl;
 	}
 
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
-		BeBoardFWInterface( puHalConfigFileName, pBoardId, pFileHandler ),
-		fData( nullptr )
+		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
+		fData( nullptr ),
+		// BeBoardFWInterface( puHalConfigFileName, pBoardId, pFileHandler )
+		fFileHandler( pFileHandler )
 	{
+		if ( fFileHandler == nullptr ) fSaveToFile = false;
+		else fSaveToFile = true;
+		std::cout << fFileHandler <<  "this should happen and not be 0 " << pFileHandler << std::endl;
+
 	}
 	// void GlibFWInterface::enableWritetoFile( std::string pFilename )
 	// {
@@ -337,7 +344,7 @@ namespace Ph2_HwInterface
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
 		fData->Set( pBoard, cData , cNPackets, true );
-
+		std::cout << "read data " << fFileHandler << std::endl;
 		if ( fSaveToFile )
 
 			fFileHandler->write( cData );

@@ -56,7 +56,7 @@ namespace Ph2_System
 		ShelveVec fShelveVector;                                           /*!< Vector of Shelve pointers */
 		BeBoardFWMap fBeBoardFWMap;                                /*!< Map of connections to the BeBoard */
 		SettingsMap fSettingsMap;                                         /*!< Maps the settings */
-
+		FileHandler* fFileHandler;
 
 
 	  public:
@@ -68,7 +68,11 @@ namespace Ph2_System
 		 * \brief Destructor of the SystemController class
 		 */
 		~SystemController();
-
+		/*!
+		* \brief create a FileHandler object with
+		 * \param pFilename : the filename of the binary file
+		*/
+		void addFileHandler( std::string pFilename );
 		/*!
 		 * \brief acceptor method for HwDescriptionVisitor
 		 * \param pVisitor

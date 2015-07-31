@@ -19,7 +19,7 @@ namespace Ph2_System
 
 	SystemController::SystemController()
 	{
-
+		fFileHandler = nullptr;
 	}
 
 	SystemController::~SystemController()
@@ -27,6 +27,13 @@ namespace Ph2_System
 		for ( auto& el : fShelveVector )
 			delete el;
 		fShelveVector.clear();
+	}
+
+	void SystemController::addFileHandler( std::string pFilename )
+	{
+		std::cout << "Creating File with name " << pFilename << std::endl;
+		fFileHandler = new FileHandler( pFilename );
+		std::cout << fFileHandler << std::endl;
 	}
 
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )
@@ -160,12 +167,10 @@ namespace Ph2_System
 
 				if ( std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "Glib" ) ) )
 				{
-					FileHandler* f = new FileHandler( "testfile" );
 
-					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId,  f );
-					// call EnableFileIO of cBeBoardFWInterface if desired
-					// if(fileIO)
-					//cBeBoardFWInterface->enableWritetoFile( "testfile" );
+					std::cout << "System Controller " << fFileHandler << std::endl;
+					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
+
 
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}
@@ -307,7 +312,7 @@ namespace Ph2_System
 
 				if ( cBoard.get( "boardType" ).get<std::string>() == "Glib" )
 				{
-					cBeBoardFWInterface = new GlibFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId );
+					cBeBoardFWInterface = new GlibFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}
 				/*else
