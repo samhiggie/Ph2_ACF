@@ -76,7 +76,7 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
 	cmd.defineOptionAlternative( "parallel", "p" );
 
-	cmd.defineOption( "save", "Save the data to a bin file. Default value: outputfile.raw ", ArgvParser::OptionRequiresValue );
+	cmd.defineOption( "save", "Save the data to a raw file.  ", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "save", "s" );
 
 	cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
@@ -90,9 +90,18 @@ int main( int argc, char* argv[] )
 		exit( 1 );
 	}
 
+	bool cSaveToFile = false;
+	std::string cOutputFile;
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_2CBC.xml";
-	std::string cOutputFile = ( cmd.foundOption( "save" ) ) ? cmd.optionValue( "save" ) : "outputfile";
+
+	if ( cmd.foundOption( "save" ) )
+		cSaveToFile = true ;
+	if ( cSaveToFile )
+		cOutputFile =  cmd.optionValue( "save" );
+
+
+	std::cout << "save:   " << cOutputFile << std::endl;
 	std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
 	cVcth = ( cmd.foundOption( "vcth" ) ) ? convertAnyInt( cmd.optionValue( "vcth" ).c_str() ) : 0;
 	pEventsperVcth = ( cmd.foundOption( "events" ) ) ? convertAnyInt( cmd.optionValue( "events" ).c_str() ) : 10;

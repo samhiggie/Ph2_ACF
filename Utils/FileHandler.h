@@ -7,7 +7,7 @@
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <vector>
-
+#include <mutex>
 #include <thread>
 
 class FileHandler
@@ -17,43 +17,27 @@ class FileHandler
 	std::string fBinaryFileName;
 	std::string fOption;
 	std::thread fThread;
+	std::mutex fMutex;
 	bool fFileIsOpened ;
   public:
 	FILE* fBinaryFile;
 	//Constructor
 	FileHandler( std::string cBinaryFileName , std::string cOption ):
-
 		fBinaryFileName( cBinaryFileName ),
-		fFileIsOpened( false ) /*,
-		fOption(cOption)*/
-	{
-
+		fFileIsOpened( false ) {
 		openFile( cOption );
-
 	}
-
 
 	//destructor
 	~FileHandler() {
-
 		closeFile();
 	}
-
-	// std::ofstream getFile() {
-	// 	return fBinaryFile;
-	// }
-
-	// void setFile( std::ofstream pBinaryFile ) {
-	// 	fBinaryFile = pBinaryFile;
-	// }
 
 	inline std::string getFilename() {
 		return fBinaryFileName;
 	}
 
 	inline bool openFile( std::string pOption ) {
-
-
 		if ( !file_open() ) {
 			// if ( !boost::filesystem::exists( getFilename() + ".raw" ) )
 			fBinaryFile = fopen( ( getFilename() + ".raw" ).c_str(), pOption.c_str() );
@@ -72,18 +56,22 @@ class FileHandler
 
 	inline void write( std::vector<uint32_t > pData ) {
 		fThread = std::thread( &FileHandler::writeFile, this, pData );
-		fThread.join();
+		fThread.detach();
 	}
 
+	inline const std::vector<uint32_t> read() {
 
-	inline void writeFile( std::vector<uint32_t>  pData ) {
+	}
 
-		std::vector<uint32_t> cVectorCopy;
-		cVectorCopy = pData;
+  private:
+	inline void write( std::vector<uint32_t>  pData ) {
 
-		uint32_t pDataBuffer[cVectorCopy.size()];
-		std::copy( cVectorCopy.begin(), cVectorCopy.end(), pDataBuffer );
-		fwrite( /*( char* )&cVectorCopy[0]*/ ( char* )&pDataBuffer , cVectorCopy.size()*sizeof( uint32_t ) , 1, fBinaryFile );
+		fMutex.lock();
+		char cBuffer[pData.size() * 4];
+
+		std::copy( pData.begin(), pData.end(), cBuffer );
+		fMutex.unlock();
+		fwrite( cBuffer  , sizeof( cBuffer ) , 1, fBinaryFile );
 		closeFile();
 	}
 };

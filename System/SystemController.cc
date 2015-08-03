@@ -33,7 +33,6 @@ namespace Ph2_System
 	{
 
 		fFileHandler = new FileHandler( pFilename, pOption );
-
 	}
 
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )
@@ -44,6 +43,7 @@ namespace Ph2_System
 			parseHWjson( pFilename, os );
 		else
 			std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
+		if ( fFileHandler != NULL ) std::cout << BOLDBLUE << "Saving binary raw data to: " << fFileHandler->getFilename() << RESET << std::endl;
 	}
 
 	void SystemController::InitializeSettings( const std::string& pFilename, std::ostream& os )
