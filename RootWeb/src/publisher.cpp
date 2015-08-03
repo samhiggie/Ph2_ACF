@@ -109,10 +109,10 @@ namespace RootWeb
 		content3.addBinaryFile( inFilename, "content of all your plots is here", inFilename );
 	}
 
-	void prepareSiteStuff( RootWSite& site, const std::string& run )
+	void prepareSiteStuff( RootWSite& site, std::string& directory, const std::string& run )
 	{
-		std::string myDirectory = run;
-		site.setTargetDirectory( myDirectory );
+		directory += run;
+		site.setTargetDirectory( directory );
 		site.setTitle( run );
 		site.setComment( "Complete run list" );
 		site.setCommentLink( "../" );
@@ -123,10 +123,10 @@ namespace RootWeb
 		site.setProgram( "Ph2_DAQ", "https://github.com/gauzinge/Ph2_ACF" );
 	}
 
-	void makeDQMmonitor( const std::string& inFilename, const std::string& run )
+	void makeDQMmonitor( const std::string& inFilename, std::string& directory, const std::string& run )
 	{
 		RootWSite site;
-		prepareSiteStuff( site, run );
+		prepareSiteStuff( site, directory, run );
 		makePageOne( site );
 		makePageTwo( site, inFilename );
 		site.makeSite( false );

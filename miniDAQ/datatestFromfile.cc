@@ -248,12 +248,10 @@ int main( int argc, char* argv[] )
 	if ( cDQMPage )
 	{
 		fillDQMhisto( elist, dqmFilename );
-		cDirBasePath += runLabel;
-		RootWeb::makeDQMmonitor( dqmFilename, cDirBasePath );
-	}
-
-	if ( cDQMPage )
+		// cDirBasePath += runLabel;
+		RootWeb::makeDQMmonitor( dqmFilename, cDirBasePath, runLabel );
 		std::cout << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath << std::endl;
+	}
 	else dumpEvents( elist );
 	return 0;
 }
