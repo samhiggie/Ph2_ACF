@@ -21,14 +21,14 @@ class FileHandler
   public:
 	FILE* fBinaryFile;
 	//Constructor
-	FileHandler( std::string cBinaryFileName /*, std::string cOption */ ):
+	FileHandler( std::string cBinaryFileName , std::string cOption ):
 
 		fBinaryFileName( cBinaryFileName ),
 		fFileIsOpened( false ) /*,
 		fOption(cOption)*/
 	{
-		//REMEMBER TO UPDATE THIS PART!!!!!!!!!!!!!!!!!!!!!!!
-		openFile( "w+" );
+
+		openFile( cOption );
 
 	}
 
@@ -58,9 +58,6 @@ class FileHandler
 			// if ( !boost::filesystem::exists( getFilename() + ".raw" ) )
 			fBinaryFile = fopen( ( getFilename() + ".raw" ).c_str(), pOption.c_str() );
 			fFileIsOpened = true;
-			if ( file_open() )
-				std::cout << "FILE OPENED!!!!!!!!!!!!!!!!!!!!!!!  " << std::endl;
-
 		}
 		return file_open();
 	}
@@ -86,12 +83,6 @@ class FileHandler
 
 		uint32_t pDataBuffer[cVectorCopy.size()];
 		std::copy( cVectorCopy.begin(), cVectorCopy.end(), pDataBuffer );
-		std::cout << "pDataBuffer dimension:  " << sizeof( pDataBuffer ) / sizeof( pDataBuffer[0] ) << std::endl;
-		std::cout << "cVectorCopy dimension:  " << cVectorCopy.size() << std::endl;
-		if ( file_open() )
-			std::cout << "FILE STILL OPENED " << std::endl;
-		else
-			std::cout << "THE FILE IS CLOSED!!!!!!!!!  " << std::endl;
 		fwrite( /*( char* )&cVectorCopy[0]*/ ( char* )&pDataBuffer , cVectorCopy.size()*sizeof( uint32_t ) , 1, fBinaryFile );
 		closeFile();
 	}

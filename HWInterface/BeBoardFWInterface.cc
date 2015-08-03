@@ -28,21 +28,9 @@ namespace Ph2_HwInterface
 		fSaveToFile( false ),
 		fFileHandler( nullptr )
 	{
-		std::cout << "NULLCONSTRUCTOR " << fFileHandler << std::endl;
 	}
 
-	// BeBoardFWInterface::BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ):
-	// 	RegManager( puHalConfigFileName, pBoardId ),
-	// 	fNTotalAcq( 0 ),
-	// 	runningAcquisition( false ),
-	// 	numAcq( 0 ),
-	// 	fFileHandler( pFileHandler )
-	// {
 
-	// 	if ( fFileHandler == nullptr ) fSaveToFile = false;
-	// 	else fSaveToFile = true;
-	// 	std::cout << "other constructor " << fFileHandler << std::endl;
-	// }
 
 
 	std::string BeBoardFWInterface::getBoardType()

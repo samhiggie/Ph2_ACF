@@ -76,6 +76,13 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
 	cmd.defineOptionAlternative( "parallel", "p" );
 
+	cmd.defineOption( "save", "Save the data to a bin file. Default value: outputfile.raw ", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "save", "s" );
+
+	cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "option", "o" );
+
+
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
 	{
@@ -85,33 +92,14 @@ int main( int argc, char* argv[] )
 
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_2CBC.xml";
+	std::string cOutputFile = ( cmd.foundOption( "save" ) ) ? cmd.optionValue( "save" ) : "outputfile";
+	std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
 	cVcth = ( cmd.foundOption( "vcth" ) ) ? convertAnyInt( cmd.optionValue( "vcth" ).c_str() ) : 0;
 	pEventsperVcth = ( cmd.foundOption( "events" ) ) ? convertAnyInt( cmd.optionValue( "events" ).c_str() ) : 10;
 
 	Timer t;
 	t.start();
-	cSystemController.addFileHandler( "testfile" );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	cSystemController.addFileHandler( cOutputFile, cOptionWrite );
 
 	cSystemController.InitializeHw( cHWFile );
 	cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
@@ -157,7 +145,7 @@ int main( int argc, char* argv[] )
 	}
 	else
 	{
-
+		t.start();
 		// make event counter start at 1 as does the L1A counter
 		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
@@ -177,6 +165,8 @@ int main( int argc, char* argv[] )
 			}
 			cNthAcq++;
 		}
+		t.stop();
+		t.show( "Time to take data:" );
 	}
 }
 

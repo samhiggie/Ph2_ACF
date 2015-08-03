@@ -29,11 +29,11 @@ namespace Ph2_System
 		fShelveVector.clear();
 	}
 
-	void SystemController::addFileHandler( std::string pFilename )
+	void SystemController::addFileHandler( std::string pFilename , std::string pOption )
 	{
-		std::cout << "Creating File with name " << pFilename << std::endl;
-		fFileHandler = new FileHandler( pFilename );
-		std::cout << fFileHandler << std::endl;
+
+		fFileHandler = new FileHandler( pFilename, pOption );
+
 	}
 
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )
@@ -168,7 +168,7 @@ namespace Ph2_System
 				if ( std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "Glib" ) ) )
 				{
 
-					std::cout << "System Controller " << fFileHandler << std::endl;
+
 					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
 
 

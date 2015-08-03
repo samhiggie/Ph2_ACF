@@ -72,7 +72,7 @@ namespace Ph2_System
 		* \brief create a FileHandler object with
 		 * \param pFilename : the filename of the binary file
 		*/
-		void addFileHandler( std::string pFilename );
+		void addFileHandler( std::string pFilename , std::string pOption );
 		/*!
 		 * \brief acceptor method for HwDescriptionVisitor
 		 * \param pVisitor
