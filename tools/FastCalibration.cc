@@ -549,8 +549,10 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 			if ( !fHoleMode != !cOffset ) cFitMode = true;
 			else cFitMode = false;
 
-			// Fit
-			cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+			// Fit or Differentiate
+			if ( fFit )
+				cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
 
 			if ( !cOffset )
 			{
@@ -635,8 +637,10 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 			//for ( auto& cChan : cCbc.second ) {
 			// Fit
 			Channel cChan = cCbc.second.at( cChanId );
-			cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
-
+			if ( fFit )
+				cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
+			
 			// check if the pedestal is larger than the targetVcth
 			// if so, flip bit back down
 			uint8_t cCurrentOffset = cCbc.first->getReg( Form( "Channel%03d", cChan.fChannelId + 1 ) );

@@ -42,6 +42,7 @@ struct Channel
 	uint8_t fFeId;  /*!< Front End ID */
 	uint8_t fCbcId;  /*!< CBC ID*/
 	uint8_t fChannelId;  /*!< Channel Number */
+	bool fFitted; /*!< Flag to select the algroithm*/
 
 	// Settings
 	uint8_t fOffset;  /*!<  current offset value for this channel; needs to be set manually */
@@ -49,7 +50,7 @@ struct Channel
 	// Data
 	TH1F* fScurve;  /*!< Histogram to store the SCurve */
 	TF1*  fFit;  /*!< Fit for the SCurve */
-
+	TH1F* fDerivative; /*!< Histogram to hold the derivative of the Scurve*/
 	// Methods
 	/*!
 	* \brief get the SCurve midpoint affter fitting
@@ -83,6 +84,7 @@ struct Channel
 	* \param pVcth: the bin at which to fill the histogram (normally Vcth value)
 	*/
 	void fillHist( uint8_t pVcth );
+	
 	/*!
 	* \brief fit the SCurve Histogram with the Fit object
 	* \param pEventsperVcth: the number of Events taken for each Vcth setting, used to normalize SCurve
@@ -92,6 +94,17 @@ struct Channel
 	*\param pResutlfile: pointer to the ROOT file where the results are supposed to be stored
 	*/
 	void fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TString pParameter, TFile* pResultfile );
+	
+	/*!
+	* \brief differentiate the SCurve Histogram with the Derivative object
+	* \param pEventsperVcth: the number of Events taken for each Vcth setting, used to normalize SCurve
+	* \param pHole: the CBC mode: electron or hole
+	* \param pParameter: the current parameter that is being varied for storing in file
+	* \param pValue: the value of pParameter
+	*\param pResutlfile: pointer to the ROOT file where the results are supposed to be stored
+	*/
+	void differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TString pParameter, TFile* pResultfile );
+	
 	/*!
 	* \brief reset the Histogram and Fit objects
 	*/
