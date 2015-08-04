@@ -138,7 +138,13 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 				if ( !cNonZero && cNHits != 0 )
 				{
 					cNonZero = true;
-					cVcth -= 5 * cStep;
+					int cBackStep = 5 * cStep;
+					if ( int( cVcth ) - cBackStep > 255 ) cVcth = 255;
+					else if ( int( cVcth ) - cBackStep < 0 ) cVcth = 0;
+					else cVcth -= cBackStep;
+					std::cout << "Found a hit, falling back by " << cBackStep << " to " << +cVcth << std::endl;
+					// cVcth -= 5 * cStep;
+					// if(cVcth )
 					cStep /= 10;
 					continue;
 				}
