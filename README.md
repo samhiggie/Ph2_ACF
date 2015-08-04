@@ -84,6 +84,7 @@ On this Repo, you can find different version of the software :
     - modified all other tools accordingly
     - merged the DQM code from the June '15 beamtest into miniDQM binary
     - updated Makefiles to build RootWeb & miniDQM
+- 04/08/2015: adding a faster & more precise algorithm to extract the parameters from SCurves via differentiating it
     
 
 
