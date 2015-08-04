@@ -2,21 +2,17 @@ ROOTFLAGS=`root-config --cflags`
 ROOTLIBDIR=`root-config --libdir`
 ROOTLIBFLAGS=`root-config --libs`
 ROOTLIBFLAGS+=-lHistPainter
-ifneq ($(strip $(BOOST_INCLUDE)),)
 INCLUDEFLAGS=-I$(BOOST_INCLUDE)
-endif
-ifneq ($(strip $(BOOST_LIB)),)
+
 BOOSTLIBFLAGS=-L$(BOOST_LIB)
-endif
 BOOSTLIBFLAGS+=-L$(BOOST_LIB) -lboost_system$(BOOST_SUFFIX) -lboost_filesystem$(BOOST_SUFFIX) -lboost_program_options$(BOOST_SUFFIX)
-GEOMLIBFLAG=-lGeom
 GLIBFLAGS=`root-config --glibs`
 INCLUDEFLAGS+=-Iinclude/
 SRCDIR=src
 INCDIR=include
 LIBDIR=lib
-BINDIR=bin
-TESTDIR=test
+# BINDIR=bin
+# TESTDIR=test
 COMPILERFLAGS+=-std=c++11 
 COMPILERFLAGS+=-g -fPIC
 COMPILERFLAGS+=-fpermissive
