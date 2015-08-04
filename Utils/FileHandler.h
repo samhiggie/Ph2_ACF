@@ -63,14 +63,8 @@ class FileHandler
 	}
 
 	void write( std::vector<uint32_t > pData ) {
-		// std::vector<uint32_t> temp = pData;
-		// char cBuffer[temp.size() * 4];
-		// std::copy( temp.begin(), temp.end(), cBuffer );
-		// std::cout << "Done with Deep Copy" << std::endl;
-		// std::vector<uint32_t> cTmpData = pData;
 		fThread = std::thread( &FileHandler::writeFile, this, pData );
 		fThread.join();
-		std::cout << "threads joined " << std::endl;
 	}
 
 	inline const std::vector<uint32_t> read() {
@@ -79,18 +73,11 @@ class FileHandler
 
   private:
 	void writeFile( std::vector<uint32_t> pData ) {
-		// std::cout << "New Thread! " << std::endl;
-		// std::mutex pMutex;
-		// pMutex.lock();
-		// std::vector<uint32_t> temp = pData;
-		// pMutex.unlock();
-
-		std::vector<uint32_t> cTmpData = pData;
-		char cBuffer[pData.size() * 4];
-
-		std::copy( pData.begin(), pData.end(), cBuffer );
+		std::vector<uint32_t> cVectorCopy = pData;
+		uint32_t pDataBuffer[cVectorCopy.size()];
+		std::copy( cVectorCopy.begin(), cVectorCopy.end(), pDataBuffer );
 		fMutex.lock();
-		fwrite( cBuffer  , sizeof( cBuffer ) , 1, fBinaryFile );
+		fwrite( &pDataBuffer , sizeof( pDataBuffer ) , 1, fBinaryFile );
 		fMutex.unlock();
 	}
 };
