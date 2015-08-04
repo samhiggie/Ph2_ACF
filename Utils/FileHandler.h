@@ -69,6 +69,20 @@ class FileHandler
 
 	inline const std::vector<uint32_t> read() {
 
+
+
+		// openFile( "r" );
+		//obtain file size
+		fseek( fBinaryFile, 0, SEEK_END );
+		long lsize = ftell( fBinaryFile );
+		rewind( fBinaryFile );
+		uint32_t pDataBuffer[sizeof( uint32_t )*lsize];
+		//read file
+		fread( pDataBuffer, sizeof( uint32_t ), lsize, fBinaryFile );
+		std::vector<uint32_t> cVector( pDataBuffer, pDataBuffer + sizeof( uint32_t )*lsize );
+		closeFile();
+		return cVector;
+
 	}
 
   private:

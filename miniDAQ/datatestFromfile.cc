@@ -219,9 +219,11 @@ int main( int argc, char* argv[] )
 	else std::cout << "Not creating DQM files!" << std::endl;
 
 	std::vector<uint32_t> dataVec;
-	readDataFile( rawFilename, dataVec );
-
 	SystemController cSystemController;
+	//readDataFile( rawFilename, dataVec );
+	cSystemController.addFileHandler( rawFilename , "r" );
+	dataVec = cSystemController.fFileHandler->read();
+	// readDataFile( rawFilename, cSystemController.fFileHandler->read() );
 	std::string cHWFile = getenv( "BASE_DIR" );
 	cHWFile += "/settings/HWDescription_2CBC.xml";
 	cSystemController.parseHWxml( cHWFile );
