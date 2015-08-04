@@ -109,6 +109,8 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 	while ( 0x00 <= cVcth && cVcth <= 0xFF )
 	{
 		if ( cAllOne ) break;
+
+		// if ( cAllOne ) break;
 		CbcRegWriter cWriter( fCbcInterface, "VCth", cVcth );
 		this->accept( cWriter );
 
@@ -132,34 +134,33 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
 				std::cout << "Vcth " << +cVcth << " Hits " << cNHits  << " Events " << cN - 1 << std::endl;
-				if ( cNHits != 0 ) cNonZero = true;
+
+				if ( !cNonZero && cNHits != 0 )
+				{
+					cNonZero = true;
+					cVcth -= 5 * cStep;
+					cStep /= 10;
+					continue;
+				}
+				if ( cNHits > 0.95 * fNCbc * fNevents )
+					cAllOneCounter++;
+
+				if ( cAllOneCounter > 6 ) cAllOne = true;
+				if ( cAllOne ) break;
+				cVcth += cStep;
+				updateHists( "", false );
+				if ( fHoleMode && cVcth >= 0xFE && cNHits != 0 )
+				{
+					cSaturate = true;
+					break;
+				}
+				if ( !fHoleMode && cVcth <= 0x01 && cNHits != 0 )
+				{
+					cSaturate = true;
+					break;
+				}
 			}
 		}
-		if ( !cNonZero && cNHits != 0 )
-		{
-			cNonZero = true;
-			cVcth -= 5 * cStep;
-			cStep /= 10;
-			continue;
-		}
-		if ( cNHits > 0.95 * fNCbc * fNevents )
-			cAllOneCounter++;
-
-		if ( cAllOneCounter > 6 ) cAllOne = true;
-		if ( cAllOne ) break;
-		if ( fHoleMode && cVcth >= 0xFE && cNHits != 0 )
-		{
-			cSaturate = true;
-			break;
-		}
-		if ( !fHoleMode && cVcth <= 0x01 && cNHits != 0 )
-		{
-			cSaturate = true;
-			break;
-		}
-		cVcth += cStep;
-		updateHists( "", false );
-
 	}
 
 	std::map<Cbc*, uint8_t > cHpoint;
