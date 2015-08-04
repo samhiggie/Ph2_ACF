@@ -10,6 +10,7 @@ void FastCalibration::ScanVplus()
 	// first set the offset of all Channels to 0x0A
 	//setOffset( 0x50,-1 );//change to this function
 	std::cout << BOLDBLUE << "Scanning Vplus ..." << RESET << std::endl;
+	fFitted = false;
 	for ( auto& cTGrpM : fTestGroupChannelMap )
 	{
 		if ( cTGrpM.first == -1 && fdoTGrpCalib )
@@ -453,7 +454,7 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 					cNonZero = true;
 					if ( ( cStep > 0 && cValue > 0x14 ) || ( cStep < 0 && cValue < 0xEB ) ) cValue -= 2 * cStep;
 					else cValue -= cStep;
-					cStep /= ( pOffset ) ? 2 : 10;
+					cStep /= 10;
 					continue;
 				}
 				// the above counter counted the CBC objects connected to pBoard
@@ -550,7 +551,7 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 			else cFitMode = false;
 
 			// Fit or Differentiate
-			if ( fFit )
+			if ( fFitted )
 				cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
 			else cChan.differentiateHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
 
@@ -590,7 +591,9 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 					cCanvas->second->cd( 1 );
 				else cCanvas->second->cd( 3 );
 				cChan.fScurve->Draw( cOption );
-				cChan.fFit->Draw( "same" );
+				if ( fFitted )	
+					cChan.fFit->Draw( "same" );
+				else cChan.fDerivative->Draw("same");	
 			}
 		}
 		if ( pDraw )  cCanvas->second->Update();
@@ -637,7 +640,7 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 			//for ( auto& cChan : cCbc.second ) {
 			// Fit
 			Channel cChan = cCbc.second.at( cChanId );
-			if ( fFit )
+			if ( fFitted )
 				cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
 			else cChan.differentiateHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
 			
@@ -663,7 +666,9 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 
 				cCanvas->second->cd( 3 );
 				cChan.fScurve->Draw( cOption );
-				cChan.fFit->Draw( "same" );
+				if ( fFitted )	
+					cChan.fFit->Draw( "same" );
+				else cChan.fFit->Draw("same");
 			}
 		}
 		if ( pDraw )  cCanvas->second->Update();

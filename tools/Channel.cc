@@ -34,13 +34,17 @@ double Channel::getNoise() const
 {
 
 	if (fFitted) {
-		if ( fFit != nullptr )
+		if ( fFit != nullptr ){
 			return fabs( fFit->GetParameter( 1 ) );
-		else return -1;
+		} else { 
+			return -1;
+		}	
 	} else {
-		if( fDerivative != nullptr)
+		if( fDerivative != nullptr) {
 			return fabs( fDerivative->GetRMS() );
-		else return -1;
+		} else {
+			return -1;
+		}	
 	}
 }
 
@@ -219,6 +223,7 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 
 		fScurve->SetDirectory( cDir );
 		fDerivative->Write(fDerivative->GetName(), TObject::kOverwrite);
+		fScurve->Write(fScurve->GetName(), TObject::kOverwrite);
 		// pResultfile->Flush();
 
 		pResultfile->cd();
