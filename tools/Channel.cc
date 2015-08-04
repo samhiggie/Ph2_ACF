@@ -223,7 +223,6 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 
 		fScurve->SetDirectory( cDir );
 		fDerivative->Write(fDerivative->GetName(), TObject::kOverwrite);
-		fScurve->Write(fScurve->GetName(), TObject::kOverwrite);
 		// pResultfile->Flush();
 
 		pResultfile->cd();

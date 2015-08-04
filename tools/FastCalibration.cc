@@ -10,7 +10,6 @@ void FastCalibration::ScanVplus()
 	// first set the offset of all Channels to 0x0A
 	//setOffset( 0x50,-1 );//change to this function
 	std::cout << BOLDBLUE << "Scanning Vplus ..." << RESET << std::endl;
-	fFitted = false;
 	for ( auto& cTGrpM : fTestGroupChannelMap )
 	{
 		if ( cTGrpM.first == -1 && fdoTGrpCalib )
@@ -282,12 +281,16 @@ void FastCalibration::Initialise()
 	fTargetVcth = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 120;
 	cSetting = fSettingsMap.find( "Nevents" );
 	fEventsPerPoint = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 10;
+	cSetting = fSettingsMap.find( "FitSCurves" );
+	fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
 	fNCbc = cCbcCount;
 
 	std::cout << "Created Object Maps and parsed settings:" << std::endl;
 	std::cout << "	Hole Mode = " << fHoleMode << std::endl;
 	std::cout << "	Nevents = " << fEventsPerPoint << std::endl;
 	std::cout << "	TargetVcth = " << int( fTargetVcth ) << std::endl;
+	std::cout << "	FitSCurves = " << int( fFitted ) << std::endl;
+
 }
 /*Currently this function sets offset for all 1-254 channels. But now to add testgroups, it has to set for 32
 channels in the group only. So it has to take the group id as well.
@@ -668,7 +671,7 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 				cChan.fScurve->Draw( cOption );
 				if ( fFitted )	
 					cChan.fFit->Draw( "same" );
-				else cChan.fFit->Draw("same");
+				else cChan.fDerivative->Draw("same");
 			}
 		}
 		if ( pDraw )  cCanvas->second->Update();
