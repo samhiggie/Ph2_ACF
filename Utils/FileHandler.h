@@ -67,23 +67,29 @@ class FileHandler
 		fThread.join();
 	}
 
-	inline const std::vector<uint32_t> read() {
+	// inline  std::vector<uint32_t> read() {
 
 
 
-		// openFile( "r" );
-		//obtain file size
-		fseek( fBinaryFile, 0, SEEK_END );
-		long lsize = ftell( fBinaryFile );
-		rewind( fBinaryFile );
-		uint32_t pDataBuffer[sizeof( uint32_t )*lsize];
-		//read file
-		fread( pDataBuffer, sizeof( uint32_t ), lsize, fBinaryFile );
-		std::vector<uint32_t> cVector( pDataBuffer, pDataBuffer + sizeof( uint32_t )*lsize );
-		closeFile();
-		return cVector;
 
-	}
+	// 	fseek( fBinaryFile, 0, SEEK_END );
+
+	// 	std::cout << "check1" << std::endl;
+	// 	long lsize = ftell( fBinaryFile );
+	// 	rewind( fBinaryFile );
+	// 	std::cout << "check2" << std::endl;
+
+	// 	lsize /= sizeof( uint32_t );
+	// 	uint32_t pDataBuffer[lsize];
+	// 	//read file
+	// 	fread( pDataBuffer, sizeof( uint32_t ), lsize, fBinaryFile );
+	// 	std::vector<uint32_t> cVector( lsize );
+	// 	for ( int i = 0; i < lsize; i++ )
+	// 		cVector[i] = pDataBuffer[i];
+
+	// 	return cVector;
+
+	// }
 
   private:
 	void writeFile( std::vector<uint32_t> pData ) {
