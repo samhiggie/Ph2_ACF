@@ -19,8 +19,11 @@ namespace Ph2_HwInterface
 {
 
 	RegManager::RegManager( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		fThread( [ = ] {StackWriteTimeOut(); } ),
-			 fDeactiveThread( false )
+		fThread( [ = ]
+	{
+		StackWriteTimeOut();
+	} ),
+	fDeactiveThread( false )
 	{
 		// Loging settings
 		uhal::disableLogging();
@@ -30,8 +33,8 @@ namespace Ph2_HwInterface
 
 		uhal::ConnectionManager cm( fUHalConfigFileName ); // Get connection
 		char cBuff[7];
-		sprintf(cBuff,"board%d",pBoardId);
-		
+		sprintf( cBuff, "board%d", pBoardId );
+
 		fBoard = new uhal::HwInterface( cm.getDevice( ( cBuff ) ) );
 
 		fThread.detach();
@@ -154,10 +157,10 @@ namespace Ph2_HwInterface
 		return cWriteCorr;
 	}
 
-	bool RegManager::WriteBlockAtAddress(uint32_t uAddr, const std::vector< uint32_t >& pValues, bool bNonInc)
+	bool RegManager::WriteBlockAtAddress( uint32_t uAddr, const std::vector< uint32_t >& pValues, bool bNonInc )
 	{
 		fBoardMutex.lock();
-		fBoard->getClient().writeBlock(uAddr, pValues, bNonInc ? uhal::defs::NON_INCREMENTAL : uhal::defs::INCREMENTAL); 
+		fBoard->getClient().writeBlock( uAddr, pValues, bNonInc ? uhal::defs::NON_INCREMENTAL : uhal::defs::INCREMENTAL );
 		fBoard->dispatch();
 		fBoardMutex.unlock();
 
@@ -169,7 +172,7 @@ namespace Ph2_HwInterface
 			int cErrCount = 0;
 
 			fBoardMutex.lock();
-			uhal::ValVector<uint32_t> cBlockRead = fBoard->getClient().readBlock(uAddr, pValues.size(), bNonInc ? uhal::defs::NON_INCREMENTAL : uhal::defs::INCREMENTAL );
+			uhal::ValVector<uint32_t> cBlockRead = fBoard->getClient().readBlock( uAddr, pValues.size(), bNonInc ? uhal::defs::NON_INCREMENTAL : uhal::defs::INCREMENTAL );
 			fBoard->dispatch();
 			fBoardMutex.unlock();
 
@@ -188,7 +191,7 @@ namespace Ph2_HwInterface
 
 		return cWriteCorr;
 	}
-            
+
 
 	uhal::ValWord<uint32_t> RegManager::ReadReg( const std::string& pRegNode )
 	{
@@ -206,7 +209,7 @@ namespace Ph2_HwInterface
 		return cValRead;
 	}
 
-	uhal::ValWord<uint32_t> RegManager::ReadAtAddress(uint32_t uAddr, uint32_t uMask )
+	uhal::ValWord<uint32_t> RegManager::ReadAtAddress( uint32_t uAddr, uint32_t uMask )
 	{
 		fBoardMutex.lock();
 		uhal::ValWord<uint32_t> cValRead = fBoard->getClient().read( uAddr, uMask );
@@ -216,7 +219,7 @@ namespace Ph2_HwInterface
 		if ( DEV_FLAG )
 		{
 			uint32_t read = ( uint32_t ) cValRead;
-			std::cout << "\nValue at address " << std::hex<< uAddr <<std::dec << " : " << read << std::endl;
+			std::cout << "\nValue at address " << std::hex << uAddr << std::dec << " : " << read << std::endl;
 		}
 
 		return cValRead;

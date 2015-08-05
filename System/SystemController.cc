@@ -29,10 +29,10 @@ namespace Ph2_System
 		fShelveVector.clear();
 	}
 
-	void SystemController::addFileHandler( std::string pFilename , std::string pOption )
+	void SystemController::addFileHandler( std::string pFilename /*, std::string pOption */ )
 	{
 
-		fFileHandler = new FileHandler( pFilename, pOption );
+		fFileHandler = new FileHandler( pFilename/*, pOption*/ );
 	}
 
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )

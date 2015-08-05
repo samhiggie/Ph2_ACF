@@ -11,6 +11,7 @@
 #include <thread>
 
 class FileHandler
+
 {
   private:
 	// for mini DAQ file IO
@@ -19,53 +20,85 @@ class FileHandler
 	std::thread fThread;
 	std::mutex fMutex;
 	bool fFileIsOpened ;
+	bool is_set;
+
 	// std::vector<uint32_t>* fData;
 
   public:
-	FILE* fBinaryFile;
+	//FILE* fBinaryFile;
+	std::fstream fBinaryFile;
+	std::vector<uint32_t> fData;
 	//Constructor
-	FileHandler( std::string cBinaryFileName , std::string cOption ):
+	FileHandler( std::string cBinaryFileName  /*std::string cOption*/ ):
+
 		fBinaryFileName( cBinaryFileName ),
-		fFileIsOpened( false ) {
-		openFile( cOption );
+		fFileIsOpened( false ) ,
+		is_set( false ) {
+		openFile( );
+		fThread = std::thread( &FileHandler::writeFile, this );
+		fThread.detach();
+
 	}
 
 	//destructor
 	~FileHandler() {
+		fThread.join();
 		closeFile();
 	}
+
+
+
+
+	void set( std::vector<uint32_t> pVector ) {
+
+		// while ( !is_set ) {
+		fMutex.lock();
+		fData.clear();
+		fData = pVector;
+		is_set = true;
+		if ( is_set )
+
+			std::cout << "is_set is true" << std::endl;
+		fMutex.unlock();
+		// }
+
+	}
+
+
 
 	std::string getFilename() {
 		return fBinaryFileName;
 	}
 
-	bool openFile( std::string pOption ) {
+	bool openFile( ) {
 		if ( !file_open() ) {
 			// if ( !boost::filesystem::exists( getFilename() + ".raw" ) )
 			fMutex.lock();
-			fBinaryFile = fopen( ( getFilename() + ".raw" ).c_str(), pOption.c_str() );
+			fBinaryFile.open( ( getFilename() + ".raw" ).c_str(), std::fstream::in | std::fstream::out | std::fstream::binary );
+			std::cout << "File opened!" << std::endl;
 			fMutex.unlock();
 			fFileIsOpened = true;
+
 		}
 		return file_open();
 	}
 
-	int closeFile() {
+	void closeFile() {
 		fMutex.lock();
 		std::cout << "Closing binary file!" << std::endl;
-		int cStatus = fclose( fBinaryFile );
+		fBinaryFile.close();
 		fMutex.unlock();
-		return cStatus;
+
 	}
 
 	bool file_open() {
 		return fFileIsOpened;
 	}
 
-	void write( std::vector<uint32_t > pData ) {
-		fThread = std::thread( &FileHandler::writeFile, this, pData );
-		fThread.join();
-	}
+	// void write( std::vector<uint32_t > pData ) {
+	// 	fThread = std::thread( &FileHandler::writeFile, this, pData );
+	// 	fThread.join();
+	// }
 
 	// inline  std::vector<uint32_t> read() {
 
@@ -92,16 +125,51 @@ class FileHandler
 	// }
 
   private:
-	void writeFile( std::vector<uint32_t> pData ) {
-		std::vector<uint32_t> cVectorCopy = pData;
-		uint32_t pDataBuffer[cVectorCopy.size()];
-		std::copy( cVectorCopy.begin(), cVectorCopy.end(), pDataBuffer );
+	void writeFile() {
+
+		while ( true ) {
+			//std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+			if ( is_set ) {
+				fMutex.lock();
+				std::cout << "is_set = true: writing..." << std::endl;
+				fMutex.unlock();
+
+				fMutex.lock();
+				//for ( auto& cElements : fData )
+				//fBinaryFile.write( ( char* ) &cElements, sizeof( uint32_t ) );
+				// std::copy( fData.begin(), fData.end(), std::ostreambuf_iterator<char>( fBinaryFile ) );
+				uint32_t cBuffer[fData.size()];
+				std::copy( fData.begin(), fData.end(), cBuffer );
+				fBinaryFile.write( ( const char* )cBuffer, sizeof( cBuffer ) );
+				fData.clear();
+				is_set = false;
+				fMutex.unlock();
+				continue;
+			}
+			else {
+				fMutex.lock();
+				// std::cout << "is_set = false: NOT writing..." << std::endl;
+				fMutex.unlock();
+				continue;
+			}
+			// if ( !is_set ) {
+			// 	fMutex.lock();
+			// 	std::cout << "is_set = false: NOT writing..." << std::endl;
+			// 	fMutex.unlock();
+			// }
+			// std::vector<uint32_t> cVectorCopy = pData;
+			// uint32_t pDataBuffer[cVectorCopy.size()];
+			// std::copy( cVectorCopy.begin(), cVectorCopy.end(), pDataBuffer );
+			// fMutex.lock();
+			// fwrite( &pDataBuffer , sizeof( pDataBuffer ) , 1, fBinaryFile );
+			// fMutex.unlock();
+		}
+		// while ( true );
 		fMutex.lock();
-		fwrite( &pDataBuffer , sizeof( pDataBuffer ) , 1, fBinaryFile );
+		std::cout << "What is wrong " << std::endl;
 		fMutex.unlock();
 	}
 };
-
 
 #endif
 

@@ -79,8 +79,8 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "save", "Save the data to a raw file.  ", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "save", "s" );
 
-	cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
-	cmd.defineOptionAlternative( "option", "o" );
+	// cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
+	// cmd.defineOptionAlternative( "option", "o" );
 
 
 	int result = cmd.parse( argc, argv );
@@ -102,13 +102,13 @@ int main( int argc, char* argv[] )
 
 
 	std::cout << "save:   " << cOutputFile << std::endl;
-	std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
+	// std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
 	cVcth = ( cmd.foundOption( "vcth" ) ) ? convertAnyInt( cmd.optionValue( "vcth" ).c_str() ) : 0;
 	pEventsperVcth = ( cmd.foundOption( "events" ) ) ? convertAnyInt( cmd.optionValue( "events" ).c_str() ) : 10;
 
 	Timer t;
 	t.start();
-	cSystemController.addFileHandler( cOutputFile, cOptionWrite );
+	cSystemController.addFileHandler( cOutputFile/*, cOptionWrite*/ );
 
 	cSystemController.InitializeHw( cHWFile );
 	cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );

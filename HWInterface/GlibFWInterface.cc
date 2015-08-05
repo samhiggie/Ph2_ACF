@@ -331,8 +331,8 @@ namespace Ph2_HwInterface
 		fData->Set( pBoard, cData , cNPackets, true );
 		if ( fSaveToFile )
 
-			fFileHandler->write( cData );
-
+			//fFileHandler->write( cData );
+			fFileHandler->set( cData );
 		return cNPackets;
 	}
 	/** compute the block size according to the number of CBC's on this board

@@ -220,10 +220,11 @@ int main( int argc, char* argv[] )
 
 	std::vector<uint32_t> dataVec;
 	SystemController cSystemController;
-	//readDataFile( rawFilename, dataVec );
-	cSystemController.addFileHandler( rawFilename , "r" );
-	dataVec = cSystemController.fFileHandler->read();
-	// readDataFile( rawFilename, cSystemController.fFileHandler->read() );
+
+	// cSystemController.addFileHandler( rawFilename );
+	//dataVec = cSystemController.fFileHandler->read(); add it for read tesr
+	readDataFile( rawFilename, dataVec );
+
 	std::string cHWFile = getenv( "BASE_DIR" );
 	cHWFile += "/settings/HWDescription_2CBC.xml";
 	cSystemController.parseHWxml( cHWFile );
