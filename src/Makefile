@@ -23,7 +23,7 @@ ExtObjectsRoot= -lPh2_Tools
 # 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
 binaries=systemtest datatest interfacetest hybridtest cmtest calibrate commission fpgaconfig pulseshape
-binariesNoRoot=systemtest datatest interfacetest fpgaconfig 
+binariesNoRoot=systemtest datatest interfacetest fpgaconfig
 
 all: rootflags clean $(binaries) 
 
@@ -69,11 +69,6 @@ pulseshape: pulseshape.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
-datatestFromfile: datatestFromfile.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects) \
-	-lboost_filesystem -lboost_program_options -L../RootWeb/lib -lRootWeb \
-
-	cp $@ ../bin
 
 .PHONY: clean
 

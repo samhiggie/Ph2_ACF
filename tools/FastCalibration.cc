@@ -281,12 +281,16 @@ void FastCalibration::Initialise()
 	fTargetVcth = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 120;
 	cSetting = fSettingsMap.find( "Nevents" );
 	fEventsPerPoint = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 10;
+	cSetting = fSettingsMap.find( "FitSCurves" );
+	fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
 	fNCbc = cCbcCount;
 
 	std::cout << "Created Object Maps and parsed settings:" << std::endl;
 	std::cout << "	Hole Mode = " << fHoleMode << std::endl;
 	std::cout << "	Nevents = " << fEventsPerPoint << std::endl;
 	std::cout << "	TargetVcth = " << int( fTargetVcth ) << std::endl;
+	std::cout << "	FitSCurves = " << int( fFitted ) << std::endl;
+
 }
 /*Currently this function sets offset for all 1-254 channels. But now to add testgroups, it has to set for 32
 channels in the group only. So it has to take the group id as well.
@@ -453,7 +457,7 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 					cNonZero = true;
 					if ( ( cStep > 0 && cValue > 0x14 ) || ( cStep < 0 && cValue < 0xEB ) ) cValue -= 2 * cStep;
 					else cValue -= cStep;
-					cStep /= ( pOffset ) ? 2 : 10;
+					cStep /= 10;
 					continue;
 				}
 				// the above counter counted the CBC objects connected to pBoard
@@ -549,8 +553,10 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 			if ( !fHoleMode != !cOffset ) cFitMode = true;
 			else cFitMode = false;
 
-			// Fit
-			cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+			// Fit or Differentiate
+			if ( fFitted )
+				cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
 
 			if ( !cOffset )
 			{
@@ -588,7 +594,9 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 					cCanvas->second->cd( 1 );
 				else cCanvas->second->cd( 3 );
 				cChan.fScurve->Draw( cOption );
-				cChan.fFit->Draw( "same" );
+				if ( fFitted )	
+					cChan.fFit->Draw( "same" );
+				else cChan.fDerivative->Draw("same");	
 			}
 		}
 		if ( pDraw )  cCanvas->second->Update();
@@ -635,8 +643,10 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 			//for ( auto& cChan : cCbc.second ) {
 			// Fit
 			Channel cChan = cCbc.second.at( cChanId );
-			cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
-
+			if ( fFitted )
+				cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
+			
 			// check if the pedestal is larger than the targetVcth
 			// if so, flip bit back down
 			uint8_t cCurrentOffset = cCbc.first->getReg( Form( "Channel%03d", cChan.fChannelId + 1 ) );
@@ -659,7 +669,9 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 
 				cCanvas->second->cd( 3 );
 				cChan.fScurve->Draw( cOption );
-				cChan.fFit->Draw( "same" );
+				if ( fFitted )	
+					cChan.fFit->Draw( "same" );
+				else cChan.fDerivative->Draw("same");
 			}
 		}
 		if ( pDraw )  cCanvas->second->Update();

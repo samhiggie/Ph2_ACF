@@ -133,12 +133,12 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 					cNthAcq++;
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
-				std::cout << "Vcth " << +cVcth << " Hits " << cNHits  << " Events " << cN - 1 << std::endl;
+				// std::cout << "Vcth " << +cVcth << " Hits " << cNHits  << " Events " << cN - 1 << std::endl;
 
 				if ( !cNonZero && cNHits != 0 )
 				{
 					cNonZero = true;
-					int cBackStep = 5 * cStep;
+					int cBackStep = 2 * cStep;
 					if ( int( cVcth ) - cBackStep > 255 ) cVcth = 255;
 					else if ( int( cVcth ) - cBackStep < 0 ) cVcth = 0;
 					else cVcth -= cBackStep;
@@ -176,7 +176,8 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 
 	for ( auto& cChannel : fChannelMap )
 	{
-		cChannel.second->fitHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
+		if ( fFitHist ) cChannel.second->fitHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
+		else cChannel.second->differentiateHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
 		cVal = cChannel.second->getPedestal();
 		if ( !cSaturate ) cHpoint[cChannel.first] = cVal;
 		else cHpoint[cChannel.first] = 255;
@@ -305,7 +306,8 @@ void PulseShape::parseSettings()
 	cSetting = fSettingsMap.find( "StepSize" );
 	if ( cSetting != std::end( fSettingsMap ) ) fStepSize = cSetting->second;
 	else fStepSize = 5;
-
+	cSetting = fSettingsMap.find( "FitSCurves" );
+	fFitHist = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
 
 	std::cout << "Parsed the following settings:" << std::endl;
 	std::cout << "	Nevents = " << fNevents << std::endl;
@@ -315,6 +317,7 @@ void PulseShape::parseSettings()
 	std::cout << "	Channel = " << int( fChannel ) << std::endl;
 	std::cout << "	ChOffset = " << int( fOffset ) << std::endl;
 	std::cout << "	StepSize = " << int( fStepSize ) << std::endl;
+	std::cout << "	FitSCurves = " << int( fFitHist ) << std::endl;
 }
 
 void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
@@ -380,7 +383,7 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 			else
 			{
 				cCanvas.second->cd( 1 );
-				cChannel->second->fScurve->Draw( "P0" );
+				cChannel->second->fScurve->Draw( "P" );
 			}
 		}
 		if ( pHistName == "" && pFinal )
@@ -391,8 +394,9 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 			else
 			{
 				cCanvas.second->cd( 1 );
-				cChannel->second->fScurve->Draw( "P0" );
-				cChannel->second->fFit->Draw( "same" );
+				cChannel->second->fScurve->Draw( "P" );
+				if ( fFitHist ) cChannel->second->fFit->Draw( "same" );
+				else cChannel->second->fDerivative->Draw( "same" );
 			}
 		}
 		else if ( pHistName == "cbc_pulseshape" )

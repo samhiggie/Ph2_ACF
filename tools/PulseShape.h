@@ -93,6 +93,7 @@ class PulseShape : public Tool
 	}
 
 	ChannelMap fChannelMap;
+	bool fFitHist;
 	uint32_t fNevents;
 	uint32_t fHoleMode;
 	uint32_t fNCbc;

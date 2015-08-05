@@ -51,8 +51,8 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "batch", "b" );
 
-	cmd.defineOption("gui","option only suitable when launching from gui", ArgvParser::NoOptionAttribute);
-	cmd.defineOptionAlternative("gui", "g");
+	cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "gui", "g" );
 
 
 	int result = cmd.parse( argc, argv );
@@ -87,7 +87,7 @@ int main( int argc, char* argv[] )
 		cCalibration.CreateResultDirectory( cDirectory );
 		cCalibration.InitResultFile( "CalibrationResults" );
 
-		if( !isGui ) cCalibration.ConfigureHw();
+		if ( !isGui ) cCalibration.ConfigureHw();
 
 		cCalibration.Initialise(); // canvases etc. for fast calibration
 		if ( !cVplus ) cCalibration.ScanVplus();
@@ -105,8 +105,8 @@ int main( int argc, char* argv[] )
 		cCalibration.InitResultFile( "CalibrationResults" );
 		cCalibration.InitialiseTestGroup();
 
-		if( !isGui ) cCalibration.ConfigureHw();
-		
+		if ( !isGui ) cCalibration.ConfigureHw();
+
 		if ( !cVplus ) cCalibration.VplusScan();
 		cCalibration.OffsetScan();
 		cCalibration.SaveResults();

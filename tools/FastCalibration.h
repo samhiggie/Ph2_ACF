@@ -100,6 +100,7 @@ class FastCalibration : public Tool
 	uint32_t fEventsPerPoint;
 	uint32_t fNCbc;
 	uint8_t fTargetVcth;
+	bool fFitted;
 
 	std::vector<uint8_t> fVplusVec;
 
