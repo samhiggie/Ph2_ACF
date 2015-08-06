@@ -221,8 +221,10 @@ int main( int argc, char* argv[] )
 	std::vector<uint32_t> dataVec;
 	SystemController cSystemController;
 
-	// cSystemController.addFileHandler( rawFilename );
-	//dataVec = cSystemController.fFileHandler->read(); add it for read tesr
+	//cSystemController.addFileHandler( rawFilename );
+
+	// cSystemController.addFileHandler(); add it for read test
+	// dataVec = cSystemController.fFileHandler->readFile( rawFilename ); add it for read test
 	readDataFile( rawFilename, dataVec );
 
 	std::string cHWFile = getenv( "BASE_DIR" );

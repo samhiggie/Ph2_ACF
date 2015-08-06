@@ -34,7 +34,11 @@ namespace Ph2_System
 
 		fFileHandler = new FileHandler( pFilename/*, pOption*/ );
 	}
+	void SystemController::addFileHandler( )
+	{
 
+		fFileHandler = new FileHandler( );
+	}
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )
 	{
 		if ( pFilename.find( ".xml" ) != std::string::npos )
