@@ -76,9 +76,10 @@ int main( int argc, char* argv[] )
 	cHybridTester.ConfigureHw();
 
 	// Here comes our Part:
-	if ( cRegisters ) cHybridTester.TestRegisters();
-	if ( cScan ) cHybridTester.ScanThreshold();
 	cHybridTester.Measure();
+	cHybridTester.TestChannels();
+	if ( cRegisters ) cHybridTester.TestRegisters();
+	if ( cScan ) cHybridTester.ScanThreshold();	
 	cHybridTester.SaveResults();
 
 
