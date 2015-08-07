@@ -16,7 +16,7 @@ class FileHandler
   private:
 	// for mini DAQ file IO
 	std::string fBinaryFileName;
-	std::string fOption;
+	char fOption;
 	std::thread fThread;
 	std::mutex fMutex;
 	bool fFileIsOpened ;
@@ -30,16 +30,18 @@ class FileHandler
 	//Constructor
 
 	//constructor used for reading file
-	FileHandler():
-		fFileIsOpened( false ) {
-	}
-	FileHandler( std::string cBinaryFileName ):
+	// FileHandler():
+	// 	fFileIsOpened( false ) {
+	// }
+	FileHandler( std::string pBinaryFileName, char pOption ):
 
-		fBinaryFileName( cBinaryFileName ),
+		fBinaryFileName( pBinaryFileName ),
+		fOption( pOption ),
 		fFileIsOpened( false ) ,
 		is_set( false ) {
-		openFile( );
-		fThread = std::thread( &FileHandler::writeFile, this );
+		openFile();
+		if ( fOption == 'w' )
+			fThread = std::thread( &FileHandler::writeFile, this );
 	}
 
 	//destructor
@@ -48,14 +50,12 @@ class FileHandler
 		closeFile();
 	}
 	void set( std::vector<uint32_t> pVector ) {
-		// while ( !is_set ) {
 		fMutex.lock();
 		fData.clear();
 		fData = pVector;
 		is_set = true;
 		if ( is_set )
 			fMutex.unlock();
-		// }
 	}
 
 	std::string getFilename() {
@@ -65,10 +65,10 @@ class FileHandler
 		if ( !file_open() ) {
 
 			fMutex.lock();
-			fBinaryFile.open( ( getFilename() + ".raw" ).c_str(), std::fstream::trunc | std::fstream::out | std::fstream::binary );
+			if ( fOption == 'w' ) fBinaryFile.open( ( getFilename() ).c_str(), std::fstream::trunc | std::fstream::out | std::fstream::binary );
+			else if ( fOption == 'r' ) fBinaryFile.open( getFilename().c_str(),  std::fstream::in |  std::fstream::binary );
 			fMutex.unlock();
 			fFileIsOpened = true;
-
 		}
 		return file_open();
 	}
@@ -81,14 +81,10 @@ class FileHandler
 		return fFileIsOpened;
 	}
 	//read from raw file to vector
-	std::vector<uint32_t> readFile( std::string cBinaryFileName ) {
+	std::vector<uint32_t> readFile( ) {
 
 		std::vector<uint32_t> cVector;
 		//open file for the reading
-		fMutex.lock();
-		fBinaryFile.open( cBinaryFileName.c_str(),  std::fstream::in |  std::fstream::binary );
-		fFileIsOpened = true;
-		fMutex.unlock();
 		while ( !fBinaryFile.eof() ) {
 			char buffer[4];
 			fBinaryFile.read( buffer, 4 );

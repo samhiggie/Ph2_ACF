@@ -108,7 +108,7 @@ int main( int argc, char* argv[] )
 
 	Timer t;
 	t.start();
-	cSystemController.addFileHandler( cOutputFile/*, cOptionWrite*/ );
+	cSystemController.addFileHandler( cOutputFile, 'w' );
 
 	cSystemController.InitializeHw( cHWFile );
 	cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
