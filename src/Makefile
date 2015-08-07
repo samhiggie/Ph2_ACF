@@ -69,4 +69,4 @@ fpgaconfig: fpgaconfig.cc
 .PHONY: clean
 
 clean:
-	rm -f $(binaries) *.o
+	rm -f *.o $(binaries)

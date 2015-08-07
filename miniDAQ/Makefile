@@ -19,7 +19,7 @@ ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uha
 # %.o: %.cc %.h
 # 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-binaries=miniDQM 
+binaries=miniDQM miniDAQ
 
 all: rootflags clean $(binaries) 
 
@@ -31,7 +31,11 @@ miniDQM: datatestFromfile.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
+miniDAQ: miniDAQ.cc
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+
 .PHONY: clean
 
 clean:
-	rm -f $(binaries) *.o
+	rm -f *.o $(binaries)
