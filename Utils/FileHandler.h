@@ -27,12 +27,8 @@ class FileHandler
 
 	std::fstream fBinaryFile;
 	std::vector<uint32_t> fData;
-	//Constructor
 
-	//constructor used for reading file
-	// FileHandler():
-	// 	fFileIsOpened( false ) {
-	// }
+	//Constructor
 	FileHandler( std::string pBinaryFileName, char pOption ):
 
 		fBinaryFileName( pBinaryFileName ),
