@@ -52,7 +52,7 @@
             <Register name="cbc_stubdata_latency_adjust_fe2"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
             <!-- This register is 0-indexed -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 999 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 9 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
 
             <!-- Polarity -->
