@@ -76,7 +76,7 @@ namespace Ph2_HwInterface
 		 * \brief Destructor of the GlibFWInterface class
 		 */
 		~GlibFWInterface() {
-			delete fData;
+			if ( fData ) delete fData;
 		}
 		/*!
 		 * \brief Configure the board with its Config File

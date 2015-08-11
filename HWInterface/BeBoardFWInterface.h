@@ -28,7 +28,6 @@
 #include "../HWDescription/BeBoard.h"
 #include <iostream>
 #include <fstream>
-#include <boost/filesystem.hpp>
 
 using namespace Ph2_HwDescription;
 
@@ -42,7 +41,6 @@ namespace Ph2_HwInterface
 {
 	class FpgaConfig;
 
-	// class FileHandler;
 	/*!
 	 * \class BeBoardFWInterface
 	 * \brief Class separating board system FW interface from uHal wrapper

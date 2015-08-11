@@ -4,7 +4,6 @@
 
 #include <istream>
 #include <iostream>
-#include <boost/filesystem.hpp>
 #include <fstream>
 #include <vector>
 #include <mutex>
@@ -30,7 +29,6 @@ class FileHandler
 
 	//Constructor
 	FileHandler( std::string pBinaryFileName, char pOption ):
-
 		fBinaryFileName( pBinaryFileName ),
 		fOption( pOption ),
 		fFileIsOpened( false ) ,
@@ -57,9 +55,9 @@ class FileHandler
 	std::string getFilename() {
 		return fBinaryFileName;
 	}
+
 	bool openFile( ) {
 		if ( !file_open() ) {
-
 			fMutex.lock();
 			if ( fOption == 'w' ) fBinaryFile.open( ( getFilename() ).c_str(), std::fstream::trunc | std::fstream::out | std::fstream::binary );
 			else if ( fOption == 'r' ) fBinaryFile.open( getFilename().c_str(),  std::fstream::in |  std::fstream::binary );
@@ -68,19 +66,21 @@ class FileHandler
 		}
 		return file_open();
 	}
+
 	void closeFile() {
 		fMutex.lock();
 		fBinaryFile.close();
 		fMutex.unlock();
 	}
+
 	bool file_open() {
 		return fFileIsOpened;
 	}
+
 	//read from raw file to vector
 	std::vector<uint32_t> readFile( ) {
-
 		std::vector<uint32_t> cVector;
-		//open file for the reading
+		//open file for reading
 		while ( !fBinaryFile.eof() ) {
 			char buffer[4];
 			fBinaryFile.read( buffer, 4 );
@@ -95,7 +95,6 @@ class FileHandler
   private:
 	void writeFile() {
 		while ( true ) {
-
 			if ( is_set ) {
 				fMutex.lock();
 				fMutex.unlock();
@@ -108,11 +107,8 @@ class FileHandler
 				fMutex.unlock();
 				continue;
 			}
-			else {
-				fMutex.lock();
-				fMutex.unlock();
-				continue;
-			}
+			else continue;
+
 		}
 	}
 };

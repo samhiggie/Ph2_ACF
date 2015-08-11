@@ -62,7 +62,7 @@ namespace Ph2_HwInterface
 		}
 		/*!
 		 * \brief Set the data in the data map
-		         * \param *pBoard : pointer to Boat
+		 * \param *pBoard : pointer to Boat
 		 * \param *pData : Data from the Cbc
 		 * \param pNevents : The number of events in this acquisiton
 		 */
