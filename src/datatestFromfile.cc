@@ -15,7 +15,7 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 
-#include "../RootWeb/include/publisher.h"
+// #include "../RootWeb/include/publisher.h"
 
 #include "TROOT.h"
 #include "TH1.h"
@@ -138,7 +138,6 @@ void fillDQMhisto( const std::vector<Event*>& elist, const std::string& outFileN
 		he.second->Write();
 	}
 
-
 	for ( auto& hVec : hchdatamap )
 	{
 		fout->cd( hVec.first.c_str() );
@@ -156,77 +155,17 @@ void dumpEvents( const std::vector<Event*>& elist )
 {
 	for ( int i = 0; i < elist.size(); i++ )
 	{
-		std::cout << "Event index: " << i + 1 << std::endl;
+		std::cout << "Event index: " << i << std::endl;
 		std::cout << *elist[i] << std::endl;
 	}
 }
-
 int main( int argc, char* argv[] )
 {
-	ArgvParser cmd;
-
-	// init
-	cmd.setIntroductoryDescription( "CMS Ph2_ACF  miniDQM application" );
-	// error codes
-	cmd.addErrorCode( 0, "Success" );
-	cmd.addErrorCode( 1, "Error" );
-	// options
-	cmd.setHelpOption( "h", "help", "Print this help page" );
-
-	cmd.defineOption( "file", "Binary Data File", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "file", "f" );
-
-	cmd.defineOption( "output", "Output Directory for DQM plots & page. Default value: Results", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "output", "o" );
-
-	cmd.defineOption( "dqm", "Build DQM webpage. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "dqm", "d" );
-
-	cmd.defineOption( "swap", "Swap endianness in Data::set. Default = true (Ph2_ACF); should be false for GlibStreamer Data", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "swap", "s" );
-
-	int result = cmd.parse( argc, argv );
-	if ( result != ArgvParser::NoParserError )
-	{
-		std::cout << cmd.parseErrorDescription( result );
-		exit( 1 );
-	}
-
-	// now query the parsing results
-	std::string rawFilename = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "";
-	if ( rawFilename.empty() )
-	{
-		std::cerr << "Error, no binary file provided. Quitting" << std::endl;
-		exit( 1 );
-	}
-
-	bool cSwap = ( cmd.foundOption( "swap" ) ) ? false : true;
-
-	bool cDQMPage = ( cmd.foundOption( "dqm" ) ) ? true : false;
-
-	std::string cDirBasePath;
-
-	if ( cDQMPage )
-	{
-		if ( cmd.foundOption( "output" ) )
-		{
-			cDirBasePath = cmd.optionValue( "output" );
-			cDirBasePath += "/";
-
-		}
-		else cDirBasePath = "Results/";
-	}
-	else std::cout << "Not creating DQM files!" << std::endl;
-
+	std::string rawFilename = argv[1];
 	std::vector<uint32_t> dataVec;
+	readDataFile( rawFilename, dataVec );
+
 	SystemController cSystemController;
-
-	//cSystemController.addFileHandler( rawFilename );
-
-	cSystemController.addFileHandler( rawFilename, 'r' ); //add it for read test
-	dataVec = cSystemController.fFileHandler->readFile( );  //add it for read test
-	//readDataFile( rawFilename, dataVec );
-
 	std::string cHWFile = getenv( "BASE_DIR" );
 	cHWFile += "/settings/HWDescription_2CBC.xml";
 	cSystemController.parseHWxml( cHWFile );
@@ -234,7 +173,7 @@ int main( int argc, char* argv[] )
 
 	Data d;
 	int nEvents = dataVec.size() / 42;
-	d.Set( pBoard, dataVec, nEvents, cSwap );
+	d.Set( pBoard, dataVec, nEvents, false );
 	const std::vector<Event*>& elist = d.GetEvents( pBoard );
 	//dumpEvents(elist);
 
@@ -248,16 +187,11 @@ int main( int argc, char* argv[] )
 	tokens.clear();
 	tokenize( fname, tokens, "." );
 	std::string runLabel = tokens[0];
-	std::string dqmFilename =  runLabel + "_dqm.root";
+	std::string dqmFilename = runLabel + "_dqm.root";
 
-	if ( cDQMPage )
-	{
-		fillDQMhisto( elist, dqmFilename );
-		// cDirBasePath += runLabel;
-		RootWeb::makeDQMmonitor( dqmFilename, cDirBasePath, runLabel );
-		std::cout << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath << std::endl;
-	}
-	else dumpEvents( elist );
+	dumpEvents( elist );
+	// fillDQMhisto(elist, dqmFilename);
+	// RootWeb::makeDQMmonitor(dqmFilename, runLabel);
+
 	return 0;
 }
-

@@ -61,7 +61,7 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC.");
+	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC." );
 	cmd.defineOptionAlternative( "ignoreI2c", "i" );
 
 	cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
@@ -76,6 +76,13 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
 	cmd.defineOptionAlternative( "parallel", "p" );
 
+	cmd.defineOption( "save", "Save the data to a raw file.  ", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "save", "s" );
+
+	// cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
+	// cmd.defineOptionAlternative( "option", "o" );
+
+
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
 	{
@@ -83,13 +90,25 @@ int main( int argc, char* argv[] )
 		exit( 1 );
 	}
 
+	bool cSaveToFile = false;
+	std::string cOutputFile;
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_2CBC.xml";
+
+	if ( cmd.foundOption( "save" ) )
+		cSaveToFile = true ;
+	if ( cSaveToFile )
+		cOutputFile =  cmd.optionValue( "save" );
+
+
+	std::cout << "save:   " << cOutputFile << std::endl;
+	// std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
 	cVcth = ( cmd.foundOption( "vcth" ) ) ? convertAnyInt( cmd.optionValue( "vcth" ).c_str() ) : 0;
 	pEventsperVcth = ( cmd.foundOption( "events" ) ) ? convertAnyInt( cmd.optionValue( "events" ).c_str() ) : 10;
 
 	Timer t;
 	t.start();
+	cSystemController.addFileHandler( cOutputFile, 'w' );
 
 	cSystemController.InitializeHw( cHWFile );
 	cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
@@ -135,7 +154,7 @@ int main( int argc, char* argv[] )
 	}
 	else
 	{
-
+		t.start();
 		// make event counter start at 1 as does the L1A counter
 		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
@@ -148,13 +167,15 @@ int main( int argc, char* argv[] )
 			if ( cN + cPacketSize >= pEventsperVcth ) cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
 			const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
 
-			for (auto& ev: events)
+			for ( auto& ev : events )
 			{
 				std::cout << ">>> Event #" << cN++ << std::endl;
 				std::cout << *ev << std::endl;
 			}
 			cNthAcq++;
 		}
+		t.stop();
+		t.show( "Time to take data:" );
 	}
 }
 

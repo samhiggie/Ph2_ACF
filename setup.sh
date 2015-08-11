@@ -5,10 +5,6 @@ export CACTUSBIN=/opt/cactus/bin
 export CACTUSLIB=/opt/cactus/lib
 export CACTUSINCLUDE=/opt/cactus/include
 
-# QT if installed
-export QTDIR=/usr/local/Trolltech/Qt-4.8.5
-export QMAKESPEC=
-export QTROOTSYSDIR=/usr/local/qtRoot/root
 
 # BOOST
 export BOOST_LIB=/opt/cactus/lib

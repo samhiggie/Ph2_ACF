@@ -15,15 +15,20 @@
 #include <uhal/uhal.hpp>
 #include "RegManager.h"
 #include "../Utils/Event.h"
+#include "../Utils/FileHandler.h"
 #include "../Utils/Data.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/Exception.h"
+#include "../Utils/FileHandler.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWDescription/Definition.h"
 #include "../HWDescription/CbcRegItem.h"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
+#include <iostream>
+#include <fstream>
+#include <boost/filesystem.hpp>
 
 using namespace Ph2_HwDescription;
 
@@ -31,9 +36,13 @@ using namespace Ph2_HwDescription;
  * \namespace Ph2_HwInterface
  * \brief Namespace regrouping all the interfaces to the hardware
  */
+class FileHandler;
+
 namespace Ph2_HwInterface
 {
 	class FpgaConfig;
+
+	// class FileHandler;
 	/*!
 	 * \class BeBoardFWInterface
 	 * \brief Class separating board system FW interface from uHal wrapper
@@ -43,6 +52,9 @@ namespace Ph2_HwInterface
 
 	  public:
 		unsigned int fNTotalAcq;
+
+		FileHandler* fFileHandler;
+		bool fSaveToFile;
 
 		static const uint32_t cMask1 = 0xff;
 		static const uint32_t cMask2 = 0xff00;
@@ -58,9 +70,14 @@ namespace Ph2_HwInterface
 		*/
 		BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
 		/*!
+		* \brief Constructor of the BeBoardFWInterface class
+		* \param puHalConfigFileName : path of the uHal Config File
+		* \param pFileHandler : pointer to file handler for saving Raw Data
+		*/
+		/*!
 		* \brief Destructor of the BeBoardFWInterface class
 		*/
-	        virtual ~BeBoardFWInterface() {}
+		virtual ~BeBoardFWInterface() {}
 		/*!
 		* \brief Get the board type
 		*/
@@ -71,8 +88,10 @@ namespace Ph2_HwInterface
 		virtual void getBoardInfo();
 
 		//These two methods will be implemented soon
-		virtual void FlashProm(uint16_t numConfig, const char* pstrFile) {}
-		virtual const FpgaConfig* getConfiguringFpga(){ return nullptr; }
+		virtual void FlashProm( uint16_t numConfig, const char* pstrFile ) {}
+		virtual const FpgaConfig* getConfiguringFpga() {
+			return nullptr;
+		}
 		virtual void ProgramCdce() {}
 
 		//Encode/Decode Cbc values
@@ -117,14 +136,16 @@ namespace Ph2_HwInterface
 		 * \param uNbAcq Number of acquisition iterations (each iteration will get CBC_DATA_PACKET_NUMBER + 1 events)
 		 * \param visitor override the visit() method of this object to process each event
 		 */
-		virtual void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) = 0;
+		virtual void StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) = 0;
 		/*! \brief Stop a running parallel acquisition
 		 */
 		virtual void StopThread();
 		/*! \brief Get the parallel acquisition iteration number */
 		int getNumAcqThread();
 		/*! \brief Is a parallel acquisition running ? */
-		bool isRunningThread() const {return runningAcquisition;}
+		bool isRunningThread() const {
+			return runningAcquisition;
+		}
 		/*!
 		 * \brief Start a DAQ
 		 */
@@ -156,16 +177,17 @@ namespace Ph2_HwInterface
 		 */
 		virtual const Event* GetNextEvent( const BeBoard* pBoard ) const = 0;
 		virtual const Event* GetEvent( const BeBoard* pBoard, int i ) const = 0;
-	        virtual const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const = 0;
+		virtual const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const = 0;
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-	protected:
+
+	  protected:
 
 		bool runningAcquisition;
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
 		boost::thread thrAcq;
-
+		// for mini DAQ file IO
 	};
 }
 
