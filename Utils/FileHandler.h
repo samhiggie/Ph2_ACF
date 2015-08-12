@@ -3,6 +3,7 @@
 #define __FILEHANDLER_H__
 
 #include <istream>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -28,89 +29,29 @@ class FileHandler
 	std::vector<uint32_t> fData;
 
 	//Constructor
-	FileHandler( std::string pBinaryFileName, char pOption ):
-		fBinaryFileName( pBinaryFileName ),
-		fOption( pOption ),
-		fFileIsOpened( false ) ,
-		is_set( false ) {
-		openFile();
-		if ( fOption == 'w' )
-			fThread = std::thread( &FileHandler::writeFile, this );
-	}
+	FileHandler( std::string pBinaryFileName, char pOption );
 
 	//destructor
-	~FileHandler() {
-		fThread.join();
-		closeFile();
-	}
-	void set( std::vector<uint32_t> pVector ) {
-		fMutex.lock();
-		fData.clear();
-		fData = pVector;
-		is_set = true;
-		if ( is_set )
-			fMutex.unlock();
-	}
+	~FileHandler();
+	void set( std::vector<uint32_t> pVector );
 
 	std::string getFilename() {
 		return fBinaryFileName;
 	}
 
-	bool openFile( ) {
-		if ( !file_open() ) {
-			fMutex.lock();
-			if ( fOption == 'w' ) fBinaryFile.open( ( getFilename() ).c_str(), std::fstream::trunc | std::fstream::out | std::fstream::binary );
-			else if ( fOption == 'r' ) fBinaryFile.open( getFilename().c_str(),  std::fstream::in |  std::fstream::binary );
-			fMutex.unlock();
-			fFileIsOpened = true;
-		}
-		return file_open();
-	}
+	bool openFile( );
 
-	void closeFile() {
-		fMutex.lock();
-		fBinaryFile.close();
-		fMutex.unlock();
-	}
+	void closeFile();
 
 	bool file_open() {
 		return fFileIsOpened;
 	}
 
 	//read from raw file to vector
-	std::vector<uint32_t> readFile( ) {
-		std::vector<uint32_t> cVector;
-		//open file for reading
-		while ( !fBinaryFile.eof() ) {
-			char buffer[4];
-			fBinaryFile.read( buffer, 4 );
-			uint32_t word;
-			memcpy( &word, buffer, 4 );
-			cVector.push_back( word );
-		}
-		fBinaryFile.close();
-		return cVector;
-	}
+	std::vector<uint32_t> readFile( );
 
   private:
-	void writeFile() {
-		while ( true ) {
-			if ( is_set ) {
-				fMutex.lock();
-				fMutex.unlock();
-				fMutex.lock();
-				uint32_t cBuffer[fData.size()];
-				std::copy( fData.begin(), fData.end(), cBuffer );
-				fBinaryFile.write( ( char* )&cBuffer, sizeof( cBuffer ) );
-				fData.clear();
-				is_set = false;
-				fMutex.unlock();
-				continue;
-			}
-			else continue;
-
-		}
-	}
+	void writeFile() ;
 };
 
 #endif
