@@ -189,23 +189,15 @@ void HybridTester::ScanThreshold()
 				while ( cN <=  cEventsperVcth )
 				{
 					// Run( pBoard, cNthAcq );
-					if ( cN > cEventsperVcth ) break;
 					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					while ( cEvent )
+					for ( auto& cEvent: events )
 					{
-						if ( cN > cEventsperVcth )
-							break;
-
 						// loop over Modules & Cbcs and count hits separately
 						cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
 						cN++;
-
-						if ( cN < cEventsperVcth )
-							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						else break;
 					}
 					cNthAcq++;
 				}
@@ -462,17 +454,12 @@ void HybridTester::Measure()
 			while ( cN <=  fTotalEvents )
 			{
 				// Run( pBoard, cNthAcq );
-				if ( cN > fTotalEvents ) break;
 				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 				// Loop over Events from this Acquisition
-				while ( cEvent )
+				for ( auto& cEvent: events )
 				{
-
-					if ( cN > fTotalEvents )
-						break;
-
 					HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
 					pBoard->accept( cFiller );
 
@@ -480,10 +467,6 @@ void HybridTester::Measure()
 						UpdateHists();
 
 					cN++;
-
-					if ( cN <= fTotalEvents )
-						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-					else break;
 				}
 				cNthAcq++;
 			}

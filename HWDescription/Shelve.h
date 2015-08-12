@@ -42,8 +42,8 @@ namespace Ph2_HwDescription
 
 		// D'tor
 		~Shelve() {
-			for ( std::vector<BeBoard*>::iterator cBeBoardIt = fBoardVector.begin(); cBeBoardIt != fBoardVector.end(); cBeBoardIt++ )
-				delete *cBeBoardIt;
+		        for ( auto& pBoard: fBoardVector )
+				delete pBoard;
 			fBoardVector.clear();
 		}
 

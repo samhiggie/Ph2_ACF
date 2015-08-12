@@ -149,45 +149,34 @@ void FastCalibration::Validate()
 			uint32_t cNthAcq = 0;
 
 			fBeBoardInterface->Start( pBoard );
-
 			while ( cN <=  cTotalEvents )
 			{
 				// Run( pBoard, cNthAcq );
 				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 				// Loop over Events from this Acquisition
-				while ( cEvent )
-				{
-
-					if ( cN > cTotalEvents )
-						break;
-
+				for (auto& ev: events) {
 					uint32_t cHitCounter = 0;
-					for ( auto cFe : pBoard->fModuleVector )
+					for ( auto& cFe : pBoard->fModuleVector )
 					{
-
-						for ( auto cCbc : cFe->fCbcVector )
+						for ( auto& cCbc : cFe->fCbcVector )
 						{
 							auto cHitProfile = cProfileMap.find( cCbc );
 							if ( cHitProfile == std::end( cProfileMap ) ) std::cout << "Error: could not find the profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
 							else
 							{
-								for ( uint8_t cChannel = 0; cChannel < 254; cChannel++ )
-								{
-									uint32_t cFillValue  = ( cEvent->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChannel ) )  ? 1 : 0;
-									cHitProfile->second->Fill( cChannel, cFillValue );
-								}
+							        const std::vector<bool>& list = ev->DataBitVector(cFe->getFeId(), cCbc->getCbcId());   
+							        int cChannel = 0;    
+							        for (const auto& b: list) {
+							                cHitProfile->second->Fill( cChannel++, ((b)?1:0) );
+							        }
 							}
 						}
 					}
 					cN++;
-
-					if ( cN <= cTotalEvents )
-						cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-					else break;
 				}
 				cNthAcq++;
-			} // End of Analyze Events of last Acquistion loop
+			} 
 			fBeBoardInterface->Stop( pBoard, cNthAcq );
 		}
 	}
@@ -292,12 +281,16 @@ void FastCalibration::Initialise()
 	fTargetVcth = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 120;
 	cSetting = fSettingsMap.find( "Nevents" );
 	fEventsPerPoint = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 10;
+	cSetting = fSettingsMap.find( "FitSCurves" );
+	fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
 	fNCbc = cCbcCount;
 
 	std::cout << "Created Object Maps and parsed settings:" << std::endl;
 	std::cout << "	Hole Mode = " << fHoleMode << std::endl;
 	std::cout << "	Nevents = " << fEventsPerPoint << std::endl;
 	std::cout << "	TargetVcth = " << int( fTargetVcth ) << std::endl;
+	std::cout << "	FitSCurves = " << int( fFitted ) << std::endl;
+
 }
 /*Currently this function sets offset for all 1-254 channels. But now to add testgroups, it has to set for 32
 channels in the group only. So it has to take the group id as well.
@@ -319,7 +312,7 @@ void FastCalibration::setOffset( uint8_t pOffset, int  pTGrpId )
 			//Here the loop will be over channels in the test group
 			for ( auto& cChannel : fTestGrpChannelIdVec ) {
 				TString cRegName = Form( "Channel%03d", cChannel + 1 );
-				fRegVec.push_back( std::make_pair( cRegName.Data(), fOffset ) );
+				fRegVec.push_back( { cRegName.Data(), fOffset } );
 			}
 		}
 		void visit( Cbc& pCbc ) {
@@ -364,7 +357,7 @@ void FastCalibration::toggleOffsetBit( uint8_t pBit, int  pTGrpId )
 				//std::cout << "DEBUG " << cRegName.Data() << " was " << std::hex << "0x" << int( cOffset );
 				cOffset  ^= ( 1 << fBit );
 				//std::cout << " is 0x" << int( cOffset ) << std::dec << std::endl;
-				fRegVec.push_back( std::make_pair( cRegName.Data(), cOffset ) );
+				fRegVec.push_back( { cRegName.Data(), cOffset } );
 			}
 			fInterface->WriteCbcMultReg( &pCbc, fRegVec );
 		}
@@ -439,28 +432,19 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 
 				fBeBoardInterface->Start( pBoard );
 
-				while ( cN <=  fEventsPerPoint )
+				while ( cN <= fEventsPerPoint )
 				{
 					// Run( pBoard, cNthAcq );
 					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					while ( cEvent )
-					{
-						if ( cN > fEventsPerPoint )
-							break;
-
-						cHitCounter += fillSCurves( pBoard, cEvent, cValue, pTGrpId ); //pass test group here
-
+					for (auto& ev: events) {
+						cHitCounter += fillSCurves( pBoard, ev, cValue, pTGrpId ); //pass test group here
 						cN++;
-
-						if ( cN <= fEventsPerPoint )
-							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						else break;
 					}
 					cNthAcq++;
-				} // done with this acquisition
+				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
 
 				if ( pOffset ) std::cout << "Offset " << int( cValue ) << " Hits: " << cHitCounter << std::endl;
@@ -473,7 +457,7 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 					cNonZero = true;
 					if ( ( cStep > 0 && cValue > 0x14 ) || ( cStep < 0 && cValue < 0xEB ) ) cValue -= 2 * cStep;
 					else cValue -= cStep;
-					cStep /= ( pOffset ) ? 2 : 10;
+					cStep /= 10;
 					continue;
 				}
 				// the above counter counted the CBC objects connected to pBoard
@@ -512,7 +496,7 @@ uint32_t FastCalibration::fillSCurves( BeBoard* pBoard,  const Event* pEvent, ui
 			CbcChannelMap::iterator cChanVec = fCbcChannelMap.find( cCbc );
 			if ( cChanVec != fCbcChannelMap.end() )
 			{
-				std::vector<uint8_t> cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
+				const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
 				for ( auto& cChanId : cTestGrpChannelVec )
 				{
 					if ( pEvent->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChanVec->second.at( cChanId ).fChannelId ) )
@@ -569,8 +553,10 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 			if ( !fHoleMode != !cOffset ) cFitMode = true;
 			else cFitMode = false;
 
-			// Fit
-			cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+			// Fit or Differentiate
+			if ( fFitted )
+				cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
 
 			if ( !cOffset )
 			{
@@ -593,7 +579,7 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 					cOffsetVal = ( fHoleMode ) ? 0xFF : 0x00;
 					std::cout << RED << "Error: Failed to extract Offset for Channel " << int( cChan.fChannelId ) << " on CBC " << int( cChan.fCbcId ) << "  -- disabling! (Fit: " <<  int( cChan.getPedestal() ) << ")" <<  RESET << std::endl;
 				}
-				cRegVec.push_back( std::make_pair( Form( "Channel%03d", cChan.fChannelId + 1 ), cOffsetVal ) );
+				cRegVec.push_back( { Form( "Channel%03d", cChan.fChannelId + 1 ), cOffsetVal } );
 			}
 			//Draw
 			if ( pDraw )
@@ -608,7 +594,9 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 					cCanvas->second->cd( 1 );
 				else cCanvas->second->cd( 3 );
 				cChan.fScurve->Draw( cOption );
-				cChan.fFit->Draw( "same" );
+				if ( fFitted )	
+					cChan.fFit->Draw( "same" );
+				else cChan.fDerivative->Draw("same");	
 			}
 		}
 		if ( pDraw )  cCanvas->second->Update();
@@ -655,8 +643,10 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 			//for ( auto& cChan : cCbc.second ) {
 			// Fit
 			Channel cChan = cCbc.second.at( cChanId );
-			cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
-
+			if ( fFitted )
+				cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
+			
 			// check if the pedestal is larger than the targetVcth
 			// if so, flip bit back down
 			uint8_t cCurrentOffset = cCbc.first->getReg( Form( "Channel%03d", cChan.fChannelId + 1 ) );
@@ -664,7 +654,7 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 					( !fHoleMode && int( cChan.getPedestal() + 0.5 ) > fTargetVcth ) ) cCurrentOffset ^= ( 1 << pTargetBit );
 			std::cout <<  "Pedestal is " << int( cChan.getPedestal() + 0.5 ) << " and target Vcth is " << int( fTargetVcth ) << " Offset Value " << +cCurrentOffset << std::endl;
 			cChan.setOffset( cCurrentOffset );
-			cRegVec.push_back( std::make_pair( Form( "Channel%03d", cChan.fChannelId + 1 ), cCurrentOffset ) );
+			cRegVec.push_back( { Form( "Channel%03d", cChan.fChannelId + 1 ), cCurrentOffset } );
 
 
 			//Draw
@@ -679,7 +669,9 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 
 				cCanvas->second->cd( 3 );
 				cChan.fScurve->Draw( cOption );
-				cChan.fFit->Draw( "same" );
+				if ( fFitted )	
+					cChan.fFit->Draw( "same" );
+				else cChan.fDerivative->Draw("same");
 			}
 		}
 		if ( pDraw )  cCanvas->second->Update();
@@ -722,8 +714,8 @@ void FastCalibration::findVplus( bool pDraw )
 		std::cout << BOLDBLUE << "TargetVCth = " << int( fTargetVcth ) << " -> Vplus = " << int( cVplusResult ) << RESET << std::endl;
 
 		RegisterVector cRegVec;
-		cRegVec.push_back( std::make_pair( "VCth", fTargetVcth ) );
-		cRegVec.push_back( std::make_pair( "Vplus", cVplusResult ) );
+		cRegVec.push_back( { "VCth", fTargetVcth } );
+		cRegVec.push_back( { "Vplus", cVplusResult } );
 		fCbcInterface->WriteCbcMultReg( cGraph.first, cRegVec );
 	}
 

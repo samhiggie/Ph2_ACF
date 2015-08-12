@@ -46,8 +46,8 @@ namespace Ph2_HwDescription
 
 		// D'tor
 		~Module() {
-			for ( std::vector<Cbc*>::iterator cCbcIt = fCbcVector.begin(); cCbcIt != fCbcVector.end(); cCbcIt++ )
-				delete *cCbcIt;
+		        for ( auto& pCbc: fCbcVector )
+				delete pCbc;
 			fCbcVector.clear();
 		};
 

@@ -13,7 +13,8 @@ LibraryDirs = /opt/cactus/lib ../lib
 # /opt/xdaq/lib
 LibraryPaths = $(LibraryDirs:%=-L%)
 
-ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils
+ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
+                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils
 ExtObjectsRoot= -lPh2_Tools 
 
 # -lboost_thread -lboost_filesystem -lboost_regex -lboost_system -lboost_thread
@@ -21,8 +22,9 @@ ExtObjectsRoot= -lPh2_Tools
 # %.o: %.cc %.h
 # 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-binaries=systemtest datatest interfacetest hybridtest cmtest calibrate commission
-binariesNoRoot=systemtest datatest interfacetest
+
+binaries=systemtest datatest interfacetest hybridtest cmtest calibrate commission fpgaconfig
+binariesNoRoot=systemtest datatest interfacetest fpgaconfig
 
 all: rootflags clean $(binaries) 
 
@@ -60,7 +62,11 @@ commission: commission.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
+fpgaconfig: fpgaconfig.cc
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+
 .PHONY: clean
 
 clean:
-	rm -f $(binaries) *.o
+	rm -f *.o $(binaries)

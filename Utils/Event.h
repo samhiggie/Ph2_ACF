@@ -27,8 +27,8 @@ using namespace Ph2_HwDescription;
 namespace Ph2_HwInterface
 {
 
-	typedef std::map<uint32_t, char*> FeEventMap;     /*!< Event Map of Cbc */
-	typedef std::map<uint32_t, FeEventMap> EventMap;     /*!< Event Map of FE */
+        typedef std::map<uint32_t, std::pair<uint32_t, uint32_t>> FeEventMap; /*!< Event Map of Cbc */
+	typedef std::map<uint32_t, FeEventMap> EventMap;          /*!< Event Map of FE */
 
 	/*!
 	 * \class Event
@@ -42,14 +42,15 @@ namespace Ph2_HwInterface
 		   id of CbcEvent also should be the order of CBCEvents in data stream starting from 0
 		 */
 	  private:
-		char* fBuf;                     /*!< Data buffer */
-		EventMap fEventMap;                     /*!< Event map */
-		uint32_t fBunch;                     /*!< Bunch value */
-		uint32_t fOrbit;                     /*!< Orbit value */
-		uint32_t fLumi;                     /*!< LuminositySection value */
-		uint32_t fEventCount;                     /*!< Event Counter */
-		uint32_t fEventCountCBC;                     /*!< Cbc Event Counter */
-		uint32_t fTDC;                     /*!< TDC value*/
+		EventMap fEventMap;             /*!< Event map */
+		uint32_t fBunch;                /*!< Bunch value */
+		uint32_t fOrbit;                /*!< Orbit value */
+		uint32_t fLumi;                 /*!< LuminositySection value */
+		uint32_t fEventCount;           /*!< Event Counter */
+		uint32_t fEventCountCBC;        /*!< Cbc Event Counter */
+		uint32_t fTDC;                  /*!< TDC value*/
+
+      	        std::vector<uint8_t> fEventData;
 
 	  public:
 		uint32_t fEventSize;                     /*!< Size of an Event */
@@ -66,16 +67,16 @@ namespace Ph2_HwInterface
 		/*!
 		 * \brief Constructor of the Event Class
 		 * \param pNbCbc
-		 * \param pEventBuf : the pointer to the raw Event buffer of this Event
+		 * \param list : the pointer to the raw Event buffer of this Event
 		 */
-		Event( uint32_t pNbCbc, const char* pEventBuf );
+		Event( uint32_t pNbCbc, const std::vector<uint8_t>& list );
 		/*!
 		 * \brief Constructor of the Event Class
 		 * \param pBoard : Board to work with
 		 * \param pNbCbc
 		 * \param pEventBuf : the pointer to the raw Event buffer of this Event
 		 */
-		Event( const BeBoard* pBoard, uint32_t pNbCbc, const char* pEventBuf );
+                Event( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint8_t>& list );
 		/*!
 		 * \brief Copy Constructor of the Event Class
 		 */
@@ -89,7 +90,7 @@ namespace Ph2_HwInterface
 		 * \brief Clear the Event Map
 		 */
 		void Clear() {
-			fEventMap.clear();
+		     fEventMap.clear();
 		}
 		/*!
 		 * \brief Add a board structure in the map
@@ -101,14 +102,14 @@ namespace Ph2_HwInterface
 		 * \param pEvent : Event to set
 		 * \return Aknowledgement of the Event setting (1/0)
 		 */
-		int SetEvent( const char* pEvent );
+	        int SetEvent( const std::vector<uint8_t>& list );
 		/*! \brief Get raw data */
-		char* GetEventData() const {
-			return fBuf;
+	        const std::vector<uint8_t>& GetEventData() const {
+		      return fEventData;
 		}
 		/*! \brief Get the event size in bytes */
 		uint32_t GetSize() const {
-			return fEventSize;
+		      return fEventSize;
 		}
 		//user interface
 		/*!
@@ -117,7 +118,7 @@ namespace Ph2_HwInterface
 		 * \param pCbcId : Cbc Id
 		 * \return Event buffer
 		 */
-		char* GetCbcEvent( const uint8_t& pFeId, const uint8_t& pCbcId ) const;
+	        void GetCbcEvent( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) const;
 		/*!
 		 * \brief Get the bunch value
 		 * \return Bunch value
@@ -236,6 +237,7 @@ namespace Ph2_HwInterface
 		 * \return Data Bit vector
 		 */
 		std::vector<bool> DataBitVector( uint8_t pFeId, uint8_t pCbcId ) const;
+	        std::vector<bool> DataBitVector( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const;
 		/*!
 		 * \brief Function to get bit string in hexadecimal format for CBC data
 		 * \param pFeId : FE Id
@@ -256,7 +258,14 @@ namespace Ph2_HwInterface
 		 * \param pCbcId : Cbc Id
 		 * \return stub bit?
 		 */
-		bool StubBit( uint8_t pFeId, uint8_t pCbcId ) const;
+     	       std::string StubBitString( uint8_t pFeId, uint8_t pCbcId ) const;
+       	       /*!
+  	        * \brief Function to get Stub bit
+	        * \param pFeId : FE Id
+	        * \param pCbcId : Cbc Id
+	        * \return stub bit?
+	        */
+	        bool StubBit( uint8_t pFeId, uint8_t pCbcId ) const;
 		/*!
 		 * \brief Function to get char at the global data string at position 8*i
 		 * \param pFeId : FE Id
@@ -264,9 +273,7 @@ namespace Ph2_HwInterface
 		 * \param pBytePosition : Position of the byte
 		 * \return Char in given position
 		 */
-		char Char( uint8_t pFeId, uint8_t pCbcId, uint32_t pBytePosition ) {
-			return GetCbcEvent( pFeId, pCbcId )[pBytePosition];
-		}
+  	        unsigned char Char( uint8_t pFeId, uint8_t pCbcId, uint32_t pBytePosition ); 
 
 		const EventMap& GetEventMap() const {
 			return fEventMap;

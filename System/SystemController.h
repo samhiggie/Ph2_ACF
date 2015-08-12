@@ -21,7 +21,7 @@
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/picojson.h"
-
+#include "../Utils/FileHandler.h"
 #include "../Utils/pugixml.hpp"
 #include "../Utils/ConsoleColor.h"
 #include <iostream>
@@ -56,7 +56,7 @@ namespace Ph2_System
 		ShelveVec fShelveVector;                                           /*!< Vector of Shelve pointers */
 		BeBoardFWMap fBeBoardFWMap;                                /*!< Map of connections to the BeBoard */
 		SettingsMap fSettingsMap;                                         /*!< Maps the settings */
-
+		FileHandler* fFileHandler;
 
 
 	  public:
@@ -68,6 +68,11 @@ namespace Ph2_System
 		 * \brief Destructor of the SystemController class
 		 */
 		~SystemController();
+		/*!
+		* \brief create a FileHandler object with
+		 * \param pFilename : the filename of the binary file
+		*/
+		void addFileHandler( std::string pFilename0, char pOption );
 
 		/*!
 		 * \brief acceptor method for HwDescriptionVisitor
@@ -100,7 +105,7 @@ namespace Ph2_System
 		/*!
 		 * \brief Configure the Hardware with XML file indicated values
 		 */
-		void ConfigureHw( std::ostream& os = std::cout , bool bIgnoreI2c = false);
+		void ConfigureHw( std::ostream& os = std::cout , bool bIgnoreI2c = false );
 		/*!
 		 * \brief Run a DAQ
 		 * \param pBeBoard
@@ -119,6 +124,28 @@ namespace Ph2_System
 
 		}
 
+		/*!
+		 * \brief Get next event from data buffer
+		 * \param pBoard
+		 * \return Next event
+		 */
+		const Event* GetNextEvent( const BeBoard* pBoard ) {
+			return fBeBoardInterface->GetNextEvent( pBoard );
+		}
+		const Event* GetEvent( const BeBoard* pBoard, int i ) const {
+			return fBeBoardInterface->GetEvent( pBoard, i );
+		}
+		const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const {
+			return fBeBoardInterface->GetEvents( pBoard );
+		}
+
+		/*!
+		 * \brief Initialize the hardware via  XML config file
+		 * \param pFilename : HW Description file
+		 *\param os : ostream to dump output
+		 */
+		void parseHWxml( const std::string& pFilename, std::ostream& os = std::cout );
+
 	  protected:
 		/*!
 		 * \convert a voltage level to it's 8bit DAC value
@@ -130,12 +157,6 @@ namespace Ph2_System
 		}
 
 	  private:
-		/*!
-		 * \brief Initialize the hardware via  XML config file
-		 * \param pFilename : HW Description file
-		 *\param os : ostream to dump output
-		 */
-		void parseHWxml( const std::string& pFilename, std::ostream& os );
 		/*!
 		 * \brief Initialize the hardware via JSON config file
 		 * \param pFilename : HW Description file

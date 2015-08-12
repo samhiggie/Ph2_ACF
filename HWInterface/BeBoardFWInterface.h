@@ -15,15 +15,19 @@
 #include <uhal/uhal.hpp>
 #include "RegManager.h"
 #include "../Utils/Event.h"
+#include "../Utils/FileHandler.h"
 #include "../Utils/Data.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/Exception.h"
+#include "../Utils/FileHandler.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWDescription/Definition.h"
 #include "../HWDescription/CbcRegItem.h"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
+#include <iostream>
+#include <fstream>
 
 using namespace Ph2_HwDescription;
 
@@ -31,9 +35,12 @@ using namespace Ph2_HwDescription;
  * \namespace Ph2_HwInterface
  * \brief Namespace regrouping all the interfaces to the hardware
  */
+class FileHandler;
+
 namespace Ph2_HwInterface
 {
 	class FpgaConfig;
+
 	/*!
 	 * \class BeBoardFWInterface
 	 * \brief Class separating board system FW interface from uHal wrapper
@@ -44,7 +51,8 @@ namespace Ph2_HwInterface
 	  public:
 		unsigned int fNTotalAcq;
 
-		Data* fData; /*!< Data read storage*/
+		FileHandler* fFileHandler;
+		bool fSaveToFile;
 
 		static const uint32_t cMask1 = 0xff;
 		static const uint32_t cMask2 = 0xff00;
@@ -60,9 +68,14 @@ namespace Ph2_HwInterface
 		*/
 		BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
 		/*!
+		* \brief Constructor of the BeBoardFWInterface class
+		* \param puHalConfigFileName : path of the uHal Config File
+		* \param pFileHandler : pointer to file handler for saving Raw Data
+		*/
+		/*!
 		* \brief Destructor of the BeBoardFWInterface class
 		*/
-		virtual ~BeBoardFWInterface();
+		virtual ~BeBoardFWInterface() {}
 		/*!
 		* \brief Get the board type
 		*/
@@ -75,7 +88,7 @@ namespace Ph2_HwInterface
 		//These two methods will be implemented soon
 		virtual void FlashProm( uint16_t numConfig, const char* pstrFile ) {}
 		virtual const FpgaConfig* getConfiguringFpga() {
-			return NULL;
+			return nullptr;
 		}
 		virtual void ProgramCdce() {}
 
@@ -160,22 +173,19 @@ namespace Ph2_HwInterface
 		 * \brief Get next event from data buffer
 		 * \return Next event
 		 */
-		virtual const Event* GetNextEvent( const BeBoard* pBoard ) = 0;
-		/*!
-		 * \brief Get the data buffer
-		 * \param pBufSize : recovers the data buffer size
-		 * \return Data buffer
-		 */
-		virtual const char* GetBuffer( uint32_t& pBufSize ) const = 0;
+		virtual const Event* GetNextEvent( const BeBoard* pBoard ) const = 0;
+		virtual const Event* GetEvent( const BeBoard* pBoard, int i ) const = 0;
+		virtual const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const = 0;
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
+
 
 	  protected:
 
 		bool runningAcquisition;
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
 		boost::thread thrAcq;
-
+		// for mini DAQ file IO
 	};
 }
 
