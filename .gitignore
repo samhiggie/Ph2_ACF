@@ -1,7 +1,15 @@
 *.o
 ._*
 *~
+Data/*
 latex/*
 html/*
 html/
 latex/
+*.bin
+*.raw
+Results/*
+settings/connections_slc6.xml
+# just for G. Auzingers sanity
+CalibrationResults
+.run_number.txt

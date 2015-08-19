@@ -27,7 +27,7 @@
 namespace Ph2_HwDescription
 {
 
-	typedef std::map< std::string, uint16_t > BeBoardRegMap;     /*!< Map containing the registers of a board */
+	typedef std::map< std::string, uint32_t > BeBoardRegMap;     /*!< Map containing the registers of a board */
 
 	/*!
 	 * \class BeBoard
@@ -63,6 +63,8 @@ namespace Ph2_HwDescription
 		* \brief Destructor
 		*/
 		~BeBoard() {
+		        for ( auto& pModule: fModuleVector )
+				delete pModule;
 			fModuleVector.clear();
 		}
 
@@ -96,13 +98,13 @@ namespace Ph2_HwDescription
 		* \param pReg
 		* \return The value of the register
 		*/
-		uint16_t getReg( const std::string& pReg ) const;
+		uint32_t getReg( const std::string& pReg ) const;
 		/*!
 		* \brief Set any register of the Map, if the register is not on the map, it adds it.
 		* \param pReg
 		* \param psetValue
 		*/
-		void setReg( const std::string& pReg, uint16_t psetValue );
+		void setReg( const std::string& pReg, uint32_t psetValue );
 
 		/*!
 		 * \brief Adding a module to the vector
@@ -153,7 +155,7 @@ namespace Ph2_HwDescription
 		* \brief Get the BeBoardIdentifier
 		* \return The BeBoardIdentifier
 		*/
-		uint16_t getBeBoardIdentifier() const {
+		uint32_t getBeBoardIdentifier() const {
 			return fBeId << 8 | fShelveId;
 		}
 		/*!

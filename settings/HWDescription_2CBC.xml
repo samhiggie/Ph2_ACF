@@ -6,12 +6,12 @@
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-              <!--   <Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register>
-                <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register> -->
-<!--                 <CBC_Files path="./settings/"/>
- -->
-                <CBC Id="0" configfile="./settings/Cbc_default_hole.txt"/>
-                <CBC Id="1" configfile="./settings/Cbc_default_hole.txt"/>
+                <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
+                <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
+	 
+                <CBC_Files path="./settings/"/>
+                <CBC Id="0" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="1" configfile="Cbc_default_hole.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->
@@ -35,6 +35,8 @@
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
             <!-- set to 1 to output L1A signal, 0 for input pulse -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
+            <!-- set to 1 for active low or 1 for active high -->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar"> 1 </Register>
 
             <!-- Clock -->
             <!-- set to 1 for external clocking -->
@@ -49,7 +51,8 @@
             <Register name="cbc_stubdata_latency_adjust_fe1"> 1 </Register>
             <Register name="cbc_stubdata_latency_adjust_fe2"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 10 </Register>
+            <!-- This register is 0-indexed -->
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 9 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
 
             <!-- Polarity -->

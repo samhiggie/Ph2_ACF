@@ -130,13 +130,10 @@ void HybridTester::Initialize( bool pThresholdScan )
 		fSCurveCanvas->Divide( fNCbc );
 	}
 	InitializeHists();
-
-
-
-
 }
 
-void HybridTester::InitializeGUI( bool pThresholdScan, const std::vector<TCanvas*>& pCanvasVector )
+
+void HybridTester::Initialize( bool pThresholdScan )
 {
 	fThresholdScan = pThresholdScan;
 	gStyle->SetOptStat( 000000 );
@@ -146,20 +143,17 @@ void HybridTester::InitializeGUI( bool pThresholdScan, const std::vector<TCanvas
 	accept( cCbcCounter );
 	fNCbc = cCbcCounter.getNCbc();
 
-	fDataCanvas = pCanvasVector.at( 1 ); //since I ounly need one here
-	fDataCanvas->SetName( "fDataCanvas" );
-	fDataCanvas->SetTitle( "SingleStripEfficiency" );
+	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
 	fDataCanvas->Divide( 2 );
 
 	if ( fThresholdScan )
 	{
-		fSCurveCanvas = pCanvasVector.at( 2 ); // only if the user decides to do a thresholdscan
-		fSCurveCanvas->SetName( "fSCurveCanvas" );
-		fSCurveCanvas->SetTitle( "NoiseOccupancy" );
+		fSCurveCanvas = new TCanvas( "fSCurveCanvas", "Noise Occupancy as function of VCth" );
 		fSCurveCanvas->Divide( fNCbc );
 	}
 
 	InitializeHists();
+	InitialiseSettings();
 }
 
 
@@ -197,8 +191,7 @@ void HybridTester::ScanThreshold()
 		// Set current Vcth value on all Cbc's
 		CbcRegWriter cWriter( fCbcInterface, "VCth", cVcth );
 		accept( cWriter );
-
-		uint32_t cN = 0;
+		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
 		uint32_t cHitCounter = 0;
 
@@ -208,29 +201,27 @@ void HybridTester::ScanThreshold()
 			if ( cAllOne ) break;
 			for ( BeBoard* pBoard : cShelve->fBoardVector )
 			{
-				while ( cN <  cEventsperVcth )
+				fBeBoardInterface->Start( pBoard );
+				while ( cN <=  cEventsperVcth )
 				{
-					Run( pBoard, cNthAcq );
-
-					const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
+					// Run( pBoard, cNthAcq );
+					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					while ( cEvent )
+					for ( auto& cEvent: events )
 					{
-						if ( cN == cEventsperVcth )
-							break;
 
 						// loop over Modules & Cbcs and count hits separately
 						cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
 						cN++;
 
-						if ( cN < cEventsperVcth )
-							cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						else break;
+						
 					}
 					cNthAcq++;
 				}
-				std::cout << "DEBUG: Vcth: " << +cVcth << " Hits: " << cHitCounter << std::endl;
+				fBeBoardInterface->Stop( pBoard, cNthAcq );
+				// std::cout << +cVcth << " " << cHitCounter << std::endl;
 				// Draw the thing after each point
 				updateSCurveCanvas( pBoard );
 
@@ -282,10 +273,7 @@ void HybridTester::ScanThreshold()
 
 void HybridTester::processSCurves( uint32_t pEventsperVcth )
 {
-	auto cSetting = fSettingsMap.find( "Threshold_NSigmas" );
-	int cSigmas = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 4;
-	bool cHoleMode = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : true;
-
+	
 	for ( auto cScurve : fSCurveMap )
 	{
 		fSCurveCanvas->cd( cScurve.first->getCbcId() + 1 );
@@ -300,7 +288,7 @@ void HybridTester::processSCurves( uint32_t pEventsperVcth )
 		double cFirst1( 0 );
 
 		// Not Hole Mode
-		if ( !cHoleMode )
+		if ( !fHoleMode )
 		{
 			for ( Int_t cBin = 1; cBin <= cScurve.second->GetNbinsX(); cBin++ )
 			{
@@ -358,9 +346,9 @@ void HybridTester::processSCurves( uint32_t pEventsperVcth )
 			double_t pedestal = cFit->second->GetParameter( 0 );
 			double_t noise = cFit->second->GetParameter( 1 );
 
-			uint8_t cThreshold = ceil( pedestal + cSigmas * fabs( noise ) );
+			uint8_t cThreshold = ceil( pedestal + fSigmas * fabs( noise ) );
 
-			std::cout << "Identified a noise Occupancy of 50% at VCth " << static_cast<int>( pedestal ) << " -- increasing by " << cSigmas <<  " sigmas (=" << fabs( noise ) << ") to " << +cThreshold << " for Cbc " << int( cScurve.first->getCbcId() ) << std::endl;
+			std::cout << "Identified a noise Occupancy of 50% at VCth " << static_cast<int>( pedestal ) << " -- increasing by " << fSigmas <<  " sigmas (=" << fabs( noise ) << ") to " << +cThreshold << " for Cbc " << int( cScurve.first->getCbcId() ) << std::endl;
 
 			TLine* cLine = new TLine( cThreshold, 0, cThreshold, 1 );
 			cLine->SetLineWidth( 3 );
@@ -540,10 +528,8 @@ void HybridTester::TestChannels(double pTopHistogram[], int pTopHistogramSize, d
 void HybridTester::Measure()
 {
 	std::cout << "Mesuring Efficiency per Strip ... " << std::endl;
-	auto cSetting = fSettingsMap.find( "Nevents" );
-	uint32_t cTotalEvents = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 200;
-	fTotalEvents = cTotalEvents;
-	std::cout << "Taking data with " << cTotalEvents << " Events!" << std::endl;
+	std::cout << "Taking data with " << fTotalEvents << " Events!" << std::endl;
+
 	CbcRegReader cReader( fCbcInterface, "VCth" );
 	accept( cReader );
 		
@@ -573,37 +559,34 @@ void HybridTester::Measure()
 			{
 				for ( BeBoard* pBoard : cShelve->fBoardVector ) 
 				{
-					uint32_t cN = 0;
-					uint32_t cNthAcq = 0;
-								 
-					while ( cN <  cTotalEvents )
-					{
-						Run( pBoard, cNthAcq );
 
-						const Event* cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-						// Loop over Events from this Acquisition
-						while ( cEvent )
-						{
-							if ( cN == cTotalEvents )
-								break;
+				uint32_t cN = 1;
+			uint32_t cNthAcq = 0;
 
-							HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
-							pBoard->accept( cFiller );
+			fBeBoardInterface->Start( pBoard );
 
-							//if ( (cN+1) % 100 == 0 )
-							if (cN == cTotalEvents-1)							
-								UpdateHists();
+			while ( cN <=  fTotalEvents )
+			{
+				// Run( pBoard, cNthAcq );
+				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
-							cN++;
+				// Loop over Events from this Acquisition
+				for ( auto& cEvent: events )
+				{
+					HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
+					pBoard->accept( cFiller );
 
-							if ( cN < cTotalEvents )
-								cEvent = fBeBoardInterface->GetNextEvent( pBoard );
-							else break;
-						}
-					
-						cNthAcq++;
-					}
-					/*Here the reconstruction of histograms happens*/
+					if ( cN % 100 == 0 )
+						UpdateHists();
+
+					cN++;
+				}
+				cNthAcq++;
+			}
+			fBeBoardInterface->Stop( pBoard, cNthAcq );
+		}
+	/*Here the reconstruction of histograms happens*/
 					if(fNCbc == 2) //reconstruction of histograms for 2cbc2 hybrid
 					{
 						if(analog_switch_cs == 0) // it means that I am illuminating top pads (of course if top antenna switch chip select line is 0)
@@ -800,7 +783,7 @@ void HybridTester::SaveResults()
 	fResultFile->Close();
 
 
-	std::cout << std::endl << "Resultfile written correctly!" << std::endl;
+	std::cout << "Resultfile written correctly!" << std::endl;
 
 	std::string cPdfName = fDirectoryName + "/HybridTestResults.pdf";
 	fDataCanvas->SaveAs( cPdfName.c_str() );

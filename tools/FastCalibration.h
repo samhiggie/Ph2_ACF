@@ -12,11 +12,7 @@
 #ifndef FastCalibration_h__
 #define FastCalibration_h__
 
-#include "../HWDescription/BeBoard.h"
-#include "../HWInterface/CbcInterface.h"
-#include "../HWInterface/BeBoardInterface.h"
-#include "../System/SystemController.h"
-#include "../Utils/ConsoleColor.h"
+#include "Tool.h"
 #include "Channel.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/CommonVisitors.h"
@@ -36,7 +32,6 @@ using namespace Ph2_System;
 
 
 typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
-typedef std::map<Cbc*, TCanvas*> CanvasMap;
 typedef std::map<Cbc*, TGraphErrors*> GraphMap;
 typedef std::map<Cbc*, TF1*> FitMap;
 typedef std::map<Cbc*, TH1F*> HistMap;
@@ -47,7 +42,7 @@ Key=-1 to do calibration on all channels
 Key=0-7 for the 8 Test Groups
 */
 
-class FastCalibration : public SystemController
+class FastCalibration : public Tool
 {
   public:
 	FastCalibration( bool pbitwisetune , bool pAllChan ) {
@@ -95,7 +90,6 @@ class FastCalibration : public SystemController
 
   private:
 	CbcChannelMap fCbcChannelMap;
-	CanvasMap fCanvasMap;
 	GraphMap fGraphMap;
 	FitMap fFitMap;
 	HistMap fHistMap;
@@ -106,6 +100,7 @@ class FastCalibration : public SystemController
 	uint32_t fEventsPerPoint;
 	uint32_t fNCbc;
 	uint8_t fTargetVcth;
+	bool fFitted;
 
 	std::vector<uint8_t> fVplusVec;
 

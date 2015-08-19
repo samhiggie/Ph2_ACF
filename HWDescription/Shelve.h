@@ -42,8 +42,10 @@ namespace Ph2_HwDescription
 
 		// D'tor
 		~Shelve() {
-                         fBoardVector.clear();
-                }
+		        for ( auto& pBoard: fBoardVector )
+				delete pBoard;
+			fBoardVector.clear();
+		}
 
 		/*!
 		 * \brief acceptor method for HwDescriptionVisitor
@@ -71,10 +73,10 @@ namespace Ph2_HwDescription
 		 * \param pBoard
 		 */
 		void addBoard( BeBoard& pBoard ) {
-		        fBoardVector.push_back( &pBoard );
+			fBoardVector.push_back( &pBoard );
 		}
 		void addBoard( BeBoard* pBoard ) {
-		        fBoardVector.push_back( pBoard );
+			fBoardVector.push_back( pBoard );
 		}
 		/*!
 		 * \brief Remove a Board from the vector

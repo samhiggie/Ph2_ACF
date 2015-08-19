@@ -39,58 +39,60 @@ namespace Ph2_HwDescription
 
 	// Public Members:
 
-	uint16_t BeBoard::getReg( const std::string& pReg ) const
+	uint32_t BeBoard::getReg( const std::string& pReg ) const
 	{
 		BeBoardRegMap::const_iterator i = fRegMap.find( pReg );
 		if ( i == fRegMap.end() )
 		{
-		        std::cout << "The Board object: " << +fBeId << " doesn't have " << pReg << std::endl;
+			std::cout << "The Board object: " << +fBeId << " doesn't have " << pReg << std::endl;
 			return 0;
 		}
 		else return i->second;
 	}
 
-	void BeBoard::setReg( const std::string& pReg, uint16_t psetValue )
+	void BeBoard::setReg( const std::string& pReg, uint32_t psetValue )
 	{
 		BeBoardRegMap::iterator i = fRegMap.find( pReg );
 		if ( i == fRegMap.end() )
-			fRegMap.insert( std::make_pair( pReg, psetValue ) );
+		  fRegMap.insert( {pReg, psetValue} );
 		else i->second = psetValue;
 	}
 
 	bool BeBoard::removeModule( uint8_t pModuleId )
 	{
-		
+
 		bool found = false;
-                std::vector<Module*>::iterator i; 
+		std::vector<Module*>::iterator i;
 		for ( i = fModuleVector.begin(); i != fModuleVector.end(); ++i )
 		{
-		        if ( (*i)->getModuleId() == pModuleId )
+			if ( ( *i )->getModuleId() == pModuleId )
 			{
 				found = true;
-                                break; 
+				break;
 			}
 		}
-		if ( found ) {
-      	                fModuleVector.erase( i );
-                        return true;
-                }
+		if ( found )
+		{
+			fModuleVector.erase( i );
+			return true;
+		}
 		else
 		{
-		        std::cout << "Error:The BeBoard: " << +fBeId 
-			          << " doesn't have the module " << +pModuleId << std::endl;
+			std::cout << "Error:The BeBoard: " << +fBeId
+					  << " doesn't have the module " << +pModuleId << std::endl;
 			return false;
 		}
 	}
 
 	Module* BeBoard::getModule( uint8_t pModuleId ) const
 	{
-	        for (Module* m : fModuleVector) {
-		         if ( m->getModuleId() == pModuleId )
+		for ( Module* m : fModuleVector )
+		{
+			if ( m->getModuleId() == pModuleId )
 				return m;
 		}
 		return nullptr;
-        }
+	}
 
 	// Private Members:
 

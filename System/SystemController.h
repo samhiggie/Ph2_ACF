@@ -20,7 +20,8 @@
 #include "../HWDescription/Definition.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
-
+#include "../Utils/picojson.h"
+#include "../Utils/FileHandler.h"
 #include "../Utils/pugixml.hpp"
 #include "../Utils/ConsoleColor.h"
 #include <iostream>
@@ -28,8 +29,6 @@
 #include <map>
 #include <stdlib.h>
 # include <string.h>
-
-#include "TFile.h"
 
 
 using namespace Ph2_HwDescription;
@@ -57,8 +56,7 @@ namespace Ph2_System
 		ShelveVec fShelveVector;                                           /*!< Vector of Shelve pointers */
 		BeBoardFWMap fBeBoardFWMap;                                /*!< Map of connections to the BeBoard */
 		SettingsMap fSettingsMap;                                         /*!< Maps the settings */
-		std::string fDirectoryName;             /*< the Directoryname for the Root file with results */
-		TFile* fResultFile;                /*< the Name for the Root file with results */
+		FileHandler* fFileHandler;
 
 
 	  public:
@@ -70,6 +68,11 @@ namespace Ph2_System
 		 * \brief Destructor of the SystemController class
 		 */
 		~SystemController();
+		/*!
+		* \brief create a FileHandler object with
+		 * \param pFilename : the filename of the binary file
+		*/
+		void addFileHandler( std::string pFilename0, char pOption );
 
 		/*!
 		 * \brief acceptor method for HwDescriptionVisitor
@@ -88,31 +91,21 @@ namespace Ph2_System
 		// }
 
 		/*!
-		 * \brief Create a result directory at the specified path + ChargeMode + Timestamp
-		 * \param pDirectoryname : the name of the directory to create
-		 * \param pDate : apend the current date and time to the directoryname
+		 * \brief Initialize the Hardware via a config file
+		 * \param pFilename : HW Description file
+		 *\param os : ostream to dump output
 		 */
-		void CreateResultDirectory( const std::string& pDirectoryname, bool pDate = true );
-		/*!
-		 * \brief Initialize the result Root file
-		 * \param pFilename : Root filename
-		 */
-		void InitResultFile( const std::string& pFilename );
-
-		/*!
-		 * \brief Initialize the Hardware via an XML file
-		 * \param pFilename : XML HW Description file
-		 */
-		void InitializeHw( const std::string& pFilename );
+		void InitializeHw( const std::string& pFilename, std::ostream& os = std::cout );
 		/*!
 		 * \brief Initialize the settings
-		 * \param pFilename : XML HW Description file
-		 */
-		void InitializeSettings( const std::string& pFilename );
+		 * \param pFilename :   settings file
+		 *\param os : ostream to dump output
+		*/
+		void InitializeSettings( const std::string& pFilename, std::ostream& os = std::cout );
 		/*!
 		 * \brief Configure the Hardware with XML file indicated values
 		 */
-		void ConfigureHw();
+		void ConfigureHw( std::ostream& os = std::cout , bool bIgnoreI2c = false );
 		/*!
 		 * \brief Run a DAQ
 		 * \param pBeBoard
@@ -131,6 +124,28 @@ namespace Ph2_System
 
 		}
 
+		/*!
+		 * \brief Get next event from data buffer
+		 * \param pBoard
+		 * \return Next event
+		 */
+		const Event* GetNextEvent( const BeBoard* pBoard ) {
+			return fBeBoardInterface->GetNextEvent( pBoard );
+		}
+		const Event* GetEvent( const BeBoard* pBoard, int i ) const {
+			return fBeBoardInterface->GetEvent( pBoard, i );
+		}
+		const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const {
+			return fBeBoardInterface->GetEvents( pBoard );
+		}
+
+		/*!
+		 * \brief Initialize the hardware via  XML config file
+		 * \param pFilename : HW Description file
+		 *\param os : ostream to dump output
+		 */
+		void parseHWxml( const std::string& pFilename, std::ostream& os = std::cout );
+
 	  protected:
 		/*!
 		 * \convert a voltage level to it's 8bit DAC value
@@ -140,6 +155,26 @@ namespace Ph2_System
 		uint32_t Vto8Bit( float pVoltage ) {
 			return static_cast<uint32_t>( pVoltage / 3.3 * 256 + 0.5 );
 		}
+
+	  private:
+		/*!
+		 * \brief Initialize the hardware via JSON config file
+		 * \param pFilename : HW Description file
+		 *\param os : ostream to dump output
+		 */
+		void parseSettingsxml( const std::string& pFilename, std::ostream& os );
+		/*!
+		 * \brief Initialize the settins via  XML file
+		 * \param pFilename : settings Description file
+		 *\param os : ostream to dump output
+		 */
+		void parseHWjson( const std::string& pFilename, std::ostream& os );
+		/*!
+		 * \brief Initialize the settins via  JSON file
+		 * \param pFilename : settings Description file
+		 *\param os : ostream to dump output
+		 */
+		void parseSettingsjson( const std::string& pFilename, std::ostream& os );
 	};
 }
 

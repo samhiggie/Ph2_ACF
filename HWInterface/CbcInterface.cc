@@ -13,6 +13,7 @@
 #include "../Utils/ConsoleColor.h"
 
 #define DEV_FLAG 0
+// #define COUNT_FLAG 0
 
 namespace Ph2_HwInterface
 {
@@ -20,13 +21,24 @@ namespace Ph2_HwInterface
 	CbcInterface::CbcInterface( const BeBoardFWMap& pBoardMap ) :
 		fBoardMap( pBoardMap ),
 		fBoardFW( nullptr ),
-		prevBoardIdentifier( 65535 )
+		prevBoardIdentifier( 65535 ),
+		fRegisterCount( 0 ),
+		fTransactionCount( 0 )
 	{
+#ifdef COUNT_FLAG
+		std::cout << "Counting number of Transactions!" << std::endl;
+#endif
 	}
 
 	CbcInterface::~CbcInterface()
 	{
+	}
 
+	void CbcInterface::output()
+	{
+#ifdef COUNT_FLAG
+		std::cout << "This instance of HWInterface::CbcInterface wrote (only write!) " << fRegisterCount << " Registers in " << fTransactionCount << " Transactions (only write!)! " << std::endl;
+#endif
 	}
 
 	void CbcInterface::setBoard( uint16_t pBoardIdentifier )
@@ -47,19 +59,9 @@ namespace Ph2_HwInterface
 
 	void CbcInterface::ConfigureCbc( const Cbc* pCbc, bool pVerifLoop, uint32_t pBlockSize )
 	{
-		this->CbcFastReset(pCbc);
-		
+		this->CbcFastReset( pCbc );
+
 		setBoard( pCbc->getBeBoardIdentifier() );
-
-#ifdef __CBCDAQ_DEV__
-		static long min( 0 ), sec( 0 );
-		struct timeval start0, end;
-		long seconds( 0 ), useconds( 0 );
-
-		if ( DEV_FLAG )
-			gettimeofday( &start0, 0 );
-#endif
-
 
 		CbcRegMap cCbcRegMap = pCbc->getRegMap();
 		CbcRegMap::iterator cIt = cCbcRegMap.begin();
@@ -85,10 +87,17 @@ namespace Ph2_HwInterface
 
 					EncodeReg( cItem, pCbc->getCbcId(), cVecRead );
 				}
+#ifdef COUNT_FLAG
+				fRegisterCount++;
+#endif
 				cCounter++;
 			}
 
 			fBoardFW->WriteCbcBlockReg( pCbc->getFeId(), cVecWrite );
+
+#ifdef COUNT_FLAG
+			fTransactionCount++;
+#endif
 
 			if ( pVerifLoop )
 			{
@@ -121,35 +130,12 @@ namespace Ph2_HwInterface
 
 			}
 		}
-
-#ifdef __CBCDAQ_DEV__
-		if ( DEV_FLAG )
-		{
-			gettimeofday( &end, 0 );
-			seconds = end.tv_sec - start0.tv_sec;
-			useconds = end.tv_usec - start0.tv_usec;
-			min += ( seconds + useconds / 1000000 ) / 60;
-			sec += ( seconds + useconds / 1000000 ) % 60;
-			std::cout << "Time took for Cbc register configuration so far = " << min << " min " << sec << " sec." << std::endl;
-		}
-#endif
-
 	}
 
 
 
 	bool CbcInterface::WriteCbcReg( Cbc* pCbc, const std::string& pRegNode, uint8_t pValue, bool pVerifLoop )
 	{
-
-#ifdef __CBCDAQ_DEV__
-		static long min( 0 ), sec( 0 );
-		struct timeval start0, end;
-		long seconds( 0 ), useconds( 0 );
-
-		if ( DEV_FLAG )
-			gettimeofday( &start0, 0 );
-#endif
-
 		CbcRegItem cRegItem = ( pCbc->getRegMap() )[pRegNode];
 		std::vector<uint32_t> cVecWrite;
 		std::vector<uint32_t> cVecRead;
@@ -162,6 +148,11 @@ namespace Ph2_HwInterface
 
 		fBoardFW->WriteCbcBlockReg( pCbc->getFeId(), cVecWrite );
 
+#ifdef COUNT_FLAG
+		fRegisterCount++;
+		fTransactionCount++;
+#endif
+
 		pCbc->setReg( pRegNode, pValue );
 
 		if ( pVerifLoop )
@@ -171,7 +162,6 @@ namespace Ph2_HwInterface
 			cRegItem.fValue = 0;
 
 			EncodeReg( cRegItem, pCbc->getCbcId(), cVecRead );
-
 
 			fBoardFW->ReadCbcBlockReg( pCbc->getFeId(), cVecRead );
 
@@ -193,34 +183,10 @@ namespace Ph2_HwInterface
 
 			else return true;
 		}
-
-
-#ifdef __CBCDAQ_DEV__
-		if ( DEV_FLAG )
-		{
-			gettimeofday( &end, 0 );
-			seconds = end.tv_sec - start0.tv_sec;
-			useconds = end.tv_usec - start0.tv_usec;
-			min += ( seconds + useconds / 1000000 ) / 60;
-			sec += ( seconds + useconds / 1000000 ) % 60;
-			std::cout << "Time took for Cbc register update so far = " << min << " min " << sec << " sec." << std::endl;
-		}
-		return true;
-#endif
 	}
 
 	void CbcInterface::WriteCbcMultReg( Cbc* pCbc, const std::vector< std::pair<std::string, uint8_t> >& pVecReq, bool pVerifLoop )
 	{
-
-#ifdef __CBCDAQ_DEV__
-		static long min( 0 ), sec( 0 );
-		struct timeval start0, end;
-		long seconds( 0 ), useconds( 0 );
-
-		if ( DEV_FLAG )
-			gettimeofday( &start0, 0 );
-#endif
-
 		setBoard( pCbc->getBeBoardIdentifier() );
 
 		std::vector<uint32_t> cVecWrite;
@@ -245,9 +211,18 @@ namespace Ph2_HwInterface
 
 				EncodeReg( cRegItemRead, pCbc->getCbcId(), cVecRead );
 			}
+
+#ifdef COUNT_FLAG
+			fRegisterCount++;
+#endif
 		}
 
 		fBoardFW->WriteCbcBlockReg( pCbc->getFeId(), cVecWrite );
+
+#ifdef COUNT_FLAG
+		fRegisterCount++;
+#endif
+
 
 		if ( pVerifLoop )
 		{
@@ -277,33 +252,10 @@ namespace Ph2_HwInterface
 				}
 			}
 		}
-
-#ifdef __CBCDAQ_DEV__
-		if ( DEV_FLAG )
-		{
-			gettimeofday( &end, 0 );
-			seconds = end.tv_sec - start0.tv_sec;
-			useconds = end.tv_usec - start0.tv_usec;
-			min += ( seconds + useconds / 1000000 ) / 60;
-			sec += ( seconds + useconds / 1000000 ) % 60;
-			std::cout << "Time took for Cbc register update so far = " << min << " min " << sec << " sec." << std::endl;
-		}
-#endif
-
-
 	}
 
-	void CbcInterface::ReadCbcReg( Cbc* pCbc, const std::string& pRegNode )
+	uint8_t CbcInterface::ReadCbcReg( Cbc* pCbc, const std::string& pRegNode )
 	{
-
-#ifdef __CBCDAQ_DEV__
-		static long min( 0 ), sec( 0 );
-		struct timeval start0, end;
-		long seconds( 0 ), useconds( 0 );
-
-		if ( DEV_FLAG )
-			gettimeofday( &start0, 0 );
-#endif
 
 		uint8_t cCbcId;
 		CbcRegItem cRegItem = ( pCbc->getRegMap() )[pRegNode];
@@ -317,40 +269,13 @@ namespace Ph2_HwInterface
 
 		DecodeReg( cRegItem, cCbcId, cVecReq[0] );
 
-#ifdef __CBCDAQ_DEV__
-		std::cout << "CbcId : " << +cCbcId << std::endl;
-		std::cout << "Value read : " << int( cRegItem.fValue ) << std::endl;
-#endif
-
 		pCbc->setReg( pRegNode, cRegItem.fValue );
-
-#ifdef __CBCDAQ_DEV__
-		if ( DEV_FLAG )
-		{
-			gettimeofday( &end, 0 );
-			seconds = end.tv_sec - start0.tv_sec;
-			useconds = end.tv_usec - start0.tv_usec;
-			min += ( seconds + useconds / 1000000 ) / 60;
-			sec += ( seconds + useconds / 1000000 ) % 60;
-			std::cout << "Time took for Cbc register refresh so far = " << min << " min " << sec << " sec." << std::endl;
-		}
-#endif
-
-
+		return cRegItem.fValue;
 	}
 
 
 	void CbcInterface::ReadCbcMultReg( Cbc* pCbc, const std::vector<std::string>& pVecReg )
 	{
-
-#ifdef __CBCDAQ_DEV__
-		static long min( 0 ), sec( 0 );
-		struct timeval start0, end;
-		long seconds( 0 ), useconds( 0 );
-
-		if ( DEV_FLAG )
-			gettimeofday( &start0, 0 );
-#endif
 
 		uint8_t cCbcId;
 		CbcRegItem cRegItem;
@@ -368,41 +293,13 @@ namespace Ph2_HwInterface
 
 			DecodeReg( cRegItem, cCbcId, cVecReq[0] );
 
-#ifdef __CBCDAQ_DEV__
-			std::cout << "CbcId : " << +cCbcId << std::endl;
-			std::cout << "Value read : " << int( cRegItem.fValue ) << std::endl;
-#endif
-
 			pCbc->setReg( v, cRegItem.fValue );
 		}
-
-#ifdef __CBCDAQ_DEV__
-		if ( DEV_FLAG )
-		{
-			gettimeofday( &end, 0 );
-			seconds = end.tv_sec - start0.tv_sec;
-			useconds = end.tv_usec - start0.tv_usec;
-			min += ( seconds + useconds / 1000000 ) / 60;
-			sec += ( seconds + useconds / 1000000 ) % 60;
-			std::cout << "Time took for Cbc register refresh so far = " << min << " min " << sec << " sec." << std::endl;
-		}
-#endif
-
-
 	}
 
 
 	void CbcInterface::ReadAllCbc( const Module* pModule )
 	{
-
-#ifdef __CBCDAQ_DEV__
-		static long min( 0 ), sec( 0 );
-		struct timeval start0, end;
-		long seconds( 0 ), useconds( 0 );
-
-		if ( DEV_FLAG )
-			gettimeofday( &start0, 0 );
-#endif
 		CbcRegItem cRegItem;
 		uint8_t cCbcId;
 		std::vector<uint32_t> cVecReq;
@@ -440,43 +337,16 @@ namespace Ph2_HwInterface
 				{
 					DecodeReg( cRegItem, cCbcId, cVecReq[j] );
 
-#ifdef __CBCDAQ_DEV__
-					std::cout << "CbcId : " << +cCbcId << std::endl;
-					std::cout << "Value read : " << int( cRegItem.fValue ) << std::endl;
-#endif
-
 					cCbc->setReg( cVecRegNode.at( j ), cRegItem.fValue );
 				}
 			}
 		}
-
-#ifdef __CBCDAQ_DEV__
-		if ( DEV_FLAG )
-		{
-			gettimeofday( &end, 0 );
-			seconds = end.tv_sec - start0.tv_sec;
-			useconds = end.tv_usec - start0.tv_usec;
-			min += ( seconds + useconds / 1000000 ) / 60;
-			sec += ( seconds + useconds / 1000000 ) % 60;
-			std::cout << "Time took for reading all Cbcs so far = " << min << " min " << sec << " sec." << std::endl;
-		}
-#endif
-
 	}
 
 
 	void CbcInterface::WriteBroadcast( const Module* pModule, const std::string& pRegNode, uint32_t pValue )
 	{
 		setBoard( pModule->getBeBoardIdentifier() );
-
-#ifdef __CBCDAQ_DEV__
-		static long min( 0 ), sec( 0 );
-		struct timeval start0, end;
-		long seconds( 0 ), useconds( 0 );
-
-		if ( DEV_FLAG )
-			gettimeofday( &start0, 0 );
-#endif
 
 		uint8_t cCbcId = 0xFF;
 		std::vector<uint32_t> cVecReq;
@@ -511,19 +381,6 @@ namespace Ph2_HwInterface
 			else
 				ReadCbcReg( pModule->getCbc( i + cMissed ), pRegNode );
 		}
-
-#ifdef __CBCDAQ_DEV__
-		if ( DEV_FLAG )
-		{
-			gettimeofday( &end, 0 );
-			seconds = end.tv_sec - start0.tv_sec;
-			useconds = end.tv_usec - start0.tv_usec;
-			min += ( seconds + useconds / 1000000 ) / 60;
-			sec += ( seconds + useconds / 1000000 ) % 60;
-			std::cout << "Time took for writing all Cbcs so far = " << min << " min " << sec << " sec." << std::endl;
-		}
-#endif
-
 	}
 
 	void CbcInterface::CbcHardReset( const Cbc* pCbc )

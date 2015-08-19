@@ -1,6 +1,7 @@
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC `root-config --cflags --evelibs`
+CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC 
+CCFlagsRoot	= `root-config --cflags --evelibs --glibs`
 #DevFlags                    = -D__CBCDAQ_DEV__
 DevFlags                   =
 
@@ -12,15 +13,26 @@ LibraryDirs = /opt/cactus/lib ../lib
 # /opt/xdaq/lib
 LibraryPaths = $(LibraryDirs:%=-L%)
 
-ExternalObjects = $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system `root-config --glibs` -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Tools -lPh2_Utils
+ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
+                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils
+ExtObjectsRoot= -lPh2_Tools 
 
 # -lboost_thread -lboost_filesystem -lboost_regex -lboost_system -lboost_thread
 
-%.o: %.cc %.h
-	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
+# %.o: %.cc %.h
+# 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-binaries=systemtest calibrate interfacetest datatest hybridtest cmtest
-all: clean $(binaries)
+
+binaries=systemtest datatest interfacetest hybridtest cmtest calibrate commission fpgaconfig
+binariesNoRoot=systemtest datatest interfacetest fpgaconfig
+
+all: rootflags clean $(binaries) 
+
+rootflags:
+	$(eval CCFlags += $(CCFlagsRoot))
+	$(eval ExternalObjects += $(ExtObjectsRoot))
+
+noroot: clean $(binariesNoRoot)
 
 systemtest: systemtest.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
@@ -46,7 +58,15 @@ cmtest: cmtest.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
+commission: commission.cc
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+
+fpgaconfig: fpgaconfig.cc
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+
 .PHONY: clean
 
 clean:
-	rm -f $(binaries) *.o
+	rm -f *.o $(binaries)

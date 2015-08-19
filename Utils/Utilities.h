@@ -12,6 +12,7 @@
 #ifndef __UTILITIES_H__
 #define __UTILITIES_H__
 
+#include <math.h>
 #include <sys/time.h>
 #include <stdint.h>
 #include <ios>
@@ -19,7 +20,6 @@
 #include <limits>
 #include "../HWDescription/Definition.h"
 #include <iostream>
-#include "TMath.h"
 
 /*!
  * \brief Get time took since the start
@@ -48,5 +48,11 @@ const std::string currentDateTime();
  * \return function value
  */
 double MyErf( double* x, double* par );
+/*!
+ * \brief converts any char array to int by automatically detecting if it is hex or dec
+ * \param pRegValue: parsed xml parmaeter char*
+ * \return converted integer
+ */
+uint32_t convertAnyInt( const char* pRegValue );
 
 #endif

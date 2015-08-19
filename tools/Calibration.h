@@ -12,10 +12,10 @@
 #ifndef Calibration_h__
 #define Calibration_h__
 
+#include "Tool.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
-#include "../System/SystemController.h"
 #include "../Utils/ConsoleColor.h"
 #include "../Utils/CommonVisitors.h"
 #include "Channel.h"
@@ -39,7 +39,7 @@ using namespace Ph2_System;
  * \class Calibration
  * \brief Read/Write Cbc's registers on a file
  */
-class Calibration : public SystemController
+class Calibration : public Tool
 {
 
   public:
@@ -76,37 +76,37 @@ class Calibration : public SystemController
 	void processSCurvesOffset( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pTargetVcth, uint8_t pTargetBit, TString pParameter, bool pHoleMode, bool pDoDraw );
 	void UpdateCbcObject( BeBoard* pBoard, uint8_t pGroupId );
 
-        // Use BeBoard reference
+	// Use BeBoard reference
 	void FitVplusVcth( BeBoard& pBoard, uint8_t pTargetVcth,  bool pDoDraw ) {
-	     FitVplusVcth( &pBoard, pTargetVcth,  pDoDraw );
-        }
+		FitVplusVcth( &pBoard, pTargetVcth,  pDoDraw );
+	}
 	void setGlobalReg( BeBoard& pBoard, const std::string& pRegName, uint8_t pRegValue ) {
-	     setGlobalReg( &pBoard, pRegName, pRegValue );
-        }
+		setGlobalReg( &pBoard, pRegName, pRegValue );
+	}
 	void initializeSCurves( BeBoard& pBoard, uint8_t pGroupId, uint8_t pValue, TString pParameter ) {
-	     initializeSCurves( &pBoard, pGroupId, pValue, pParameter );
-        }
+		initializeSCurves( &pBoard, pGroupId, pValue, pParameter );
+	}
 	void measureSCurves( BeBoard& pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint32_t pTotalChannels, bool pHoleMode ) {
-	     measureSCurves( &pBoard, pGroupId, pEventsperVcth, pTotalChannels, pHoleMode );
-        }
+		measureSCurves( &pBoard, pGroupId, pEventsperVcth, pTotalChannels, pHoleMode );
+	}
 	void processSCurves( BeBoard& pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pValue, TString pParameter, bool pHoleMode, bool pDoDraw ) {
-	     processSCurves( &pBoard, pGroupId, pEventsperVcth, pValue, pParameter, pHoleMode, pDoDraw );
-        }
+		processSCurves( &pBoard, pGroupId, pEventsperVcth, pValue, pParameter, pHoleMode, pDoDraw );
+	}
 	uint32_t fillScurveHists( BeBoard& pBoard, uint8_t pGroupId, uint8_t pVcth, const Event* pEvent ) {
-	     return fillScurveHists( &pBoard, pGroupId, pVcth, pEvent );
-        }
+		return fillScurveHists( &pBoard, pGroupId, pVcth, pEvent );
+	}
 	uint32_t ToggleTestGroup( BeBoard& pBoard, uint8_t pGroupId, bool pHoleMode, bool pEnable ) {
-	     return ToggleTestGroup( &pBoard, pGroupId, pHoleMode, pEnable );
-        }
+		return ToggleTestGroup( &pBoard, pGroupId, pHoleMode, pEnable );
+	}
 	uint32_t SetOffsetTargetBitTestGroup( BeBoard& pBoard, uint8_t pGroupId, bool pHoleMode, uint8_t pTargetBit, uint8_t pTargetVcth ) {
-    	     return SetOffsetTargetBitTestGroup( &pBoard, pGroupId, pHoleMode, pTargetBit, pTargetVcth );
-        }
+		return SetOffsetTargetBitTestGroup( &pBoard, pGroupId, pHoleMode, pTargetBit, pTargetVcth );
+	}
 	void processSCurvesOffset( BeBoard& pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pTargetVcth, uint8_t pTargetBit, TString pParameter, bool pHoleMode, bool pDoDraw ) {
-	     processSCurvesOffset( &pBoard, pGroupId, pEventsperVcth, pTargetVcth, pTargetBit, pParameter, pHoleMode, pDoDraw );
-        }
+		processSCurvesOffset( &pBoard, pGroupId, pEventsperVcth, pTargetVcth, pTargetBit, pParameter, pHoleMode, pDoDraw );
+	}
 	void UpdateCbcObject( BeBoard& pBoard, uint8_t pGroupId ) {
-	     UpdateCbcObject( &pBoard, pGroupId );
-        }
+		UpdateCbcObject( &pBoard, pGroupId );
+	}
 };
 
 #endif

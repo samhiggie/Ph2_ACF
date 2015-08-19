@@ -13,18 +13,12 @@
 #define HybridTester_h__
 #define CH_DIAGNOSIS_DECISION_TH 80 // decision threshold value for channels diagnosis, expressed in % from 0 to 100
 
-#include "../HWDescription/Module.h"
-#include "../HWDescription/Cbc.h"
-#include "../HWDescription/BeBoard.h"
-#include "../HWInterface/CbcInterface.h"
-#include "../HWInterface/BeBoardInterface.h"
-#include "../System/SystemController.h"
-#include "../Utils/ConsoleColor.h"
+#include "Tool.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/CommonVisitors.h"
-#include "../Utils/Antenna.h"
-#include "../System/SystemController.h"
+
+
 
 #include "TCanvas.h"
 #include "TFile.h"
@@ -32,11 +26,6 @@
 #include "TF1.h"
 #include "TStyle.h"
 #include "TLine.h"
-#include "Channel.h"
-#include <fstream>
-#include <time.h>
-#include <sstream>
-#include <vector>
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
@@ -60,7 +49,7 @@ typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
  * \class HybridTester
  * \brief Class to test x*CBC2 Hybrids
  */
-class HybridTester : public Antenna, public SystemController
+class HybridTester : public Tool
 {
   public:
 	// Default C'tor
@@ -104,7 +93,7 @@ class HybridTester : public Antenna, public SystemController
 	* \param pThresholdScan :  bool flag to initialize the additional canvas for the Threshold scan
 	* \param pCanvasVector: vector of TCanvas* to be passed by the GUI to draw on
 	*/
-	void InitializeGUI( bool pThresholdScan, const std::vector<TCanvas*>& pCanvasVector );
+	void InitialiseGUI( int pVcth, int pNevents, bool pTestreg, bool pScanthreshold, bool pHolemode );
 	/*!
 	* \brief Test CBC registers by writing complimentary bit patterns (0x55, 0xAA)
 	*/
@@ -142,15 +131,13 @@ class HybridTester : public Antenna, public SystemController
 	TestGroupChannelMap fTestGroupChannelMap; /*!< Map of Channels for groupwise measuring of efficiency */
 	CalibratedOffsetMap fOffsetMap;
 	TCanvas* fSCurveCanvas;   /*!< Canvas for threshold scan */
+
 	std::map<Cbc*, TH1F*> fSCurveMap;  /*!< Histograms for SCurve */
 	std::map<Cbc*, TF1*> fFitMap;   /*!< fits for SCurve*/
 	double fTopHistogramMerged[255] = {0};
 	double fBottomHistogramMerged[255] = {0};
 	uint32_t fTotalEvents;
 
-	double fDecisionThreshold = 10.0;   /*!< Decision Threshold for channels occupancy based tests, values from 1 to 100 as % */
-
-	//double fChannelDiagnosisThreshold;
 	/*!
 	* \brief private method that sets offset for a particular test group
 	*/
@@ -175,7 +162,11 @@ class HybridTester : public Antenna, public SystemController
 	void updateSCurveCanvas( BeBoard* pBoard );
 	void processSCurves( uint32_t pEventsperVcth );
 
-	const std::string currentDateTime() {
+	uint32_t fTotalEvents;
+	bool fHoleMode;
+	int fSigmas;
+	uint8_t fVcth;
+const std::string currentDateTime() {
    		time_t now = time(0);
    		struct tm  tstruct;
     		char buf[80];

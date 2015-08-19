@@ -12,7 +12,7 @@
 #define CMTESTER_H__
 
 
-#include "../System/SystemController.h"
+#include "Tool.h"
 #include "../Utils/CommonVisitors.h"
 
 // ROOT
@@ -36,7 +36,7 @@ using namespace Ph2_HwInterface;
 using namespace Ph2_HwDescription;
 
 typedef std::map<Cbc*, std::map<std::string, TObject*> >  CbcHistogramMap;
-typedef std::map<Cbc*, TCanvas*> CanvasMap;
+// typedef std::map<Cbc*, TCanvas*> CanvasMap;
 typedef std::map<Module*, std::map<std::string, TObject*> > ModuleHistogramMap;
 
 
@@ -45,33 +45,25 @@ typedef std::map<Module*, std::map<std::string, TObject*> > ModuleHistogramMap;
  * \brief Class to perform Common Mode noise studies
  */
 
-class CMTester : public SystemController
+class CMTester : public Tool
 {
 
   public:
 	void Initialize();
-	void InitializeGUI( std::vector<TCanvas*> pCanvasVector );
 	void ScanNoiseChannels();
 	void TakeData();
 	void FinishRun();
-	void SaveResults();
 
   private:
-	void initializeHists();
 	void updateHists( bool pFinal = false );
 	void parseSettings();
 	void analyze( BeBoard* pBoard, const Event* pEvent );
-	TObject* getHist( Cbc* pCbc, std::string pName );
-	TObject* getHist( Module* pModule, std::string pName );
 	bool randHit( float pProbability );
 	bool isMasked( Cbc* pCbc, int pChan );
 	bool isMasked( int pGlobalChannel );
 
 	uint32_t fNevents, fDoSimulate, fSimOccupancy;
 
-	CanvasMap fCanvasMap;
-	CbcHistogramMap fCbcHistoMap;
-	ModuleHistogramMap fModuleHistoMap;
 	std::map<Cbc*, std::set<int> > fNoiseStripMap;
 
 };
