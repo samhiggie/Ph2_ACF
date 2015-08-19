@@ -190,6 +190,8 @@ namespace Ph2_HwInterface
 		 * \param pstrFile path to MCS file
 		 */
 		void FlashProm( uint16_t numConfig, const char* pstrFile );
+		/*! \brief Jump to an FPGA configuration */
+		void JumpToFpgaConfig( uint16_t numConfig);
 		/*! \brief Is the FPGA being configured ?
 		 * \return FPGA configuring process or NULL if configuration occurs */
 		const FpgaConfig* getConfiguringFpga() {
