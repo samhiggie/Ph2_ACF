@@ -19,12 +19,22 @@ namespace Ph2_System
 	class SystemController;
 }
 
+namespace GUI
+{
+	class SystemControllerWorker;
+}
+
 namespace Ph2_HwDescription
 {
 	class Shelve;
 	class BeBoard;
 	class Module;
 	class Cbc;
+}
+
+namespace Ph2_HwInterface
+{
+	class Event;
 }
 
 class HwDescriptionVisitor
@@ -36,6 +46,12 @@ class HwDescriptionVisitor
 	 */
 	virtual void visit( Ph2_System::SystemController& pSystemController ) {}
 	// virtual void visit() = 0;
+
+	/*!
+		 * \brief Visitor for top level System Controller in the GUI
+		 * \param pSystemController
+		 */
+	virtual void visit( const GUI::SystemControllerWorker& pSystemControllerWorker ) {}
 
 	/*!
 	 * \brief Visitor for Shelve Class
@@ -57,6 +73,12 @@ class HwDescriptionVisitor
 	 * \param pCbc
 	 */
 	virtual void visit( Ph2_HwDescription::Cbc& pCbc ) {}
+};
+
+class HwInterfaceVisitor
+{
+    public:
+	virtual void visit ( const Ph2_HwInterface::Event& pEvent ) = 0;
 };
 
 #endif

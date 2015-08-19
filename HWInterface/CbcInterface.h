@@ -38,6 +38,10 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface* fBoardFW;                     /*!< Board loaded */
 		uint16_t prevBoardIdentifier;                     /*!< Id of the previous board */
 
+		uint16_t fRegisterCount;                                /*!< Counter for the number of Registers written */
+		uint16_t fTransactionCount;         /*!< Counter for the number of Transactions */
+
+
 	  private:
 		/*!
 		 * \brief Set the board to talk with
@@ -94,7 +98,7 @@ namespace Ph2_HwInterface
 		 * \param pCbc
 		 * \param pRegNode : Node of the register to read
 		 */
-		void ReadCbcReg( Cbc* pCbc, const std::string& pRegNode );
+		uint8_t ReadCbcReg( Cbc* pCbc, const std::string& pRegNode );
 		/*!
 		 * \brief Read several register in the Cbc
 		 * \param pCbc
@@ -132,6 +136,8 @@ namespace Ph2_HwInterface
 		 * \param pWord : variable to put the decoded word
 		 */
 		void DecodeReg( CbcRegItem& pRegItem, uint8_t pCbcId, uint32_t pWord );
+
+		void output();
 
 	};
 }

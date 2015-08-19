@@ -18,8 +18,11 @@ namespace Ph2_HwInterface
 		fBoardMap( pBoardMap ),
 		fBoardFW( nullptr ),
 		prevBoardIdentifier( 65535 )
+
 	{
 	}
+
+
 
 	BeBoardInterface::~BeBoardInterface()
 	{
@@ -49,6 +52,13 @@ namespace Ph2_HwInterface
 		pBoard->setReg( pRegNode, pVal );
 	}
 
+	void BeBoardInterface::WriteBlockBoardReg( BeBoard* pBoard, const std::string& pRegNode, const std::vector<uint32_t>& pValVec )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->WriteBlockReg( pRegNode, pValVec );
+	}
+
+
 	void BeBoardInterface::WriteBoardMultReg( BeBoard* pBoard, const std::vector < std::pair< std::string , uint32_t > >& pRegVec )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
@@ -63,11 +73,12 @@ namespace Ph2_HwInterface
 	}
 
 
-	void BeBoardInterface::ReadBoardReg( BeBoard* pBoard, const std::string& pRegNode )
+	uint32_t BeBoardInterface::ReadBoardReg( BeBoard* pBoard, const std::string& pRegNode )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
-
-		pBoard->setReg( pRegNode, static_cast<uint32_t>( fBoardFW->ReadReg( pRegNode ) ) );
+		uint32_t cRegValue = static_cast<uint32_t>( fBoardFW->ReadReg( pRegNode ) );
+		pBoard->setReg( pRegNode,  cRegValue );
+		return cRegValue;
 	}
 
 	void BeBoardInterface::ReadBoardMultReg( BeBoard* pBoard, std::vector < std::pair< std::string , uint32_t > >& pRegVec )
@@ -81,6 +92,11 @@ namespace Ph2_HwInterface
 		}
 	}
 
+	std::vector<uint32_t> BeBoardInterface::ReadBlockBoardReg( BeBoard* pBoard, const std::string& pRegNode, uint32_t pSize )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->ReadBlockRegValue( pRegNode, pSize );
+	}
 
 	void BeBoardInterface::getBoardInfo( const BeBoard* pBoard )
 	{
@@ -94,6 +110,30 @@ namespace Ph2_HwInterface
 		fBoardFW->ConfigureBoard( pBoard );
 	}
 
+
+	void BeBoardInterface::StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->StartThread( pBoard, uNbAcq, visitor );
+	}
+
+	void BeBoardInterface::StopThread( BeBoard* pBoard )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->StopThread();
+	}
+
+	int BeBoardInterface::getNumAcqThread( BeBoard* pBoard )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->getNumAcqThread();
+	}
+
+	bool BeBoardInterface::isRunningThread( BeBoard* pBoard )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->isRunningThread();
+	}
 
 	void BeBoardInterface::Start( BeBoard* pBoard )
 	{
@@ -123,7 +163,7 @@ namespace Ph2_HwInterface
 	}
 
 
-	void BeBoardInterface::ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger )
+	uint32_t BeBoardInterface::ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
 		fBoardFW->ReadData( pBoard, pNthAcq, pBreakTrigger );
@@ -135,10 +175,39 @@ namespace Ph2_HwInterface
 		fBoardFW->GetNextEvent( pBoard );
 	}
 
-	const char* BeBoardInterface::GetBuffer( const BeBoard* pBoard, uint32_t& pBufSize )
+	const Event* BeBoardInterface::GetEvent( const BeBoard* pBoard, int i )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
-		fBoardFW->GetBuffer( pBufSize );
+		return fBoardFW->GetEvent( pBoard, i );
+	}
+	const std::vector<Event*>& BeBoardInterface::GetEvents( const BeBoard* pBoard )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->GetEvents( pBoard );
 	}
 
+	const uhal::Node& BeBoardInterface::getUhalNode( const BeBoard* pBoard, const std::string& pStrPath )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->getUhalNode( pStrPath );
+	}
+
+	uhal::HwInterface* BeBoardInterface::getHardwareInterface( const BeBoard* pBoard )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->getHardwareInterface();
+	}
+
+
+	void BeBoardInterface::FlashProm( BeBoard* pBoard, uint16_t numConfig, const char* pstrFile )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->FlashProm( numConfig, pstrFile );
+	}
+
+	const FpgaConfig* BeBoardInterface::getConfiguringFpga( BeBoard* pBoard )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->getConfiguringFpga();
+	}
 }

@@ -51,6 +51,9 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "batch", "b" );
 
+	cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "gui", "g" );
+
 
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
@@ -70,6 +73,8 @@ int main( int argc, char* argv[] )
 	bool cCalibrateTGrp = ( cmd.foundOption( "allChan" ) ) ? true : false;
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 
+	bool isGui = ( cmd.foundOption( "gui" ) ) ? true : false;
+
 	TApplication cApp( "Root Application", &argc, argv );
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
@@ -81,7 +86,9 @@ int main( int argc, char* argv[] )
 		cCalibration.InitializeSettings( cHWFile );
 		cCalibration.CreateResultDirectory( cDirectory );
 		cCalibration.InitResultFile( "CalibrationResults" );
-		cCalibration.ConfigureHw();
+
+		if ( !isGui ) cCalibration.ConfigureHw();
+
 		cCalibration.Initialise(); // canvases etc. for fast calibration
 		if ( !cVplus ) cCalibration.ScanVplus();
 		cCalibration.ScanOffset();
@@ -97,7 +104,9 @@ int main( int argc, char* argv[] )
 		cCalibration.CreateResultDirectory( cDirectory );
 		cCalibration.InitResultFile( "CalibrationResults" );
 		cCalibration.InitialiseTestGroup();
-		cCalibration.ConfigureHw();
+
+		if ( !isGui ) cCalibration.ConfigureHw();
+
 		if ( !cVplus ) cCalibration.VplusScan();
 		cCalibration.OffsetScan();
 		cCalibration.SaveResults();

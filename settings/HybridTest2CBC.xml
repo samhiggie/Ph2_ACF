@@ -8,25 +8,10 @@
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
                 <Global_CBC_Register name="VCth"> 0x7C </Global_CBC_Register>
                 <Global_CBC_Register name="TriggerLatency"> 0x03 </Global_CBC_Register>
-
-		<!--Global_CBC_Register name="Vplus"> 0x5D </Global_CBC_Register-->
-		<!-- Last 5 bits of this register set up analog MUX see CBC2 1.3.1 documentation-->
-		<Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0xAB </Global_CBC_Register>
-
-                <!--CBC_Files path="CalibrationResults/uXX_h_006/"/-->
-
-		<!-- Calibration file path for the damaged hybrid -->
-		<!--CBC_Files path="Results/Calibration_Hole_04-02-15_09:43/"/-->
-		<!--CBC_Files path="Results/Calibration_Hole_05-03-15_14:22/"/-->
-		
-
-		<!-- Calibration file path for the good hybrid -->
-                <CBC_Files path="Results/Calibration_Hole_26-01-15_15:50/"/>
-		<!--CBC_Files path="Results/Calibration_Hole_01-04-15_15:20/"/-->
-		
-
-                <CBC Id="0" configfile="FE0CBC0.txt"/>
-                <CBC Id="1" configfile="FE0CBC1.txt"/>
+		        <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0xAB </Global_CBC_Register>
+                <CBC_Files path="settings/"/>
+                 <CBC Id="0" configfile="Cbc_default_hole.txt"/>
+                 <CBC Id="1" configfile="Cbc_default_hole.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->

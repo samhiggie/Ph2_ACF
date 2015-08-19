@@ -46,7 +46,9 @@ namespace Ph2_HwDescription
 
 		// D'tor
 		~Module() {
-		         fCbcVector.clear();
+		        for ( auto& pCbc: fCbcVector )
+				delete pCbc;
+			fCbcVector.clear();
 		};
 
 		/*!
@@ -74,12 +76,12 @@ namespace Ph2_HwDescription
 		 * \brief Adding a Cbc to the vector
 		 * \param pCbc
 		 */
-	         void addCbc( Cbc& pCbc ) {
-		       fCbcVector.push_back( &pCbc );
-		 }
-	         void addCbc( Cbc* pCbc ) {
-		       fCbcVector.push_back( pCbc );
-		 }
+		void addCbc( Cbc& pCbc ) {
+			fCbcVector.push_back( &pCbc );
+		}
+		void addCbc( Cbc* pCbc ) {
+			fCbcVector.push_back( pCbc );
+		}
 		/*!
 		 * \brief Remove a Cbc from the vector
 		 * \param pCbcId

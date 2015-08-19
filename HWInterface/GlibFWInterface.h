@@ -21,6 +21,8 @@
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
 
+
+
 using namespace Ph2_HwDescription;
 
 /*!
@@ -29,6 +31,8 @@ using namespace Ph2_HwDescription;
  */
 namespace Ph2_HwInterface
 {
+	class FpgaConfig;
+
 	/*!
 	 * \class GlibFWInterface
 	 * \brief init/config of the Glib and its Cbc's
@@ -37,9 +41,13 @@ namespace Ph2_HwInterface
 	{
 
 	  private:
+		Data* fData; /*!< Data read storage*/
+
 		struct timeval fStartVeto;
 		std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
 		std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
+		FpgaConfig* fpgaConfig;
+		FileHandler* fFileHandler ;
 
 
 	  private:
@@ -57,16 +65,24 @@ namespace Ph2_HwInterface
 		 */
 		GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
 		/*!
+		 * \brief Constructor of the GlibFWInterface class
+		 * \param puHalConfigFileName : path of the uHal Config File
+		 * \param pBoardId
+		 * \param pFileHandler : pointer to file handler for saving Raw Data
+		 */
+		GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+
+		/*!
 		 * \brief Destructor of the GlibFWInterface class
 		 */
 		~GlibFWInterface() {
+			if ( fData ) delete fData;
 		}
-
 		/*!
 		 * \brief Configure the board with its Config File
 		 * \param pBoard
 		 */
-		void ConfigureBoard( const BeBoard* pBoard );
+		void ConfigureBoard( const BeBoard* pBoard ) override;
 		/*!
 		 * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
 		 */
@@ -74,38 +90,50 @@ namespace Ph2_HwInterface
 		/*!
 		 * \brief Start a DAQ
 		 */
-		void Start();
+		void Start() override;
 		/*!
 		 * \brief Stop a DAQ
 		 * \param pNthAcq : actual number of acquisitions
 		 */
-		void Stop( uint32_t pNthAcq );
+		void Stop( uint32_t pNthAcq ) override;
 		/*!
 		 * \brief Pause a DAQ
 		 */
-		void Pause();
+		void Pause() override;
 		/*!
 		 * \brief Unpause a DAQ
 		 */
-		void Resume();
+		void Resume() override;
 		/*!
 		 * \brief Read data from DAQ
 		 * \param pNthAcq : actual number of acquisitions
 		 * \param pBreakTrigger : if true, enable the break trigger
+		 * \return cNPackets: the number of packets read
 		 */
-		void ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger );
+		uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger ) override;
 		/*!
 		 * \brief Get next event from data buffer
 		 * \return Next event
 		 */
-		const Event* GetNextEvent( const BeBoard* pBoard );
-		/*!
-		* \brief Get the data buffer
-		* \param pBufSize : recovers the data buffer size
-		* \return Data buffer
-		*/
-		const char* GetBuffer( uint32_t& pBufSize ) const;
+		const Event* GetNextEvent( const BeBoard* pBoard ) const override {
+			return fData->GetNextEvent( pBoard );
+		}
+		const Event* GetEvent( const BeBoard* pBoard, int i ) const override {
+			return fData->GetEvent( pBoard, i );
+		}
+		const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const override {
+			return fData->GetEvents( pBoard );
+		}
+		/*! \brief Read a block of a given size
+		 * \param pRegNode Param Node name
+		 * \param pBlocksize Number of 32-bit words to read
+		 * \return Vector of validated 32-bit values
+		 */
+		std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) override;
 
+		bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues ) override;
+
+		void StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) override;
 		//Methods for the Cbc's:
 
 	  private:
@@ -138,6 +166,11 @@ namespace Ph2_HwInterface
 
 		void SelectFeSRAM( uint32_t pFe );
 
+		/*! Compute the size of an acquisition data block
+		 * \return Number of 32-bit words to be read at each iteration */
+		uint32_t computeBlockSize( BeBoard* pBoard );
+
+
 	  public:
 
 		//r/w the Cbc registers
@@ -147,11 +180,22 @@ namespace Ph2_HwInterface
 		 * \param pVecReq : Vector to stack the read words
 		 */
 		void WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq );
-		/* \brief Read register blocks of a Cbc
+		/*! \brief Read register blocks of a Cbc
 		 * \param pFeId : FrontEnd to work with
 		 * \param pVecReq : Vector to stack the read words
 		 */
 		void ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq );
+		/*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration
+		 * \param numConfig FPGA configuration number (1 or 2)
+		 * \param pstrFile path to MCS file
+		 */
+		void FlashProm( uint16_t numConfig, const char* pstrFile );
+		/*! \brief Is the FPGA being configured ?
+		 * \return FPGA configuring process or NULL if configuration occurs */
+		const FpgaConfig* getConfiguringFpga() {
+			return fpgaConfig;
+		}
+		void threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor );
 
 	};
 }

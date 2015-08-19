@@ -92,6 +92,8 @@
             <node id="sram2" address="0x04000000" permission="rw" mode="block" size="0x00800000" description="SRAM2 bank address" />
             <node id="sram2_256" address="0x040000ff" permission="rw" mode="single" description="SRAM2 256th word" />
             <!--node id="freq_ttc_fmc"            address="0x40000001" permission="r" mode="single"/-->
+            <node id="flash_block" address="0x08000000"     mode="block" size="0x00800000" permission="rw" description="FLASH memory for FPGA configuration"/>
+
         
             <!-- CBC I2C REGISTERS -->
             <node id="cbc_i2c_cmd_ack" address="0x80000008" mask="0x0000000C" permission="rw" description="Hand shaking before reading result of I2C request. 0:Wait, 1:OK" />
@@ -259,7 +261,7 @@
                 </node>
         
             </node>
-
+            <node id="flash_async_read_cmd"    address="0x0800bddf"  mask="0xFFFFFFFF" description="FLASH memory asynchronous read mode"/>
             <!-- <node id="neuf" address="0x90000000" mode="block" size="1000" description="9000" /> -->
             
 </node>

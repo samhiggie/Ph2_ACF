@@ -318,6 +318,6 @@
 #define WIDTH_CBCDATA             254     //NCHANNELS
 #define OFFSET_GLIBFLAG           10+254  //OFFSET_CBCDATA + WIDTH_CBCDATA
 #define WIDTH_GLIBFLAG            12
-#define OFFSET_CBCSTUBDATA        264+12  //OFFSET_GLIBFLAG + WIDTH_GLIBFLAG
+#define OFFSET_CBCSTUBDATA        264+23  //LAST BIT
 #define WIDTH_CBCSTUBDATA         12
 //------------------------------------------------------------------------------
