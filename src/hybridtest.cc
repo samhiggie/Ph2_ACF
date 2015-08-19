@@ -20,7 +20,6 @@ using namespace CommandLineProcessing;
 
 int main( int argc, char* argv[] )
 {
-
 	ArgvParser cmd;
 
 	// init
@@ -67,7 +66,7 @@ int main( int argc, char* argv[] )
 		exit( 1 );
 	}
 
-	bool isGui = ( cmd.foundOption( "gui" ) ) ? true : false;
+	bool isGui = (cmd.foundOption("gui")) ? true : false;
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HybridTest2CBC.xml";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
@@ -76,12 +75,12 @@ int main( int argc, char* argv[] )
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	cDirectory += "HybridTest";
 
-
 	TApplication cApp( "Root Application", &argc, argv );
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
 	HybridTester cHybridTester;
+
 
 	if ( !isGui )
 	{
@@ -128,7 +127,6 @@ int main( int argc, char* argv[] )
 		cHybridTester.SaveResults();
 
 	}
-
 
 
 	if ( !batchMode ) cApp.Run();

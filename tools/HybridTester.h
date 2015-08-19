@@ -12,7 +12,6 @@
 #ifndef HybridTester_h__
 #define HybridTester_h__
 
-
 #include "Tool.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"

@@ -34,7 +34,7 @@ void HybridTester::InitializeHists()
 	fHistTop = ( TH1F* )( gROOT->FindObject( cFrontName ) );
 	if ( fHistTop ) delete fHistTop;
 
-	fHistTop = new TH1F( cFrontName, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) + 1, -0.5, ( fNCbc / 2 * 254 ) + .5 );
+	fHistTop = new TH1F( cFrontName, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 253 ) + 1, -0.5, ( fNCbc / 2 * 253 ) + .5 );
 	fHistTop->SetFillColor( 4 );
 	fHistTop->SetFillStyle( 3001 );
 
@@ -42,7 +42,7 @@ void HybridTester::InitializeHists()
 	fHistBottom = ( TH1F* )( gROOT->FindObject( cBackName ) );
 	if ( fHistBottom ) delete fHistBottom;
 
-	fHistBottom = new TH1F( cBackName, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) + 1 , -0.5, ( fNCbc / 2 * 254 ) + .5 );
+	fHistBottom = new TH1F( cBackName, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 253 ) + 1 , -0.5, ( fNCbc / 2 * 253 ) + .5 );
 	fHistBottom->SetFillColor( 4 );
 	fHistBottom->SetFillStyle( 3001 );
 
@@ -124,6 +124,7 @@ void HybridTester::InitialiseGUI( int pVcth, int pNevents, bool pTestreg, bool p
 	InitializeHists();
 }
 
+
 void HybridTester::Initialize( bool pThresholdScan )
 {
 	fThresholdScan = pThresholdScan;
@@ -142,6 +143,7 @@ void HybridTester::Initialize( bool pThresholdScan )
 		fSCurveCanvas = new TCanvas( "fSCurveCanvas", "Noise Occupancy as function of VCth" );
 		fSCurveCanvas->Divide( fNCbc );
 	}
+
 	InitializeHists();
 	InitialiseSettings();
 }
@@ -193,7 +195,7 @@ void HybridTester::ScanThreshold()
 					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					for ( auto& cEvent : events )
+					for ( auto& cEvent: events )
 					{
 						// loop over Modules & Cbcs and count hits separately
 						cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
@@ -391,6 +393,7 @@ void HybridTester::updateSCurveCanvas( BeBoard* pBoard )
 }
 
 
+
 void HybridTester::TestRegisters()
 {
 	// This method has to be followed by a configure call, otherwise the CBCs will be in an undefined state
@@ -546,7 +549,7 @@ void HybridTester::Measure()
 						std::cout << "Wrong number of CBC2 chips detected in the hybrid: " << fNCbc << ", breaking the acquisition loop ..." << std::endl;
 						break;
 					}
-
+					
 
 					/*Here clearing histograms after each event*/
 					fHistBottom->SetContent( ( double* ) zero_fill );
@@ -563,8 +566,9 @@ void HybridTester::Measure()
 	fHistTop->GetYaxis()->SetRangeUser( 0, 100 );
 	fHistBottom->Scale( 100 / double_t( fTotalEvents ) );
 	fHistBottom->GetYaxis()->SetRangeUser( 0, 100 );
+	
 	UpdateHists();
-
+	
 	cAntenna.close();
 
 	TestChannels( ( double* ) cTopHistogramMerged, sizeof( cTopHistogramMerged ) / sizeof( cTopHistogramMerged[0] ), ( double* ) cBottomHistogramMerged, sizeof( cBottomHistogramMerged ) / sizeof( cBottomHistogramMerged[0] ), fDecisionThreshold );
