@@ -1,7 +1,7 @@
-Objs                    = Exception.o Utilities.o Event.o Data.o argvparser.o
+Objs                    = Exception.o Utilities.o Event.o Data.o argvparser.o Antenna.o
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` -Wcpp
+CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` -Wcpp -L/usr/lib64/ -lusb
 #DevFlags                   = -D__CBCDAQ_DEV__
 DevFlags		=
 
@@ -13,7 +13,7 @@ IncludePaths            = $(IncludeDirs:%=-I%)
 	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
 all: $(Objs) ../HWDescription/Definition.h
-	$(CC) -std=c++11 -shared -o libPh2_Utils.so $(Objs) -pthread
+	$(CC) -std=c++11 -shared -L/usr/lib64/ -lusb -o libPh2_Utils.so $(Objs) -pthread
 	mv libPh2_Utils.so ../lib
 
 clean:

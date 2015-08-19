@@ -11,6 +11,7 @@
 
 #ifndef HybridTester_h__
 #define HybridTester_h__
+#define CH_DIAGNOSIS_DECISION_TH 80 // decision threshold value for channels diagnosis, expressed in % from 0 to 100
 
 #include "../HWDescription/Module.h"
 #include "../HWDescription/Cbc.h"
@@ -24,7 +25,6 @@
 #include "../Utils/CommonVisitors.h"
 #include "../Utils/Antenna.h"
 #include "../System/SystemController.h"
-
 
 #include "TCanvas.h"
 #include "TFile.h"
@@ -42,6 +42,16 @@ using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
+namespace patch
+{
+    template < typename T > std::string to_string( const T& n )
+    {
+        std::ostringstream stm ;
+        stm << n ;
+        return stm.str() ;
+    }
+}
+
 typedef std::map< int, std::vector<uint8_t> >  TestGroupChannelMap;
 typedef std::map<Cbc*,  std::map< uint8_t, uint8_t > > CalibratedOffsetMap;
 typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
@@ -50,12 +60,12 @@ typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
  * \class HybridTester
  * \brief Class to test x*CBC2 Hybrids
  */
-class HybridTester : public SystemController
+class HybridTester : public Antenna, public SystemController
 {
   public:
 	// Default C'tor
 	HybridTester() {
-	for ( int cGid = -1; cGid < 8; cGid++ ) {
+		for ( int cGid = -1; cGid < 8; cGid++ ) {
 			std::vector<uint8_t> cTempChannelVec;
 			if ( cGid > -1 ) {
 				for ( int cIdx = 0; cIdx < 16; cIdx++ ) {
@@ -77,10 +87,10 @@ class HybridTester : public SystemController
 					cTempChannelVec.push_back( cIdx );
 			}
 			fTestGroupChannelMap[cGid] = cTempChannelVec;
-	}
+		}
 	
 	// here we need to read the initial offset values and fill it in fOffsetMap
-}
+	}
 
 	// Default D'tor
 	~HybridTester() {}
@@ -107,6 +117,14 @@ class HybridTester : public SystemController
 	* \brief Measure the single strip efficiency
 	*/
 	void Measure();
+	/*!
+	* \brief private method that configures SPI interface between CP2130 and slave analog switch
+	*/
+	void ConfigureSpiSlave(usb_dev_handle* pUsbHandle, uint8_t pSlaveChipSelectId);
+	/*!
+	* \brief private method that switches on given channel of last analog switch for which SPI interface was configured
+	*/
+	void TurnOnAnalogSwitchChannel(usb_dev_handle* pUsbHandle, uint8_t pSwichChannelId);
 	/*!
 	* \brief private method that checks channels malfunction based on occupancy histograms, produces output report in .txt format
 	*/
@@ -137,6 +155,9 @@ class HybridTester : public SystemController
 	double fTopHistogramMerged[255] = {0};
 	double fBottomHistogramMerged[255] = {0};
 	uint32_t fTotalEvents;
+
+	double fDecisionThreshold = 10.0;   /*!< Decision Threshold for channels occupancy based tests, values from 1 to 100 as % */
+
 	//double fChannelDiagnosisThreshold;
 	/*!
 	* \brief private method that sets offset for a particular test group
@@ -170,6 +191,69 @@ class HybridTester : public SystemController
     		strftime(buf, sizeof(buf), "%Y-%m-%d_at_%H-%M-%S", &tstruct);
    		return buf;
 	}
+
+
+
+
+std::string DecimalToBinaryString(int a)
+{
+    std::string binary = "";
+    int mask = 1;
+    for(int i = 0; i < 31; i++)
+    {
+        if((mask&a) >= 1)
+            binary = "1"+binary;
+        else
+            binary = "0"+binary;
+        mask<<=1;
+    }
+    return binary;
+}
+
+std::string CharToBinaryString(int a)
+{
+    std::string binary = "";
+    int mask = 1;
+    for(int i = 0; i < 7; i++)
+    {
+        if((mask&a) >= 1)
+            binary = "1"+binary;
+        else
+            binary = "0"+binary;
+        mask<<=1;
+    }
+    return binary;
+}
+
+void print_buffer(char* buf, int8_t buf_size)
+{
+    for(uint8_t i=0; i<buf_size; i++)
+    {
+        std::cout<<buf[i]+0<<" ";
+    }
+    std::cout<<std::endl;
+}
+
+std::string int_vector_to_string(std::vector<int> int_vector)
+{
+    std::string output_string = "";
+    for (std::vector<int>::iterator it = int_vector.begin(); it != int_vector.end(); ++it)
+    {
+        output_string += patch::to_string(*it) + "; ";
+    }
+    return output_string;
+}
+
+std::string double_vector_to_string(std::vector<double> int_vector)
+{
+    std::string output_string = "";
+    for (std::vector<double>::iterator it = int_vector.begin(); it != int_vector.end(); ++it)
+    {
+        output_string += patch::to_string(*it) + "; ";
+    }
+    return output_string;
+}
+
 	
 
 };

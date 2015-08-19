@@ -1,15 +1,4 @@
 #include "HybridTester.h"
-using namespace std;
-
-namespace patch
-{
-    template < typename T > std::string to_string( const T& n )
-    {
-        std::ostringstream stm ;
-        stm << n ;
-        return stm.str() ;
-    }
-}
 
 // fill the Histograms, count the hits and increment Vcth
 
@@ -465,20 +454,20 @@ void HybridTester::TestRegisters()
 
 		void dumpResult(std::string fDirectoryName) {
 			ofstream report( fDirectoryName + "/registers_test.txt"); // Creates a file in the current directory
-			report << "Testing Cbc Registers one-by-one with complimentary bit-patterns (0xAA, 0x55)"<<endl;
+			report << "Testing Cbc Registers one-by-one with complimentary bit-patterns (0xAA, 0x55)"<<std::endl;
 			for ( const auto& cCbc : fBadRegisters ) {
 				report << "Malfunctioning Registers on Cbc " << cCbc.first << " : " << std::endl;
 				for ( const auto& cReg : cCbc.second ) report << cReg << std::endl;
 				
 			}
 			report.close();
-			cout << "Channels diagnosis report written to: " + fDirectoryName + "/registers_test.txt" << endl;
+			std::cout << "Channels diagnosis report written to: " + fDirectoryName + "/registers_test.txt" << std::endl;
 		}
 	};
 
 	// This should probably be done in the top level application but there I do not have access to the settings map
 
-	std::cout << endl << "Running registers testing tool ... " << std::endl;
+	std::cout << std::endl << "Running registers testing tool ... " << std::endl;
 	RegTester cRegTester( fCbcInterface );
 	accept( cRegTester );
 	cRegTester.dumpResult(fDirectoryName);
@@ -490,7 +479,8 @@ void HybridTester::TestRegisters()
 
 void HybridTester::TestChannels()
 {
-	cout << endl << "Running channels testing tool ... " << endl;
+	std::cout << std::endl << "Running channels testing tool ... " << std::endl;
+	std::cout << "Decision threshold: " << CH_DIAGNOSIS_DECISION_TH << "%" << std::endl;
 	double cChannelDiagnosisThreshold = CH_DIAGNOSIS_DECISION_TH;
 	std::vector<int> cBadChannelsTop;
     	std::vector<int> cBadChannelsBottom;
@@ -509,18 +499,19 @@ void HybridTester::TestChannels()
 	}
 
 	ofstream report( fDirectoryName + "/channels_test.txt"); // Create a file in the current directory
-	report << "Testing run with decision threshold: " + patch::to_string(cChannelDiagnosisThreshold) + "%"<<endl;
-	report << "Channels numbering convention from 0 to " + patch::to_string(cTopHistSize-2) + " for top and to " + patch::to_string(cBottomHistSize-2) + " for bottom side" <<endl;
-	report << "Number of malfunctioning channels:  " + patch::to_string(cBadChannelsTop.size() + cBadChannelsBottom.size())<<endl;
-    	report << "Malfunctioning channels from TOP side:  " + int_vector_to_string(cBadChannelsTop)<<endl;
-    	report << "Malfunctioning channels from BOTTOM side:  " + int_vector_to_string(cBadChannelsBottom)<<endl;
+	report << "Testing run with decision threshold: " + patch::to_string(cChannelDiagnosisThreshold) + "%"<<std::endl;
+	report << "Channels numbering convention from 0 to " + patch::to_string(cTopHistSize-2) + " for top and to " + patch::to_string(cBottomHistSize-2) + " for bottom side" <<std::endl;
+	report << "Number of malfunctioning channels:  " + patch::to_string(cBadChannelsTop.size() + cBadChannelsBottom.size())<<std::endl;
+    	report << "Malfunctioning channels from TOP side:  " + int_vector_to_string(cBadChannelsTop)<<std::endl;
+    	report << "Malfunctioning channels from BOTTOM side:  " + int_vector_to_string(cBadChannelsBottom)<<std::endl;
 	report.close();
-	cout << "Channels testing report written to: " << endl << fDirectoryName + "/channels_test.txt" << endl;
+	std::cout << "Channels testing report written to: " << std::endl << fDirectoryName + "/channels_test.txt" << std::endl;
 }
 
 void HybridTester::TestChannels(double pTopHistogram[], int pTopHistogramSize, double pBottomHistogram[], int pBottomHistogramSize, double pDecisionThreshold)
 {
-	cout << endl << "Running channels testing tool 2... " << endl;
+	std::cout << std::endl << "Running channels testing tool 2... " << std::endl;
+	std::cout << "Decision threshold: " << pDecisionThreshold << "%" << std::endl;
 	std::vector<int> cBadChannelsTop;
     	std::vector<int> cBadChannelsBottom;
 	int cHistogramBinId;
@@ -536,13 +527,68 @@ void HybridTester::TestChannels(double pTopHistogram[], int pTopHistogramSize, d
 	}
 
 	ofstream report( fDirectoryName + "/channels_test2.txt"); // Create a file in the current directory
-	report << "Testing run with decision threshold: " + patch::to_string(pDecisionThreshold) + "%"<<endl;
-	report << "Channels numbering convention from 0 to " + patch::to_string(pTopHistogramSize-2) + " for top and to " + patch::to_string(pBottomHistogramSize-2) + " for bottom side" <<endl;
-	report << "Number of malfunctioning channels:  " + patch::to_string(cBadChannelsTop.size() + cBadChannelsBottom.size())<<endl;
-    	report << "Malfunctioning channels from TOP side:  " + int_vector_to_string(cBadChannelsTop)<<endl;
-    	report << "Malfunctioning channels from BOTTOM side:  " + int_vector_to_string(cBadChannelsBottom)<<endl;
+	report << "Testing run with decision threshold: " + patch::to_string(pDecisionThreshold) + "%" << std::endl;
+	report << "Channels numbering convention from 0 to " + patch::to_string(pTopHistogramSize-2) + " for top and to " + patch::to_string(pBottomHistogramSize-2) + " for bottom side" << std::endl;
+	report << "Number of malfunctioning channels:  " + patch::to_string(cBadChannelsTop.size() + cBadChannelsBottom.size())<<std::endl;
+    	report << "Malfunctioning channels from TOP side:  " + int_vector_to_string(cBadChannelsTop) << std::endl;
+    	report << "Malfunctioning channels from BOTTOM side:  " + int_vector_to_string(cBadChannelsBottom) << std::endl;
 	report.close();
-	cout << "Channels testing report written to: " << endl << fDirectoryName + "/channels_test2.txt" << endl;
+	std::cout << "Channels testing report written to: " << std::endl << fDirectoryName + "/channels_test2.txt" << std::endl;
+}
+
+void HybridTester::ConfigureSpiSlave(usb_dev_handle* pUsbHandle, uint8_t pSlaveChipSelectId)
+{	
+
+	//here I need to set up usb connection parameters for antenna board
+	const static int cUsbEndpointBulkIn = 0x82;  // usb endpoint 0x82 address for USB IN bulk transfers
+	const static int cUsbEndpointBulkOut = 0x01;  // usb endpoint 0x01 address for USB OUT bulk transfers
+	const static int cUsbTimeout = 5000;  // usb operation timeout in ms
+	
+	int result; // variable for gathering results from USB related transfers, useful only for debugging
+	char buf_in[4] = {0}; // buf_in[] is used just for reading back data from chip, via usb, I used it only for debugging purpose to check if correct CS line has been set for SPI transfers
+ 	char control_msg_set_spi_word[2] = {0, 0x19}; //configuration values from CP2130 datasheet
+	char buf_out[2] = {0, 2};  //configuration values from CP2130 datasheet
+	char bulk_buffer_out[9] = {0, 0, 1, 0, 1, 0, 0, 0, 0}; //SPI communication values, bits of the last byte are the channels or the analog switch to be turned on
+	buf_out[0] = pSlaveChipSelectId;
+	control_msg_set_spi_word[0] = pSlaveChipSelectId;
+	
+	/*First activate chip select line of corresponding analog switch for SPI communication.*/
+    	result = usb_control_msg(pUsbHandle, 0x40, 0x25, 0, 0, (char *) buf_out, sizeof(buf_out), cUsbTimeout);
+	
+	/*Check 'buf_in' if correct number of chip select channel was stored in the cp2130 chip.*/
+    	result = usb_control_msg(pUsbHandle, 0xC0, 0x24, 0, 0, (char *) buf_in, sizeof(buf_in), cUsbTimeout);
+	
+	/*Set SPI transfer parameters.*/
+    	result = usb_control_msg(pUsbHandle, 0x40, 0x31, 0, 0, (char *) control_msg_set_spi_word, sizeof(control_msg_set_spi_word), cUsbTimeout);
+	
+	/*Finally we can write through cp2130 to analog switch. We are writing an array of chars where the last byte is giving the position of channels to be turned on. 
+	They are identified by '1' position in binary representation of that byte value.*/
+	result = usb_bulk_write(pUsbHandle, cUsbEndpointBulkOut, (char *) bulk_buffer_out, sizeof(bulk_buffer_out), cUsbTimeout); // turning off all channels of analog switch 
+	sleep(0.1);
+
+}
+
+void HybridTester::TurnOnAnalogSwitchChannel(usb_dev_handle* pUsbHandle, uint8_t pSwichChannelId)
+{
+	//here I need to set up usb connection parameters for antenna board
+	const static int cUsbEndpointBulkIn = 0x82;  // usb endpoint 0x82 address for USB IN bulk transfers
+	const static int cUsbEndpointBulkOut = 0x01;  // usb endpoint 0x01 address for USB OUT bulk transfers
+	const static int cUsbTimeout = 5000;  // usb operation timeout in ms
+		
+ 	int result; // variable for gathering results from USB related transfers, useful only for debugging 
+	char bulk_buffer_out[9] = {0, 0, 1, 0, 1, 0, 0, 0, 0}; //SPI communication values, bits of the last byte are the channels or the analog switch to be turned on
+	if (pSwichChannelId == 9)
+	{ 
+		bulk_buffer_out[8] = 0; // this is just to turn off all the channels of analog switch (if powered it holds last written configuration) at the end of the loop
+	}
+	else
+	{ 
+		bulk_buffer_out[8] = (char)((1<<(pSwichChannelId-1))&0xFF);
+	}
+
+	result = usb_bulk_write(pUsbHandle, cUsbEndpointBulkOut, (char *) bulk_buffer_out, sizeof(bulk_buffer_out), cUsbTimeout);
+	sleep(0.1);
+	
 }
 
 void HybridTester::Measure()
@@ -555,28 +601,16 @@ void HybridTester::Measure()
 	CbcRegReader cReader( fCbcInterface, "VCth" );
 	accept( cReader );
 		
-	//here I need to set up usb connection parameters for antenna board
-	const static int cUsbEndpointBulkIn = 0x82;  // usb endpoint 0x82 address for USB IN bulk transfers
-	const static int cUsbEndpointBulkOut = 0x01;  // usb endpoint 0x01 address for USB OUT bulk transfers
-	const static int cUsbTimeout = 5000;  // usb operation timeout in ms
-	
-	usb_dev_handle *antenna_usb_handle; // pointer to the device handle from libusb0.1, see usb.h file for more details
- 	int result; // variable for gathering results from USB related transfers, useful only for debugging 
-	
- 	if ((antenna_usb_handle = setup_libusb_access()) == NULL)
+	Antenna cAntenna;
+ 	if ((cAntenna.fUsbHandle = cAntenna.setup_libusb_access()) == NULL)
 	{ 
-		cout<<"Abandon the ship! Failed to connect with antenna setup, check if it is plugged in the USB port."<<endl;
+		std::cout<<"Abandon the ship! Failed to connect with antenna setup, check if it is plugged in the USB port."<<std::endl;
 		exit(-1); // ok this is maybe a slight overreaction, but there is no point to continue testing if antenna test board is not connected
 	}
-	usb_claim_interface(antenna_usb_handle, 0); // claim the interface for antenna connection, so kernel cannot do it when we need to use the device
-	usb_reset(antenna_usb_handle); // this thing is extremely useful, chip needs to wake up from whatever state it was in after its interface was reclaimed
-    	char buf_in[4] = {0}; // buf_in[] is used just for reading back data from chip, via usb, I used it only for debugging purpose to check if correct CS line has been set for SPI transfers
-    	char analog_switch_cs = 0; // analog switch CS line number (for 2cbc2 hybrid there are only two switches that can be connected to CS0 or CS1 line
-     	uint8_t channel_position = 1; // analog switch channel number from 1 to 8
-	char control_msg_set_spi_word[2] = {0, 0x19};
-	char buf_out[2] = {0, 2};
-	char bulk_buffer_out[9] = {0, 0, 1, 0, 1, 0, 0, 0, 0};
-	double zero_fill[255] = {0}; // this is an array of zeros to clear histograms, since I could not find a method for clearing histograms, I just fill them with zeros
+	usb_claim_interface(cAntenna.fUsbHandle, 0); // claim the interface for antenna connection, so kernel cannot do it when we need to use the device
+	usb_reset(cAntenna.fUsbHandle); // chip needs to wake up from whatever state it was in before its interface was reclaimed
+    	
+	double zero_fill[255] = {0}; // this is an array of zeros to clear histograms, since I could not find a method for clearing histograms I just fill them with zeros
 	double cTopHistogramMerged[fNCbc*127+1];
 	double cBottomHistogramMerged[fNCbc*127+1];	
 	for (int i=0; i<fNCbc*127+1; i++)
@@ -585,87 +619,23 @@ void HybridTester::Measure()
 		cBottomHistogramMerged[i] = 0;
 	}
 
-	//setting offset to 0x00 for all the groups except the group of ID = 0 
-	//for (uint8_t cGroup = 1; cGroup<8; cGroup++){
-		
-		//setOffset(0x00, cGroup);
-	 	/*need also to disable the channels because setting offset to 0x00 is not sufficient, still some hits are measured 
-		on these channels and they add up to the histogram with every iteration*/
-		/*TO DO HERE*/		
-		
-	//	}
-	/*
-	fHistTop->Scale( 100 / double_t( cTotalEvents ) );
-	fHistTop->GetYaxis()->SetRangeUser( 0, cTotalEvents );
-	fHistBottom->Scale( 100 / double_t( cTotalEvents ) );
-	fHistBottom->GetYaxis()->SetRangeUser( 0, cTotalEvents );
-	*/
 	fHistTop->GetYaxis()->SetRangeUser( 0, cTotalEvents );
 	fHistBottom->GetYaxis()->SetRangeUser( 0, cTotalEvents );
-	//for (analog_switch_cs = 0; analog_switch_cs < 1; analog_switch_cs++){ 
-	for (analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++){ 
-		buf_out[0] = analog_switch_cs;
-		control_msg_set_spi_word[0] = analog_switch_cs;
-		/*First activate chip select line of corresponding analog switch for SPI communication.*/
-    		result = usb_control_msg(antenna_usb_handle, 0x40, 0x25, 0, 0, (char *) buf_out, sizeof(buf_out), cUsbTimeout);
-		/*Check if correct number of chip select channel was stored in the cp2130 chip.*/
-    		result = usb_control_msg(antenna_usb_handle, 0xC0, 0x24, 0, 0, (char *) buf_in, sizeof(buf_in), cUsbTimeout);
-		/*Set SPI transfer parameters.*/
-    		result = usb_control_msg(antenna_usb_handle, 0x40, 0x31, 0, 0, (char *) control_msg_set_spi_word, sizeof(control_msg_set_spi_word), cUsbTimeout);
-		/*Finally we can write through cp2130 to analog switch. We are writing an array of chars where the last byte is giving the position of channels to be turned of. 
-		It is identified by '1' position in binary representation of that byte value.*/
-		result = usb_bulk_write(antenna_usb_handle, cUsbEndpointBulkOut, (char *) bulk_buffer_out, sizeof(bulk_buffer_out), cUsbTimeout); // turning off all channels of analog switch 
-		sleep(0.1);
+	for (uint8_t analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++){ 
 		
-		//Sliding window for taking measurements, the channels groups are iterated to avoid measuring through all the channels at once which was a possible source of X-talk
-		//for (channel_position = 1; channel_position < 2; channel_position++){
-		for (channel_position = 1; channel_position < 10; channel_position++){	
+		ConfigureSpiSlave(cAntenna.fUsbHandle, analog_switch_cs);
 		
-			if (channel_position == 9)
-			{ 
-				bulk_buffer_out[8] = 0; // this is just to turn off all the channels of analog switch (if powered it holds last written configuration) at the end of the loop
-			}
-			else
-			{ 
-				bulk_buffer_out[8] = (char)((1<<(channel_position-1))&0xFF);
-			}
-			//print_buffer((char *) bulk_buffer_out, sizeof(bulk_buffer_out));
-			result = usb_bulk_write(antenna_usb_handle, cUsbEndpointBulkOut, (char *) bulk_buffer_out, sizeof(bulk_buffer_out), cUsbTimeout);
-			sleep(0.1);
+		for (uint8_t channel_position = 1; channel_position < 10; channel_position++){	
+		
+			TurnOnAnalogSwitchChannel(cAntenna.fUsbHandle, channel_position);
 	
-			//if (cSlider){
-				//settting offset to 0x00 for previously active group, do not do it for the first iteration when cSlider = 0
-				//setOffset(0x00, cSlider-1);
-				/*need also to disable the channel because setting offset to 0x00 is not sufficient, still some hits are measured 
-				on these channels and they add up to the histogram with every iteration*/
-				/*TO DO HERE*/
-			
-				/*Enabling the current group for measurements*/
-				/*TO DO HERE*/
-		
-				//Setting calibrated offset to the currently enabled group
-				//setOffset(cSlider);
-			//}
-		
-	
-			for ( auto& cShelve : fShelveVector ) //(to be deleted) loop fires 1 time for 2CBC2 hybrid
+			for ( auto& cShelve : fShelveVector ) 
 			{
-				for ( BeBoard* pBoard : cShelve->fBoardVector ) //(to be deleted) loop fires 1 time for 2CBC2 hybrid
+				for ( BeBoard* pBoard : cShelve->fBoardVector ) 
 				{
 					uint32_t cN = 0;
 					uint32_t cNthAcq = 0;
-				
-					/*
-					//loops over modules and cbcs made to perform channels masking - doesnt work, need to clarify why!
-					//masking in post-calibration files FE0CBC0.txt/FE0CBC1.txt directly also do not affect occupancy measurements at all! 
-					for (Module* pModule : pBoard->fModuleVector){
-						for (Cbc* pCbc : pModule->fCbcVector){										
-							fCbcInterface->WriteCbcReg(pCbc, "MaskChannelFrom008downto001", 0x00);
-							//fCbcInterface->WriteCbcReg(pCbc, "Channel009", 0x00);
-							std::cout<<"I am masking"<<endl;
-						}
-					}*/
-				 
+								 
 					while ( cN <  cTotalEvents )
 					{
 						Run( pBoard, cNthAcq );
@@ -694,23 +664,54 @@ void HybridTester::Measure()
 						cNthAcq++;
 					}
 					/*Here the reconstruction of histograms happens*/
-					if(analog_switch_cs == 0) // it means that I am illuminating top pads (of course if top antenna switch chip select line is 0
+					if(fNCbc == 2) //reconstruction of histograms for 2cbc2 hybrid
 					{
-						for(uint8_t channel_id = 1; channel_id < fNCbc*127 + 1; channel_id++)
+						if(analog_switch_cs == 0) // it means that I am illuminating top pads (of course if top antenna switch chip select line is 0)
 						{
-							if (fTopHistogramMerged[channel_id] < fHistTop->GetBinContent(channel_id)) fTopHistogramMerged[channel_id] = fHistTop->GetBinContent(channel_id);
-							if (cTopHistogramMerged[channel_id] < fHistTop->GetBinContent(channel_id)) cTopHistogramMerged[channel_id] = fHistTop->GetBinContent(channel_id);
-						}
+							for(uint8_t channel_id = 1; channel_id < fNCbc*127 + 1; channel_id++)
+							{
+								if (fTopHistogramMerged[channel_id] < fHistTop->GetBinContent(channel_id)) fTopHistogramMerged[channel_id] = fHistTop->GetBinContent(channel_id);
+								if (cTopHistogramMerged[channel_id] < fHistTop->GetBinContent(channel_id)) cTopHistogramMerged[channel_id] = fHistTop->GetBinContent(channel_id);
+							}
 				
-					}
-					else if(analog_switch_cs == 1) // it means that I am illuminating top pads (of course if top antenna switch chip select line is 0
-					{
-						for(uint8_t channel_id = 1; channel_id < fNCbc*127 + 1; channel_id++)
+						}
+						else if(analog_switch_cs == 1) // it means that I am illuminating top pads (if bottom antenna switch chip select line is 1)
 						{
-							if (fBottomHistogramMerged[channel_id] < fHistBottom->GetBinContent(channel_id)) fBottomHistogramMerged[channel_id] = fHistBottom->GetBinContent(channel_id);
-							if (cBottomHistogramMerged[channel_id] < fHistBottom->GetBinContent(channel_id)) cBottomHistogramMerged[channel_id] = fHistBottom->GetBinContent(channel_id);
-						}			
+							for(uint8_t channel_id = 1; channel_id < fNCbc*127 + 1; channel_id++)
+							{
+								if (fBottomHistogramMerged[channel_id] < fHistBottom->GetBinContent(channel_id)) fBottomHistogramMerged[channel_id] = fHistBottom->GetBinContent(channel_id);
+								if (cBottomHistogramMerged[channel_id] < fHistBottom->GetBinContent(channel_id)) cBottomHistogramMerged[channel_id] = fHistBottom->GetBinContent(channel_id);
+							}			
+						}
 					}
+
+					else if(fNCbc == 8) //reconstruction of histograms for 8cbc2 hybrid
+					{
+						if(analog_switch_cs % 2 == 1) // it means that I am illuminating top pads (if top antenna switches have odd numbers of chip select lines)
+						{
+							for(uint8_t channel_id = 1; channel_id < fNCbc*127 + 1; channel_id++)
+							{
+								if (fTopHistogramMerged[channel_id] < fHistTop->GetBinContent(channel_id)) fTopHistogramMerged[channel_id] = fHistTop->GetBinContent(channel_id);
+								if (cTopHistogramMerged[channel_id] < fHistTop->GetBinContent(channel_id)) cTopHistogramMerged[channel_id] = fHistTop->GetBinContent(channel_id);
+							}
+				
+						}
+						else if(analog_switch_cs % 2 == 0) // // it means that I am illuminating bottom pads (if top antenna switches have even numbers of chip select lines)
+						{
+							for(uint8_t channel_id = 1; channel_id < fNCbc*127 + 1; channel_id++)
+							{
+								if (fBottomHistogramMerged[channel_id] < fHistBottom->GetBinContent(channel_id)) fBottomHistogramMerged[channel_id] = fHistBottom->GetBinContent(channel_id);
+								if (cBottomHistogramMerged[channel_id] < fHistBottom->GetBinContent(channel_id)) cBottomHistogramMerged[channel_id] = fHistBottom->GetBinContent(channel_id);
+							}			
+						}
+					}
+					else
+					{
+						std::cout<<"Wrong number of CBC2 chips detected in the hybrid: "<< fNCbc << ", breaking the acquisition loop ..."<< std::endl;
+						break;
+					}
+					
+
 					/*Here clearing histograms after each event*/
 					fHistBottom->SetContent((double *) zero_fill);
 					fHistTop->SetContent((double *) zero_fill);
@@ -732,12 +733,12 @@ void HybridTester::Measure()
 	UpdateHists();
 	
 	/*We release interface so any other software or kernel driver can claim it */
-	usb_release_interface(antenna_usb_handle, 0);
+	usb_release_interface(cAntenna.fUsbHandle, 0);
 	/*we close the usb connection with the cp2130 chip*/
- 	usb_close(antenna_usb_handle);
+ 	usb_close(cAntenna.fUsbHandle);
 	/*waiting for keyboard input*/
  	//std::cin.ignore();
-	TestChannels((double *) cTopHistogramMerged, sizeof(cTopHistogramMerged)/sizeof(cTopHistogramMerged[0]), (double *) cBottomHistogramMerged, sizeof(cBottomHistogramMerged)/sizeof(cBottomHistogramMerged[0]), 80.0);
+	TestChannels((double *) cTopHistogramMerged, sizeof(cTopHistogramMerged)/sizeof(cTopHistogramMerged[0]), (double *) cBottomHistogramMerged, sizeof(cBottomHistogramMerged)/sizeof(cBottomHistogramMerged[0]), fDecisionThreshold);
 	
 }
 
@@ -825,34 +826,34 @@ void HybridTester::SaveResults()
 {
 	int hybrid_id = -1;
 	ifstream infile;
-	string line_buffer;
-	string content_buffer;
-    	string date_string = currentDateTime();
-	string hybrid_id_string = patch::to_string(hybrid_id);
-    	string filename = "Results/HybridTestingDatabase/Hybrid" + hybrid_id_string + "_on_" + date_string + ".txt";
+	std::string line_buffer;
+	std::string content_buffer;
+    	std::string date_string = currentDateTime();
+	std::string hybrid_id_string = patch::to_string(hybrid_id);
+    	std::string filename = "Results/HybridTestingDatabase/Hybrid" + hybrid_id_string + "_on_" + date_string + ".txt";
 	ofstream myfile;
     	myfile.open (filename.c_str());
-    	myfile << "Hybrid ID: "<<hybrid_id_string<<endl;
-    	myfile << "Created on: "<<date_string<<endl<<endl;
-    	myfile << " Hybrid Testing Report"<<endl;
-    	myfile << "-----------------------"<<endl<<endl;
-    	myfile << " Write/Read Registers Test"<<endl;
-    	myfile << "---------------------------"<<endl;
+    	myfile << "Hybrid ID: " << hybrid_id_string << std::endl;
+    	myfile << "Created on: " << date_string << std::endl << std::endl;
+    	myfile << " Hybrid Testing Report" << std::endl;
+    	myfile << "-----------------------" << std::endl << std::endl;
+    	myfile << " Write/Read Registers Test" << std::endl;
+    	myfile << "---------------------------" << std::endl;
 
 	infile.open (fDirectoryName + "/registers_test.txt");
         while(getline(infile,line_buffer)) content_buffer += line_buffer + "\r\n"; // To get you all the lines.
-	if (content_buffer == "") myfile << "Test not performed!"<<endl;
+	if (content_buffer == "") myfile << "Test not performed!" << std::endl;
 
 	infile.close();
-    	myfile << content_buffer<<endl;
+    	myfile << content_buffer << std::endl;
 	content_buffer = "";
-	myfile << " Channels Functioning Test"<<endl;
-    	myfile << "---------------------------"<<endl;
+	myfile << " Channels Functioning Test" << std::endl;
+    	myfile << "---------------------------" << std::endl;
 	infile.open (fDirectoryName + "/channels_test2.txt");
         while(getline(infile,line_buffer)) content_buffer += line_buffer + "\r\n"; // To get you all the lines.
-	if (content_buffer == "") myfile << "Test not performed!"<<endl;
+	if (content_buffer == "") myfile << "Test not performed!" << std::endl;
 	infile.close();
-	myfile << content_buffer<<endl;
+	myfile << content_buffer << std::endl;
 	myfile.close();
 
 	fHistTop->Write( fHistTop->GetName(), TObject::kOverwrite );
@@ -863,7 +864,7 @@ void HybridTester::SaveResults()
 	fResultFile->Close();
 
 
-	std::cout<<endl << "Resultfile written correctly!" << std::endl;
+	std::cout << std::endl << "Resultfile written correctly!" << std::endl;
 
 	std::string cPdfName = fDirectoryName + "/HybridTestResults.pdf";
 	fDataCanvas->SaveAs( cPdfName.c_str() );
@@ -872,66 +873,8 @@ void HybridTester::SaveResults()
 		cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";
 		fSCurveCanvas->SaveAs( cPdfName.c_str() );
 	}
-	cout <<endl<< "Summary testing report written to: " << endl << filename <<endl;
+	std::cout << std::endl << "Summary testing report written to: " << std::endl << filename << std::endl;
 
 }
-/*string DecimalToBinaryString(int a)
-{
-    std::string binary = "";
-    int mask = 1;
-    for(int i = 0; i < 31; i++)
-    {
-        if((mask&a) >= 1)
-            binary = "1"+binary;
-        else
-            binary = "0"+binary;
-        mask<<=1;
-    }
-    return binary;
-}
 
-string CharToBinaryString(int a)
-{
-    std::string binary = "";
-    int mask = 1;
-    for(int i = 0; i < 7; i++)
-    {
-        if((mask&a) >= 1)
-            binary = "1"+binary;
-        else
-            binary = "0"+binary;
-        mask<<=1;
-    }
-    return binary;
-}
-
-void print_buffer(char* buf, int8_t buf_size)
-{
-    for(uint8_t i=0; i<buf_size; i++)
-    {
-        std::cout<<buf[i]+0<<" ";
-    }
-    std::cout<<std::endl;
-}
-
-std::string int_vector_to_string(std::vector<int> int_vector)
-{
-    std::string output_string = "";
-    for (std::vector<int>::iterator it = int_vector.begin(); it != int_vector.end(); ++it)
-    {
-        output_string += patch::to_string(*it) + "; ";
-    }
-    return output_string;
-}
-
-std::string double_vector_to_string(std::vector<double> int_vector)
-{
-    std::string output_string = "";
-    for (std::vector<double>::iterator it = int_vector.begin(); it != int_vector.end(); ++it)
-    {
-        output_string += patch::to_string(*it) + "; ";
-    }
-    return output_string;
-}
-*/
 

@@ -39,7 +39,7 @@ datatest: datatest.cc
 	cp $@ ../bin
 
 hybridtest: hybridtest.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX) -std=c++11 $(CCFlags) -L/usr/lib64/ -lusb -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 cmtest: cmtest.cc
