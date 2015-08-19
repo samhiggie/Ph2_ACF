@@ -30,7 +30,7 @@ using namespace Ph2_HwDescription;
 
 typedef std::map<Cbc*, std::map<std::string, TObject*> >  CbcHistogramMap;
 typedef std::map<Module*, std::map<std::string, TObject*> > ModuleHistogramMap;
-typedef std::map<Module*, TCanvas*> CanvasMap;
+// typedef std::map<Module*, TCanvas*> CanvasMap;
 
 /*!
  * \class Commissioning
@@ -46,7 +46,7 @@ class Commissioning : public Tool
 	std::map<Module*, uint8_t> ScanLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	std::map<Module*, uint8_t> ScanStubLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	// void ScanLatencyThreshold();
-	void SaveResults();
+	// void SaveResults();
 
   private:
 	void initializeHists();
@@ -57,14 +57,7 @@ class Commissioning : public Tool
 	void parseSettings();
 	void dumpConfigFiles();
 
-	// Histogram Methods
-	// TObject* getHist( Cbc* pCbc, std::string pName );
-	TObject* getHist( Module* pModule, std::string pName );
-
 	//  Members
-	CanvasMap fCanvasMap;
-	// CbcHistogramMap fCbcHistMap;
-	ModuleHistogramMap fModuleHistMap;
 	uint32_t fNevents;
 	uint32_t fInitialThreshold;
 	uint32_t fHoleMode;

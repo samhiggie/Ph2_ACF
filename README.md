@@ -74,6 +74,24 @@ On this Repo, you can find different version of the software :
     - restructured the ostream operator of the Event class
 - 05/06/2015: minor modifications
     - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks. 
+- 11/06/2015: merging a new design for Data and Event classes (v1-20)
+    - Data class now holds a vector of Events and the events are directly decoded after acquisition - the char* databuffer does not exist any longer
+    - added methods: std::vector<Event*> GetEvents(); Event* GetEvent()
+    - updated all scripts
+- 17/07/2015: including a new executable fpgaconfig to upload .mcs files to the EPROM, updated tool base-class, included DQM code from the Beamtest
+    - fpgaconfig binary allows to upload FW images to EPROM (2 separate images)
+    - tool base class now contains containers for histograms along with bookHisto(), getHisto(), saveHisto() methods
+    - modified all other tools accordingly
+    - merged the DQM code from the June '15 beamtest into miniDQM binary
+    - updated Makefiles to build RootWeb & miniDQM
+- 04/08/2015: adding a faster & more precise algorithm to extract the parameters from SCurves via differentiating it - implemented in FastCalibration
+- 11/08/2015: adding threaded File IO features (v1-21)
+    - added FileHandler class for threaded saving of binary data as it comes from the GLIB to file (without speed penalty)
+    - FileHandler can also read binary files for playback (see miniDAQ/datatestFromfile.cc)
+    - adding miniDAQ executable that saves to file and handles runnumber in a hidden Data/.run_number.txt file
+    - miniDQM code based on BT DQM still available for playing back the binary data
+    - datatest now has a -s option to specify a filename where binary data should be saved (optionally)
+    
 
 
 ### Setup
@@ -190,7 +208,11 @@ Follow these instructions to install and compile the libraries:
 
 1. Clone the GitHub repo.
 
-2. Do a make in the root of the repo (make sure you have all µHal, root, boost... libraries on your computer).
+2.      
+    
+        $> source setup.sh
+
+3. Do a make in the root of the repo (make sure you have all µHal, root, boost... libraries on your computer).
 
 3. Launch 
         
@@ -218,8 +240,31 @@ Follow these instructions to install and compile the libraries:
 
     to run the CM noise study
 
+7. Launch
 
-7. an example of how to use visitors can be found in src/interfacetest.cc or in the HybridTester class
+        $> commission --help
+
+    to do latency & threshold scans
+
+8. Launch 
+
+        $> fpgaconfig --help
+
+    to upload a new FW image to the GLIB
+
+9. Launch
+
+        $> miniDAQ --help
+
+    to save binary data from the GLIB to file
+
+10. Launch
+
+        $> miniDQM --help
+
+    to run the DQM code from the June '15 beamtest
+
+an example of how to use visitors can be found in src/interfacetest.cc or in the HybridTester class
 
 
 ##### What can you do with the software ?
@@ -234,6 +279,10 @@ At the moment the package provides the following features:
 - Validate Hybrids
 - Perform CM noise tests
 - user external trigger and clock signals for your tests
+- upload .mcs files to the GLIB
+- perform simple commissioning procedures
+- save binary data to file
+- create simple DQM histograms from binary data
 - any other routine you want to implement yourself ... 
 
 

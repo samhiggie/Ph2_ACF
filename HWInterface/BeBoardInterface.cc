@@ -18,8 +18,11 @@ namespace Ph2_HwInterface
 		fBoardMap( pBoardMap ),
 		fBoardFW( nullptr ),
 		prevBoardIdentifier( 65535 )
+
 	{
 	}
+
+
 
 	BeBoardInterface::~BeBoardInterface()
 	{
@@ -108,7 +111,7 @@ namespace Ph2_HwInterface
 	}
 
 
-	void BeBoardInterface::StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor)
+	void BeBoardInterface::StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
 		fBoardFW->StartThread( pBoard, uNbAcq, visitor );
@@ -172,10 +175,15 @@ namespace Ph2_HwInterface
 		fBoardFW->GetNextEvent( pBoard );
 	}
 
-	const char* BeBoardInterface::GetBuffer( const BeBoard* pBoard, uint32_t& pBufSize )
+	const Event* BeBoardInterface::GetEvent( const BeBoard* pBoard, int i )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
-		fBoardFW->GetBuffer( pBufSize );
+		return fBoardFW->GetEvent( pBoard, i );
+	}
+	const std::vector<Event*>& BeBoardInterface::GetEvents( const BeBoard* pBoard )
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->GetEvents( pBoard );
 	}
 
 	const uhal::Node& BeBoardInterface::getUhalNode( const BeBoard* pBoard, const std::string& pStrPath )

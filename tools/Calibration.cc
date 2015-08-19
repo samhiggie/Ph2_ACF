@@ -168,7 +168,7 @@ uint32_t Calibration::SetOffsetTargetBitTestGroup( BeBoard* pBoard, uint8_t pGro
 					cOffset &= ~( 1 << pTargetBit );
 				}
 
-				std::pair<std::string, uint8_t> cRegPair = std::make_pair( cRegName.Data(), cOffset );
+				std::pair<std::string, uint8_t> cRegPair = { cRegName.Data(), cOffset };
 				cRegVec.push_back( cRegPair );
 
 				// Update the Channel Object
@@ -250,7 +250,7 @@ void Calibration::processSCurvesOffset( BeBoard* pBoard, uint8_t pGroupId, uint3
 					cOffset &= ~( 1 << pTargetBit );
 
 					TString cRegName = Form( "Channel%03d", cChannel.fChannelId );
-					std::pair<std::string, uint8_t> cRegPair = std::make_pair( cRegName.Data(), cOffset );
+					std::pair<std::string, uint8_t> cRegPair = { cRegName.Data(), cOffset };
 					cRegVec.push_back( cRegPair );
 					cChannel.setOffset( cOffset );
 				}
@@ -264,7 +264,7 @@ void Calibration::processSCurvesOffset( BeBoard* pBoard, uint8_t pGroupId, uint3
 					// cOffset ^= (1<<pTargetBit);
 
 					TString cRegName = Form( "Channel%03d", cChannel.fChannelId );
-					std::pair<std::string, uint8_t> cRegPair = std::make_pair( cRegName.Data(), cOffset );
+					std::pair<std::string, uint8_t> cRegPair = { cRegName.Data(), cOffset };
 					cRegVec.push_back( cRegPair );
 					cChannel.setOffset( cOffset );
 				}
@@ -663,7 +663,7 @@ uint32_t Calibration::ToggleTestGroup( BeBoard* pBoard, uint8_t pGroupId, bool p
 				uint8_t cRegValue;
 				if ( pEnable ) cRegValue = 0x50;
 				else cRegValue = ( pHoleMode ) ?  0x00 : 0xFF;
-				std::pair<std::string, uint8_t> cRegPair = std::make_pair( cRegName.Data(), cRegValue );
+				std::pair<std::string, uint8_t> cRegPair = { cRegName.Data(), cRegValue };
 				cRegVec.push_back( cRegPair );
 
 				// Update the Channel Object

@@ -21,19 +21,16 @@ namespace Ph2_HwInterface
 
 	//Constructor, makes the board map
 	BeBoardFWInterface::BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		RegManager( puHalConfigFileName, pBoardId )
+		RegManager( puHalConfigFileName, pBoardId ),
+		fNTotalAcq( 0 ),
+		runningAcquisition( false ),
+		numAcq( 0 ),
+		fSaveToFile( false ),
+		fFileHandler( nullptr )
 	{
-		fNTotalAcq=0;
-		runningAcquisition=false;
-		numAcq=0; 
-		fData = new Data( );
 	}
 
 
-	BeBoardFWInterface::~BeBoardFWInterface()
-	{
-	        if (fData) delete fData;
-	}
 
 
 	std::string BeBoardFWInterface::getBoardType()
@@ -57,7 +54,6 @@ namespace Ph2_HwInterface
 		return cBoardTypeString;
 
 	}
-
 
 	void BeBoardFWInterface::getBoardInfo()
 	{
@@ -96,7 +92,7 @@ namespace Ph2_HwInterface
 
 	void BeBoardFWInterface::DecodeReg( CbcRegItem& pRegItem, uint8_t pCbcId, uint32_t pWord )
 	{
-                // What does pCbcId do here??
+		// What does pCbcId do here??
 		pCbcId = ( pWord & cMask5 ) >> 17;
 		pRegItem.fPage = ( pWord & cMask6 ) >> 16;
 		pRegItem.fAddress = ( pWord & cMask2 ) >> 8;
@@ -104,23 +100,31 @@ namespace Ph2_HwInterface
 	}
 
 
-	
-	void BeBoardFWInterface::StopThread(){
-		if (runningAcquisition) {
-			runningAcquisition=false;
-			try {
+
+	void BeBoardFWInterface::StopThread()
+	{
+		if ( runningAcquisition )
+		{
+			runningAcquisition = false;
+			try
+			{
 				thrAcq.join();
-			} catch (std::exception & e) {
+			}
+			catch ( std::exception& e )
+			{
 				std::cerr << "Death to Stop in BeBoardFWInterface::StopThread()" << e.what() << std::endl;
-			} catch (...) {
+			}
+			catch ( ... )
+			{
 				std::cerr << "Death to Stop in BeBoardFWInterface::StopThread(). failed to perform thrAcq.join()" << std::endl;
 			}
 		}
 
 	}
-	
-	int BeBoardFWInterface::getNumAcqThread(){
-			return (int)numAcq;
+
+	int BeBoardFWInterface::getNumAcqThread()
+	{
+		return ( int )numAcq;
 	}
 }
 

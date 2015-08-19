@@ -32,7 +32,6 @@ using namespace Ph2_System;
 
 
 typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
-typedef std::map<Cbc*, TCanvas*> CanvasMap;
 typedef std::map<Cbc*, TGraphErrors*> GraphMap;
 typedef std::map<Cbc*, TF1*> FitMap;
 typedef std::map<Cbc*, TH1F*> HistMap;
@@ -91,7 +90,6 @@ class FastCalibration : public Tool
 
   private:
 	CbcChannelMap fCbcChannelMap;
-	CanvasMap fCanvasMap;
 	GraphMap fGraphMap;
 	FitMap fFitMap;
 	HistMap fHistMap;
@@ -102,6 +100,7 @@ class FastCalibration : public Tool
 	uint32_t fEventsPerPoint;
 	uint32_t fNCbc;
 	uint8_t fTargetVcth;
+	bool fFitted;
 
 	std::vector<uint8_t> fVplusVec;
 

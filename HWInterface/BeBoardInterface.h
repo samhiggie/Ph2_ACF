@@ -187,12 +187,9 @@ namespace Ph2_HwInterface
 		 * \return Next event
 		 */
 		const Event* GetNextEvent( const BeBoard* pBoard );
-		/*!
-		 * \brief Get the data buffer
-		 * \param pBufSize : recovers the data buffer size
-		 * \return Data buffer
-		 */
-		const char* GetBuffer( const BeBoard* pBeBoard, uint32_t& pBufSize );
+		const Event* GetEvent( const BeBoard* pBoard, int i );
+	        const std::vector<Event*>& GetEvents( const BeBoard* pBoard );
+
 		/*! \brief Get a uHAL node object from its path in the uHAL XML address file
 		 * \param pBoard pointer to a board description
 		 * \return Reference to the uhal::node object

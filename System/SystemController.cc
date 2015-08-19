@@ -19,16 +19,21 @@ namespace Ph2_System
 
 	SystemController::SystemController()
 	{
-
+		fFileHandler = nullptr;
 	}
 
 	SystemController::~SystemController()
 	{
-		for ( std::vector<Shelve*>::iterator cShelveIt = fShelveVector.begin(); cShelveIt != fShelveVector.end(); cShelveIt++ )
-			delete *cShelveIt;
+		for ( auto& el : fShelveVector )
+			delete el;
 		fShelveVector.clear();
 	}
 
+	void SystemController::addFileHandler( std::string pFilename , char pOption )
+	{
+
+		fFileHandler = new FileHandler( pFilename, pOption );
+	}
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )
 	{
 		if ( pFilename.find( ".xml" ) != std::string::npos )
@@ -37,6 +42,7 @@ namespace Ph2_System
 			parseHWjson( pFilename, os );
 		else
 			std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
+		if ( fFileHandler != NULL ) std::cout << BOLDBLUE << "Saving binary raw data to: " << fFileHandler->getFilename() << RESET << std::endl;
 	}
 
 	void SystemController::InitializeSettings( const std::string& pFilename, std::ostream& os )
@@ -49,7 +55,7 @@ namespace Ph2_System
 			std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
 	}
 
-	void SystemController::ConfigureHw( std::ostream& os , bool bIgnoreI2c)
+	void SystemController::ConfigureHw( std::ostream& os , bool bIgnoreI2c )
 	{
 
 		bool cHoleMode, cCheck;
@@ -84,10 +90,10 @@ namespace Ph2_System
 			}
 
 			void visit( Cbc& pCbc ) {
-				if (!fIgnoreI2c){
+				if ( !fIgnoreI2c ) {
 					fCbcInterface->ConfigureCbc( &pCbc );
 					los_ << GREEN <<  "Successfully configured Cbc " << int( pCbc.getCbcId() ) << RESET << std::endl;
-				} 
+				}
 			}
 		};
 
@@ -160,7 +166,11 @@ namespace Ph2_System
 
 				if ( std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "Glib" ) ) )
 				{
-					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId );
+
+
+					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
+
+
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}
 				/*else
@@ -172,7 +182,7 @@ namespace Ph2_System
 					if ( static_cast<std::string>( cModuleNode.name() ) == "Module" )
 					{
 						bool cStatus = cModuleNode.attribute( "Status" ).as_bool();
-						std::cout << cStatus << std::endl;
+						//std::cout << cStatus << std::endl;
 						if ( cStatus )
 						{
 							os << BOLDCYAN << "|" << "	" << "|" << "----" << cModuleNode.name() << "  " << cModuleNode.first_attribute().name() << " :" << cModuleNode.attribute( "ModuleId" ).value() << RESET << std:: endl;
@@ -301,7 +311,7 @@ namespace Ph2_System
 
 				if ( cBoard.get( "boardType" ).get<std::string>() == "Glib" )
 				{
-					cBeBoardFWInterface = new GlibFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId );
+					cBeBoardFWInterface = new GlibFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}
 				/*else

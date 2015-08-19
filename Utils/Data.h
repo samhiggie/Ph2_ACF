@@ -13,6 +13,7 @@
 #define __DATA_H__
 
 #include <uhal/uhal.hpp>
+#include <memory>
 #include <ios>
 #include <istream>
 #include "../Utils/Event.h"
@@ -31,30 +32,21 @@ namespace Ph2_HwInterface
 	class Data
 	{
 	  private:
-		char* fBuf;              /*! Data buffer <*/
-		uint32_t fBufSize;           /*! Size of Data buffer <*/
-		uint32_t fNevents;                 /*! Number of Events<*/
-		Event* fEvent;                /*! Ptr. to Events container < */
+		uint32_t fNevents;              /*! Number of Events<*/
 		uint32_t fCurrentEvent;         /*! Current EventNumber in use <*/
-		uint32_t fNCbc  ;       /*! Number of CBCs in the setup <*/
-		uint32_t fEventSize  ;       /*! Size of 1 Event <*/
+		uint32_t fNCbc  ;               /*! Number of CBCs in the setup <*/
+		uint32_t fEventSize  ;          /*! Size of 1 Event <*/
 
+		std::vector<Event*> fEventList;
 
 	  private:
-		/*!
-		 * \brief Byte swapping (not used)
-		 * \param *org : input byte string
-		 * \param *swapped : output byte string
-		 * \param nbytes : lenght of byte string
-		 */
-		void swapByteOrder( const char* org, char* swapped, unsigned int nbyte );
 
 	  public:
 		/*!
 		 * \brief Constructor of the Data class
 		 * \param pNbCbc
 		 */
-		Data( ) : fBuf( nullptr ), fEvent( nullptr ), fCurrentEvent( 0 ), fEventSize( 0 ) {
+		Data( ) :  fCurrentEvent( 0 ), fEventSize( 0 ) {
 		}
 		/*!
 		 * \brief Copy Constructor of the Data class
@@ -64,38 +56,37 @@ namespace Ph2_HwInterface
 		 * \brief Destructor of the Data class
 		 */
 		~Data() {
-			if ( fBuf ) delete fBuf;
+			for ( auto pevt : fEventList )
+				delete pevt;
+			fEventList.clear();
 		}
 		/*!
 		 * \brief Set the data in the data map
+		 * \param *pBoard : pointer to Boat
 		 * \param *pData : Data from the Cbc
 		 * \param pNevents : The number of events in this acquisiton
 		 */
-		void Set( const std::vector<uint32_t>* pData, uint32_t pNevents );
+		void Set( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBytes = true );
 		/*!
 		 * \brief Reset the data structure
 		 */
 		void Reset();
 		/*!
-		 * \brief Copy the data buffer
-		 * \param pData : Data to copy in
-		 */
-		void CopyBuffer( const Data& pData );
-		/*!
-		 * \brief Copy the data buffer
-		 * \param pBufSize : size of the buffer
-		 * \return Data buffer
-		 */
-		const char* GetBuffer( uint32_t& pBufSize ) const;
-		/*!
 		 * \brief Get the next Event
 		 * \param pBoard: pointer to BeBoard
 		 * \return Next Event
 		 */
-		const Event* GetNextEvent( const BeBoard* pBoard );
-
+		// cannot be const as fCurrentEvent is incremented
+		const Event* GetNextEvent( const BeBoard* pBoard ) {
+			return ( ( fCurrentEvent >= fEventList.size() ) ? nullptr : fEventList.at( fCurrentEvent++ ) );
+		}
+		const Event* GetEvent( const BeBoard* pBoard, int i ) const {
+			return ( ( i >= fEventList.size() ) ? nullptr : fEventList.at( i ) );
+		}
+		const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const {
+			return fEventList;
+		}
 	};
 
 }
-
 #endif

@@ -54,7 +54,7 @@ namespace Ph2_HwDescription
 	{
 		BeBoardRegMap::iterator i = fRegMap.find( pReg );
 		if ( i == fRegMap.end() )
-			fRegMap.insert( std::make_pair( pReg, psetValue ) );
+		  fRegMap.insert( {pReg, psetValue} );
 		else i->second = psetValue;
 	}
 

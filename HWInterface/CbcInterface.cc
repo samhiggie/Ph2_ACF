@@ -13,7 +13,7 @@
 #include "../Utils/ConsoleColor.h"
 
 #define DEV_FLAG 0
-#define COUNT_FLAG 0
+// #define COUNT_FLAG 0
 
 namespace Ph2_HwInterface
 {
