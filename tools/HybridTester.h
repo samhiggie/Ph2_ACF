@@ -118,14 +118,6 @@ class HybridTester : public Antenna, public SystemController
 	*/
 	void Measure();
 	/*!
-	* \brief private method that configures SPI interface between CP2130 and slave analog switch
-	*/
-	void ConfigureSpiSlave(usb_dev_handle* pUsbHandle, uint8_t pSlaveChipSelectId);
-	/*!
-	* \brief private method that switches on given channel of last analog switch for which SPI interface was configured
-	*/
-	void TurnOnAnalogSwitchChannel(usb_dev_handle* pUsbHandle, uint8_t pSwichChannelId);
-	/*!
 	* \brief private method that checks channels malfunction based on occupancy histograms, produces output report in .txt format
 	*/
 	void TestChannels();

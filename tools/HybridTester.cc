@@ -536,60 +536,6 @@ void HybridTester::TestChannels(double pTopHistogram[], int pTopHistogramSize, d
 	std::cout << "Channels testing report written to: " << std::endl << fDirectoryName + "/channels_test2.txt" << std::endl;
 }
 
-void HybridTester::ConfigureSpiSlave(usb_dev_handle* pUsbHandle, uint8_t pSlaveChipSelectId)
-{	
-
-	//here I need to set up usb connection parameters for antenna board
-	const static int cUsbEndpointBulkIn = 0x82;  // usb endpoint 0x82 address for USB IN bulk transfers
-	const static int cUsbEndpointBulkOut = 0x01;  // usb endpoint 0x01 address for USB OUT bulk transfers
-	const static int cUsbTimeout = 5000;  // usb operation timeout in ms
-	
-	int result; // variable for gathering results from USB related transfers, useful only for debugging
-	char buf_in[4] = {0}; // buf_in[] is used just for reading back data from chip, via usb, I used it only for debugging purpose to check if correct CS line has been set for SPI transfers
- 	char control_msg_set_spi_word[2] = {0, 0x19}; //configuration values from CP2130 datasheet
-	char buf_out[2] = {0, 2};  //configuration values from CP2130 datasheet
-	char bulk_buffer_out[9] = {0, 0, 1, 0, 1, 0, 0, 0, 0}; //SPI communication values, bits of the last byte are the channels or the analog switch to be turned on
-	buf_out[0] = pSlaveChipSelectId;
-	control_msg_set_spi_word[0] = pSlaveChipSelectId;
-	
-	/*First activate chip select line of corresponding analog switch for SPI communication.*/
-    	result = usb_control_msg(pUsbHandle, 0x40, 0x25, 0, 0, (char *) buf_out, sizeof(buf_out), cUsbTimeout);
-	
-	/*Check 'buf_in' if correct number of chip select channel was stored in the cp2130 chip.*/
-    	result = usb_control_msg(pUsbHandle, 0xC0, 0x24, 0, 0, (char *) buf_in, sizeof(buf_in), cUsbTimeout);
-	
-	/*Set SPI transfer parameters.*/
-    	result = usb_control_msg(pUsbHandle, 0x40, 0x31, 0, 0, (char *) control_msg_set_spi_word, sizeof(control_msg_set_spi_word), cUsbTimeout);
-	
-	/*Finally we can write through cp2130 to analog switch. We are writing an array of chars where the last byte is giving the position of channels to be turned on. 
-	They are identified by '1' position in binary representation of that byte value.*/
-	result = usb_bulk_write(pUsbHandle, cUsbEndpointBulkOut, (char *) bulk_buffer_out, sizeof(bulk_buffer_out), cUsbTimeout); // turning off all channels of analog switch 
-	sleep(0.1);
-
-}
-
-void HybridTester::TurnOnAnalogSwitchChannel(usb_dev_handle* pUsbHandle, uint8_t pSwichChannelId)
-{
-	//here I need to set up usb connection parameters for antenna board
-	const static int cUsbEndpointBulkIn = 0x82;  // usb endpoint 0x82 address for USB IN bulk transfers
-	const static int cUsbEndpointBulkOut = 0x01;  // usb endpoint 0x01 address for USB OUT bulk transfers
-	const static int cUsbTimeout = 5000;  // usb operation timeout in ms
-		
- 	int result; // variable for gathering results from USB related transfers, useful only for debugging 
-	char bulk_buffer_out[9] = {0, 0, 1, 0, 1, 0, 0, 0, 0}; //SPI communication values, bits of the last byte are the channels or the analog switch to be turned on
-	if (pSwichChannelId == 9)
-	{ 
-		bulk_buffer_out[8] = 0; // this is just to turn off all the channels of analog switch (if powered it holds last written configuration) at the end of the loop
-	}
-	else
-	{ 
-		bulk_buffer_out[8] = (char)((1<<(pSwichChannelId-1))&0xFF);
-	}
-
-	result = usb_bulk_write(pUsbHandle, cUsbEndpointBulkOut, (char *) bulk_buffer_out, sizeof(bulk_buffer_out), cUsbTimeout);
-	sleep(0.1);
-	
-}
 
 void HybridTester::Measure()
 {
@@ -602,13 +548,7 @@ void HybridTester::Measure()
 	accept( cReader );
 		
 	Antenna cAntenna;
- 	if ((cAntenna.fUsbHandle = cAntenna.setup_libusb_access()) == NULL)
-	{ 
-		std::cout<<"Abandon the ship! Failed to connect with antenna setup, check if it is plugged in the USB port."<<std::endl;
-		exit(-1); // ok this is maybe a slight overreaction, but there is no point to continue testing if antenna test board is not connected
-	}
-	usb_claim_interface(cAntenna.fUsbHandle, 0); // claim the interface for antenna connection, so kernel cannot do it when we need to use the device
-	usb_reset(cAntenna.fUsbHandle); // chip needs to wake up from whatever state it was in before its interface was reclaimed
+	cAntenna.initializeAntenna();
     	
 	double zero_fill[255] = {0}; // this is an array of zeros to clear histograms, since I could not find a method for clearing histograms I just fill them with zeros
 	double cTopHistogramMerged[fNCbc*127+1];
@@ -623,11 +563,11 @@ void HybridTester::Measure()
 	fHistBottom->GetYaxis()->SetRangeUser( 0, cTotalEvents );
 	for (uint8_t analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++){ 
 		
-		ConfigureSpiSlave(cAntenna.fUsbHandle, analog_switch_cs);
+		cAntenna.ConfigureSpiSlave(analog_switch_cs);
 		
 		for (uint8_t channel_position = 1; channel_position < 10; channel_position++){	
 		
-			TurnOnAnalogSwitchChannel(cAntenna.fUsbHandle, channel_position);
+			cAntenna.TurnOnAnalogSwitchChannel(channel_position);
 	
 			for ( auto& cShelve : fShelveVector ) 
 			{
@@ -732,12 +672,8 @@ void HybridTester::Measure()
 	
 	UpdateHists();
 	
-	/*We release interface so any other software or kernel driver can claim it */
-	usb_release_interface(cAntenna.fUsbHandle, 0);
-	/*we close the usb connection with the cp2130 chip*/
- 	usb_close(cAntenna.fUsbHandle);
-	/*waiting for keyboard input*/
- 	//std::cin.ignore();
+	cAntenna.close();
+
 	TestChannels((double *) cTopHistogramMerged, sizeof(cTopHistogramMerged)/sizeof(cTopHistogramMerged[0]), (double *) cBottomHistogramMerged, sizeof(cBottomHistogramMerged)/sizeof(cBottomHistogramMerged[0]), fDecisionThreshold);
 	
 }
