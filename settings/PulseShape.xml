@@ -68,8 +68,9 @@
     <Setting name="Nevents" > 10 </Setting>
     <Setting name="Vplus" > 0x26 </Setting>
     <Setting name="TPAmplitude" > 0xD5 </Setting>
-    <Setting name="Channel" > 1 </Setting>
+    <!-- <Setting name="Channel" > 1 </Setting> -->
+    <Setting name="TestGroup" > 1 </Setting>
     <Setting name="ChannelOffset" > 0x04 </Setting>
-    <Setting name="StepSize" > 2 </Setting>
+    <Setting name="StepSize" > 5 </Setting>
     <Setting name="FitSCurves" > 0 </Setting>
 </Settings>

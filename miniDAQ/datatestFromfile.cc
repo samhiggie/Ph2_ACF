@@ -156,7 +156,7 @@ void dumpEvents( const std::vector<Event*>& elist )
 {
 	for ( int i = 0; i < elist.size(); i++ )
 	{
-		std::cout << "Event index: " << i << std::endl;
+		std::cout << "Event index: " << i + 1 << std::endl;
 		std::cout << *elist[i] << std::endl;
 	}
 }
@@ -219,9 +219,14 @@ int main( int argc, char* argv[] )
 	else std::cout << "Not creating DQM files!" << std::endl;
 
 	std::vector<uint32_t> dataVec;
-	readDataFile( rawFilename, dataVec );
-
 	SystemController cSystemController;
+
+	//cSystemController.addFileHandler( rawFilename );
+
+	cSystemController.addFileHandler( rawFilename, 'r' ); //add it for read test
+	dataVec = cSystemController.fFileHandler->readFile( );  //add it for read test
+	//readDataFile( rawFilename, dataVec );
+
 	std::string cHWFile = getenv( "BASE_DIR" );
 	cHWFile += "/settings/HWDescription_2CBC.xml";
 	cSystemController.parseHWxml( cHWFile );

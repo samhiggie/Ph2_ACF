@@ -51,6 +51,7 @@ struct Channel
 	TH1F* fScurve;  /*!< Histogram to store the SCurve */
 	TF1*  fFit;  /*!< Fit for the SCurve */
 	TH1F* fDerivative; /*!< Histogram to hold the derivative of the Scurve*/
+	TGraph* fPulse;
 	// Methods
 	/*!
 	* \brief get the SCurve midpoint affter fitting
@@ -79,12 +80,16 @@ struct Channel
 	* \param pValue: the value of pParameter
 	*/
 	void initializeHist( uint8_t pValue, TString pParameter );
+	void initializePulse( TString pTitle );
+	void setPulsePoint( double x, double y ) {
+		fPulse->SetPoint( fPulse->GetN(), x, y );
+	}
 	/*!
 	* \brief fill the histogram
 	* \param pVcth: the bin at which to fill the histogram (normally Vcth value)
 	*/
 	void fillHist( uint8_t pVcth );
-	
+
 	/*!
 	* \brief fit the SCurve Histogram with the Fit object
 	* \param pEventsperVcth: the number of Events taken for each Vcth setting, used to normalize SCurve
@@ -94,7 +99,7 @@ struct Channel
 	*\param pResutlfile: pointer to the ROOT file where the results are supposed to be stored
 	*/
 	void fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TString pParameter, TFile* pResultfile );
-	
+
 	/*!
 	* \brief differentiate the SCurve Histogram with the Derivative object
 	* \param pEventsperVcth: the number of Events taken for each Vcth setting, used to normalize SCurve
@@ -104,7 +109,7 @@ struct Channel
 	*\param pResutlfile: pointer to the ROOT file where the results are supposed to be stored
 	*/
 	void differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TString pParameter, TFile* pResultfile );
-	
+
 	/*!
 	* \brief reset the Histogram and Fit objects
 	*/

@@ -6,13 +6,14 @@
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
-//#include "../tools/Calibration.h"
 #include "../Utils/Timer.h"
-//#include <TApplication.h>
+#include <fstream>
 #include <inttypes.h>
+#include <boost/filesystem.hpp>
 #include "../Utils/argvparser.h"
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
+#include "TString.h"
 
 
 using namespace Ph2_HwDescription;
@@ -44,6 +45,40 @@ void syntax( int argc )
 	else return;
 }
 
+
+std::string getFileName()
+{
+	std::string line;
+	std::fstream cFile;
+	int cRunNumber;
+	if ( boost::filesystem::exists( ".run_number.txt" ) )
+	{
+
+		cFile.open( ".run_number.txt", std::fstream::out | std::fstream::in );
+		if ( cFile.is_open() )
+		{
+			cFile >> cRunNumber ;
+
+			cRunNumber ++;
+			cFile.clear();
+			cFile.seekp( 0 );
+			cFile << cRunNumber;
+			cFile.close();
+		}
+		else
+			std::cout << "File not opened!" << std::endl;
+	}
+	else
+	{
+		cRunNumber = 1;
+		cFile.open( ".run_number.txt", std::fstream::out );
+		cFile << cRunNumber;
+		cFile.close();
+	}
+	TString cRunString = Form( "run_%03d.raw", cRunNumber );
+	return cRunString.Data();
+}
+
 int main( int argc, char* argv[] )
 {
 
@@ -61,14 +96,8 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "ignoreI2c", "Ignore I2C configuration of CBCs. Allows to run acquisition on a bare board without CBC." );
-	cmd.defineOptionAlternative( "ignoreI2c", "i" );
-
 	cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
-
-	cmd.defineOption( "vcth", "Threshold in VCth units (hex (including 0x) or decimal) . Default values from HW description .XML file", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "vcth", "v" );
 
 	cmd.defineOption( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "events", "e" );
@@ -76,12 +105,8 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
 	cmd.defineOptionAlternative( "parallel", "p" );
 
-	cmd.defineOption( "save", "Save the data to a raw file.  ", ArgvParser::OptionRequiresValue );
-	cmd.defineOptionAlternative( "save", "s" );
-
-	// cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
-	// cmd.defineOptionAlternative( "option", "o" );
-
+	cmd.defineOption( "dqm", "Print every i-th event.  ", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "dqm", "d" );
 
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
@@ -90,54 +115,21 @@ int main( int argc, char* argv[] )
 		exit( 1 );
 	}
 
-	bool cSaveToFile = false;
+	//bool cSaveToFile = false;
 	std::string cOutputFile;
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_2CBC.xml";
 
-	if ( cmd.foundOption( "save" ) )
-		cSaveToFile = true ;
-	if ( cSaveToFile )
-		cOutputFile =  cmd.optionValue( "save" );
+	const char* cDirectory = "Data";
+	mkdir( cDirectory ,  777 );
+	cOutputFile = "Data/" + getFileName() ;
 
-
-	std::cout << "save:   " << cOutputFile << std::endl;
-	// std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
-	cVcth = ( cmd.foundOption( "vcth" ) ) ? convertAnyInt( cmd.optionValue( "vcth" ).c_str() ) : 0;
 	pEventsperVcth = ( cmd.foundOption( "events" ) ) ? convertAnyInt( cmd.optionValue( "events" ).c_str() ) : 10;
 
-	Timer t;
-	t.start();
 	cSystemController.addFileHandler( cOutputFile, 'w' );
 
 	cSystemController.InitializeHw( cHWFile );
-	cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
-
-	t.stop();
-	t.show( "Time to Initialize/configure the system: " );
-
-	if ( cVcth != 0 )
-	{
-		t.start();
-
-		for ( auto cShelve : cSystemController.fShelveVector )
-		{
-			for ( auto cShelve : cSystemController.fShelveVector )
-			{
-				for ( auto cBoard : ( cShelve )->fBoardVector )
-				{
-					for ( auto cFe : cBoard->fModuleVector )
-					{
-						for ( auto cCbc : cFe->fCbcVector )
-							cSystemController.fCbcInterface->WriteCbcReg( cCbc, "VCth", uint8_t( cVcth ) );
-					}
-				}
-			}
-		}
-
-		t.stop();
-		t.show( "Time for changing VCth on all CBCs:" );
-	}
+	cSystemController.ConfigureHw( std::cout );
 
 	BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
 	if ( cmd.foundOption( "parallel" ) )
@@ -146,7 +138,7 @@ int main( int argc, char* argv[] )
 		std::cout << "Packet number=" << nbPacket << ", Nb events=" << pEventsperVcth << " -> Nb acquisition iterations=" << nbAcq << std::endl;
 
 		AcqVisitor visitor;
-		std::cout << "Press Enter to start the acquisition, press Enter again to stop it." << std::endl;
+		std::cout << "Press Enter to start the acquisition, press Enter again to stop i" << std::endl;
 		std::cin.ignore();
 		cSystemController.fBeBoardInterface->StartThread( pBoard, nbAcq, &visitor );
 		std::cin.ignore();
@@ -154,28 +146,39 @@ int main( int argc, char* argv[] )
 	}
 	else
 	{
-		t.start();
 		// make event counter start at 1 as does the L1A counter
 		uint32_t cN = 1;
 		uint32_t cNthAcq = 0;
+		uint32_t count = 0;
 
 		cSystemController.fBeBoardInterface->Start( pBoard );
 		while ( cN <= pEventsperVcth )
 		{
 			uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 
-			if ( cN + cPacketSize >= pEventsperVcth ) cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
+			if ( cN + cPacketSize >= pEventsperVcth )
+				cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
+
 			const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
 
 			for ( auto& ev : events )
 			{
-				std::cout << ">>> Event #" << cN++ << std::endl;
-				std::cout << *ev << std::endl;
+				count++;
+				cN++;
+				if ( cmd.foundOption( "dqm" ) )
+				{
+					if ( count % atoi( cmd.optionValue( "dqm" ).c_str() ) == 0 )
+					{
+						std::cout << ">>> Event #" << count << std::endl;
+						std::cout << *ev << std::endl;
+					}
+				}
+				if ( count % 100  == 0 )
+					std::cout << ">>> Recorded Event #" << count << std::endl;
 			}
 			cNthAcq++;
 		}
-		t.stop();
-		t.show( "Time to take data:" );
 	}
 }
+
 

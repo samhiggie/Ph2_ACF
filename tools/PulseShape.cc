@@ -17,6 +17,7 @@ void PulseShape::Initialize()
 			std::cerr << "cBoardId = " << cBoardId << std::endl;
 			// we could read the Delay_after_TestPulse Register in a variable
 			uint32_t cDelayAfterPulse = fBeBoardInterface->ReadBoardReg( cBoard, DELAY_AF_TEST_PULSE );
+			fDelayAfterPulse = cDelayAfterPulse;
 			std::cout << "actual Delay: " << +cDelayAfterPulse << std::endl;
 			for ( auto& cFe : cBoard->fModuleVector )
 			{
@@ -32,26 +33,22 @@ void PulseShape::Initialize()
 					TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%dcbc%d", cFeId, cCbcId ), Form( "FE%dCBC%d  Online Canvas", cFeId, cCbcId ) );
 					ctmpCanvas->Divide( 2, 1 );
 					fCanvasMap[cCbc] = ctmpCanvas;
+					TH2I* cFrame = new TH2I( "cFrame", "PulseShape; Delay [ns]; Amplitude [VCth]", 350, 4950, 5300, 255, 0, 255 );
+					cFrame->SetStats( false );
+					ctmpCanvas->cd( 2 );
+					cFrame->Draw( );
+					bookHistogram( cCbc, "frame", cFrame );
 					std::cerr << "Initializing map fCanvasMap[" << Form( "0x%x", cCbc ) << "] = " << Form( "0x%x", ctmpCanvas ) << std::endl;
-
-					//Create graphs for each CBC
-					TString cName =  Form( "g_cbc_pulseshape_Fe%dCbc%d", cFeId, cCbcId );
+					// Create Multigraph Object for each CBC
+					TString cName =  Form( "g_cbc_pulseshape_MultiGraph_Fe%dCbc%d", cFeId, cCbcId );
 					TObject* cObj = gROOT->FindObject( cName );
 					if ( cObj ) delete cObj;
-					TGraph* cPulseGraph = new TGraph();
-					cPulseGraph->SetName( cName );
-					cPulseGraph->SetMarkerStyle( 3 );
-					cPulseGraph->GetXaxis()->SetTitle( "TestPulseDelay [ns]" );
-					cPulseGraph->GetYaxis()->SetTitle( "TestPulseAmplitue [VCth]" );
-
-					bookHistogram( cCbc, "cbc_pulseshape", cPulseGraph );
-
+					TMultiGraph* cMultiGraph = new TMultiGraph();
+					cMultiGraph->SetName( cName );
+					bookHistogram( cCbc, "cbc_pulseshape", cMultiGraph );
 					cName = Form( "f_cbc_pulse_Fe%dCbc%d", cFeId, cCbcId );
 					cObj = gROOT->FindObject( cName );
 					if ( cObj ) delete cObj;
-					TF1* cPulseFit = new TF1( cName, pulseshape, ( cDelayAfterPulse - 1 ) * 25, ( cDelayAfterPulse + 6 ) * 25, 4 );
-
-					bookHistogram( cCbc, "cbc_pulsefit", cPulseFit );
 				}
 
 			}
@@ -67,49 +64,51 @@ void PulseShape::Initialize()
 
 void PulseShape::ScanTestPulseDelay( uint8_t pStepSize )
 {
-	setSystemTestPulse( fTPAmplitude, fChannel );
-	enableChannel( fChannel );
 
+
+	// setSystemTestPulse(fTPAmplitude, fChannelId);
+	// enableChannel(fChannelId);
+	setSystemTestPulse( fTPAmplitude/*, 0 */ );
+	enableTestGroup();
 	// initialize the historgram for the channel map
 	int cCoarseDefault = 201;
 	int cLow = ( cCoarseDefault - 1 ) * 25;
 	int cHigh = ( cCoarseDefault + 8 ) * 25;
-	std::map<Cbc*, uint8_t> cCollectedPoints;
 	for ( uint32_t cTestPulseDelay = cLow ; cTestPulseDelay < cHigh; cTestPulseDelay += fStepSize )
 	{
 		setDelayAndTesGroup( cTestPulseDelay );
-		cCollectedPoints =  ScanVcth( cTestPulseDelay );
-		for ( auto& cPoint : cCollectedPoints )
-		{
-			TGraph* cTmpGraph = static_cast<TGraph*>( getHist( cPoint.first, "cbc_pulseshape" ) );
-			cTmpGraph->SetPoint( cTmpGraph->GetN(), cTestPulseDelay, cPoint.second );
-
-		}
-		updateHists( "cbc_pulseshape", false );
-
+		ScanVcth( cTestPulseDelay );
 	}
+
 	this->fitGraph( cLow );
+	updateHists( "cbc_pulseshape", true );
+
 }
 
-
-std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
+void PulseShape::ScanVcth( uint32_t pDelay )
 {
+	for ( auto& cChannelVector : fChannelMap )
+		for ( auto& cChannel : cChannelVector.second )
+			cChannel->initializeHist( pDelay, "Delay" );
 
-	for ( auto& cChannel : fChannelMap )
-		cChannel.second->initializeHist( pDelay, "Delay" );
 
 	uint8_t cVcth = ( fHoleMode ) ?  0xFF :  0x00;
 	int cStep = ( fHoleMode ) ? -10 : +10;
 	uint32_t cAllOneCounter = 0;
-	// uint8_t cDoubleVcth;
 	bool cAllOne = false;
 	bool cNonZero = false;
 	bool cSaturate = false;
+	uint8_t cDoubleVcth;
+
 	// Adaptive VCth loop
 	while ( 0x00 <= cVcth && cVcth <= 0xFF )
 	{
 		if ( cAllOne ) break;
-
+		if ( cVcth == cDoubleVcth )
+		{
+			cVcth +=  cStep;
+			continue;
+		}
 		// if ( cAllOne ) break;
 		CbcRegWriter cWriter( fCbcInterface, "VCth", cVcth );
 		this->accept( cWriter );
@@ -129,30 +128,29 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 				{
 					cN += fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-					cNHits += fillVcthHist( pBoard, events, cVcth );
+					for ( auto& cEvent : events )
+						cNHits += fillVcthHist( pBoard, cEvent, cVcth );
 					cNthAcq++;
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
-				// std::cout << "Vcth " << +cVcth << " Hits " << cNHits  << " Events " << cN - 1 << std::endl;
-
 				if ( !cNonZero && cNHits != 0 )
 				{
 					cNonZero = true;
+					cDoubleVcth = cVcth;
 					int cBackStep = 2 * cStep;
 					if ( int( cVcth ) - cBackStep > 255 ) cVcth = 255;
 					else if ( int( cVcth ) - cBackStep < 0 ) cVcth = 0;
 					else cVcth -= cBackStep;
-					std::cout << "Found a hit, falling back by " << cBackStep << " to " << +cVcth << std::endl;
-					// cVcth -= 5 * cStep;
-					// if(cVcth )
 					cStep /= 10;
 					continue;
 				}
-				if ( cNHits > 0.95 * fNCbc * fNevents )
+				if ( cNHits > 0.95 * fNCbc * fNevents * findChannelsInTestGroup( fTestGroup ).size() )
 					cAllOneCounter++;
 
 				if ( cAllOneCounter > 6 ) cAllOne = true;
-				if ( cAllOne ) break;
+				if ( cAllOne )
+
+					break;
 				cVcth += cStep;
 				updateHists( "", false );
 				if ( fHoleMode && cVcth >= 0xFE && cNHits != 0 )
@@ -169,24 +167,22 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 		}
 	}
 
-	std::map<Cbc*, uint8_t > cHpoint;
-
-	uint8_t cVal;
-	// uint8_t cMax;
-
-	for ( auto& cChannel : fChannelMap )
+	for ( auto& cChannelVector : fChannelMap )
 	{
-		if ( fFitHist ) cChannel.second->fitHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
-		else cChannel.second->differentiateHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
-		cVal = cChannel.second->getPedestal();
-		if ( !cSaturate ) cHpoint[cChannel.first] = cVal;
-		else cHpoint[cChannel.first] = 255;
-		std::cout << "Cbc Id " << +cChannel.first->getCbcId() << " Delay " << +pDelay << " VCth " << +cVal << std::endl;
+		for ( auto& cChannel : cChannelVector.second )
+		{
+			if ( fFitHist ) cChannel->fitHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
+			else cChannel->differentiateHist( fNevents, fHoleMode, pDelay, "Delay", fResultFile );
+			if ( !cSaturate ) cChannel->setPulsePoint( pDelay, cChannel->getPedestal() );
+			else cChannel->setPulsePoint( pDelay, 255 );
+		}
 
 	}
 	updateHists( "", true );
-	return cHpoint;
+	updateHists( "cbc_pulseshape", false );
 }
+
+
 
 
 //////////////////////////////////////		PRIVATE METHODS		/////////////////////////////////////////////
@@ -194,42 +190,79 @@ std::map<Cbc*, uint8_t> PulseShape::ScanVcth( uint32_t pDelay )
 
 void PulseShape::fitGraph( int pLow )
 {
-	// iterate over fCbcHistMap
-	// for each Cbc
-	// 	TGraph->Fit()
-	for ( auto& cCbc : fCbcHistMap )
+	for ( auto& cCbc : fChannelMap )
 	{
-		TGraph* cGraph = static_cast<TGraph*>( getHist( cCbc.first, "cbc_pulseshape" ) );
-		TF1* cFit = static_cast<TF1*>( getHist( cCbc.first, "cbc_pulsefit" ) );
-		//"scale_par"
-		cFit->SetParLimits( 0, 160, 2000 );
-		//"offset"
-		cFit->SetParLimits( 1, pLow, pLow + 300 );
-		//"time_constant"
-		cFit->SetParLimits( 2, 5, 12.5 );
-		//"y_offset"
-		cFit->SetParLimits( 3, 0, 40 );
-		cGraph->Fit( cFit );
+		for ( auto& cChannel : cCbc.second )
+		{
+			TString cName = Form( "f_cbc_pulse_Fe%dCbc%d_Channel%d", cCbc.first->getFeId(), cCbc.first->getCbcId(), cChannel->fChannelId );
+			TObject* cObj = gROOT->FindObject( cName );
+			if ( cObj ) delete cObj;
+			//TF1* cPulseFit = new TF1( cName, pulseshape, ( fDelayAfterPulse - 1 ) * 25, ( fDelayAfterPulse + 6 ) * 25, 6 );
+			TF1* cPulseFit = new TF1( cName, pulseshape, 5000, 5300, 6 );
+
+			cPulseFit->SetParNames( "Amplitude", "t_0", "tau", "Amplitude offset", "Rel. negative pulse amplitude", "Delta t" );
+			//"scale_par"
+			cPulseFit->SetParLimits( 0, 160, 2000 );
+			cPulseFit->SetParameter( 0, 250 );
+			//"offset"
+			cPulseFit->SetParLimits( 1, 5000, 5300 );
+			cPulseFit->SetParameter( 1, 5025 );
+			//"time_constant"
+			cPulseFit->SetParLimits( 2, 25, 75 );
+			cPulseFit->SetParameter( 2, 50 );
+			//"y_offset"
+			cPulseFit->SetParLimits( 3, 0, 200 );
+			cPulseFit->SetParameter( 3, 50 );
+			//"Relative amplitude of negative pulse"
+			cPulseFit->SetParameter( 4, 0.5 );
+			cPulseFit->SetParLimits( 4, 0, 1 );
+			//delta t
+			cPulseFit->FixParameter( 5, 50 );
+
+			cChannel->fPulse->Fit( cPulseFit, "R+S" );
+			TString cDirName = "PulseshapeFits";
+			TDirectory* cDir = dynamic_cast< TDirectory* >( gROOT->FindObject( cDirName ) );
+			if ( !cDir ) cDir = fResultFile->mkdir( cDirName );
+			fResultFile->cd( cDirName );
+			cChannel->fPulse->Write( cChannel->fPulse->GetName(), TObject::kOverwrite );
+			cPulseFit->Write( cPulseFit->GetName(), TObject::kOverwrite );
+			fResultFile->cd();
+		}
+
 	}
 }
 
-int PulseShape::findTestGroup( uint32_t pChannelId )
+
+
+
+std::vector<uint32_t> PulseShape::findChannelsInTestGroup( uint32_t pTestGroup )
 {
-	int cGrp = -1;
-	for ( int cChIndex = 0; cChIndex < 16; cChIndex++ )
+
+
+	std::vector<uint32_t> cChannelVector;
+	for ( int idx = 0; idx < 16; idx++ )
 	{
-		uint32_t cResult = pChannelId / 2 - cChIndex * 8;
-		if ( cResult < 8 )
-			cGrp = cResult;
+		int ctemp1 = idx * 16  + pTestGroup * 2 + 1 ;
+		int ctemp2 = ctemp1 + 1;
+		if ( ctemp1 < 254 ) cChannelVector.push_back( ctemp1 );
+		if ( ctemp2 < 254 )  cChannelVector.push_back( ctemp2 );
 	}
-	return cGrp;
+	return cChannelVector;
+
+
+
+
 }
 
-void PulseShape::enableChannel( uint8_t pChannelId )
+void PulseShape::enableTestGroup( )
 {
-
-	std::string cReg = Form( "Channel%03d", pChannelId + 1 );;
-	CbcRegWriter cWriter( fCbcInterface, cReg, fOffset );
+	std::vector<std::pair<std::string, uint8_t> > cRegVec;
+	for ( auto& cChannel : fChannelVector )
+	{
+		TString cRegName = Form( "Channel%03d", cChannel );
+		cRegVec.push_back( std::make_pair( cRegName.Data(), fOffset ) );
+	}
+	CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
 	this->accept( cWriter );
 }
 
@@ -248,38 +281,31 @@ void PulseShape::setDelayAndTesGroup( uint32_t pDelay )
 
 }
 
-uint32_t PulseShape::fillVcthHist( BeBoard* pBoard, std::vector<Event*> pEventVector, uint32_t pVcth )
+uint32_t PulseShape::fillVcthHist( BeBoard* pBoard, Event* pEvent, uint32_t pVcth )
 {
 	uint32_t cHits = 0;
 	// Loop over Events from this Acquisition
-
 	for ( auto cFe : pBoard->fModuleVector )
 	{
 		for ( auto cCbc : cFe->fCbcVector )
 		{
 			//  get histogram to fill
-
-			auto cChannel = fChannelMap.find( cCbc );
-			if ( cChannel == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCbc->getCbcId() << " )" << std::endl;
+			auto cChannelVector = fChannelMap.find( cCbc );
+			if ( cChannelVector == std::end( fChannelMap ) ) std::cout << "Error, no channel vector mapped to this CBC ( " << +cCbc->getCbcId() << " )" << std::endl;
 			else
 			{
-				uint32_t cCbcHitCounter = 0;
-				for ( auto& cEvent : pEventVector )
+				for ( auto& cChannel : cChannelVector->second )
 				{
-					if ( cEvent->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChannel->second->fChannelId ) )
+					if ( pEvent->DataBit( cFe->getFeId(), cCbc->getCbcId(), cChannel->fChannelId - 1 ) )
 					{
-						cCbcHitCounter++;
-
+						cChannel->fillHist( pVcth );
 						cHits++;
-
 					}
 				}
-				TH1F* cTmpHist = cChannel->second->fScurve;
-				if ( cTmpHist->GetBinContent( cTmpHist->FindBin( pVcth ) ) == 0 ) cChannel->second->fScurve->SetBinContent( pVcth, cCbcHitCounter );
 			}
 		}
+		return cHits;
 	}
-	return cHits;
 }
 
 void PulseShape::parseSettings()
@@ -300,9 +326,9 @@ void PulseShape::parseSettings()
 	cSetting = fSettingsMap.find( "ChannelOffset" );
 	if ( cSetting != std::end( fSettingsMap ) ) fOffset = cSetting->second;
 	else fOffset = 0x05;
-	cSetting = fSettingsMap.find( "Channel" );
-	if ( cSetting != std::end( fSettingsMap ) ) fChannel = cSetting->second;
-	else fChannel = 9;
+	cSetting = fSettingsMap.find( "TestGroup" );
+	if ( cSetting != std::end( fSettingsMap ) ) fTestGroup = cSetting->second;
+	else fTestGroup = 1;
 	cSetting = fSettingsMap.find( "StepSize" );
 	if ( cSetting != std::end( fSettingsMap ) ) fStepSize = cSetting->second;
 	else fStepSize = 5;
@@ -314,20 +340,17 @@ void PulseShape::parseSettings()
 	std::cout << "	HoleMode = " << int( fHoleMode ) << std::endl;
 	std::cout << "	Vplus = " << int( fVplus ) << std::endl;
 	std::cout << "	TPAmplitude = " << int( fTPAmplitude ) << std::endl;
-	std::cout << "	Channel = " << int( fChannel ) << std::endl;
 	std::cout << "	ChOffset = " << int( fOffset ) << std::endl;
 	std::cout << "	StepSize = " << int( fStepSize ) << std::endl;
 	std::cout << "	FitSCurves = " << int( fFitHist ) << std::endl;
+	std::cout << "	TestGroup = " << int( fTestGroup ) << std::endl;
 }
 
-void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
+void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude )
 {
-	// translate the channel id to a test group
+
 	std::vector<std::pair<std::string, uint8_t>> cRegVec;
-
-	//calculate the right test group
-	this->fTestGroup = findTestGroup( pChannelId );
-
+	fChannelVector = findChannelsInTestGroup( fTestGroup );
 	uint8_t cRegValue =  to_reg( 0, fTestGroup );
 	cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup",  cRegValue ) );
 
@@ -355,18 +378,28 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pChannelId )
 			{
 				uint32_t cFeId = cFe->getFeId();
 
-
 				for ( auto& cCbc : cFe->fCbcVector )
 				{
+					std::vector<Channel*> cChannelVector;
 					uint32_t cCbcId = cCbc->getCbcId();
-					Channel* cChannel = new Channel( cBoardId, cFeId, cCbcId, pChannelId );
-					fChannelMap[cCbc] = cChannel;
+					int cMakerColor = 1;
+					for ( auto& cChannelId : fChannelVector )
+					{
+						Channel* cChannel = new Channel( cBoardId, cFeId, cCbcId, cChannelId );
+						TString cName =  Form( "g_cbc_pulseshape_Fe%dCbc%d_Channel%d", cFeId, cCbcId, cChannelId );
+						cChannel->initializePulse( cName );
+						cChannelVector.push_back( cChannel );
+						cChannel->fPulse->SetMarkerColor( cMakerColor );
+						cMakerColor++;
+						TMultiGraph* cTmpGraph = static_cast<TMultiGraph*>( getHist( cCbc, "cbc_pulseshape" ) );
+						cTmpGraph->Add( cChannel->fPulse, "lp" );
+					}
+					fChannelMap[cCbc] = cChannelVector;
 				}
-				// enableChannel( pChannelId );
-				std::cout << "Channel: " << +pChannelId << std::endl;
 			}
 		}
 	}
+
 
 }
 
@@ -378,42 +411,67 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 		if ( pHistName == "" )
 		{
 			// now iterate over the channels in the channel map and draw
-			auto cChannel = fChannelMap.find( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ) );
-			if ( cChannel == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCanvas.first << " )" << std::endl;
+			auto cChannelVector = fChannelMap.find( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ) );
+			if ( cChannelVector == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCanvas.first << " )" << std::endl;
 			else
 			{
-				cCanvas.second->cd( 1 );
-				cChannel->second->fScurve->Draw( "P" );
+				TString cOption = "P";
+				for ( auto& cChannel : cChannelVector->second )
+				{
+					cCanvas.second->cd( 1 );
+					cChannel->fScurve->Draw( cOption );
+					cOption = "p same";
+				}
 			}
 		}
 		if ( pHistName == "" && pFinal )
 		{
 			// now iterate over the channels in the channel map and draw
-			auto cChannel = fChannelMap.find( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ) );
-			if ( cChannel == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCanvas.first << " )" << std::endl;
+			auto cChannelVector = fChannelMap.find( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ) );
+			if ( cChannelVector == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCanvas.first << " )" << std::endl;
 			else
 			{
-				cCanvas.second->cd( 1 );
-				cChannel->second->fScurve->Draw( "P" );
-				if ( fFitHist ) cChannel->second->fFit->Draw( "same" );
-				else cChannel->second->fDerivative->Draw( "same" );
+				TString cOption = "P";
+				for ( auto& cChannel : cChannelVector->second )
+				{
+					cCanvas.second->cd( 1 );
+					cChannel->fScurve->Draw( cOption );
+					cOption = "p same";
+					if ( fFitHist ) cChannel->fFit->Draw( "same" );
+					else cChannel->fDerivative->Draw( "same" );
+				}
 			}
 		}
 		else if ( pHistName == "cbc_pulseshape" )
 		{
+			auto cChannelVector = fChannelMap.find( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ) );
+			if ( cChannelVector == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCanvas.first << " )" << std::endl;
+			else
+			{
+				TH2I* cTmpFrame = static_cast<TH2I*>( getHist( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ), "frame" ) );
+				cCanvas.second->cd( 2 );
+				cTmpFrame->Draw( );
+				TString cOption = "P same";
+				for ( auto& cChannel : cChannelVector->second )
+				{
+					cCanvas.second->cd( 2 );
+					cChannel->fPulse->Draw( cOption );
+					cOption = "P same";
+				}
 
-			cCanvas.second->cd( 2 );
-			TGraph* cTmpGraph = dynamic_cast<TGraph*>( getHist( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ), pHistName ) );
-			cTmpGraph->Draw( "AP" );
+			}
 		}
 		else if ( pHistName == "cbc_pulseshape" && pFinal )
 		{
-
-			cCanvas.second->cd( 2 );
-			TGraph* cTmpGraph = dynamic_cast<TGraph*>( getHist( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ), pHistName ) );
-			TF1* cTmpFit = dynamic_cast<TF1*>( getHist( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ), "cbc_pulsefit" ) );
-			cTmpGraph->Draw( "AP" );
-			cTmpFit->Draw( "same" );
+			auto cChannelVector = fChannelMap.find( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ) );
+			if ( cChannelVector == std::end( fChannelMap ) ) std::cout << "Error, no channel mapped to this CBC ( " << +cCanvas.first << " )" << std::endl;
+			else
+			{
+				cCanvas.second->cd( 2 );
+				TMultiGraph* cMultiGraph = static_cast<TMultiGraph*>( getHist( static_cast<Ph2_HwDescription::Cbc*>( cCanvas.first ), "cbc_pulseshape" ) );
+				cMultiGraph->Draw( "A" );
+				cCanvas.second->Modified();
+			}
 		}
 
 		cCanvas.second->Update();
@@ -423,10 +481,11 @@ void PulseShape::updateHists( std::string pHistName, bool pFinal )
 double pulseshape( double* x, double* par )
 {
 	double xx = x[0];
-	double temp = pow( ( xx - par[1] ) / par[2] , 3 );
-	double val = ( ( par[0] * temp * exp( -( ( xx - par[1] ) / par[2] ) ) ) ) + par[3];
-	if ( xx < par[1] )
-		val = par[3];
+	double val = par[3];
+	if ( xx > par[1] )
+		val += par[0] * ( xx - par[1] ) / par[2] * exp( -( ( xx - par[1] ) / par[2] ) );
+	if ( xx > par[1] + par[5] )
+		val -= par[0] * par[4] * ( xx - par[1] - par[5] ) / par[2]  * exp( -( ( xx - par[1] - par[5] ) / par[2] ) );
 	return val;
 }
 

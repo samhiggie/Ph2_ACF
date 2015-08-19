@@ -57,6 +57,21 @@ void Channel::setOffset( uint8_t pOffset )
 	fOffset = pOffset;
 }
 
+void Channel::initializePulse( TString pName )
+{
+	TObject* cObj = gROOT->FindObject( pName );
+	if ( cObj ) delete cObj;
+	fPulse = new TGraph();
+	fPulse->SetName( pName );
+	fPulse->SetMarkerStyle( 3 );
+	fPulse->GetXaxis()->SetTitle( "TestPulseDelay [ns]" );
+	fPulse->GetYaxis()->SetTitle( "TestPulseAmplitue [VCth]" );
+	// fPulse->GetYaxis()->SetRangeUser( 0, 255 );
+	// fPulse->GetHistogram()->SetMaximum( 255. );
+	// fPulse->GetHistogram()->SetMinimum( 0. );
+	fPulse->GetYaxis()->SetLimits( 0, 255 );
+
+}
 void Channel::initializeHist( uint8_t pValue, TString pParameter )
 {
 
