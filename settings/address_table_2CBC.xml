@@ -55,6 +55,10 @@
 		<node id="gbt_phase_mon_reset" address="0x0" mask="0x04000000" permission="rw" />
 		<node id="fpga_program_b_trst" address="0x0" mask="0x10000000" permission="rw" />
 	</node>
+    	<node id="ctrl_2"       address="0x00000005"   permission="rw">
+		<node id="icap_page"    mask="0x00000003"       permission="rw"/>
+		<node id="icap_trigg"      mask="0x00000010"       permission="rw"/>
+	</node>
 	
 	<!-- SYSTEM STATUS -->
 	<node id="status" address="0x00000006" permission="r" mode="single">

@@ -41,6 +41,12 @@ namespace Ph2_HwInterface
  * \return String describing the upload status containing the block number and the estimated remaining time
  */
 			const std::string& getProgressString() const {return progressString;}
+
+/*! \brief Jump to an FPGA configuration
+ * \param numConfig FPGA configuration number
+ */
+			void jumpToImage( uint16_t numImage);
+
 		private:
 
 			timeval timStart, timEnd;

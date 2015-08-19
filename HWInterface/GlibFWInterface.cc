@@ -599,4 +599,16 @@ namespace Ph2_HwInterface
 
 		fpgaConfig->runUpload( numConfig, pstrFile );
 	}
+
+	void GlibFWInterface::JumpToFpgaConfig( uint16_t numConfig)
+	{
+		if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
+			throw Exception( "This board is uploading an FPGA configuration" );
+
+		if ( !fpgaConfig )
+			fpgaConfig = new FpgaConfig( this );
+
+		fpgaConfig->jumpToImage( numConfig == 1 ? 0 : numConfig);
+	}
+
 }

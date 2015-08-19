@@ -11,7 +11,7 @@
 #ifndef __BEBOARDFWINTERFACE_H__
 #define __BEBOARDFWINTERFACE_H__
 
-#include <thread>
+#include <boost/thread.hpp>
 #include <uhal/uhal.hpp>
 #include "RegManager.h"
 #include "../Utils/Event.h"
@@ -85,8 +85,10 @@ namespace Ph2_HwInterface
 		*/
 		virtual void getBoardInfo();
 
-		//These two methods will be implemented soon
+		/*! \brief Upload a configuration in a board FPGA */
 		virtual void FlashProm( uint16_t numConfig, const char* pstrFile ) {}
+		/*! \brief Jump to an FPGA configuration */
+		virtual void JumpToFpgaConfig( uint16_t numConfig){}
 		virtual const FpgaConfig* getConfiguringFpga() {
 			return nullptr;
 		}
