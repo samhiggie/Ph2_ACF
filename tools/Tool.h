@@ -18,6 +18,7 @@
 #include "TFile.h"
 #include "TObject.h"
 #include "TCanvas.h"
+#include "THttpServer.h"
 
 using namespace Ph2_System;
 
@@ -35,6 +36,7 @@ class Tool : public SystemController
   public:
 	std::string fDirectoryName;             /*< the Directoryname for the Root file with results */
 	TFile* fResultFile;                /*< the Name for the Root file with results */
+	THttpServer* fHttpServer;
 
 	Tool() {}
 
@@ -67,7 +69,7 @@ class Tool : public SystemController
 		}
 		// find histogram with given name: if it exists, delete the object, if not create
 		auto cHisto = cCbcHistMap->second.find( pName );
-		if ( cHisto != std::end( cCbcHistMap->second ) ) cCbcHistMap->second.erase(cHisto);
+		if ( cHisto != std::end( cCbcHistMap->second ) ) cCbcHistMap->second.erase( cHisto );
 		cCbcHistMap->second[pName] = pObject;
 	}
 
@@ -83,7 +85,7 @@ class Tool : public SystemController
 		}
 		// find histogram with given name: if it exists, delete the object, if not create
 		auto cHisto = cModuleHistMap->second.find( pName );
-		if ( cHisto != std::end( cModuleHistMap->second ) ) cModuleHistMap->second.erase(cHisto);
+		if ( cHisto != std::end( cModuleHistMap->second ) ) cModuleHistMap->second.erase( cHisto );
 		cModuleHistMap->second[pName] = pObject;
 	}
 
@@ -183,6 +185,12 @@ class Tool : public SystemController
 			fResultFile = TFile::Open( cFilename.c_str(), "RECREATE" );
 		}
 		else std::cout << RED << "ERROR: " << RESET << "No Result Directory initialized - not saving results!" << std::endl;
+	}
+
+	void StartHttpServer() {
+		if ( fHttpServer ) delete fHttpServer;
+		fHttpServer = new THttpServer( "http:8081" );
+		fHttpServer->SetReadOnly( kTRUE );
 	}
 };
 #endif
