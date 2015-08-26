@@ -3,8 +3,8 @@
 
 
 <?php
-//ob_implicit_flush(true);
-//ob_end_flush();
+ob_implicit_flush(true);
+ob_end_flush();
 set_include_path(get_include_path() . PATH_SEPARATOR . 'amassett/Ph2_ACF/www/html');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -48,12 +48,13 @@ fclose($file);
 // echo "\n"."the command is: "."source ".$command."\n";
 
 // echo "\n"."the path is: ". exec('pwd');
-// $process = proc_open("source ".$command, $descriptorspec, $pipes, $current_path, array());
+// // $process = proc_open("source ".$command, $descriptorspec, $pipes, $current_path, array());
+// $process = proc_open($cmd, $descriptorspec, $pipes, $current_path, array());
 // echo "<pre>";
 // if (is_resource($process)) {
 
 //     while ($s = fgets($pipes[1])) {
-//     	echo "provas";
+//     	echo "print me";
 //         print $s;
 //         flush();
 
@@ -62,11 +63,43 @@ fclose($file);
 
 // echo "</pre>";
 
+
+
+
+
+
 $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
- exec("source ".$command, $output);
-  foreach ( $output as $item ) {
-        echo $item . "<br/>";
-    }
+$handle = popen("source ".$command, "r");
+while (!feof($handle)) {
+    $data = fgets($handle);
+    print $data."<br/>";
+   
+   
+   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
+//  exec("source ".$command, $output);
+//   foreach ( $output as $item ) {
+//         echo $item . "<br/>";
+//     }
 
 ?>
 

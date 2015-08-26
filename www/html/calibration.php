@@ -42,7 +42,7 @@ div#navigation li#activelink a{border-bottom: 1px solid #fff;background-color: #
 <br><br>
 <input type="checkbox" name="All_channel" value="yes">Calibration using all channel
 <br><br>
-Output Folder:<input type="textfield" name="output" value="Results">
+Output Folder:<input type="textfield" name="output" value="Results/">
 <br><br>
 Hw Description File:<input type="textfield" name="Hw Description File " value="settings/Calibration2CBC.xml">
 <br><br><br><br>
