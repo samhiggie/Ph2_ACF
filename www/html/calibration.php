@@ -30,7 +30,8 @@ div#navigation li#activelink a{border-bottom: 1px solid #fff;background-color: #
     <li id="activelink"><a href="calibration.php">Calibration</a></li>
 </ul>
 </div>
-<form action="action_calibration.php" method=post>
+
+<form action="action_calibration.php" method=post  target="my_iframe">
 <br><br><br><br>
 <input type="radio" name="type" value="fast" checked>Fast Calibration
 <br><br>
@@ -47,6 +48,22 @@ Output Folder:<input type="textfield" name="output" value="Results/">
 Hw Description File:<input type="textfield" name="Hw Description File " value="settings/Calibration2CBC.xml">
 <br><br><br><br>
 <input type="submit" value="Submit">
+<br><br>
+
 </form> 
+<script type="text/javascript" ></script>
+    <script>
+      $(document).ready(function(){
+        var locations = ["", "action_calibration.php"];
+        var len = locations.length;
+        var iframe = $('#frame');
+        var i = 0;
+        setInterval(function () {
+            iframe.attr('src', locations[++i % len]);
+        }, 30000);
+      });
+    </script>
+<iframe id="frame" name="my_iframe"  height="520" width="99%"></iframe>
+
 </body>
 </html>

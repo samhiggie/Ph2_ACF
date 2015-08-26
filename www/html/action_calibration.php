@@ -33,39 +33,8 @@ echo $formatted;
 
 echo "<br/>";
 
-fwrite($file, "#!/bin/bash"."\n"."cd ../../"."\n"."source setup.sh"."\n".$formatted);
+fwrite($file, "#!/bin/bash"."\n"."cd ../../"."\n"."source "."$(pwd)/setup.sh" ."\n".$formatted);
 fclose($file);
-
-
-// $cmd = "ping 127.0.0.1";
-// $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
-// $descriptorspec = array(
-//    0 => array("pipe", "r"),   // stdin is a pipe that the child will read from
-//    1 => array("pipe", "w"),   // stdout is a pipe that the child will write to
-//    2 => array("pipe", "w")    // stderr is a pipe that the child will write to
-// );
-// flush();
-// echo "\n"."the command is: "."source ".$command."\n";
-
-// echo "\n"."the path is: ". exec('pwd');
-// // $process = proc_open("source ".$command, $descriptorspec, $pipes, $current_path, array());
-// $process = proc_open($cmd, $descriptorspec, $pipes, $current_path, array());
-// echo "<pre>";
-// if (is_resource($process)) {
-
-//     while ($s = fgets($pipes[1])) {
-//     	echo "print me";
-//         print $s;
-//         flush();
-
-//     }
-// }
-
-// echo "</pre>";
-
-
-
-
 
 
 $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
@@ -77,23 +46,6 @@ while (!feof($handle)) {
    
    
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
 //  exec("source ".$command, $output);
