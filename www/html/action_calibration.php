@@ -1,9 +1,7 @@
 <html>
 <body>
 
-<form action="stop.php" method=post>
-<input type="submit" name="ciao" value="STOP">
-</form>
+
 <?php
 ob_implicit_flush(true);
 ob_end_flush();
@@ -48,20 +46,21 @@ $count=10;
 while ((!feof($handle))&& $continue) {
     $data = fgets($handle);
     print $data."<br/>";
-    echo $continue;
+    // echo $continue;
 
-       if($count>65)
-         $continue=FALSE;
-     echo $count;
-     $count++;
+     //   if($count>65)
+     //     $continue=FALSE;
+     // echo $count;
+     // $count++;
       
   	// if(isset($_POST['exec1'])==TRUE){
   	// BREAK;
    // }
    
 }
-shell_exec("kill $(pidof calibrate)");
-exit();
+
+//shell_exec("kill $(pidof calibrate)");
+
 
 // $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
 //  exec("source ".$command, $output);
