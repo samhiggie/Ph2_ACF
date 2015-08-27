@@ -43,8 +43,8 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "batch", "b" );
 
-	cmd.defineOption("gui","option only suitable when launching from gui", ArgvParser::NoOptionAttribute);
-	cmd.defineOptionAlternative("gui", "g");
+	cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "gui", "g" );
 
 
 	int result = cmd.parse( argc, argv );
@@ -54,7 +54,7 @@ int main( int argc, char* argv[] )
 		std::cout << cmd.parseErrorDescription( result );
 		exit( 1 );
 	}
-	bool isGui = (cmd.foundOption("gui")) ? true : false;
+	bool isGui = ( cmd.foundOption( "gui" ) ) ? true : false;
 
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/CMTest2CBC.xml";
@@ -74,8 +74,8 @@ int main( int argc, char* argv[] )
 	cTester.InitializeSettings( cHWFile );
 	cTester.CreateResultDirectory( cDirectory );
 	cTester.InitResultFile( "CMTest" );
-
-	if(!isGui) cTester.ConfigureHw();
+	cTester.StartHttpServer( 8081 );
+	if ( !isGui ) cTester.ConfigureHw();
 
 	// Here comes our Part:
 	if ( cScan ) cTester.ScanNoiseChannels();
