@@ -44,18 +44,24 @@ fclose($file);
 $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
 $handle = popen("source ".$command, "r");
 $continue=TRUE;
+$count=10;
 while ((!feof($handle))&& $continue) {
     $data = fgets($handle);
     print $data."<br/>";
     echo $continue;
 
-  	if(isset($_POST['exec1'])==TRUE){
-  	BREAK;
-   }
+       if($count>65)
+         $continue=FALSE;
+     echo $count;
+     $count++;
+      
+  	// if(isset($_POST['exec1'])==TRUE){
+  	// BREAK;
+   // }
    
 }
 shell_exec("kill $(pidof calibrate)");
-
+exit();
 
 // $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
 //  exec("source ".$command, $output);

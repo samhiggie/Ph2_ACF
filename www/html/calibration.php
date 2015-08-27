@@ -61,6 +61,17 @@ Hw Description File:<input type="textfield" name="Hw Description File " value="s
 <br><br>
 
 </form> 
+<form action="" method="POST">
+<input type="button" value="STOP" name="STOP">
+</form>
+
+<?php 
+   if (isset($_POST["STOP"]))
+   {
+
+  shell_exec("kill $(pidof calibrate)");
+}
+?>
 <!-- <form action="stop.php" method=get >
   <input type="submit" name="stop" value="STOP">
 </form> -->
