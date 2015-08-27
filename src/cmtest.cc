@@ -74,7 +74,7 @@ int main( int argc, char* argv[] )
 	cTester.InitializeSettings( cHWFile );
 	cTester.CreateResultDirectory( cDirectory );
 	cTester.InitResultFile( "CMTest" );
-	cTester.StartHttpServer( 8081 );
+	cTester.StartHttpServer( 8082 );
 	if ( !isGui ) cTester.ConfigureHw();
 
 	// Here comes our Part:
