@@ -17,6 +17,12 @@ div#navigation li a{text-decoration: none;border: 1px solid #787878;padding: 0px
     background: #ccc;color: #036}
 div#navigation li a:hover{background-color: #f0f0f0}
 div#navigation li#activelink a{border-bottom: 1px solid #fff;background-color: #fff;color: #603}
+
+div#allign{
+	position: absolute;
+    right: 600px;
+    }
+  
 </style>
 </head>
 <body>
@@ -30,7 +36,10 @@ div#navigation li#activelink a{border-bottom: 1px solid #fff;background-color: #
     <li id="activelink"><a href="calibration.php">Calibration</a></li>
 </ul>
 </div>
-
+ <div id="allign">
+ <br>
+      <iframe id="frame" name="my_iframe"  height="520" width="1100" allign="right"  frameBorder="0" ></iframe>
+</div>
 <form action="action_calibration.php" method=post  target="my_iframe">
 <br><br><br><br>
 <input type="radio" name="type" value="fast" checked>Fast Calibration
@@ -47,10 +56,14 @@ Output Folder:<input type="textfield" name="output" value="Results/">
 <br><br>
 Hw Description File:<input type="textfield" name="Hw Description File " value="settings/Calibration2CBC.xml">
 <br><br><br><br>
-<input type="submit" value="Submit">
+<input type="submit" name="exec" value="Submit">
+
 <br><br>
 
 </form> 
+<!-- <form action="stop.php" method=get >
+  <input type="submit" name="stop" value="STOP">
+</form> -->
 <script type="text/javascript" ></script>
     <script>
       $(document).ready(function(){
@@ -63,7 +76,6 @@ Hw Description File:<input type="textfield" name="Hw Description File " value="s
         }, 30000);
       });
     </script>
-<iframe id="frame" name="my_iframe"  height="520" width="99%"></iframe>
-
+   
 </body>
 </html>
