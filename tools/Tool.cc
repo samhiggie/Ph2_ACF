@@ -148,12 +148,13 @@ void Tool::InitResultFile( const std::string& pFilename )
 	else std::cout << RED << "ERROR: " << RESET << "No Result Directory initialized - not saving results!" << std::endl;
 }
 
-void Tool::StartHttpServer( const int pPort, bool pReadonly )
+void Tool::StartHttpServer( const int pPort, const int pRefreshTime, bool pReadonly )
 {
 #ifdef __HTTP__
 	fHttpServer = new THttpServer( Form( "http:%d", pPort ) );
 	fHttpServer->SetReadOnly( pReadonly );
-	// fHttpServer->SetJSROOT( "https://root.cern.ch/js/3.3" );
+	fHttpServer->SetTimer( pRefreshTime, kTRUE );
+	std::cout << "Opening THttpServer on port " << pPort << "." << std::endl;
 #else
 	std::cout << "Error, ROOT version < 5.34 detected or not compiled with Http Server support!" << std::endl << " No THttpServer available! - The webgui will fail to show plots!" << std::endl;
 	std::cout << "ROOT must be built with '--enable-http' flag to use this feature." << std::endl;

@@ -193,7 +193,7 @@ void HybridTester::ScanThreshold()
 					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					for ( auto& cEvent: events )
+					for ( auto& cEvent : events )
 					{
 						// loop over Modules & Cbcs and count hits separately
 						cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
@@ -336,6 +336,9 @@ void HybridTester::processSCurves( uint32_t pEventsperVcth )
 
 	}
 	fSCurveCanvas->Update();
+#ifdef __HTTP__
+	fHttpServer->ProcessRequests();
+#endif
 
 	// Write and Save the Canvas as PDF
 	fSCurveCanvas->Write( fSCurveCanvas->GetName(), TObject::kOverwrite );
@@ -388,6 +391,9 @@ void HybridTester::updateSCurveCanvas( BeBoard* pBoard )
 		}
 	}
 	fSCurveCanvas->Update();
+#ifdef __HTTP__
+	fHttpServer->ProcessRequests();
+#endif
 }
 
 
@@ -458,7 +464,7 @@ void HybridTester::Measure()
 				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 				// Loop over Events from this Acquisition
-				for ( auto& cEvent: events )
+				for ( auto& cEvent : events )
 				{
 					HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
 					pBoard->accept( cFiller );
