@@ -18,7 +18,10 @@
 #include "TFile.h"
 #include "TObject.h"
 #include "TCanvas.h"
+
+#ifdef __HTTP__
 #include "THttpServer.h"
+#endif
 
 using namespace Ph2_System;
 
@@ -36,8 +39,9 @@ class Tool : public SystemController
   public:
 	std::string fDirectoryName;             /*< the Directoryname for the Root file with results */
 	TFile* fResultFile;                /*< the Name for the Root file with results */
+#ifdef __HTTP__
 	THttpServer* fHttpServer;
-
+#endif
 	Tool() {}
 
 	~Tool() {}
@@ -187,10 +191,15 @@ class Tool : public SystemController
 		else std::cout << RED << "ERROR: " << RESET << "No Result Directory initialized - not saving results!" << std::endl;
 	}
 
-	void StartHttpServer() {
-		if ( fHttpServer ) delete fHttpServer;
-		fHttpServer = new THttpServer( "http:8081" );
-		fHttpServer->SetReadOnly( kTRUE );
+	void StartHttpServer( int pPort = 8082, bool pReadonly = true ) {
+#ifdef __HTTP__
+		fHttpServer = new THttpServer( Form( "http:%d", pPort ) );
+		fHttpServer->SetReadOnly( pReadonly );
+		fHttpServer->SetJSROOT( "https://root.cern.ch/js/3.3" );
+#else
+		std::cout << "Error, ROOT version < 5.34 detected or not compiled with Http Server support!" << std::endl << " No THttpServer available! - The webgui will fail to show plots!" << std::endl;
+		std::cout << "ROOT must be built with '--enable-http' flag to use this feature." << std::endl;
+#endif
 	}
 };
 #endif
