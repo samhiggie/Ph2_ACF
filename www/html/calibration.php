@@ -61,16 +61,17 @@ Hw Description File:<input type="textfield" name="Hw Description File " value="s
 <br><br>
 
 </form> 
-<form action="" method="GET">
+<form action="calibration.php" method="GET">
 <input type="submit" value="STOP" name="STOP">
 </form>
 
 <?php 
+   print "Probably someone is about to die...".isset($_GET["STOP"])."<br />";
    if (isset($_GET["STOP"]))
    {
-
-  shell_exec("kill $(pidof calibrate)");
-}
+      shell_exec("kill $(pidof calibrate)");
+      shell_exec("touch /tmp/bwahahahahahahahaha");
+    }
 ?>
 <!-- <form action="stop.php" method=get >
   <input type="submit" name="stop" value="STOP">

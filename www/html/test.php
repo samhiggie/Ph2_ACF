@@ -1,34 +1,107 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Border Tabs - Css</title>
-<meta http-equiv="content-type" content="text/html; charset=iso-8859-1">
-<meta name="generator" content="HAPedit 3.0">
-<style type="text/css">
-html,body{margin:0;padding:0}
-body{font: 100.01% "Trebuchet MS",Arial,sans-serif}
-div#header{background-color:#9CF}
-div#header h1{margin:0;line-height:70px;margin-left:20px}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN">
+<html lang="en">
+<head >
 
-div#navigation{background-color: #9cf;border-bottom: 1px solid #787878;padding-left: 20px}
-div#navigation ul{list-style-type: none;margin: 0;padding: 0;white-space: nowrap}
-div#navigation li{display: inline;margin: 0;padding: 0}
-div#navigation li a{text-decoration: none;border: 1px solid #787878;padding: 0px 0.3em;
-    background: #ccc;color: #036}
-div#navigation li a:hover{background-color: #f0f0f0}
-div#navigation li#activelink a{border-bottom: 1px solid #fff;background-color: #fff;color: #603}
-</style>
-</head>
-<body>
-<div id="header"><h1></h1></div>
-<div id="navigation">
-<ul>
+   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+   <title>Demonstrator of online usage of JSROOT</title>
+
+   <!--  load JSROOT with 2D graphic -->
+   <script src="http://root.cern.ch/js/3.6/scripts/JSRootCore.js?2d" type="text/javascript"></script>
+
+   <script type='text/javascript'>
+function getOutput() {
+   setInterval(function(){
+ getRequest(
+      'prova1.php', // URL for the PHP file
+       drawOutput,  // handle successful request
+       drawError    // handle error
+  );
+  createGUI();
+  return true;
+
+
+   },3000);
+ 
+}  
+// handles drawing an error message
+function drawError() {
+    var container = document.getElementById('output');
+    container.innerHTML = 'Bummer: there was an error!';
+}
+// handles the response, adds the html
+function drawOutput(responseText) {
+    var container = document.getElementById('output');
+    container.innerHTML = responseText;
+}
+// helper function for cross-browser request object
+function getRequest(url, success, error) {
+    var req = false;
+    try{
+        // most browsers
+        req = new XMLHttpRequest();
+    } catch (e){
+        // IE
+        try{
+            req = new ActiveXObject("Msxml2.XMLHTTP");
+        } catch(e) {
+            // try an older version
+            try{
+                req = new ActiveXObject("Microsoft.XMLHTTP");
+            } catch(e) {
+                return false;
+            }
+        }
+    }
+    if (!req) return false;
+    if (typeof success != 'function') success = function () {};
+    if (typeof error!= 'function') error = function () {};
+    req.onreadystatechange = function(){
+        if(req.readyState == 4) {
+            return req.status === 200 ? 
+                success(req.responseText) : error(req.status);
+        }
+    }
+    req.open("GET", url, true);
+    req.send(null);
    
-    <li><a href="fpgaconfig.php">FPGAconfig</a></li>
-    <li><a href="miniDAQ.php">MiniDAQ</a></li>
-    <li><a href="datatest.php">Datatest</a></li>
-    <li id="activelink"><a href="calibration.php">Calibration</a></li>
-</ul>
+    return req;
+}
+
+
+      var mdi = null;
+      var cnt = 0;
+      var drawopt = null;
+     
+     //  var request_addr = "http://127.0.0.1:8082/Canvases/Fe0_Cbc0_Calibration/root.json";
+
+
+      function createGUI() {
+         // json file stored in same folder, absolute address can be used as well
+           
+         var addr = "provami1.json"
+    var addr2 = "provami2.json"
+        var req = JSROOT.NewHttpRequest(addr, 'object', function(obj) {
+          JSROOT.draw("drawing", obj, "hist");
+        });
+
+         req.send(null);
+      var req = JSROOT.NewHttpRequest(addr2, 'object', function(obj) {
+          JSROOT.draw("drawing2", obj, "hist");
+        });
+         req.send(null);
+      
+      }
+   </script>
+</head>
+
+<body>
+<div style="width:1800 ">
+  <div id="drawing"  style="width:800px; height:600px; float:left; "></div>
+ <div id="drawing2"  style="width:800px; height:600px; float:left;" ></div>
 </div>
+
 </body>
+<a href="#" onclick="return getOutput();"> test </a>
+<div id="output">waiting for action</div>
 </html>

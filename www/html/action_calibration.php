@@ -43,9 +43,10 @@ $command =  preg_replace('/\s+/', '', $current_path.'/initialize.sh');
 $handle = popen("source ".$command, "r");
 $continue=TRUE;
 $count=10;
+print "<pre>";
 while ((!feof($handle))&& $continue) {
     $data = fgets($handle);
-    print $data."<br/>";
+    print $data;
     // echo $continue;
 
      //   if($count>65)
@@ -58,6 +59,7 @@ while ((!feof($handle))&& $continue) {
    // }
    
 }
+print "</pre>";
 
 //shell_exec("kill $(pidof calibrate)");
 
