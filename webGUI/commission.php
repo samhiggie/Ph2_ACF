@@ -28,29 +28,39 @@ div#allign{
 <body>
 <div id="header"><h1></h1></div>
 <div id="navigation">
+
+<!-- this is the tab menu', for create another tab just copy this part and the css part adding a link with id="activelink" with href="yourNewPage.php"-->
 <ul>
    
     <li><a href="fpgaconfig.php">FPGAconfig</a></li>
     <li><a href="miniDAQ.php">MiniDAQ</a></li>
     <li><a href="datatest.php">Datatest</a></li>
-    <li id="activelink"><a href="calibration.php">Calibration</a></li>
+    <li><a href="calibration.php">Calibration</a></li>
+    <li id="activelink"><a href="commission.php">Commission</a></li>
 </ul>
 </div>
+
+
  <div id="allign">
  <br>
       <iframe id="frame" name="my_iframe"  height="520" width="1100" allign="right"  frameBorder="0" ></iframe>
 </div>
-<form action="action_calibration.php" method=post  target="my_iframe">
+
+<!-- this is the form that starts action calibration.php after the click on submit -->
+<form action="action_commission.php" method=post  target="my_iframe">
 <br><br><br><br>
-<input type="radio" name="type" value="fast" checked>Fast Calibration
+
+<input type="checkbox" name="latency" value="yes">scan the trigger latency
 <br><br>
-<input type="radio" name="type" value="old">Old Calibration
+<input type="checkbox" name="treshold" value="yes"> scan the CBC comparator threshold
 <br><br>
-<input type="checkbox" name="ScanVPlus" value="yes" checked>Scan Vcth vs VPlus
+<input type="checkbox" name="stublatency" value="yes">scan the stub latency
 <br><br>
-<input type="checkbox" name="Bitwise" value="yes">Bitwise Offset Tuning
+<input type="checkbox" name="pedestal" value="yes"> scan the CBC pedestals in addition with the threshold scan
 <br><br>
-<input type="checkbox" name="All_channel" value="yes">Calibration using all channel
+Minimum value for latency scan:<input type="textfield" name="minimum" >
+<br><br>
+Range in cycles for latency scan:<input type="textfield" name="range" >
 <br><br>
 Output Folder:<input type="textfield" name="output" value="Results/">
 <br><br>
@@ -61,16 +71,18 @@ Hw Description File:<input type="textfield" name="Hw Description File " value="s
 <br><br>
 
 </form> 
-<form action="calibration.php" method="GET">
+
+
+<form action="" method="GET">
 <input type="submit" value="STOP" name="STOP">
 </form>
 
 <?php 
-   print "Probably someone is about to die...".isset($_GET["STOP"])."<br />";
+   
    if (isset($_GET["STOP"]))
    {
-      shell_exec("kill $(pidof calibrate)");
-      shell_exec("touch /tmp/bwahahahahahahahaha");
+      shell_exec("kill $(pidof commission)");
+      
     }
 ?>
 <!-- <form action="stop.php" method=get >
@@ -79,7 +91,7 @@ Hw Description File:<input type="textfield" name="Hw Description File " value="s
 <script type="text/javascript" ></script>
     <script>
       $(document).ready(function(){
-        var locations = ["", "action_calibration.php"];
+        var locations = ["", "action_commission.php"];
         var len = locations.length;
         var iframe = $('#frame');
         var i = 0;

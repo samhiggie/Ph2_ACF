@@ -11,31 +11,39 @@ ini_set('display_errors', 1);
  
 $current_path=shell_exec("pwd");
 $command=null;
-$formatted="calibrate";
+$formatted="datatest";
 $file=fopen("initialize.sh","w") or die("Unable to open file!");
-$calibr_type = $_POST['type'];
-if($calibr_type=="old")
-$formatted=$formatted." --old";
+$vcth;
 
-if(isset($_POST['ScanVPlus']))
-	$formatted=$formatted." --skip";
 
-if(isset($_POST['Bitwise']))
-$formatted=$formatted." --bm";
+if(isset($_POST['ignoreI2c']))
+	$formatted=$formatted." -i";
 
-if(isset($_POST['All_channel']))
-$formatted=$formatted." -a";
+if(isset($_POST['parallel']))
+$formatted=$formatted." -p";
 
-$formatted=$formatted." -o ".$_POST['output'];
+if(isset($_POST['save']))
+$formatted=$formatted." -s";
+
+// if(isset($_POST['vcth'])){
+
+// $vcth = $_POST['vcth'];
+// $formatted=$formatted." --vcth ".$vcth;
+// }
+
+if($_POST['vcth']!="")
+$formatted=$formatted." -v ".$_POST['vcth'];
+
+if($_POST['events']!="")
+$formatted=$formatted." -e ".$_POST['events'];
 
 $formatted=$formatted." -f ".$_POST['Hw_Description_File_'];
 
 
-echo $formatted;
 
 echo "<br/>";
 
-fwrite($file, "#!/bin/bash"."\n"."cd ../../"."\n"."source "."$(pwd)/setup.sh" ."\n".$formatted);
+fwrite($file, "#!/bin/bash"."\n"."cd ../"."\n"."source "."$(pwd)/setup.sh" ."\n".$formatted);
 fclose($file);
 
 

@@ -48,7 +48,7 @@ function drawOutput(responseText) {
 }
 // helper function for cross-browser request object
 function getRequest(url, success, error) {
-    startGUI();
+    
     var req = false;
     try{
         // most browsers
@@ -75,8 +75,10 @@ function getRequest(url, success, error) {
                 success(req.responseText) : error(req.status);
         }
     }
-    req.open("GET", url, true);
+    req.open("GET", url, false);
+    
     req.send(null);
+    startGUI();
     return req;
 }
 
@@ -128,7 +130,7 @@ function getRequest(url, success, error) {
           req.send(null); 
            if (addr!=null) request_addr2 = addr; 
 
-         var req = JSROOT.NewHttpRequest(request_addr2, 'object', function(histo) {
+         var req2 = JSROOT.NewHttpRequest(request_addr2, 'object', function(histo) {
             if (!histo) {
                d3.select('#drawing2').html("<h3>Can not get " + request_addr2 + " from the server</h3>"); 
                return;
@@ -141,7 +143,7 @@ function getRequest(url, success, error) {
           });
 
          
-          req.send(null); 
+          req2.send(null); 
       }
 
       function startGUI() {
