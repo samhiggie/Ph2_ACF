@@ -86,13 +86,18 @@ namespace Ph2_HwInterface
 		virtual void getBoardInfo();
 
 		/*! \brief Upload a configuration in a board FPGA */
-		virtual void FlashProm( uint16_t numConfig, const char* pstrFile ) {}
+		virtual void FlashProm( const std::string& strConfig, const char* pstrFile ) {}
 		/*! \brief Jump to an FPGA configuration */
-		virtual void JumpToFpgaConfig( uint16_t numConfig){}
+		virtual void JumpToFpgaConfig(const std::string& strConfig){}
+		/*! \brief Current FPGA configuration*/
 		virtual const FpgaConfig* getConfiguringFpga() {
 			return nullptr;
 		}
 		virtual void ProgramCdce() {}
+		/*! \brief Get the list of available FPGA configuration (or firmware images)*/
+		virtual std::vector<std::string> getFpgaConfigList( ){ return std::vector<std::string>();}
+		/*! \brief Delete one Fpga configuration (or firmware image)*/
+		virtual void DeleteFpgaConfig( const std::string& strId){}
 
 		//Encode/Decode Cbc values
 		/*!

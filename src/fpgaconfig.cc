@@ -21,6 +21,7 @@ using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
 using namespace CommandLineProcessing;
+using namespace std;
 
 //Class used to process events acquired by a parallel acquisition
 class AcqVisitor: public HwInterfaceVisitor
@@ -45,6 +46,25 @@ void syntax( int argc )
 	else return;
 }
 
+void verifyImageName( const string& strImage, const vector<string>& lstNames){
+	    if (lstNames.empty() && strImage.compare("1")!=0 && strImage.compare("2")!=0){
+		cout<< "Error, invalid image name, should be 1 (golden) or 2 (user)"<<endl;
+		exit(1);
+	    } else {
+		bool bFound=false;
+		for (int iName=0; iName<lstNames.size(); iName++){
+			if (!strImage.compare(lstNames[iName])){
+				bFound=true;
+				break;
+			}// else cout<<strImage<<"!="<<lstNames[iName]<<endl;
+		}
+		if (!bFound){
+			cout<<"Error, this image name: "<<strImage<<" is not available on SD card"<<endl;
+			exit(1);
+		}
+	    }
+}
+
 int main( int argc, char* argv[] )
 {
 
@@ -64,15 +84,20 @@ int main( int argc, char* argv[] )
 
 
 	
+	cmd.defineOption( "list", "Print the list of available firmware images on SD card (works only with CTA boards)" );
+	cmd.defineOptionAlternative( "list", "l" ); 
 
-	cmd.defineOption( "file", "FPGA Bitstream (*.mcs format)", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+	cmd.defineOption( "delete", "Delete a firmware image on SD card (works only with CTA boards)", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "delete", "d" ); 
+
+	cmd.defineOption( "file", "FPGA Bitstream (*.mcs format for GLIB or *.bit format for CTA boards)", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
 
-	cmd.defineOption( "image", "Load to image 1 (golden) or 2 (user)", ArgvParser::OptionRequiresValue);
-	cmd.defineOptionAlternative("image","i");
+	cmd.defineOption( "config", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+	cmd.defineOptionAlternative( "config", "c" );
 
-	cmd.defineOption( "jump", "Jump to image 1 (golden) or 2 (user)", ArgvParser::OptionRequiresValue);
-	cmd.defineOptionAlternative("jump","j");
+	cmd.defineOption( "image", "Load to image 1 (golden) or 2 (user) or named image for CTA boards, jump to the given image if no file is specified", ArgvParser::OptionRequiresValue);
+	cmd.defineOptionAlternative("image","i");
 
 	int result = cmd.parse( argc, argv );
 
@@ -81,72 +106,84 @@ int main( int argc, char* argv[] )
 		std::cout << cmd.parseErrorDescription( result );
 		exit( 1 );
 	}
-	uint16_t cNJump=0;
-	if (cmd.foundOption("jump"))
-		cNJump = std::stoi(cmd.optionValue("jump"));
-
+	std::string cHWFile = ( cmd.foundOption( "config" ) ) ? cmd.optionValue( "config" ) : "settings/HWDescription_2CBC.xml";
+	cSystemController.InitializeHw( cHWFile );
+	//cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
+	BeBoard* pBoard = cSystemController.fShelveVector.at(0)->fBoardVector.at(0);
+	vector<string> lstNames = cSystemController.fBeBoardInterface->getFpgaConfigList(pBoard);
         std::string cFWFile;
-	std::string cHWFile = "settings/HWDescription_2CBC.xml";
-        if(cmd.foundOption("file")){
+	string strImage("1");
+	if (cmd.foundOption("list")){
+		cout<<lstNames.size()<<" firmware images on SD card:"<<endl;
+		for (auto &name:lstNames)
+			cout<<" - "<<name<<endl;
+
+		exit(0);
+	} else if(cmd.foundOption("file")){
  		cFWFile=cmd.optionValue("file");
-		std::size_t found = cFWFile.find(".mcs");
-		if(found == std::string::npos){
-			std::cout << "Error, the specified file is not an .mcs file" << std::endl;
+		if(lstNames.size()==0 && cFWFile.find(".mcs") == std::string::npos){
+			std::cout << "Error, the specified file is not a .mcs file" << std::endl;
 			exit(1);
-		}
-	}
-        else if (cNJump==0)
+		} else if (lstNames.size()>0 && cFWFile.find(".bit") == std::string::npos){
+			std::cout << "Error, the specified file is not a .bit file" << std::endl;
+			exit(1);
+		} 
+	} else if (cmd.foundOption("delete") && !lstNames.empty()){
+		strImage = cmd.optionValue("delete");
+		verifyImageName(strImage, lstNames);
+		cSystemController.fBeBoardInterface->DeleteFpgaConfig(pBoard, strImage);
+		cout<<"Firmware image: "<<strImage<<" deleted from SD card"<<endl;
+		exit(0);
+	} else if (!cmd.foundOption("image"))
 	{
 		cFWFile="";
 		std::cout << "Error, no FW image specified" << std::endl;
 		exit(1);
-	}
+	} 
 
+	if (cmd.foundOption("image")){
+	    strImage = cmd.optionValue("image");
+	    if (!cmd.foundOption("file"))
+		    verifyImageName(strImage, lstNames);
+	} else if (!lstNames.empty())
+		strImage="GoldenImage.bin";
 
-	uint16_t cNImage = (cmd.foundOption("image")) ? std::stoi(cmd.optionValue("image")) : 1;
 	Timer t;
 	t.start();
 
-	cSystemController.InitializeHw( cHWFile );
-	//cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
-	
-	BeBoard* pBoard = cSystemController.fShelveVector.at(0)->fBoardVector.at(0);
 
 	t.stop();
 	t.show( "Time to Initialize/configure the system: " );
 
-	if (cNJump){
-		cSystemController.fBeBoardInterface->JumpToFpgaConfig(pBoard, cNJump);
+	if (!cmd.foundOption("file")){
+		cSystemController.fBeBoardInterface->JumpToFpgaConfig(pBoard, strImage);
 		exit(0);
 	}
 
 	bool cUploadDone = 0;	
 
      
-	cSystemController.fBeBoardInterface->FlashProm(pBoard, cNImage, cFWFile.c_str());
+	cSystemController.fBeBoardInterface->FlashProm(pBoard, strImage, cFWFile.c_str());
       uint32_t progress;
 
 	while (cUploadDone == 0)
 	{
 		
-               progress= cSystemController.fBeBoardInterface->getConfiguringFpga(pBoard)->getProgressValue();
-             
-           	
-		
+               progress= cSystemController.fBeBoardInterface->getConfiguringFpga(pBoard)->getProgressValue(); 
             
           
          	
                if(progress==100){
                 cUploadDone = 1;
-		std::cout << "\n 100% Done" << std::endl;
-               
-               	 
-		}
+		std::cout << "\n 100% Done" << std::endl; 
+	       } else {
+		cout << progress << "%                   \r"<<flush;
+		sleep(1);
+	       }
 	}
 
 		
 	t.stop();
 	t.show( "Time elapsed:" );
-	}
-
+}
 

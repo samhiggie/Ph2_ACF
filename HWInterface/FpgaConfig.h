@@ -25,10 +25,10 @@ namespace Ph2_HwInterface
  */
 			FpgaConfig(BeBoardFWInterface* pbbi);
 /*! \brief Launch the firmware upload in a separate thread
- * \param numConfig FPGA configuration number
+ * \param strConfig FPGA configuration number or name
  * \param pstrFile absolute path to the MCS file
  */
-			void runUpload(uint16_t numConfig, const char* pstrFile) throw (std::string);
+			virtual void runUpload(const std::string& strConfig, const char* pstrFile) throw (std::string)=0;
 /*! \brief Tells if a configuration is currently been uploaded
  * \return Configuration number or 0 if no upload is been processed
  */
@@ -43,29 +43,16 @@ namespace Ph2_HwInterface
 			const std::string& getProgressString() const {return progressString;}
 
 /*! \brief Jump to an FPGA configuration
- * \param numConfig FPGA configuration number
+ * \param strConfig FPGA configuration number or name
  */
-			void jumpToImage( uint16_t numImage);
+			virtual void jumpToImage( const std::string& strImage)=0;
 
-		private:
+		protected:
 
 			timeval timStart, timEnd;
 			uint32_t progressValue, numUploadingFpga;
 			std::string progressString;
 			BeBoardFWInterface* fwManager;
-    ///Sets the read mode as asynchronous.
-			void confAsyncRead() throw (std::string);
-	///Locks or unlocks a block of the flash (Xilinx DS617(v3.0.1) page 75, figure 43).
-			void blockLockOrUnlock(uint32_t block_number, char operation) throw (std::string);
-	///Erases a block of the flash (Xilinx DS617(v3.0.1) page 73, figure 41).
-			void blockErase(uint32_t block_number) throw (std::string);
- 	///Writes up to 32 words to the flash (Xilinx DS617(v3.0.1) page 71, figure 39).
-			void bufferProgram(uint32_t block_number, uint32_t data_address, std::vector<uint32_t>& write_buffer, uint32_t words) throw (std::string);
-/*! \brief Main uploading loop
- * \param bGolden true for the golden (first) configuration. The golden configuration will be used when the board is rebooted.
- * \param pstrFile Absolute path the MCS configuration file
- */
-			void dumpFromFileIntoFlash(bool bGolden, const char* pstrFile) throw (std::string);
 	};
 }
 #endif
