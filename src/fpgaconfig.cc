@@ -47,9 +47,11 @@ void syntax( int argc )
 }
 
 void verifyImageName( const string& strImage, const vector<string>& lstNames){
-	    if (lstNames.empty() && strImage.compare("1")!=0 && strImage.compare("2")!=0){
-		cout<< "Error, invalid image name, should be 1 (golden) or 2 (user)"<<endl;
-		exit(1);
+	    if (lstNames.empty()){
+		if (strImage.compare("1")!=0 && strImage.compare("2")!=0){
+			cout<< "Error, invalid image name, should be 1 (golden) or 2 (user)"<<endl;
+			exit(1);
+		}
 	    } else {
 		bool bFound=false;
 		for (int iName=0; iName<lstNames.size(); iName++){
