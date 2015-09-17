@@ -302,7 +302,7 @@ namespace Ph2_HwInterface
 
 		//Read SRAM
 		std::vector<uint32_t> cData =  ReadBlockRegValue( fStrSram, cBlockSize );
-
+ 		
 		WriteReg( fStrSramUserLogic, 1 );
 		WriteReg( fStrReadout, 1 );
 

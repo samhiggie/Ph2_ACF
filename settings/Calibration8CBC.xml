@@ -58,7 +58,8 @@
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC"> 0 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.negative_logic_sTTS"> 0 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.polarity_tlu"> 0 </Register>
-            
+            <Register name="user_wb_ttc_fmc_regs.pc_commands2.cbc_mask"> 0 </Register>
+
         </BeBoard>
     </Shelve>
 </HwDescription>
@@ -69,5 +70,5 @@
     <Setting name="EnableTestPulse"> 0 </Setting>
     <Setting name="TestPulsePotentiometer"> 0xF1 </Setting>
     <Setting name="HoleMode"> 1 </Setting>
-    <Setting name="FitSCurves"> 0 </Setting>
+    <Setting name="FitSCurves"> 1 </Setting>
 </Settings>
