@@ -171,11 +171,12 @@ namespace Ph2_HwInterface
 
 			fBoardFW->ReadCbcBlockReg( pCbc->getFeId(), cVecRead );
 
-			for ( int i = 0; i < cVecWrite.size(); i++ )
-			{
-				std::cout << "           <-idpaaaaaaaavvvvvvvv" << std::endl;
-				std::cout << static_cast<std::bitset<32> >( cVecWrite.at( i ) ) << std::endl << static_cast<std::bitset<32> >( cVecRead.at( i ) ) << std::endl << std::endl;
-			}
+			// for ( int i = 0; i < cVecWrite.size(); i++ )
+			// {
+			//  std::cout << "           <-idpaaaaaaaavvvvvvvv" << std::endl;
+			//  std::cout << static_cast<std::bitset<32> >( cVecWrite.at( i ) ) << std::endl << static_cast<std::bitset<32> >( cVecRead.at( i ) ) << std::endl << std::endl;
+			// }
+
 			if ( cVecWrite != cVecRead )
 			{
 
