@@ -35,6 +35,8 @@ using namespace std;
 #define PARAM_FLASH_BLOCK130 "flash_block130"
 #define PARAM_FLASH_BLOCK "flash_block"
 #define PARAM_FPGA_PROGRAM_B_TRST "ctrl.fpga_program_b_trst"
+#define PARAM_FPGA_ICAP_PAGE	"ctrl_2.icap_page"
+#define PARAM_FPGA_ICAP_TRIGG	"ctrl_2.icap_trigg"
 
 //Commands
 #define blockLockConfirm_comm		 0x0001
@@ -347,5 +349,9 @@ void FpgaConfig::dumpFromFileIntoFlash(bool bGolden, const char* strFile) throw 
         }
    }
 
+   void FpgaConfig::jumpToImage( uint16_t numImage){
+	fwManager->WriteReg(PARAM_FPGA_ICAP_PAGE, numImage);
+	fwManager->WriteReg(PARAM_FPGA_ICAP_TRIGG, 1);
+   }
 }
 

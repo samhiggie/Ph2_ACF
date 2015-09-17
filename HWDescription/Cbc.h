@@ -16,6 +16,7 @@
 #include "FrontEndDescription.h"
 #include "CbcRegItem.h"
 #include "../Utils/Visitor.h"
+#include "../Utils/Exception.h"
 #include <iostream>
 #include <map>
 #include <string>
@@ -88,7 +89,12 @@ namespace Ph2_HwDescription
 		* \param psetValue
 		*/
 		void setReg( const std::string& pReg, uint8_t psetValue );
-
+		/*!
+		* \brief Get any registeritem of the Map
+		* \param pReg
+		* \return  RegItem
+		*/
+		CbcRegItem getRegItem( const std::string& pReg );
 		/*!
 		* \brief Write the registers of the Map in a file
 		* \param filename

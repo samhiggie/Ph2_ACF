@@ -68,8 +68,11 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "file", "FPGA Bitstream (*.mcs format)", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
 
-	cmd.defineOption( "image", "Load to image 1 or 2", ArgvParser::OptionRequiresValue);
+	cmd.defineOption( "image", "Load to image 1 (golden) or 2 (user)", ArgvParser::OptionRequiresValue);
 	cmd.defineOptionAlternative("image","i");
+
+	cmd.defineOption( "jump", "Jump to image 1 (golden) or 2 (user)", ArgvParser::OptionRequiresValue);
+	cmd.defineOptionAlternative("jump","j");
 
 	int result = cmd.parse( argc, argv );
 
@@ -78,7 +81,9 @@ int main( int argc, char* argv[] )
 		std::cout << cmd.parseErrorDescription( result );
 		exit( 1 );
 	}
-
+	uint16_t cNJump=0;
+	if (cmd.foundOption("jump"))
+		cNJump = std::stoi(cmd.optionValue("jump"));
 
         std::string cFWFile;
 	std::string cHWFile = "settings/HWDescription_2CBC.xml";
@@ -90,8 +95,7 @@ int main( int argc, char* argv[] )
 			exit(1);
 		}
 	}
-    
-        else
+        else if (cNJump==0)
 	{
 		cFWFile="";
 		std::cout << "Error, no FW image specified" << std::endl;
@@ -110,6 +114,11 @@ int main( int argc, char* argv[] )
 
 	t.stop();
 	t.show( "Time to Initialize/configure the system: " );
+
+	if (cNJump){
+		cSystemController.fBeBoardInterface->JumpToFpgaConfig(pBoard, cNJump);
+		exit(0);
+	}
 
 	bool cUploadDone = 0;	
 
@@ -137,7 +146,7 @@ int main( int argc, char* argv[] )
 
 		
 	t.stop();
-	t.show( "Time for changing VCth on all CBCs:" );
+	t.show( "Time elapsed:" );
 	}
 
 

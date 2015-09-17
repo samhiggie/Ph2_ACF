@@ -21,3 +21,13 @@ namespace Ph2_HwInterface
 		return  pBuff;
 	}
 }
+
+namespace Ph2_HwDescription
+{
+	const char* Exception::what() const throw()
+	{
+		std::string pStr = "HWDescription: " + fStrError;
+		const char* pBuff = pStr.c_str();
+		return pBuff;
+	}
+}
