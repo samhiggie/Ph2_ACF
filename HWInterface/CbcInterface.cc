@@ -104,14 +104,14 @@ namespace Ph2_HwInterface
 
 				fBoardFW->ReadCbcBlockReg( pCbc->getFeId(), cVecRead );
 
-                
-    //             for(int i = 0; i < cVecWrite.size(); i++)
-    //             {
-    //             	std::cout << "           <-idpaaaaaaaavvvvvvvv" << std::endl;
-    //                 std::cout << static_cast<std::bitset<32> >(cVecWrite.at(i)) << std::endl << static_cast<std::bitset<32> > (cVecRead.at(i)) << std::endl << std::endl;
+
+				//             for(int i = 0; i < cVecWrite.size(); i++)
+				//             {
+				//              std::cout << "           <-idpaaaaaaaavvvvvvvv" << std::endl;
+				//                 std::cout << static_cast<std::bitset<32> >(cVecWrite.at(i)) << std::endl << static_cast<std::bitset<32> > (cVecRead.at(i)) << std::endl << std::endl;
 				// }
-				
-                // only if I have a mismatch will i decode word by word and compare
+
+				// only if I have a mismatch will i decode word by word and compare
 				if ( cVecWrite != cVecRead )
 				{
 
@@ -142,7 +142,7 @@ namespace Ph2_HwInterface
 
 	bool CbcInterface::WriteCbcReg( Cbc* pCbc, const std::string& pRegNode, uint8_t pValue, bool pVerifLoop )
 	{
-		CbcRegItem cRegItem = ( pCbc->getRegMap() )[pRegNode];
+		CbcRegItem cRegItem = pCbc->getRegItem( pRegNode );
 		std::vector<uint32_t> cVecWrite;
 		std::vector<uint32_t> cVecRead;
 
@@ -171,6 +171,11 @@ namespace Ph2_HwInterface
 
 			fBoardFW->ReadCbcBlockReg( pCbc->getFeId(), cVecRead );
 
+			for ( int i = 0; i < cVecWrite.size(); i++ )
+			{
+				std::cout << "           <-idpaaaaaaaavvvvvvvv" << std::endl;
+				std::cout << static_cast<std::bitset<32> >( cVecWrite.at( i ) ) << std::endl << static_cast<std::bitset<32> >( cVecRead.at( i ) ) << std::endl << std::endl;
+			}
 			if ( cVecWrite != cVecRead )
 			{
 
@@ -203,7 +208,7 @@ namespace Ph2_HwInterface
 
 		for ( const auto& v : pVecReq )
 		{
-			cRegItemWrite = ( pCbc->getRegMap() )[v.first];
+			cRegItemWrite = pCbc->getRegItem( v.first );
 			cRegItemWrite.fValue = v.second;
 
 			EncodeReg( cRegItemWrite, pCbc->getCbcId(), cVecWrite );
@@ -212,7 +217,7 @@ namespace Ph2_HwInterface
 
 			if ( pVerifLoop )
 			{
-				cRegItemRead = ( pCbc->getRegMap() )[v.first];
+				cRegItemRead = pCbc->getRegItem( v.first );
 				cRegItemRead.fValue = 0;
 
 				EncodeReg( cRegItemRead, pCbc->getCbcId(), cVecRead );
@@ -264,7 +269,7 @@ namespace Ph2_HwInterface
 	{
 
 		uint8_t cCbcId;
-		CbcRegItem cRegItem = ( pCbc->getRegMap() )[pRegNode];
+		CbcRegItem cRegItem = pCbc->getRegItem( pRegNode );
 		std::vector<uint32_t> cVecReq;
 
 		setBoard( pCbc->getBeBoardIdentifier() );
@@ -289,13 +294,15 @@ namespace Ph2_HwInterface
 		setBoard( pCbc->getBeBoardIdentifier() );
 
 		for ( const auto& v : pVecReg )
-			EncodeReg( pCbc->getRegMap()[v], pCbc->getCbcId(), cVecReq );
+
+			EncodeReg( pCbc->getRegItem( v ) , pCbc->getCbcId(), cVecReq );
 
 		fBoardFW->ReadCbcBlockReg( pCbc->getFeId(), cVecReq );
 
-		int iReq=0;
-		for ( const auto& v : pVecReg ){
-			DecodeReg( cRegItem, 0, cVecReq[iReq++] ); 
+		int iReq = 0;
+		for ( const auto& v : pVecReg )
+		{
+			DecodeReg( cRegItem, 0, cVecReq[iReq++] );
 			pCbc->setReg( v, cRegItem.fValue );
 		}
 	}
@@ -371,7 +378,7 @@ namespace Ph2_HwInterface
 			else if ( i == 0 && pModule->getCbc( i + cMissed ) != nullptr )
 			{
 				Cbc* cCbc = pModule->getCbc( i + cMissed );
-				CbcRegItem cRegItem = ( cCbc->getRegMap() )[pRegNode];
+				CbcRegItem cRegItem = cCbc->getRegItem( pRegNode );
 				cRegItem.fValue = pValue;
 
 				EncodeReg( cRegItem, cCbcId, cVecReq );
