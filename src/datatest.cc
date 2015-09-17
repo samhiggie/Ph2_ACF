@@ -139,8 +139,8 @@ int main( int argc, char* argv[] )
 
 		t.stop();
 		t.show( "Time for changing VCth on all CBCs:" );
-		// CbcRegReader cReader( cSystemController.fCbcInterface, "VCth" );
-		// cSystemController.accept( cReader );
+		CbcRegReader cReader( cSystemController.fCbcInterface, "VCth" );
+		cSystemController.accept( cReader );
 	}
 
 	BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
