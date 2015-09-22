@@ -66,7 +66,7 @@ namespace Ph2_HwInterface
 		/*!
 		* \brief Destructor of the BeBoardFWInterface class
 		*/
-	        virtual ~BeBoardFWInterface() {}
+		virtual ~BeBoardFWInterface() {}
 		/*!
 		* \brief Get the board type
 		*/
@@ -77,8 +77,12 @@ namespace Ph2_HwInterface
 		virtual void getBoardInfo();
 
 		//These two methods will be implemented soon
-		virtual void FlashProm(uint16_t numConfig, const char* pstrFile) {}
-		virtual const FpgaConfig* getConfiguringFpga(){ return nullptr; }
+		virtual void FlashProm( uint16_t numConfig, const char* pstrFile ) {}
+		/*! \brief Jump to an FPGA configuration */
+		virtual void JumpToFpgaConfig( uint16_t numConfig ) {}
+		virtual const FpgaConfig* getConfiguringFpga() {
+			return nullptr;
+		}
 		virtual void ProgramCdce() {}
 
 		//Encode/Decode Cbc values
@@ -123,14 +127,16 @@ namespace Ph2_HwInterface
 		 * \param uNbAcq Number of acquisition iterations (each iteration will get CBC_DATA_PACKET_NUMBER + 1 events)
 		 * \param visitor override the visit() method of this object to process each event
 		 */
-		virtual void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) = 0;
+		virtual void StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) = 0;
 		/*! \brief Stop a running parallel acquisition
 		 */
 		virtual void StopThread();
 		/*! \brief Get the parallel acquisition iteration number */
 		int getNumAcqThread();
 		/*! \brief Is a parallel acquisition running ? */
-		bool isRunningThread() const {return runningAcquisition;}
+		bool isRunningThread() const {
+			return runningAcquisition;
+		}
 		/*!
 		 * \brief Start a DAQ
 		 */
@@ -162,11 +168,11 @@ namespace Ph2_HwInterface
 		 */
 		virtual const Event* GetNextEvent( const BeBoard* pBoard ) const = 0;
 		virtual const Event* GetEvent( const BeBoard* pBoard, int i ) const = 0;
-	        virtual const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const = 0;
+		virtual const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const = 0;
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-	protected:
+	  protected:
 
 		bool runningAcquisition;
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
