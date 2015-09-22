@@ -206,6 +206,11 @@ namespace Ph2_HwInterface
 		 * \param pstrFile path to MCS file containing the FPGA configuration
 		 */
 		void FlashProm( BeBoard* pBoard, uint16_t numConfig, const char* pstrFile );
+		/*! \brief Jump to an FPGA configuration
+ 		* \param pBoard pointer to a board description
+ 		* \param numConfig FPGA configuration number
+ 		*/
+		void JumpToFpgaConfig( BeBoard* pBoard, uint16_t numConfig);
 		/*! \brief Current FPGA configuration
 		 * \param pBoard pointer to a board description
 		 * \return const pointer to an FPGA uploading process. NULL means that no upload is been processed.

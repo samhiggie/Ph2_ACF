@@ -19,13 +19,15 @@ namespace Ph2_HwInterface
 {
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
+		BeBoardFWInterface( puHalConfigFileName, pBoardId ), 
+		fpgaConfig(nullptr),
 		fData( nullptr )
 	{}
 
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
+		fpgaConfig(nullptr),
 		fData( nullptr ),
 
 		fFileHandler( pFileHandler )
@@ -285,10 +287,10 @@ namespace Ph2_HwInterface
 		cVal = ReadReg( fStrFull );
 
 		do
-		{
+		{ 
 			cVal = ReadReg( fStrFull );
-			if ( cVal == 0 )
-				std::this_thread::sleep_for( cWait );
+			if (cVal==0)
+				std::this_thread::sleep_for( cWait ); 
 		}
 		while ( cVal == 0 );
 
@@ -322,7 +324,6 @@ namespace Ph2_HwInterface
 
 		// just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
 		if ( fData ) delete fData;
-
 		fData = new Data();
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
@@ -332,9 +333,8 @@ namespace Ph2_HwInterface
 		return cNPackets;
 	}
 	/** compute the block size according to the number of CBC's on this board
-	 * this will have to change with a more generic FW */
-	uint32_t GlibFWInterface::computeBlockSize( BeBoard* pBoard )
-	{
+	 * this will have to change with a more generic FW */ 
+	uint32_t GlibFWInterface::computeBlockSize(BeBoard* pBoard){
 		//use a counting visitor to find out the number of CBCs
 		struct CbcCounter : public HwDescriptionVisitor
 		{
@@ -402,15 +402,14 @@ namespace Ph2_HwInterface
 	}
 
 
-	void GlibFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
-	{
-		if ( runningAcquisition ) return;
+	void GlibFWInterface::StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor){
+		if (runningAcquisition) return;
 
-		runningAcquisition = true;
-		numAcq = 0;
-		nbMaxAcq = uNbAcq;
+		runningAcquisition=true;
+		numAcq=0;
+		nbMaxAcq=uNbAcq;
 
-		thrAcq = boost::thread( &Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
+		thrAcq=boost::thread(&Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor);
 	}
 
 	void GlibFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
@@ -502,7 +501,7 @@ namespace Ph2_HwInterface
 
 		WriteReg( fStrSramUserLogic, 0 );
 
-		pVecReq = ReadBlockRegValue( fStrSram, pVecReq.size() );
+		pVecReq = ReadBlockRegValue(fStrSram, pVecReq.size() );
 		/*uhal::ValVector<uint32_t> cData = ReadBlockReg( fStrSram, pVecReq.size() );
 		uhal::ValWord<uint32_t> cWord;
 		// To avoid the IPBUS bug
@@ -516,22 +515,22 @@ namespace Ph2_HwInterface
 		WriteReg( fStrSramUserLogic, 1 );
 		WriteReg( CBC_I2C_CMD_RQ, 0 );
 
-		/*	std::vector<uint32_t>::iterator it = pVecReq.begin();
-			uhal::ValVector< uint32_t >::const_iterator itValue = cData.begin();
+	/*	std::vector<uint32_t>::iterator it = pVecReq.begin();
+		uhal::ValVector< uint32_t >::const_iterator itValue = cData.begin();
 
-			while ( it != pVecReq.end() )
-			{
-				*it = *itValue;
-				it++;
-				itValue++;
-			}
-			// To avoid the IPBUS bug
-			//  replace the 256th word
-			if ( pVecReq.size() > 255 )
-			{
-				pVecReq.at( 255 ) = cWord.value();
-				// std::cout << "256th ReadbackValue " <<  std::bitset<32>( pVecReq.at( 255 ) ) << " - 2nd read value " <<  std::bitset<32> ( cWord.value() )  << std::endl;
-			}*/
+		while ( it != pVecReq.end() )
+		{
+			*it = *itValue;
+			it++;
+			itValue++;
+		}
+		// To avoid the IPBUS bug
+		//  replace the 256th word
+		if ( pVecReq.size() > 255 )
+		{
+			pVecReq.at( 255 ) = cWord.value();
+			// std::cout << "256th ReadbackValue " <<  std::bitset<32>( pVecReq.at( 255 ) ) << " - 2nd read value " <<  std::bitset<32> ( cWord.value() )  << std::endl;
+		}*/
 
 	}
 
@@ -587,14 +586,26 @@ namespace Ph2_HwInterface
 		EnableI2c( 0 );
 	}
 
-	void GlibFWInterface::FlashProm( uint16_t numConfig, const char* pstrFile )
+	void GlibFWInterface::FlashProm(uint16_t numConfig, const char* pstrFile)
+	{
+		if (fpgaConfig && fpgaConfig->getUploadingFpga()>0)
+			throw Exception("This board is already uploading an FPGA configuration");
+		
+		if (!fpgaConfig)
+			fpgaConfig=new FpgaConfig(this); 
+
+		fpgaConfig->runUpload(numConfig, pstrFile);
+	}
+
+	void GlibFWInterface::JumpToFpgaConfig( uint16_t numConfig)
 	{
 		if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
-			throw Exception( "This board is already uploading an FPGA configuration" );
+			throw Exception( "This board is uploading an FPGA configuration" );
 
 		if ( !fpgaConfig )
 			fpgaConfig = new FpgaConfig( this );
 
-		fpgaConfig->runUpload( numConfig, pstrFile );
+		fpgaConfig->jumpToImage( numConfig == 1 ? 0 : numConfig);
 	}
+
 }
