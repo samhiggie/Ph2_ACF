@@ -15,7 +15,7 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 
-#include "../RootWeb/include/publisher.h"
+#include "publisher.h"
 
 #include "TROOT.h"
 #include "TH1.h"
@@ -49,31 +49,19 @@ void tokenize( const std::string& str, std::vector<std::string>& tokens, const s
 	}
 }
 
-void readDataFile( const std::string infile, std::vector<uint32_t>& list )
-{
-	uint32_t word;
-	std::ifstream fin( infile, std::ios::in | std::ios::binary );
-	if ( fin.is_open() )
-	{
-		while ( !fin.eof() )
-		{
-			char buffer[4];
-			fin.read( buffer, 4 );
-			uint32_t word;
-			memcpy( &word, buffer, 4 );
-			list.push_back( word );
-		}
-		fin.close();
-	}
-	else
-		std::cerr << "Failed to open " << infile << "!" << std::endl;
-}
 
 void fillDQMhisto( const std::vector<Event*>& elist, const std::string& outFileName )
 {
 	std::map<std::string, TH1I*> herrbitmap;
 	std::map<std::string, TH1I*> hnstubsmap;
 	std::map<std::string, std::vector<TH1I*>> hchdatamap;
+	std::map<std::string, std::vector<int>> sensorNhits ;
+        sensorNhits["even"] = std::vector<int>();
+        sensorNhits["odd"] = std::vector<int>();
+
+	TH1I* hdut0 = new TH1I( "evenSensor_hitprofile", "Even Sensor Hitmap", 1016, 0.5, 1016.5 );
+	TH1I* hdut1 = new TH1I( "oddSensor_hitprofile", "Odd Sensor Hitmap", 1016, 0.5, 1016.5 );
+	TH1I* hsensCorr = new TH1I( "sensorHitcorr", "Sensor Hit Correlation", 4, 0.5, 4.5 );
 
 	TH1I* hl1A = new TH1I( "l1A", "L1A Counter", 10000, 0, 10000 );
 	TH1I* htdc = new TH1I( "tdc", "TDC counter", 256, -0.5, 255.5 );
@@ -82,6 +70,8 @@ void fillDQMhisto( const std::vector<Event*>& elist, const std::string& outFileN
 		htdc->Fill( ev->GetTDC() );
 		hl1A->Fill( ev->GetEventCount() );
 		const EventMap& evmap = ev->GetEventMap();
+		sensorNhits["even"].clear();
+		sensorNhits["odd"].clear();
 		for ( auto const& it : evmap )
 		{
 			uint32_t feId = it.first;
@@ -116,14 +106,24 @@ void fillDQMhisto( const std::vector<Event*>& elist, const std::string& outFileN
 				{
 					if ( dataVec[ch] )
 					{
-						if ( ch % 2 == 0 )
+						if ( ch % 2 == 0 ) {
 							hchdatamap[key][0]->Fill( ch / 2 + 1 );
-						else
+                                                        hdut0->Fill( 127*cbcId + ch / 2 + 1);
+                                                        sensorNhits["even"].push_back(1);
+                                                }
+						else {
 							hchdatamap[key][1]->Fill( ch / 2 + 1 );
+                                                        hdut1->Fill( 127*cbcId + ch / 2 + 1);
+                                                        sensorNhits["odd"].push_back(1);
+                                                }
 					}
 				}
 			}
 		}
+                if(sensorNhits["even"].empty() && sensorNhits["odd"].empty()) hsensCorr->Fill(1);
+                else if(!sensorNhits["even"].empty() && sensorNhits["odd"].empty()) hsensCorr->Fill(2);
+                else if(sensorNhits["even"].empty() && !sensorNhits["odd"].empty()) hsensCorr->Fill(3);
+                else if(!sensorNhits["even"].empty() && !sensorNhits["odd"].empty()) hsensCorr->Fill(4);
 	}
 	TFile* fout = TFile::Open( outFileName.c_str(), "RECREATE" );
 	for ( auto& he : herrbitmap )
@@ -146,9 +146,18 @@ void fillDQMhisto( const std::vector<Event*>& elist, const std::string& outFileN
 		hVec.second.at( 1 )->Write();
 	}
 
+        hsensCorr->GetXaxis()->SetBinLabel(1,"No hits");
+        hsensCorr->GetXaxis()->SetBinLabel(2,"Even & !Odd");
+        hsensCorr->GetXaxis()->SetBinLabel(3,"Odd & !Even");
+        hsensCorr->GetXaxis()->SetBinLabel(4,"Even & Odd");
 	fout->cd();
 	hl1A->Write();
 	htdc->Write();
+	fout->mkdir("Sensor");
+        fout->cd("Sensor");
+        hdut0->Write();
+        hdut1->Write();
+        hsensCorr->Write();
 	fout->Close();
 }
 
@@ -185,6 +194,8 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "swap", "Swap endianness in Data::set. Default = true (Ph2_ACF); should be false for GlibStreamer Data", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "swap", "s" );
 
+	cmd.defineOption( "8cbc", "Use 8CBC system. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
 	{
@@ -204,6 +215,8 @@ int main( int argc, char* argv[] )
 
 	bool cDQMPage = ( cmd.foundOption( "dqm" ) ) ? true : false;
 
+	bool c8CBC = ( cmd.foundOption( "8cbc" ) ) ? true : false;
+
 	std::string cDirBasePath;
 
 	if ( cDQMPage )
@@ -221,22 +234,21 @@ int main( int argc, char* argv[] )
 	std::vector<uint32_t> dataVec;
 	SystemController cSystemController;
 
-	//cSystemController.addFileHandler( rawFilename );
-
 	cSystemController.addFileHandler( rawFilename, 'r' ); //add it for read test
-	dataVec = cSystemController.fFileHandler->readFile( );  //add it for read test
-	//readDataFile( rawFilename, dataVec );
+	//	dataVec = cSystemController.fFileHandler->readFile( );  //add it for read test
+	cSystemController.readFile(dataVec);  //add it for read test
 
 	std::string cHWFile = getenv( "BASE_DIR" );
-	cHWFile += "/settings/HWDescription_2CBC.xml";
+        cHWFile += "/";
+	cHWFile += (c8CBC) ? XML_DESCRIPTION_FILE_8CBC : XML_DESCRIPTION_FILE_2CBC;
 	cSystemController.parseHWxml( cHWFile );
 	BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
 
 	Data d;
-	int nEvents = dataVec.size() / 42;
+        int eventSize =  EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32*(c8CBC ? 8 : 4);
+	int nEvents = dataVec.size() / eventSize;
 	d.Set( pBoard, dataVec, nEvents, cSwap );
 	const std::vector<Event*>& elist = d.GetEvents( pBoard );
-	//dumpEvents(elist);
 
 	// Create the DQM plots and generate the root file
 	// first of all strip the folder name

@@ -17,6 +17,7 @@ namespace RootWeb
 #if 0
 		// With one collapsing content (default is open)
 		auto& content1 = home.addContent( "Section 1" );
+
 		// With a table of strings
 		auto& aTableS = content1.addTable();
 		for ( int i = 1; i <= 10; ++i )
