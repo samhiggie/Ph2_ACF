@@ -2,18 +2,22 @@ CC              = gcc
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC 
 CCFlagsRoot	= `root-config --cflags --evelibs --glibs`
-#DevFlags                    = -D__CBCDAQ_DEV__
-DevFlags                   =
+#DevFlags       = -D__CBCDAQ_DEV__
+DevFlags        = 
 
 IncludeDirs     =  /opt/cactus/include ../
 
-IncludePaths            = $(IncludeDirs:%=-I%)
+IncludePaths    = $(IncludeDirs:%=-I%)
+IncludePaths    += -I../RootWeb/include
+
 
 LibraryDirs = /opt/cactus/lib ../lib
 # /opt/xdaq/lib
 LibraryPaths = $(LibraryDirs:%=-L%)
 
-ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lboost_filesystem -lboost_program_options -L../RootWeb/lib -lRootWeb
+ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
+                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lboost_filesystem -lboost_program_options -L../RootWeb/lib -lRootWeb
+#                                 -lboost_filesystem -lboost_program_options
 # ExtObjectsRoot= -lPh2_Tools 
 
 # %.o: %.cc %.h
@@ -27,8 +31,11 @@ rootflags:
 	$(eval CCFlags += $(CCFlagsRoot))
 	$(eval ExternalObjects += $(ExtObjectsRoot))
 
-miniDQM: datatestFromfile.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+publisher.o: publisher.cc publisher.h
+	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
+
+miniDQM: datatestFromfile.cc publisher.h publisher.o
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) publisher.o $(ExternalObjects) 
 	cp $@ ../bin
 
 miniDAQ: miniDAQ.cc
