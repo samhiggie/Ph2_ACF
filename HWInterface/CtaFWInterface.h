@@ -1,7 +1,7 @@
 /*!
 
-        \file                           GlibFWInterface.h
-        \brief                          GlibFWInterface init/config of the Glib and its Cbc's
+        \file                           CtaFWInterface.h
+        \brief                          CtaFWInterface init/config of the CTA and its Cbc's
         \author                         Lorenzo BIDEGAIN, Nicolas PIERRE
         \version            1.0
         \date                           28/07/14
@@ -9,8 +9,8 @@
 
  */
 
-#ifndef __GLIBFWINTERFACE_H__
-#define __GLIBFWINTERFACE_H__
+#ifndef __CTAFWINTERFACE_H__
+#define __CTAFWINTERFACE_H__
 
 #include <string>
 #include <map>
@@ -31,13 +31,13 @@ using namespace Ph2_HwDescription;
  */
 namespace Ph2_HwInterface
 {
-	class FpgaConfig;
+	class CtaFpgaConfig;
 
 	/*!
-	 * \class GlibFWInterface
-	 * \brief init/config of the Glib and its Cbc's
+	 * \class CtaFWInterface
+	 * \brief init/config of the CTA and its Cbc's
 	 */
-	class GlibFWInterface : public BeBoardFWInterface
+	class CtaFWInterface : public BeBoardFWInterface
 	{
 
 	  private:
@@ -46,7 +46,7 @@ namespace Ph2_HwInterface
 		struct timeval fStartVeto;
 		std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
 		std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
-		FpgaConfig* fpgaConfig;
+		CtaFpgaConfig* fpgaConfig;
 		FileHandler* fFileHandler ;
 
 
@@ -59,23 +59,23 @@ namespace Ph2_HwInterface
 
 	  public:
 		/*!
-		 * \brief Constructor of the GlibFWInterface class
+		 * \brief Constructor of the CtaFWInterface class
 		 * \param puHalConfigFileName : path of the uHal Config File
 		 * \param pBoardId
 		 */
-		GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
+		CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
 		/*!
-		 * \brief Constructor of the GlibFWInterface class
+		 * \brief Constructor of the CtaFWInterface class
 		 * \param puHalConfigFileName : path of the uHal Config File
 		 * \param pBoardId
 		 * \param pFileHandler : pointer to file handler for saving Raw Data
 		 */
-		GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+		CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
 
 		/*!
-		 * \brief Destructor of the GlibFWInterface class
+		 * \brief Destructor of the CtaFWInterface class
 		 */
-		~GlibFWInterface() {
+		~CtaFWInterface() {
 			if ( fData ) delete fData;
 		}
 		/*!
@@ -131,8 +131,6 @@ namespace Ph2_HwInterface
 		 */
 		std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) override;
 
-		bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues ) override;
-
 		void StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) override;
 		//Methods for the Cbc's:
 
@@ -170,6 +168,7 @@ namespace Ph2_HwInterface
 		 * \return Number of 32-bit words to be read at each iteration */
 		uint32_t computeBlockSize( BeBoard* pBoard );
 
+		void checkIfUploading();
 
 	  public:
 
@@ -186,7 +185,7 @@ namespace Ph2_HwInterface
 		 */
 		void ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq );
 		/*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration
-		 * \param numConfig FPGA configuration number (1 or 2)
+		 * \param strConfig FPGA configuration name 
 		 * \param pstrFile path to MCS file
 		 */
 		void FlashProm( const std::string& strConfig, const char* pstrFile );
@@ -195,8 +194,13 @@ namespace Ph2_HwInterface
 		/*! \brief Is the FPGA being configured ?
 		 * \return FPGA configuring process or NULL if configuration occurs */
 		const FpgaConfig* getConfiguringFpga() {
-			return fpgaConfig;
+			return (const FpgaConfig*)fpgaConfig;
 		}
+		/*! \brief Get the list of available FPGA configuration (or firmware images)*/
+		std::vector<std::string> getFpgaConfigList( );
+		/*! \brief Delete one Fpga configuration (or firmware image)*/
+		void DeleteFpgaConfig( const std::string& strId);
+
 		void threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor );
 
 	};

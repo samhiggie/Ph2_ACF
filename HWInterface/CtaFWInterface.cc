@@ -1,7 +1,7 @@
 /*
 
-        FileName :                    GlibFWInterface.h
-        Content :                     GlibFWInterface init/config of the Glib and its Cbc's
+        FileName :                    CtaFWInterface.h
+        Content :                     CtaFWInterface init/config of the CTA and its Cbc's
         Programmer :                  Lorenzo BIDEGAIN, Nicolas PIERRE
         Version :                     1.0
         Date of creation :            28/07/14
@@ -12,20 +12,20 @@
 #include <time.h>
 #include <chrono>
 #include <uhal/uhal.hpp>
-#include "GlibFWInterface.h"
-#include "GlibFpgaConfig.h"
+#include "CtaFWInterface.h"
+#include "CtaFpgaConfig.h"
 
 namespace Ph2_HwInterface
 {
 
-	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
+	CtaFWInterface::CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ), 
 		fpgaConfig(nullptr),
 		fData( nullptr )
 	{}
 
 
-	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
+	CtaFWInterface::CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
 		fpgaConfig(nullptr),
 		fData( nullptr ),
@@ -37,7 +37,7 @@ namespace Ph2_HwInterface
 	}
 
 
-	void GlibFWInterface::ConfigureBoard( const BeBoard* pBoard )
+	void CtaFWInterface::ConfigureBoard( const BeBoard* pBoard )
 	{
 
 		//We may here switch in the future with the StackReg method of the RegManager
@@ -71,17 +71,9 @@ namespace Ph2_HwInterface
 
 		std::this_thread::sleep_for( cPause );
 
-		/*
-		        GlibRegMap : map<std::string,uint8_t> created from Glib class
 
-		   Mandatory to go through a created cGlibRegMap.
-		   If you want to put directly pGlib.getGlibRegMap(), you'll end up with
-		   a seg fault error, as it is not putting all the map in mem but only
-		   begin() and end().
-		 */
-
-		BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
-		for ( auto const& it : cGlibRegMap )
+		BeBoardRegMap cRegMap = pBoard->getBeBoardRegMap();
+		for ( auto const& it : cRegMap )
 		{
 			cPairReg.first = it.first;
 			cPairReg.second = it.second;
@@ -154,7 +146,7 @@ namespace Ph2_HwInterface
 	}
 
 
-	void GlibFWInterface::SelectFEId()
+	void CtaFWInterface::SelectFEId()
 	{
 		if ( static_cast<uint32_t>( ReadReg( HYBRID_TYPE ) ) == 8 )
 		{
@@ -174,7 +166,7 @@ namespace Ph2_HwInterface
 		}
 	}
 
-	void GlibFWInterface::Start()
+	void CtaFWInterface::Start()
 	{
 		std::vector< std::pair<std::string, uint32_t> > cVecReg;
 		std::pair<std::string, uint32_t> cPairReg;
@@ -213,7 +205,7 @@ namespace Ph2_HwInterface
 
 	}
 
-	void GlibFWInterface::Stop( uint32_t pNthAcq )
+	void CtaFWInterface::Stop( uint32_t pNthAcq )
 	{
 
 		std::vector< std::pair<std::string, uint32_t> > cVecReg;
@@ -256,7 +248,7 @@ namespace Ph2_HwInterface
 	}
 
 
-	void GlibFWInterface::Pause()
+	void CtaFWInterface::Pause()
 	{
 
 		WriteReg( BREAK_TRIGGER, 1 );
@@ -264,13 +256,13 @@ namespace Ph2_HwInterface
 	}
 
 
-	void GlibFWInterface::Resume()
+	void CtaFWInterface::Resume()
 	{
 
 		WriteReg( BREAK_TRIGGER, 0 );
 	}
 
-	uint32_t GlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
+	uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
 	{
 		//Readout settings
 		std::chrono::milliseconds cWait( 1 );
@@ -302,7 +294,7 @@ namespace Ph2_HwInterface
 
 		//Read SRAM
 		std::vector<uint32_t> cData =  ReadBlockRegValue( fStrSram, cBlockSize );
- 		
+
 		WriteReg( fStrSramUserLogic, 1 );
 		WriteReg( fStrReadout, 1 );
 
@@ -335,7 +327,7 @@ namespace Ph2_HwInterface
 	}
 	/** compute the block size according to the number of CBC's on this board
 	 * this will have to change with a more generic FW */
-	uint32_t GlibFWInterface::computeBlockSize( BeBoard* pBoard )
+	uint32_t CtaFWInterface::computeBlockSize( BeBoard* pBoard )
 	{
 		//use a counting visitor to find out the number of CBCs
 		struct CbcCounter : public HwDescriptionVisitor
@@ -358,31 +350,13 @@ namespace Ph2_HwInterface
 		return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
 	}
 
-	std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
+	std::vector<uint32_t> CtaFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
 	{
 		uhal::ValVector<uint32_t> valBlock = ReadBlockReg( pRegNode, pBlocksize );
-		std::vector<uint32_t> vBlock = valBlock.value();
-		// To avoid the IPBUS bug
-		// need to convert uHal::ValVector to vector<uint32_t> so we can replace the 256th word
-		if ( pBlocksize > 255 )
-		{
-			std::string fSram_256 = pRegNode + "_256";
-			uhal::ValWord<uint32_t> cWord = ReadReg( fSram_256 );
-			vBlock[255] = cWord.value();
-		}
-		return vBlock;
+		return valBlock.value();
 	}
 
-	bool GlibFWInterface::WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
-	{
-		bool cWriteCorr = RegManager::WriteBlockReg( pRegNode, pValues );
-
-		if ( pValues.size() > 255 )
-			WriteReg( pRegNode + "_256", pValues[255] );
-		return cWriteCorr;
-	}
-
-	void GlibFWInterface::SelectDaqSRAM( uint32_t pNthAcq )
+	void CtaFWInterface::SelectDaqSRAM( uint32_t pNthAcq )
 	{
 		fStrSram  = ( ( pNthAcq % 2 + 1 ) == 1 ? SRAM1 : SRAM2 );
 		fStrSramUserLogic = ( ( pNthAcq % 2 + 1 ) == 1 ? SRAM1_USR_LOGIC : SRAM2_USR_LOGIC );
@@ -394,7 +368,7 @@ namespace Ph2_HwInterface
 
 	//Methods for Cbc's:
 
-	void GlibFWInterface::SelectFeSRAM( uint32_t pFe )
+	void CtaFWInterface::SelectFeSRAM( uint32_t pFe )
 	{
 		pFe = 0;
 		fStrSram = ( pFe ? SRAM2 : SRAM1 );
@@ -404,7 +378,7 @@ namespace Ph2_HwInterface
 	}
 
 
-	void GlibFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
+	void CtaFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
 	{
 		if ( runningAcquisition ) return;
 
@@ -412,10 +386,10 @@ namespace Ph2_HwInterface
 		numAcq = 0;
 		nbMaxAcq = uNbAcq;
 
-		thrAcq = boost::thread( &Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
+		thrAcq = boost::thread( &Ph2_HwInterface::CtaFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
 	}
 
-	void GlibFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
+	void CtaFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
 	{
 		Start( );
 		cBlockSize = computeBlockSize( pBoard );
@@ -433,7 +407,7 @@ namespace Ph2_HwInterface
 		runningAcquisition = false;
 	};
 
-	bool GlibFWInterface::I2cCmdAckWait( uint32_t pAckVal, uint8_t pNcount )
+	bool CtaFWInterface::I2cCmdAckWait( uint32_t pAckVal, uint8_t pNcount )
 	{
 		unsigned int cWait( 100 );
 
@@ -468,7 +442,7 @@ namespace Ph2_HwInterface
 		return true;
 	}
 
-	void GlibFWInterface::SendBlockCbcI2cRequest( std::vector<uint32_t>& pVecReq, bool pWrite )
+	void CtaFWInterface::SendBlockCbcI2cRequest( std::vector<uint32_t>& pVecReq, bool pWrite )
 	{
 		WriteReg( fStrSramUserLogic, 1 );
 
@@ -499,46 +473,20 @@ namespace Ph2_HwInterface
 
 	}
 
-	void GlibFWInterface::ReadI2cBlockValuesInSRAM( std::vector<uint32_t>& pVecReq )
+	void CtaFWInterface::ReadI2cBlockValuesInSRAM( std::vector<uint32_t>& pVecReq )
 	{
 
 		WriteReg( fStrSramUserLogic, 0 );
 
 		pVecReq = ReadBlockRegValue( fStrSram, pVecReq.size() );
-		/*uhal::ValVector<uint32_t> cData = ReadBlockReg( fStrSram, pVecReq.size() );
-		uhal::ValWord<uint32_t> cWord;
-		// To avoid the IPBUS bug
-		//  replace the 256th word
-		if ( pVecReq.size() > 255 )
-		{
-			std::string fSram_256 = fStrSram + "_256";
-			cWord = ReadReg( fSram_256 );
-			std::cout << "WARNING: Reading more than 255 32-bit words from SRAM, thus need to avoid the uHAL-GLIB bug!" << std::endl;
-		}*/
 		WriteReg( fStrSramUserLogic, 1 );
 		WriteReg( CBC_I2C_CMD_RQ, 0 );
 
-		/*	std::vector<uint32_t>::iterator it = pVecReq.begin();
-			uhal::ValVector< uint32_t >::const_iterator itValue = cData.begin();
-
-			while ( it != pVecReq.end() )
-			{
-				*it = *itValue;
-				it++;
-				itValue++;
-			}
-			// To avoid the IPBUS bug
-			//  replace the 256th word
-			if ( pVecReq.size() > 255 )
-			{
-				pVecReq.at( 255 ) = cWord.value();
-				// std::cout << "256th ReadbackValue " <<  std::bitset<32>( pVecReq.at( 255 ) ) << " - 2nd read value " <<  std::bitset<32> ( cWord.value() )  << std::endl;
-			}*/
 
 	}
 
 
-	void GlibFWInterface::EnableI2c( bool pEnable )
+	void CtaFWInterface::EnableI2c( bool pEnable )
 	{
 		uint32_t cValue = I2C_CTRL_ENABLE;
 
@@ -551,7 +499,7 @@ namespace Ph2_HwInterface
 			usleep( 100000 );
 	}
 
-	void GlibFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
+	void CtaFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
 	{
 		SelectFeSRAM( pFeId );
 		EnableI2c( 1 );
@@ -569,7 +517,7 @@ namespace Ph2_HwInterface
 		EnableI2c( 0 );
 	}
 
-	void GlibFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
+	void CtaFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
 	{
 		SelectFeSRAM( pFeId );
 		EnableI2c( 1 );
@@ -589,26 +537,37 @@ namespace Ph2_HwInterface
 		EnableI2c( 0 );
 	}
 
-	void GlibFWInterface::FlashProm( const std::string& strConfig, const char* pstrFile )
+	void CtaFWInterface::FlashProm( const std::string& strConfig, const char* pstrFile )
 	{
-		if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
-			throw Exception( "This board is already uploading an FPGA configuration" );
-
-		if ( !fpgaConfig )
-			fpgaConfig = new GlibFpgaConfig( this );
+		checkIfUploading();
 
 		fpgaConfig->runUpload( strConfig, pstrFile );
 	}
 
-	void GlibFWInterface::JumpToFpgaConfig( const std::string& strConfig)
+	void CtaFWInterface::JumpToFpgaConfig( const std::string& strConfig)
 	{
-		if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
-			throw Exception( "This board is uploading an FPGA configuration" );
-
-		if ( !fpgaConfig )
-			fpgaConfig = new GlibFpgaConfig( this );
+		checkIfUploading();
 
 		fpgaConfig->jumpToImage( strConfig);
 	}
 
+	std::vector<std::string> CtaFWInterface::getFpgaConfigList()
+	{
+		checkIfUploading();
+		return fpgaConfig->getFirmwareImageNames( );
+	}
+
+	void CtaFWInterface::DeleteFpgaConfig( const std::string& strId)
+	{
+		checkIfUploading();
+		fpgaConfig->deleteFirmwareImage( strId);
+	}
+
+	void CtaFWInterface::checkIfUploading(){
+		if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
+			throw Exception( "This board is uploading an FPGA configuration" );
+
+		if ( !fpgaConfig )
+			fpgaConfig = new CtaFpgaConfig( this );
+	}
 }

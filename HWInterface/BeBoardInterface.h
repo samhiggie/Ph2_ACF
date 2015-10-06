@@ -205,18 +205,27 @@ namespace Ph2_HwInterface
 		 * \param numConfig FPGA configuration number to be uploaded
 		 * \param pstrFile path to MCS file containing the FPGA configuration
 		 */
-		void FlashProm( BeBoard* pBoard, uint16_t numConfig, const char* pstrFile );
+		void FlashProm( BeBoard* pBoard, const std::string& strConfig, const char* pstrFile );
 		/*! \brief Jump to an FPGA configuration
  		* \param pBoard pointer to a board description
  		* \param numConfig FPGA configuration number
  		*/
-		void JumpToFpgaConfig( BeBoard* pBoard, uint16_t numConfig);
+		void JumpToFpgaConfig( BeBoard* pBoard, const std::string& strConfig);
 		/*! \brief Current FPGA configuration
 		 * \param pBoard pointer to a board description
 		 * \return const pointer to an FPGA uploading process. NULL means that no upload is been processed.
 		 */
 		const FpgaConfig* getConfiguringFpga( BeBoard* pBoard );
 
+		/*! \brief Get the list of available FPGA configuration (or firmware images)
+ 		* \param pBoard pointer to a board description */
+		std::vector<std::string> getFpgaConfigList( BeBoard* pBoard);
+
+		/*! \brief Delete one Fpga configuration (or firmware image)
+ 		* \param pBoard pointer to a board description 
+		 * \param strId Firmware image identifier*/
+		void DeleteFpgaConfig(BeBoard* pBoard, const std::string& strId);
+		
 	};
 }
 
