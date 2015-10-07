@@ -199,21 +199,33 @@ namespace Ph2_HwInterface
 	}
 
 
-	void BeBoardInterface::FlashProm( BeBoard* pBoard, uint16_t numConfig, const char* pstrFile )
+	void BeBoardInterface::FlashProm( BeBoard* pBoard, const std::string& strConfig, const char* pstrFile )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
-		fBoardFW->FlashProm( numConfig, pstrFile );
+		fBoardFW->FlashProm( strConfig, pstrFile );
 	}
 
-	void BeBoardInterface::JumpToFpgaConfig( BeBoard* pBoard, uint16_t numConfig)
+	void BeBoardInterface::JumpToFpgaConfig( BeBoard* pBoard, const std::string& strConfig)
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
-		fBoardFW->JumpToFpgaConfig( numConfig );
+		fBoardFW->JumpToFpgaConfig( strConfig );
 	}
 
 	const FpgaConfig* BeBoardInterface::getConfiguringFpga( BeBoard* pBoard )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );
 		return fBoardFW->getConfiguringFpga();
+	}
+
+	std::vector<std::string> BeBoardInterface::getFpgaConfigList( BeBoard* pBoard)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		return fBoardFW->getFpgaConfigList();
+	}
+
+	void BeBoardInterface::DeleteFpgaConfig(BeBoard* pBoard, const std::string& strId)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->DeleteFpgaConfig( strId );
 	}
 }

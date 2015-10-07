@@ -272,6 +272,9 @@ void Calibration::processSCurvesOffset( BeBoard* pBoard, uint8_t pGroupId, uint3
 
 			if ( !cRegVec.empty() ) fCbcInterface->WriteCbcMultReg( pBoard->getModule( cGroupIt.first.fFeId )->getCbc( cGroupIt.first.fCbcId ), cRegVec, READBACK );
 			currentCanvas->Update();
+#ifdef __HTTP__
+			fHttpServer->ProcessRequests();
+#endif
 		}
 	}
 	// std::cout << "Processed SCurves for Target Bit " << GREEN <<  +pTargetBit << RESET << std::endl;
@@ -408,6 +411,9 @@ void Calibration::FitVplusVcth( BeBoard* pBoard, uint8_t pTargetVcth,  bool pDoD
 				cVplusVcthMultiGraph->SetMinimum( 0 );
 				cVplusVcthMultiGraph->SetMaximum( 255 );
 				currentCanvas->Update();
+#ifdef __HTTP__
+				fHttpServer->ProcessRequests();
+#endif
 				cVplusVcthMultiGraph->Write( cVplusVcthMultiGraph->GetName(), TObject::kOverwrite );
 				cFit->Write( Form( "Fit_Fe%d_Cbc%d", cFe->getFeId(), cCbc->getCbcId() ), TObject::kOverwrite );
 				fResultFile->Flush();
@@ -610,6 +616,9 @@ void Calibration::processSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pE
 
 			fResultFile->Flush();
 			currentCanvas->Update();
+#ifdef __HTTP__
+			fHttpServer->ProcessRequests();
+#endif
 		}
 	}
 	// std::cout << "Processed SCurves for Test group " << GREEN <<  +pGroupId << RESET << " on all Cbc's connected to Be " << RED << int(pBoard->getBeId()) << RESET << std::endl;

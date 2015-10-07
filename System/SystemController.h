@@ -75,6 +75,11 @@ namespace Ph2_System
 		void addFileHandler( std::string pFilename0, char pOption );
 
 		/*!
+		* \brief read file in the a FileHandler object
+		 * \param pVec : the data vector 
+		*/
+     	        void readFile(std::vector<uint32_t>& pVec );
+		/*!
 		 * \brief acceptor method for HwDescriptionVisitor
 		 * \param pVisitor
 		 */

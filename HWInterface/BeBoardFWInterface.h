@@ -11,7 +11,7 @@
 #ifndef __BEBOARDFWINTERFACE_H__
 #define __BEBOARDFWINTERFACE_H__
 
-#include <thread>
+#include <boost/thread.hpp>
 #include <uhal/uhal.hpp>
 #include "RegManager.h"
 #include "../Utils/Event.h"
@@ -19,12 +19,15 @@
 #include "../Utils/Data.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/Exception.h"
+#include "../Utils/FileHandler.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWDescription/Definition.h"
 #include "../HWDescription/CbcRegItem.h"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
+#include <iostream>
+#include <fstream>
 
 using namespace Ph2_HwDescription;
 
@@ -37,6 +40,7 @@ class FileHandler;
 namespace Ph2_HwInterface
 {
 	class FpgaConfig;
+
 	/*!
 	 * \class BeBoardFWInterface
 	 * \brief Class separating board system FW interface from uHal wrapper
@@ -61,7 +65,7 @@ namespace Ph2_HwInterface
 		/*!
 		* \brief Constructor of the BeBoardFWInterface class
 		* \param puHalConfigFileName : path of the uHal Config File
-		*/
+		* \param pFileHandler : pointer to file handler for saving Raw Data*/
 		BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
 		/*!
 		* \brief Destructor of the BeBoardFWInterface class
@@ -76,14 +80,19 @@ namespace Ph2_HwInterface
 		*/
 		virtual void getBoardInfo();
 
-		//These two methods will be implemented soon
-		virtual void FlashProm( uint16_t numConfig, const char* pstrFile ) {}
+		/*! \brief Upload a configuration in a board FPGA */
+		virtual void FlashProm( const std::string& strConfig, const char* pstrFile ) {}
 		/*! \brief Jump to an FPGA configuration */
-		virtual void JumpToFpgaConfig( uint16_t numConfig ) {}
+		virtual void JumpToFpgaConfig(const std::string& strConfig){}
+		/*! \brief Current FPGA configuration*/
 		virtual const FpgaConfig* getConfiguringFpga() {
 			return nullptr;
 		}
 		virtual void ProgramCdce() {}
+		/*! \brief Get the list of available FPGA configuration (or firmware images)*/
+		virtual std::vector<std::string> getFpgaConfigList( ){ return std::vector<std::string>();}
+		/*! \brief Delete one Fpga configuration (or firmware image)*/
+		virtual void DeleteFpgaConfig( const std::string& strId){}
 
 		//Encode/Decode Cbc values
 		/*!

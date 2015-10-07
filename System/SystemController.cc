@@ -34,6 +34,12 @@ namespace Ph2_System
 
 		fFileHandler = new FileHandler( pFilename, pOption );
 	}
+
+        void SystemController::readFile( std::vector<uint32_t>& pVec )
+	{
+	  pVec = fFileHandler->readFile( );
+	}
+
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )
 	{
 		if ( pFilename.find( ".xml" ) != std::string::npos )
@@ -162,17 +168,10 @@ namespace Ph2_System
 
 				fShelveVector[cNShelve]->addBoard( cBeBoard );
 
-				BeBoardFWInterface* cBeBoardFWInterface;
-
-				if ( std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "Glib" ) ) )
-				{
-
-
-					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
-
-
-					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
-				}
+				if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "GLIB" ) ) )
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
+				else if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "CTA" ) ) )
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
 				/*else
 				        cBeBoardFWInterface = new OtherFWInterface();*/
 
@@ -314,8 +313,8 @@ namespace Ph2_System
 					cBeBoardFWInterface = new GlibFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}
-				/*else
-				        cBeBoardFWInterface = new OtherFWInterface();*/
+				else if ( cBoard.get( "boardType" ).get<std::string>() == "Cta" )
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
 
 				// now grab the modules
 				picojson::array cModules = cBoard.get( "Modules" ).get<picojson::array>();
