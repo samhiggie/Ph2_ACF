@@ -11,8 +11,8 @@
 
 #include "HWDescription/BeBoard.h"
 #include "HWInterface/FpgaConfig.h"
-#include "fc7/Firmware.hpp"
-#include "fc7/MmcPipeInterface.hpp"
+#include "Firmware.h"
+#include "MmcPipeInterface.h"
 
 using namespace Ph2_HwDescription;
 namespace Ph2_HwInterface

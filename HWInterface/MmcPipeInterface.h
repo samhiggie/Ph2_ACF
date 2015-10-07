@@ -1,11 +1,11 @@
-#ifndef _fc7_MmcPipeInterface_hpp_
-#define _fc7_MmcPipeInterface_hpp_
+#ifndef _fc7_MmcPipeInterface_h_
+#define _fc7_MmcPipeInterface_h_
 
 // FC7 Headers
 #include "uhal/DerivedNode.hpp"
 #include "uhal/log/exception.hpp"
 
-#include "fc7/Firmware.hpp"
+#include "Firmware.h"
 
 #include <string>
 

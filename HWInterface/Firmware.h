@@ -4,8 +4,8 @@
         @date 2011
  */
 
-#ifndef Firmware_hpp
-#define Firmware_hpp
+#ifndef Firmware_h
+#define Firmware_h
 
 #include <vector>
 #include <string>
