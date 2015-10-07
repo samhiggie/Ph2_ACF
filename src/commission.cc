@@ -92,6 +92,8 @@ int main( int argc, char* argv[] )
 	else if ( cThreshold ) cResultfile = "Threshold";
 	else cResultfile = "Commissioning";
 	cCommissioning.InitResultFile( cResultfile );
+	cCommissioning.StartHttpServer();
+
 	if ( !gui ) cCommissioning.ConfigureHw();
 
 	// Here comes our Part:

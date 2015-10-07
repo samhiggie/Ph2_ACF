@@ -11,7 +11,7 @@ Hybrids, Boards) and their properties(values, status)
 
 - a tools/ directory with several utilities (currently: calibration, hybrid testing, common-mode analysis)
 
-- some applications: datatest, interfacetest, hybridtest, system, calibrate
+- some applications: datatest, interfacetest, hybridtest, system, calibrate, commission, fpgaconfig
 
 ##### Different versions
 
@@ -91,7 +91,16 @@ On this Repo, you can find different version of the software :
     - adding miniDAQ executable that saves to file and handles runnumber in a hidden Data/.run_number.txt file
     - miniDQM code based on BT DQM still available for playing back the binary data
     - datatest now has a -s option to specify a filename where binary data should be saved (optionally)
-    
+- 06/10/2015: adding several new features:
+    - bugfix w.r.t. 8CBC data format
+    - bugfixed 8CBC_DIO5 firmware
+    - a mechanism that throws an exception if a non-existing CBC register is to be written
+    - a binary to measure the pulseshape of the CBC on all channels of a test-group
+    - added support for THttp Server support (web access to histograms & root objects)
+    - a webgui
+    - re-worked Fpga configuration options
+    - CTA FW interface
+    - revised Root-web DQM structure
 
 
 ### Setup
