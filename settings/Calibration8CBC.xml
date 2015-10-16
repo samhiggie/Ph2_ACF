@@ -6,14 +6,15 @@
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <CBC Id="0" configfile="./settings/Cbc_default_hole.txt"/>
-                <CBC Id="1" configfile="./settings/Cbc_default_hole.txt"/>
-                <CBC Id="2" configfile="./settings/Cbc_default_hole.txt"/>
-                <CBC Id="3" configfile="./settings/Cbc_default_hole.txt"/>
-                <CBC Id="4" configfile="./settings/Cbc_default_hole.txt"/>
-                <CBC Id="5" configfile="./settings/Cbc_default_hole.txt"/>
-                <CBC Id="6" configfile="./settings/Cbc_default_hole.txt"/>
-                <CBC Id="7" configfile="./settings/Cbc_default_hole.txt"/>
+                          <CBC_Files path="./settings/"/>
+                <CBC Id="0" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="1" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="2" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="3" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="4" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="5" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="6" configfile="Cbc_default_hole.txt"/>
+                <CBC Id="7" configfile="Cbc_default_hole.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->

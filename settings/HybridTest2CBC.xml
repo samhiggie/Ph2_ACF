@@ -6,7 +6,7 @@
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <Global_CBC_Register name="VCth"> 0x7C </Global_CBC_Register>
+                <Global_CBC_Register name="VCth"> 0x70 </Global_CBC_Register>
                 <Global_CBC_Register name="TriggerLatency"> 0x03 </Global_CBC_Register>
 		        <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0xAB </Global_CBC_Register>
                 <CBC_Files path="settings/"/>

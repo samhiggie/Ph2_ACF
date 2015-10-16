@@ -134,6 +134,7 @@ void HybridTester::Initialize( bool pThresholdScan )
 	Counter cCbcCounter;
 	accept( cCbcCounter );
 	fNCbc = cCbcCounter.getNCbc();
+	std::cout <<"DEBUG "<<  fNCbc << std::endl;
 
 	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
 	fDataCanvas->Divide( 2 );
@@ -204,7 +205,7 @@ void HybridTester::ScanThreshold()
 					cNthAcq++;
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
-				// std::cout << +cVcth << " " << cHitCounter << std::endl;
+				std::cout << +cVcth << " " << cHitCounter << std::endl;
 				// Draw the thing after each point
 				updateSCurveCanvas( pBoard );
 
@@ -452,7 +453,7 @@ void HybridTester::Measure()
 	Antenna cAntenna;
 	cAntenna.initializeAntenna();
 
-	double zero_fill[255] = {0}; // this is an array of zeros to clear histograms, since I could not find a method for clearing histograms I just fill them with zeros
+	double zero_fill[1017] = {0}; // this is an array of zeros to clear histograms, since I could not find a method for clearing histograms I just fill them with zeros
 	double cTopHistogramMerged[fNCbc * 127 + 1];
 	double cBottomHistogramMerged[fNCbc * 127 + 1];
 	for ( int i = 0; i < fNCbc * 127 + 1; i++ )
@@ -463,9 +464,10 @@ void HybridTester::Measure()
 
 	fHistTop->GetYaxis()->SetRangeUser( 0, fTotalEvents );
 	fHistBottom->GetYaxis()->SetRangeUser( 0, fTotalEvents );
+
 	for ( uint8_t analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++ )
 	{
-
+		std::cout << "Chip Select ID " << +analog_switch_cs << std::endl;
 		cAntenna.ConfigureSpiSlave( analog_switch_cs );
 
 		for ( uint8_t channel_position = 1; channel_position < 10; channel_position++ )
@@ -502,6 +504,7 @@ void HybridTester::Measure()
 						cNthAcq++;
 					}
 					fBeBoardInterface->Stop( pBoard, cNthAcq );
+
 					/*Here the reconstruction of histograms happens*/
 					if ( fNCbc == 2 ) //reconstruction of histograms for 2cbc2 hybrid
 					{
@@ -528,7 +531,7 @@ void HybridTester::Measure()
 					{
 						if ( analog_switch_cs % 2 == 1 ) // it means that I am illuminating top pads (if top antenna switches have odd numbers of chip select lines)
 						{
-							for ( uint8_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
+							for ( uint16_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
 							{
 								if ( fTopHistogramMerged[channel_id] < fHistTop->GetBinContent( channel_id ) ) fTopHistogramMerged[channel_id] = fHistTop->GetBinContent( channel_id );
 								if ( cTopHistogramMerged[channel_id] < fHistTop->GetBinContent( channel_id ) ) cTopHistogramMerged[channel_id] = fHistTop->GetBinContent( channel_id );
@@ -537,7 +540,7 @@ void HybridTester::Measure()
 						}
 						else if ( analog_switch_cs % 2 == 0 ) // // it means that I am illuminating bottom pads (if top antenna switches have even numbers of chip select lines)
 						{
-							for ( uint8_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
+							for ( uint16_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
 							{
 								if ( fBottomHistogramMerged[channel_id] < fHistBottom->GetBinContent( channel_id ) ) fBottomHistogramMerged[channel_id] = fHistBottom->GetBinContent( channel_id );
 								if ( cBottomHistogramMerged[channel_id] < fHistBottom->GetBinContent( channel_id ) ) cBottomHistogramMerged[channel_id] = fHistBottom->GetBinContent( channel_id );
@@ -550,7 +553,6 @@ void HybridTester::Measure()
 						break;
 					}
 					
-
 					/*Here clearing histograms after each event*/
 					fHistBottom->SetContent( ( double* ) zero_fill );
 					fHistTop->SetContent( ( double* ) zero_fill );

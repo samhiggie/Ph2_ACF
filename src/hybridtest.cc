@@ -92,8 +92,8 @@ int main( int argc, char* argv[] )
 		cHybridTester.ConfigureHw();
 
 		// Here comes our Part:
-		cHybridTester.Measure();
-		cHybridTester.TestChannels();
+		
+		std::cout << "Test Registers " << cRegisters << " , scan threshold " << cScan << std::endl;
 		if ( cRegisters ) cHybridTester.TestRegisters();
 		if ( cScan )
 		{
@@ -102,7 +102,8 @@ int main( int argc, char* argv[] )
 			std::cout << "Identified the threshold for 0 noise occupancy - Start external Signal source!" << std::endl;
 			mypause();
 		}
-
+		cHybridTester.Measure();
+		cHybridTester.TestChannels();
 		cHybridTester.SaveResults();
 
 	}

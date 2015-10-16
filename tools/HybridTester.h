@@ -87,8 +87,8 @@ class HybridTester : public Tool
 
 	std::map<Cbc*, TH1F*> fSCurveMap;  /*!< Histograms for SCurve */
 	std::map<Cbc*, TF1*> fFitMap;   /*!< fits for SCurve*/
-	double fTopHistogramMerged[255] = {0};
-	double fBottomHistogramMerged[255] = {0};
+	double fTopHistogramMerged[1017] = {0};
+	double fBottomHistogramMerged[1017] = {0};
 	uint32_t fTotalEvents;
 	bool fHoleMode;
 	int fSigmas;
