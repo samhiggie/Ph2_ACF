@@ -49,14 +49,17 @@ rootflags:
 	$(eval ExternalObjects += $(ExtObjectsRoot))
 
 print:
-	@echo 'Root Has Http:' $(ROOTVERSION)
+	@echo 'Root Has Http: ' $(ROOTVERSION)
 
 publisher.o: publisher.cc publisher.h
 	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-miniDQM: datatestFromfile.cc publisher.h publisher.o
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) publisher.o $(ExternalObjects) 
+DQMHistogrammer.o: DQMHistogrammer.cc DQMHistogrammer.h
+	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(CCFlagsRoot) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
+miniDQM: datatestFromfile.cc publisher.h publisher.o DQMHistogrammer.h DQMHistogrammer.o
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) publisher.o DQMHistogrammer.o $(ExternalObjects) 
+	cp $@ ../bin
 
 miniDAQ: miniDAQ.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
