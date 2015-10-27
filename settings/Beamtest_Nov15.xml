@@ -4,8 +4,21 @@
 
     <Shelve Id="0" >
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+            <FW_Version NCbcDataSize="8"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
+                <CBC_Files path="/afs/cern.ch/user/g/gauzinge/Ph2_ACF/Calibrations/Module1/Hybrid1/"/>
+                <CBC Id="0" configfile="FE0CBC0.txt"/>
+                <CBC Id="1" configfile="FE0CBC1.txt"/>
+                <CBC Id="2" configfile="FE0CBC2.txt"/>
+                <CBC Id="3" configfile="FE0CBC3.txt"/>
+                <CBC Id="4" configfile="FE0CBC4.txt"/>
+                <CBC Id="5" configfile="FE0CBC5.txt"/>
+                <CBC Id="6" configfile="FE0CBC6.txt"/>
+                <CBC Id="7" configfile="FE0CBC7.txt"/>
+            </Module>
+
+          <!--   <Module FeId="1" FMCId="1" ModuleId="1" Status="1">
                 <CBC_Files path="./settings/"/>
                 <CBC Id="0" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="1" configfile="Cbc_default_electron.txt"/>
@@ -16,19 +29,7 @@
                 <CBC Id="6" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="7" configfile="Cbc_default_electron.txt"/>
             </Module>
-
-            <Module FeId="1" FMCId="1" ModuleId="1" Status="1">
-                <CBC_Files path="./settings/"/>
-                <CBC Id="0" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="1" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="2" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="3" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="4" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="5" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="6" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="7" configfile="Cbc_default_electron.txt"/>
-            </Module>
-
+ -->
             <!-- Commissioning Mode -->
             <!-- set to 1 to enable commissioning mode -->
             <Register name="COMMISSIONNING_MODE_RQ"> 0 </Register>

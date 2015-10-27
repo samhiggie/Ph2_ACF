@@ -355,7 +355,8 @@ namespace Ph2_HwInterface
 
 		CbcCounter cCounter;
 		pBoard->accept( cCounter );
-		return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
+		if ( pBoard->getNCbcDataSize() != 0 ) return cNPackets * ( pBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 );
+		else return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
 	}
 
 	std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
