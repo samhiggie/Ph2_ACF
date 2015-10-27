@@ -6,10 +6,13 @@
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register
-                <Global_CBC_Register name="VCth"> 0x70 </Global_CBC_Register
+                <Global_CBC_Register name="VCth"> 0x84 </Global_CBC_Register>
+                <!-- <Global_CBC_Register name="VPlus"> 0x78 </Global_CBC_Register> -->
+                <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
 
-                <CBC_Files path="/afs/cern.ch/user/g/gauzinge/Ph2_ACF/Calibrations/Module1/Hybrid1/"/>
+            <CBC_Files path="/afs/cern.ch/user/g/gauzinge/Ph2_ACF/Calibrations/Module1/Hybrid1_test/"/>
+                 <!-- <CBC_Files path="./Results/Calibration_Electron_27-10-15_17:22/"/> -->
+
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
                 <CBC Id="2" configfile="FE0CBC2.txt"/>
@@ -40,8 +43,7 @@
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms" > 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
             <!-- set to 1 to output L1A signal, 0 for input pulse -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar"> 0 </Register>
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register> 
 
             <!-- Clock -->
             <!-- set to 1 for external clocking -->
@@ -63,14 +65,13 @@
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC"> 0 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.negative_logic_sTTS"> 0 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.polarity_tlu"> 0 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.cbc_mask"> 0 </Register>
-
+            
         </BeBoard>
     </Shelve>
 </HwDescription>
 
 <Settings>
-    <Setting name="Nevents"> 100 </Setting>
-    <Setting name="HoleMode"> 1 </Setting>
+    <Setting name="Nevents"> 5000 </Setting>
+    <Setting name="HoleMode"> 0 </Setting>
     <Setting name="Threshold_NSigmas"> 4 </Setting>
 </Settings>
