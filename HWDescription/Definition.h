@@ -17,8 +17,8 @@
 //-----------------------------------------------------------------------------
 //Glib Config Files
 
-#define XML_DESCRIPTION_FILE_2CBC "../settings/HWDescription_2CBC.xml"
-#define XML_DESCRIPTION_FILE_8CBC "../settings/HWDescription_8CBC.xml"
+#define XML_DESCRIPTION_FILE_2CBC "settings/HWDescription_2CBC.xml"
+#define XML_DESCRIPTION_FILE_8CBC "settings/HWDescription_8CBC.xml"
 
 //------------------------------------------------------------------------------
 //Cbc Config Files

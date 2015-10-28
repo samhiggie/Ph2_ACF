@@ -9,54 +9,17 @@
 
 namespace RootWeb
 {
-	void makePageOne( RootWSite& site )
-	{
-		// Adding one page
-		auto& home = site.addPage( "Home" );
-		home.setAddress( "index.html" );
-#if 0
-		// With one collapsing content (default is open)
-		auto& content1 = home.addContent( "Section 1" );
 
-		// With a table of strings
-		auto& aTableS = content1.addTable();
-		for ( int i = 1; i <= 10; ++i )
-		{
-			for ( int j = 1; j <= 10; ++j )
-				aTableS.setContent( i, j, Form( "G%d", i * j ) );
-		}
-		// With a table of doubles (3 decimal places)
-		auto& aTableD = content1.addTable();
-		for ( int i = 1; i <= 10; ++i )
-		{
-			for ( int j = 1; j <= 10; ++j )
-				aTableD.setContent( i, j, sqrt( i * j ), 3 );
-		}
-		// The second content is collapsed by defauls
-		auto& content2 = home.addContent( "Section 2", false );
-		content2.addText( "Hello, there, I was hiding here" );
-#endif
-	}
-
-	TH1D* createPlot()
-	{
-		TH1D* myHisto = new TH1D( "test", "Here I am", 10, 0, 10 );
-		myHisto->Fill( 3 );
-		myHisto->Fill( 3 );
-		myHisto->Fill( 4 );
-		myHisto->Fill( 5 );
-		return myHisto;
-	}
-
-	void makePageTwo( RootWSite& site, const std::string& inFilename )
+	void makeMainPage( RootWSite& site, const std::string& inFilename )
 	{
 		auto& myPage = site.addPage( "DQM Plots" );
+		myPage.setAddress( "index.html" );
 
 		// With a content containing some plots
 		auto& content1 = myPage.addContent( "Common Plots" );
 
 		// open DQM file
-		TFile* fin = TFile::Open( TString( inFilename ) );
+		TFile* fin = TFile::Open( inFilename.c_str() );
 		std::vector<TKey*> directoryKey;
 		TIter next( fin->GetListOfKeys() );
 		TObject* obj;
@@ -71,11 +34,11 @@ namespace RootWeb
 			{
 				TH1* h = dynamic_cast<TH1*>( key->ReadObj() );
 				h->SetDirectory( 0 );
-				TString canvasName( "c" + std::string( key->GetName() ) );
-				TCanvas* myCanvas = new TCanvas( canvasName, "c1", 500, 500 );
+				std::string canvasName( "c" ); canvasName += key->GetName();
+				TCanvas* myCanvas = new TCanvas( canvasName.c_str(), "c1", 700, 500 );
 				myCanvas->cd();
 				h->Draw();
-				auto& myImage = content1.addImage( myCanvas, 600, 400 );
+				auto& myImage = content1.addImage( myCanvas, 700, 500 );
 				myImage.setComment( "A little explanation here always helps" );
 				myImage.setName( h->GetTitle() );
 			}
@@ -89,17 +52,17 @@ namespace RootWeb
 			TDirectory* dir = dynamic_cast<TDirectory*>( key->ReadObj() );
 			TIter next( dir->GetListOfKeys() );
 			TKey* hkey;
-			while ( ( hkey = ( TKey* )next() ) )
+			while ( ( hkey = dynamic_cast<TKey*>(next()) ) )
 			{
 				TClass* cl = gROOT->GetClass( hkey->GetClassName() );
 				if ( !cl->InheritsFrom( "TH1" ) ) continue;
 				TH1* h = dynamic_cast<TH1*>( hkey->ReadObj() );
 				h->SetDirectory( 0 );
-				TString canvasName( "c" + std::string( hkey->GetName() ) );
-				TCanvas* myCanvas = new TCanvas( canvasName, "c1", 500, 500 );
+				std::string canvasName( "c" ); canvasName += hkey->GetName();
+				TCanvas* myCanvas = new TCanvas( canvasName.c_str(), "c1", 700, 500 );
 				myCanvas->cd();
 				h->Draw();
-				auto& myImage = content2.addImage( myCanvas, 600, 400 );
+				auto& myImage = content2.addImage( myCanvas, 700, 500 );
 				myImage.setComment( "A little explanation here always helps" );
 				myImage.setName( h->GetTitle() );
 			}
@@ -117,19 +80,16 @@ namespace RootWeb
 		site.setTitle( run );
 		site.setComment( "Complete run list" );
 		site.setCommentLink( "../" );
-		site.addAuthor( "Mickey Mouse" );
-		site.addAuthor( "Dylan Dog" );
-		site.addAuthor( "Nathan Never" );
+		site.addAuthor( "Ph2_DAQ Team" );
 		site.setRevision( "0.1" );
-		site.setProgram( "Ph2_DAQ", "https://github.com/gauzinge/Ph2_ACF" );
+		site.setProgram( "Ph2_DAQ", "https://gitlab.cern.ch/cmstkph2/Ph2_ACF" );
 	}
 
 	void makeDQMmonitor( const std::string& inFilename, std::string& directory, const std::string& run )
 	{
 		RootWSite site;
 		prepareSiteStuff( site, directory, run );
-		makePageOne( site );
-		makePageTwo( site, inFilename );
+		makeMainPage( site, inFilename );
 		site.makeSite( false );
 	}
 }
