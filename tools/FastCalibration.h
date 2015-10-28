@@ -46,9 +46,9 @@ class FastCalibration : public Tool
 {
   public:
 	FastCalibration( bool pbitwisetune , bool pAllChan ) {
-		fVplusVec.push_back( 0x14 );
-		fVplusVec.push_back( 0x64 );
-		fVplusVec.push_back( 0xA4 );
+		fVplusVec.push_back( 0x58 );
+		fVplusVec.push_back( 0x78 );
+		fVplusVec.push_back( 0x98 );
 		fdoTGrpCalib = !pAllChan;
 		fdoBitWisetuning = pbitwisetune;
 		for ( int gid = -1; gid < 8; gid++ ) {
@@ -87,12 +87,14 @@ class FastCalibration : public Tool
 	}
 
 	void Validate();
+	void measureNoise();
 
   private:
 	CbcChannelMap fCbcChannelMap;
 	GraphMap fGraphMap;
 	FitMap fFitMap;
 	HistMap fHistMap;
+	HistMap fNoiseMap;
 	TestGroupChannelMap fTestGroupChannelMap;
 	bool fdoTGrpCalib;
 	bool fdoBitWisetuning;
@@ -118,6 +120,7 @@ class FastCalibration : public Tool
 	//void initializeSCurves( TString pParameter, uint8_t pValue );
 	void processSCurves( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
 	void processSCurvesOffset( TString pParameter, uint8_t pTargetBit, bool pDraw, int pTGrpId );
+	void processSCurvesNoise( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
 	// void fitVplusVcthGraph();
 	void findVplus( bool pDraw );
 	void writeGraphs();

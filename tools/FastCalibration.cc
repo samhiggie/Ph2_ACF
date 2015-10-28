@@ -47,6 +47,54 @@ void FastCalibration::ScanVplus()
 	findVplus( true );
 
 }
+
+void FastCalibration::measureNoise()
+{
+	// method to measure one final set of SCurves with the final calibration applied to extract the noise
+	// now measure some SCurves
+	for ( auto& cTGrpM : fTestGroupChannelMap )
+	{
+		if ( cTGrpM.first == -1 && fdoTGrpCalib )
+			continue;
+		if ( cTGrpM.first > -1 && !fdoTGrpCalib )
+			break;
+
+		std::cout << "Enabling Test Group...." << cTGrpM.first << std::endl;
+
+		// now initialize the Scurves
+		initializeSCurves( "Final", 0, cTGrpM.first );
+
+		// measure the SCurves, the false is indicating that I am sweeping Vcth
+		measureSCurves( false, cTGrpM.first );
+
+		// now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
+		processSCurvesNoise( "Final", 0, true, cTGrpM.first );
+		// After finishing with one test group, disable it again
+		std::cout << "Disabling Test Group...." << cTGrpM.first << std::endl;
+	}
+	std::cout << BOLDBLUE << "Finished measuring the noise ..." << std::endl << RESET << std::endl;
+
+	// now plot the histogram with the noise
+
+	for ( auto& cHist : fNoiseMap )
+	{
+		std::cout << BOLDRED << "Average noise on FE " << +cHist.first->getFeId() << " CBC " << +cHist.first->getCbcId() << " is " << cHist.second->GetMean() << " with an RMS of " << cHist.second->GetRMS() << " VCth units." << RESET << std::endl;
+		// now find the canvas, cd to pad?? and draw
+		auto cCanvas = fCanvasMap.find( cHist.first );
+		if ( cCanvas == std::end( fCanvasMap ) ) std::cout << "Error: could not find the Canvas for CBC " << int( cHist.first->getCbcId() ) << std::endl;
+		else
+		{
+			cCanvas->second->cd( 2 );
+			cHist.second->DrawCopy();
+			cCanvas->second->Update();
+#ifdef __HTTP__
+			fHttpServer->ProcessRequests();
+#endif
+		}
+	}
+}
+
+
 void FastCalibration::ScanOffset()
 {
 
@@ -134,7 +182,7 @@ void FastCalibration::Validate()
 
 	// Now Take Data
 
-	uint32_t cTotalEvents = 200;
+	uint32_t cTotalEvents = 2000;
 
 	CbcRegReader cReader( fCbcInterface, "VCth" );
 	accept( cReader );
@@ -270,6 +318,12 @@ void FastCalibration::Initialise()
 					if ( cHist ) delete cHist;
 					cHist = new TH1F( cHistname, cHistname, 100, 0, 1 );
 					fHistMap[cCbc] = cHist;
+
+					cHistname = Form( "Fe%dCBC%d_Noise", cFe->getFeId(), cCbc->getCbcId() );
+					cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
+					if ( cHist ) delete cHist;
+					cHist = new TH1F( cHistname, cHistname, 510, -0.5, 254.5 );
+					fNoiseMap[cCbc] =  cHist;
 				}
 			}
 		}
@@ -695,6 +749,80 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 	}
 }
 
+void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId )
+{
+	uint32_t cPad = 4;
+
+	// First fitHits for every Channel, then extract the midpoint and noise and fill it in fVplusVcthGraphMap
+	for ( auto& cCbc : fCbcChannelMap )
+	{
+		// Find the Canvas
+		CanvasMap::iterator cCanvas = fCanvasMap.find( cCbc.first );
+		if ( pDraw )
+		{
+			if ( cCanvas == fCanvasMap.end() )
+			{
+				std::cout << "Could not find the correct Canvas for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
+				pDraw = false;
+			}
+			else cCanvas->second->cd( cPad );
+		}
+
+		// use another histogram for the noise
+		HistMap::iterator cHist = fNoiseMap.find( cCbc.first );
+		if ( cHist == fNoiseMap.end() ) std::cout << "Could not find the correct Noise Histogram for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
+
+		// Loop the Channels
+		bool cFirst = true;
+		TString cOption;
+
+		std::vector<uint8_t> cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
+		for ( auto& cChanId : cTestGrpChannelVec )
+		{
+			//for ( auto& cChan : cCbc.second )
+			bool cFitMode;
+			Channel cChan = cCbc.second.at( cChanId );
+			if ( !fHoleMode ) cFitMode = true;
+			else cFitMode = false;
+
+			// Fit or Differentiate
+			if ( fFitted )
+				cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+
+
+			// instead of the code below, use a histogram to histogram the noise
+			cHist->second->Fill( cChan.getNoise() );
+			if ( cChan.getNoise() == 0 || cChan.getNoise() > 255 ) std::cout << RED << "Error, SCurve Fit for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << " Channel " << int( cChan.fChannelId ) << " did not work correctly!" << RESET << std::endl;
+
+			//Draw
+			if ( pDraw )
+			{
+				if ( cFirst )
+				{
+					cOption = "P" ;
+					cFirst = false;
+				}
+				else cOption = "P same";
+
+				cCanvas->second->cd( cPad );
+				cChan.fScurve->Draw( cOption );
+				if ( fFitted )
+					cChan.fFit->Draw( "same" );
+				else cChan.fDerivative->Draw( "same" );
+			}
+		}
+		if ( pDraw )
+		{
+			cCanvas->second->Update();
+#ifdef __HTTP__
+			fHttpServer->ProcessRequests();
+#endif
+		}
+	}
+
+}
+
 void FastCalibration::findVplus( bool pDraw )
 {
 	// fit the VplusVcthGraph and evaluate at fTargetVcth, then use the key of the map I am iterating (Cbc*) with fCbcInterface to write the object
@@ -750,6 +878,8 @@ void FastCalibration::writeGraphs()
 	for ( const auto& cCanvas : fCanvasMap )
 		cCanvas.second->Write( cCanvas.second->GetName(), TObject::kOverwrite );
 	for ( const auto& cHist : fHistMap )
+		cHist.second->SetDirectory( fResultFile );
+	for ( const auto& cHist : fNoiseMap )
 		cHist.second->SetDirectory( fResultFile );
 }
 

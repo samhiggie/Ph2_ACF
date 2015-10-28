@@ -4,6 +4,7 @@
 
     <Shelve Id="0" >
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+        	<FW_Version NCbcDataSize="8"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
                 <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
@@ -11,13 +12,13 @@
 
                 <CBC_Files path="./settings/"/>
                 <CBC Id="0" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="1" configfile="Cbc_default_electron.txt"/>
+                <!-- <CBC Id="1" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="2" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="3" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="4" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="5" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="6" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="7" configfile="Cbc_default_electron.txt"/>
+                <CBC Id="7" configfile="Cbc_default_electron.txt"/> -->
             </Module>
 
             <!-- Commissioning Mode -->
