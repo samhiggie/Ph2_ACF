@@ -2,6 +2,7 @@
 
 #include "../Utils/Utilities.h"
 #include "../tools/Commissioning.h"
+#include "../tools/FastCalibration.h"
 #include <TApplication.h>
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
@@ -39,6 +40,11 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "stublatency", "scan the stub latency", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "stublatency", "s" );
 
+	cmd.defineOption( "noise", "scan the CBC noise per strip", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "noise", "n" );
+
+	cmd.defineOption( "occupancy", "Measure the occupancy", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+
 	cmd.defineOption( "minimum", "minimum value for latency scan", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "minimum", "m" );
 
@@ -70,6 +76,8 @@ int main( int argc, char* argv[] )
 	bool cStubLatency = ( cmd.foundOption( "stublatency" ) ) ? true : false;
 	bool cThreshold = ( cmd.foundOption( "threshold" ) ) ? true : false;
 	bool cScanPedestal = ( cmd.foundOption( "pedestal" ) ) ? true : false;
+	bool cNoise = ( cmd.foundOption( "noise" ) ) ? true : false;
+	bool cOccupancy = ( cmd.foundOption( "occupancy" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	cDirectory += "Commissioning";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
@@ -102,6 +110,42 @@ int main( int argc, char* argv[] )
 	if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
 	cCommissioning.SaveResults();
 
+
+	if ( cNoise )
+	{
+		FastCalibration cCalibration( false, false );
+		cCalibration.InitializeHw( cHWFile );
+		cCalibration.InitializeSettings( cHWFile );
+		cCalibration.CreateResultDirectory( cDirectory );
+		std::string cResultfile = "NoiseScan";
+		cCalibration.InitResultFile( cResultfile );
+		cCalibration.StartHttpServer();
+		cCalibration.ConfigureHw();
+
+		cCalibration.Initialise(); // canvases etc. for fast calibration
+		// if ( cOccupancy ) cCalibration.Validate();
+		cCalibration.measureNoise();
+		cCalibration.SaveResults();
+
+	}
+
+	else if ( cOccupancy )
+	{
+		FastCalibration cCalibration( false, false );
+		cCalibration.InitializeHw( cHWFile );
+		cCalibration.InitializeSettings( cHWFile );
+		cCalibration.CreateResultDirectory( cDirectory );
+		std::string cResultfile = "NoiseScan";
+		cCalibration.InitResultFile( cResultfile );
+		cCalibration.StartHttpServer();
+		cCalibration.ConfigureHw();
+
+		cCalibration.Initialise(); // canvases etc. for fast calibration
+		cCalibration.Validate();
+		// cCalibration.measureNoise();
+		cCalibration.SaveResults();
+
+	}
 
 	if ( !batchMode ) cApp.Run();
 

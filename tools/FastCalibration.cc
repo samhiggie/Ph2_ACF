@@ -50,6 +50,10 @@ void FastCalibration::ScanVplus()
 
 void FastCalibration::measureNoise()
 {
+
+	TCanvas* ctmpNoiseCanvas = new TCanvas( "Module Noise", "Module Noise" );
+	TH1F* cModuleNoise = new TH1F( "Module Noise", "Module Noise", 510, -0.5, 254.5 );
+
 	// method to measure one final set of SCurves with the final calibration applied to extract the noise
 	// now measure some SCurves
 	for ( auto& cTGrpM : fTestGroupChannelMap )
@@ -78,6 +82,7 @@ void FastCalibration::measureNoise()
 
 	for ( auto& cHist : fNoiseMap )
 	{
+		cModuleNoise->Add( cHist.second );
 		std::cout << BOLDRED << "Average noise on FE " << +cHist.first->getFeId() << " CBC " << +cHist.first->getCbcId() << " is " << cHist.second->GetMean() << " with an RMS of " << cHist.second->GetRMS() << " VCth units." << RESET << std::endl;
 		// now find the canvas, cd to pad?? and draw
 		auto cCanvas = fCanvasMap.find( cHist.first );
@@ -92,6 +97,12 @@ void FastCalibration::measureNoise()
 #endif
 		}
 	}
+	ctmpNoiseCanvas->cd();
+	cModuleNoise->Draw();
+	ctmpNoiseCanvas->Update();
+#ifdef __HTTP__
+	fHttpServer->ProcessRequests();
+#endif
 }
 
 
@@ -275,6 +286,10 @@ void FastCalibration::Initialise()
 			for ( auto cFe : cBoard->fModuleVector )
 			{
 				uint32_t cFeId = cFe->getFeId();
+
+				// TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
+				// TH1F* cNoise = new T1F( cNoisehistname, cNoisehistname, 510, -0.5, 254.5 );
+				// bookHistogram( cFe, "Module_noisehist", cNoise );
 
 				for ( auto cCbc : cFe->fCbcVector )
 				{
