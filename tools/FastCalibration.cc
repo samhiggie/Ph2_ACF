@@ -3,6 +3,107 @@
 
 // TODO: Canvas divisions
 
+void FastCalibration::Initialise()
+{
+	//is to be called after system controller::ReadHW, ReadSettings
+	// populates all the maps
+
+	uint32_t cCbcCount = 0;
+
+	for ( auto cShelve : fShelveVector )
+	{
+		uint32_t cShelveId = cShelve->getShelveId();
+
+		for ( auto cBoard : cShelve->fBoardVector )
+		{
+			uint32_t cBoardId = cBoard->getBeId();
+
+			for ( auto cFe : cBoard->fModuleVector )
+			{
+				uint32_t cFeId = cFe->getFeId();
+
+				TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
+				TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 510, -0.5, 254.5 );
+				bookHistogram( cFe, "Module_noisehist", cNoise );
+
+				cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
+				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, 255, .5, 255.5 );
+				bookHistogram( cFe, "Module_Stripnoise", cStripnoise );
+
+				for ( auto cCbc : cFe->fCbcVector )
+				{
+					uint32_t cCbcId = cCbc->getCbcId();
+					cCbcCount++;
+
+					// populate the channel vector
+					std::vector<Channel> cChanVec;
+
+					for ( uint8_t cChan = 0; cChan < 254; cChan++ )
+						cChanVec.push_back( Channel( cBoardId, cFeId, cCbcId, cChan ) );
+
+					fCbcChannelMap[cCbc] = cChanVec;
+
+					// now create the canvasses
+					TString cCanvasname = Form( "Fe%d_Cbc%d_Calibration", cFeId, cCbcId );
+					TCanvas* ctmpCanvas = dynamic_cast<TCanvas*>( gROOT->FindObject( cCanvasname ) );
+					if ( ctmpCanvas ) delete ctmpCanvas;
+					ctmpCanvas =  new TCanvas( cCanvasname, cCanvasname );
+					ctmpCanvas->Divide( 2, 2 );
+					fCanvasMap[cCbc] = ctmpCanvas;
+
+
+					// now the TGraphErrors
+					TString cGraphname = Form( "VplusVcthGraph_Fe%d_Cbc%d", cFeId, cCbcId );
+					TGraphErrors* ctmpGraph = dynamic_cast<TGraphErrors*>( gROOT->FindObject( cGraphname ) );
+					if ( ctmpGraph ) delete ctmpGraph;
+					ctmpGraph = new TGraphErrors();
+					ctmpGraph->SetName( cGraphname );
+					ctmpGraph->GetXaxis()->SetTitle( "SCurve Midpoint [VCth]" );
+					ctmpGraph->GetXaxis()->SetRangeUser( 0, 255 );
+					ctmpGraph->GetYaxis()->SetTitle( "Vplus" );
+					ctmpGraph->GetYaxis()->SetRangeUser( 0, 255 );
+					fGraphMap[cCbc] = ctmpGraph;
+
+					// the fits are initialized when I fit!
+
+					// validiation histograms
+					TString cHistname = Form( "Validation_Fe%d_Cbc%d", cFeId, cCbcId );
+					TH1F* cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
+					if ( cHist ) delete cHist;
+					cHist = new TH1F( cHistname, cHistname, 100, 0, 1 );
+					fHistMap[cCbc] = cHist;
+
+					cHistname = Form( "Fe%dCBC%d_Noise", cFe->getFeId(), cCbc->getCbcId() );
+					cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
+					if ( cHist ) delete cHist;
+					cHist = new TH1F( cHistname, cHistname, 200, 0, 20 );
+					fNoiseMap[cCbc] =  cHist;
+				}
+			}
+		}
+	}
+	// now read the settings from the map
+	// fHoleMode = fSettingsMap.find( "HoleMode" )->second;
+	// fEventsPerPoint = fSettingsMap.find( "Nevents" )->second;
+	// fTargetVcth = fSettingsMap.find( "TargetVcth" )->second;
+	auto cSetting = fSettingsMap.find( "HoleMode" );
+	fHoleMode = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 1;
+	cSetting = fSettingsMap.find( "TargetVcth" );
+	fTargetVcth = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 120;
+	cSetting = fSettingsMap.find( "Nevents" );
+	fEventsPerPoint = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 10;
+	cSetting = fSettingsMap.find( "FitSCurves" );
+	fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
+	fNCbc = cCbcCount;
+
+	std::cout << "Created Object Maps and parsed settings:" << std::endl;
+	std::cout << "	Hole Mode = " << fHoleMode << std::endl;
+	std::cout << "	Nevents = " << fEventsPerPoint << std::endl;
+	std::cout << "	TargetVcth = " << int( fTargetVcth ) << std::endl;
+	std::cout << "	FitSCurves = " << int( fFitted ) << std::endl;
+
+}
+
 void FastCalibration::ScanVplus()
 {
 	// Method to perform a Vplus Scan
@@ -80,29 +181,70 @@ void FastCalibration::measureNoise()
 
 	// now plot the histogram with the noise
 
-	for ( auto& cHist : fNoiseMap )
+	// instead of looping over the Histograms and finding everything according to the CBC from the map, just loop the CBCs
+	for ( auto cShelve : fShelveVector )
 	{
-		cModuleNoise->Add( cHist.second );
-		std::cout << BOLDRED << "Average noise on FE " << +cHist.first->getFeId() << " CBC " << +cHist.first->getCbcId() << " is " << cHist.second->GetMean() << " with an RMS of " << cHist.second->GetRMS() << " VCth units." << RESET << std::endl;
-		// now find the canvas, cd to pad?? and draw
-		auto cCanvas = fCanvasMap.find( cHist.first );
-		if ( cCanvas == std::end( fCanvasMap ) ) std::cout << "Error: could not find the Canvas for CBC " << int( cHist.first->getCbcId() ) << std::endl;
-		else
+		uint32_t cShelveId = cShelve->getShelveId();
+
+		for ( auto cBoard : cShelve->fBoardVector )
 		{
-			cCanvas->second->cd( 2 );
-			cHist.second->DrawCopy();
-			cCanvas->second->Update();
+			uint32_t cBoardId = cBoard->getBeId();
+
+			for ( auto cFe : cBoard->fModuleVector )
+			{
+				uint32_t cFeId = cFe->getFeId();
+
+				// here get the per FE histograms
+				TH1F* cTmpHist = static_cast<TH1F*>( getHist( cFe, "Module_noisehist" ) );
+				TProfile* cTmpProfile = static_cast<TProfile*>( getHist( cFe, "Module_Stripnoise" ) );
+
+				for ( auto cCbc : cFe->fCbcVector )
+				{
+					// here get the per-CBC histograms
+					auto cHist = fNoiseMap.find( cCbc );
+					if ( cHist == std::end( fNoiseMap ) ) std::cout << "Error: could not find the Noise Histogram for CBC " << int( cCbc->getCbcId() ) << std::endl;
+					std::cout << BOLDRED << "Average noise on FE " << +cHist->first->getFeId() << " CBC " << +cHist->first->getCbcId() << " is " << cHist->second->GetMean() << " with an RMS of " << cHist->second->GetRMS() << " VCth units." << RESET << std::endl;
+					auto cCanvas = fCanvasMap.find( cCbc );
+					if ( cCanvas == std::end( fCanvasMap ) ) std::cout << "Error: could not find the Canvas for CBC " << int( cHist->first->getCbcId() ) << std::endl;
+					else
+					{
+						cCanvas->second->cd( 2 );
+						cHist->second->DrawCopy();
+						cCanvas->second->Update();
 #ifdef __HTTP__
-			fHttpServer->ProcessRequests();
+						fHttpServer->ProcessRequests();
 #endif
+					}
+					// here add the CBC histos to the module histos
+					cTmpHist->Add( cHist->second );
+				}
+			}
 		}
 	}
-	ctmpNoiseCanvas->cd();
-	cModuleNoise->Draw();
-	ctmpNoiseCanvas->Update();
-#ifdef __HTTP__
-	fHttpServer->ProcessRequests();
-#endif
+
+	// 	for ( auto& cHist : fNoiseMap )
+	// 	{
+	// 		cModuleNoise->Add( cHist.second );
+	// 		std::cout << BOLDRED << "Average noise on FE " << +cHist.first->getFeId() << " CBC " << +cHist.first->getCbcId() << " is " << cHist.second->GetMean() << " with an RMS of " << cHist.second->GetRMS() << " VCth units." << RESET << std::endl;
+	// 		// now find the canvas, cd to pad?? and draw
+	// 		auto cCanvas = fCanvasMap.find( cHist.first );
+	// 		if ( cCanvas == std::end( fCanvasMap ) ) std::cout << "Error: could not find the Canvas for CBC " << int( cHist.first->getCbcId() ) << std::endl;
+	// 		else
+	// 		{
+	// 			cCanvas->second->cd( 2 );
+	// 			cHist.second->DrawCopy();
+	// 			cCanvas->second->Update();
+	// #ifdef __HTTP__
+	// 			fHttpServer->ProcessRequests();
+	// #endif
+	// 		}
+	// 	}
+	// 	ctmpNoiseCanvas->cd();
+	// 	cModuleNoise->Draw();
+	// 	ctmpNoiseCanvas->Update();
+	// #ifdef __HTTP__
+	// 	fHttpServer->ProcessRequests();
+	// #endif
 }
 
 
@@ -268,102 +410,7 @@ void FastCalibration::Validate()
 }
 
 
-void FastCalibration::Initialise()
-{
-	//is to be called after system controller::ReadHW, ReadSettings
-	// populates all the maps
 
-	uint32_t cCbcCount = 0;
-
-	for ( auto cShelve : fShelveVector )
-	{
-		uint32_t cShelveId = cShelve->getShelveId();
-
-		for ( auto cBoard : cShelve->fBoardVector )
-		{
-			uint32_t cBoardId = cBoard->getBeId();
-
-			for ( auto cFe : cBoard->fModuleVector )
-			{
-				uint32_t cFeId = cFe->getFeId();
-
-				// TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
-				// TH1F* cNoise = new T1F( cNoisehistname, cNoisehistname, 510, -0.5, 254.5 );
-				// bookHistogram( cFe, "Module_noisehist", cNoise );
-
-				for ( auto cCbc : cFe->fCbcVector )
-				{
-					uint32_t cCbcId = cCbc->getCbcId();
-					cCbcCount++;
-
-					// populate the channel vector
-					std::vector<Channel> cChanVec;
-
-					for ( uint8_t cChan = 0; cChan < 254; cChan++ )
-						cChanVec.push_back( Channel( cBoardId, cFeId, cCbcId, cChan ) );
-
-					fCbcChannelMap[cCbc] = cChanVec;
-
-					// now create the canvasses
-					TString cCanvasname = Form( "Fe%d_Cbc%d_Calibration", cFeId, cCbcId );
-					TCanvas* ctmpCanvas = dynamic_cast<TCanvas*>( gROOT->FindObject( cCanvasname ) );
-					if ( ctmpCanvas ) delete ctmpCanvas;
-					ctmpCanvas =  new TCanvas( cCanvasname, cCanvasname );
-					ctmpCanvas->Divide( 2, 2 );
-					fCanvasMap[cCbc] = ctmpCanvas;
-
-
-					// now the TGraphErrors
-					TString cGraphname = Form( "VplusVcthGraph_Fe%d_Cbc%d", cFeId, cCbcId );
-					TGraphErrors* ctmpGraph = dynamic_cast<TGraphErrors*>( gROOT->FindObject( cGraphname ) );
-					if ( ctmpGraph ) delete ctmpGraph;
-					ctmpGraph = new TGraphErrors();
-					ctmpGraph->SetName( cGraphname );
-					ctmpGraph->GetXaxis()->SetTitle( "SCurve Midpoint [VCth]" );
-					ctmpGraph->GetXaxis()->SetRangeUser( 0, 255 );
-					ctmpGraph->GetYaxis()->SetTitle( "Vplus" );
-					ctmpGraph->GetYaxis()->SetRangeUser( 0, 255 );
-					fGraphMap[cCbc] = ctmpGraph;
-
-					// the fits are initialized when I fit!
-
-					// validiation histograms
-					TString cHistname = Form( "Validation_Fe%d_Cbc%d", cFeId, cCbcId );
-					TH1F* cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
-					if ( cHist ) delete cHist;
-					cHist = new TH1F( cHistname, cHistname, 100, 0, 1 );
-					fHistMap[cCbc] = cHist;
-
-					cHistname = Form( "Fe%dCBC%d_Noise", cFe->getFeId(), cCbc->getCbcId() );
-					cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
-					if ( cHist ) delete cHist;
-					cHist = new TH1F( cHistname, cHistname, 510, -0.5, 254.5 );
-					fNoiseMap[cCbc] =  cHist;
-				}
-			}
-		}
-	}
-	// now read the settings from the map
-	// fHoleMode = fSettingsMap.find( "HoleMode" )->second;
-	// fEventsPerPoint = fSettingsMap.find( "Nevents" )->second;
-	// fTargetVcth = fSettingsMap.find( "TargetVcth" )->second;
-	auto cSetting = fSettingsMap.find( "HoleMode" );
-	fHoleMode = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 1;
-	cSetting = fSettingsMap.find( "TargetVcth" );
-	fTargetVcth = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 120;
-	cSetting = fSettingsMap.find( "Nevents" );
-	fEventsPerPoint = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 10;
-	cSetting = fSettingsMap.find( "FitSCurves" );
-	fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
-	fNCbc = cCbcCount;
-
-	std::cout << "Created Object Maps and parsed settings:" << std::endl;
-	std::cout << "	Hole Mode = " << fHoleMode << std::endl;
-	std::cout << "	Nevents = " << fEventsPerPoint << std::endl;
-	std::cout << "	TargetVcth = " << int( fTargetVcth ) << std::endl;
-	std::cout << "	FitSCurves = " << int( fFitted ) << std::endl;
-
-}
 /*Currently this function sets offset for all 1-254 channels. But now to add testgroups, it has to set for 32
 channels in the group only. So it has to take the group id as well.
 Change to void FastCalibration::setOffset( uint8_t pOffset , int TGrpId )
@@ -807,8 +854,9 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 
 
 			// instead of the code below, use a histogram to histogram the noise
-			cHist->second->Fill( cChan.getNoise() );
 			if ( cChan.getNoise() == 0 || cChan.getNoise() > 255 ) std::cout << RED << "Error, SCurve Fit for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << " Channel " << int( cChan.fChannelId ) << " did not work correctly!" << RESET << std::endl;
+			else cHist->second->Fill( cChan.getNoise() );
+
 
 			//Draw
 			if ( pDraw )
