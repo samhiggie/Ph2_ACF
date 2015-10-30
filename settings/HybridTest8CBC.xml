@@ -14,7 +14,7 @@
             <CBC_Files path="/afs/cern.ch/user/g/gauzinge/Ph2_ACF/Calibrations/Module1/Hybrid1/"/>
                  <!-- <CBC_Files path="./Results/Calibration_Electron_30-10-15_12:19/"/> -->
 
-                <CBC Id="0" configfile="FE0CBC0.txt"/>
+                <!-- <CBC Id="0" configfile="FE0CBC0.txt"/> -->
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
                 <!-- <CBC Id="2" configfile="FE0CBC2.txt"/>
                 <CBC Id="3" configfile="FE0CBC3.txt"/>
@@ -78,5 +78,5 @@
     <Setting name="HoleMode"> 0 </Setting>
     <Setting name="Threshold_NSigmas"> 4 </Setting>
     <Setting name="Nevents"> 50 </Setting>
-    <Setting name="FitSCurves"> 1 </Setting>
+    <Setting name="FitSCurves"> 0 </Setting>
 </Settings>

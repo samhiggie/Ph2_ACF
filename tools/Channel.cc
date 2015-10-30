@@ -208,37 +208,43 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 
 		// Histogram of Differences
 
-		double_t cPrev = fScurve->GetBinContent( fScurve->GetBin( -0.5 ) );
+		// double_t cPrev = fScurve->GetBinContent( fScurve->GetBin( -0.5 ) );
 		double_t cDiff;
 		double_t cCurrent;
+		double_t cPrev;
 		bool cActive; // indicates existence of data points
 		int cStep = 1;
+		int cDiffCounter = 0;
 
-		double cValue = 0;
+		double cBin = 0;
 		if ( pHole )
 		{
+			cPrev = fScurve->GetBinContent( fScurve->GetBin( -0.5 ) );
 			cActive = false;
-			while ( 0 <= cValue && cValue <= 255 )
+			for ( cBin = 0; cBin <= 255; cBin++ )
 			{
-				cCurrent = fScurve->GetBinContent( fScurve->GetBin( cValue ) );
+				cCurrent = fScurve->GetBinContent( fScurve->GetBin( cBin ) );
 				cDiff = cPrev - cCurrent;
-				if ( cPrev == 1 ) cActive = true; // sampling begins
-				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cValue - 0.5 ), cDiff );
+				if ( cPrev > 0.9 ) cActive = true; // sampling begins
+				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ), fabs( cDiff ) );
+				if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
+				if ( cDiffCounter == 8 ) break;
 				cPrev = cCurrent;
-				cValue += cStep;
 			}
 		}
 		else
 		{
-			cActive = true;
-			while ( -0.5 <= cValue && cValue <= 255.5 )
+			cPrev = fScurve->GetBinContent( fScurve->GetBin( 255.5 ) );
+			cActive = false;
+			for ( cBin = 255; cBin >= 0; cBin-- )
 			{
-				cCurrent = fScurve->GetBinContent( fScurve->GetBin( cValue ) );
+				cCurrent = fScurve->GetBinContent( fScurve->GetBin( cBin ) );
 				cDiff = cCurrent - cPrev;
-				if ( cDiff == -1 ) cActive = false; // sampling ends
-				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cValue - 0.5 ), cDiff );
+				if ( cPrev > 0.9 ) cActive = true; // sampling begins
+				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ),  fabs( cDiff ) );
+				if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
+				if ( cDiffCounter == 8 ) break;
 				cPrev = cCurrent;
-				cValue += cStep;
 			}
 		}
 

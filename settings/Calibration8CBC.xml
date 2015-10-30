@@ -77,5 +77,5 @@
     <Setting name="EnableTestPulse"> 0 </Setting>
     <Setting name="TestPulsePotentiometer"> 0x00 </Setting>
     <Setting name="HoleMode"> 0 </Setting>
-    <Setting name="FitSCurves"> 1 </Setting>
+    <Setting name="FitSCurves"> 0 </Setting>
 </Settings>

@@ -233,9 +233,9 @@ void FastCalibration::measureNoise()
 #endif
 					// here add the CBC histos to the module histos
 					cTmpHist->Add( cHist->second );
-					for ( int cBin = 0; cBin < cStripHist->second->GetNbinsX(); cBin++ )
+					for ( int cBin = 0; cBin < cStripHist->second->GetNbinsX() - 1; cBin++ )
 					{
-						std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
+						// std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
 
 						if ( cStripHist->second->GetBinContent( cBin ) > 0 && cStripHist->second->GetBinContent( cBin ) < 256 ) cTmpProfile->Fill( cCbcId * 254 + cBin, cStripHist->second->GetBinContent( cBin ) );
 						else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
@@ -764,8 +764,8 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 			// Fit
 			Channel cChan = cCbc.second.at( cChanId );
 			if ( fFitted )
-				cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
-			else cChan.differentiateHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
+				cChan.fitHist( fEventsPerPoint, !fHoleMode, pTargetBit, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, !fHoleMode, pTargetBit, pParameter, fResultFile );
 
 			// check if the pedestal is larger than the targetVcth
 			// if so, flip bit back down
@@ -828,14 +828,11 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 		for ( auto& cChanId : cTestGrpChannelVec )
 		{
 			//for ( auto& cChan : cCbc.second )
-			bool cFitMode;
 			Channel cChan = cCbc.second.at( cChanId );
-			if ( !fHoleMode ) cFitMode = true;
-			else cFitMode = false;
 
 			// Fit or Differentiate
-			if ( fFitted ) cChan.fitHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
-			else cChan.differentiateHist( fEventsPerPoint, cFitMode, pValue, pParameter, fResultFile );
+			if ( fFitted ) cChan.fitHist( fEventsPerPoint, fHoleMode, pValue, pParameter, fResultFile );
+			else cChan.differentiateHist( fEventsPerPoint, fHoleMode, pValue, pParameter, fResultFile );
 
 
 			// instead of the code below, use a histogram to histogram the noise
