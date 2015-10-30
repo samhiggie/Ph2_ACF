@@ -99,8 +99,8 @@ void FastCalibration::Initialise()
 		}
 	}
 	// now divide the canvases according to the number of FE's & CBC's
-	int x;
-	int y;
+	int x = 1;
+	int y = 1;
 
 	if ( cCbcCount == 2 )
 	{
@@ -113,6 +113,7 @@ void FastCalibration::Initialise()
 		y = 4;
 	}
 	else if ( cCbcCount == 16 ) x = y = 4;
+
 	fVplusCanvas->Divide( x, y );
 	fVcthVplusCanvas->Divide( x, y );
 	fOffsetCanvas->Divide( x, y );
