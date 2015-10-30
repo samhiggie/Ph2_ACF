@@ -60,6 +60,7 @@ namespace Ph2_HwInterface
 		static const uint32_t cMask4 = 0xff000000;
 		static const uint32_t cMask5 = 0x1e0000;
 		static const uint32_t cMask6 = 0x10000;
+		static const uint32_t cMask7 = 0x200000;
 	  public:
 
 		/*!
@@ -83,16 +84,18 @@ namespace Ph2_HwInterface
 		/*! \brief Upload a configuration in a board FPGA */
 		virtual void FlashProm( const std::string& strConfig, const char* pstrFile ) {}
 		/*! \brief Jump to an FPGA configuration */
-		virtual void JumpToFpgaConfig(const std::string& strConfig){}
+		virtual void JumpToFpgaConfig( const std::string& strConfig ) {}
 		/*! \brief Current FPGA configuration*/
 		virtual const FpgaConfig* getConfiguringFpga() {
 			return nullptr;
 		}
 		virtual void ProgramCdce() {}
 		/*! \brief Get the list of available FPGA configuration (or firmware images)*/
-		virtual std::vector<std::string> getFpgaConfigList( ){ return std::vector<std::string>();}
+		virtual std::vector<std::string> getFpgaConfigList( ) {
+			return std::vector<std::string>();
+		}
 		/*! \brief Delete one Fpga configuration (or firmware image)*/
-		virtual void DeleteFpgaConfig( const std::string& strId){}
+		virtual void DeleteFpgaConfig( const std::string& strId ) {}
 
 		//Encode/Decode Cbc values
 		/*!
