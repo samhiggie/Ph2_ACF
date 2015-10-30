@@ -90,17 +90,26 @@ class FastCalibration : public Tool
 	void measureNoise();
 
   private:
+	TCanvas* fVplusCanvas;
+	TCanvas* fVcthVplusCanvas;
+	TCanvas* fOffsetCanvas;
+	TCanvas* fValidationCanvas;
+	TCanvas* fNoiseCanvas;
+	TCanvas* fFeSummaryCanvas;
+
 	CbcChannelMap fCbcChannelMap;
 	GraphMap fGraphMap;
 	FitMap fFitMap;
 	HistMap fHistMap;
 	HistMap fNoiseMap;
+	HistMap fNoiseStripMap;
 	TestGroupChannelMap fTestGroupChannelMap;
 	bool fdoTGrpCalib;
 	bool fdoBitWisetuning;
 	bool fHoleMode;
 	uint32_t fEventsPerPoint;
 	uint32_t fNCbc;
+	uint32_t fNFe;
 	uint8_t fTargetVcth;
 	bool fFitted;
 
