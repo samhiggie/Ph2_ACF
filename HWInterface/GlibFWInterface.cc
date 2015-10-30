@@ -397,7 +397,7 @@ namespace Ph2_HwInterface
 
 	void GlibFWInterface::SelectFeSRAM( uint32_t pFe )
 	{
-		// pFe = 0;
+		pFe = 0;
 		fStrSram = ( pFe ? SRAM2 : SRAM1 );
 		fStrOtherSram = ( pFe ? SRAM1 : SRAM2 );
 		fStrSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
