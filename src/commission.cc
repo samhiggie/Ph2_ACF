@@ -17,7 +17,6 @@ using namespace CommandLineProcessing;
 
 int main( int argc, char* argv[] )
 {
-	Commissioning cCommissioning;
 	ArgvParser cmd;
 
 	// init
@@ -91,25 +90,28 @@ int main( int argc, char* argv[] )
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
-	cCommissioning.InitializeHw( cHWFile );
-	cCommissioning.InitializeSettings( cHWFile );
-	cCommissioning.Initialize( );
-	cCommissioning.CreateResultDirectory( cDirectory );
-	std::string cResultfile;
-	if ( cLatency || cStubLatency ) cResultfile = "Latency";
-	else if ( cThreshold ) cResultfile = "Threshold";
-	else cResultfile = "Commissioning";
-	cCommissioning.InitResultFile( cResultfile );
-	cCommissioning.StartHttpServer();
+	if ( !cNoise )
+	{
+		Commissioning cCommissioning;
+		cCommissioning.InitializeHw( cHWFile );
+		cCommissioning.InitializeSettings( cHWFile );
+		cCommissioning.Initialize( );
+		cCommissioning.CreateResultDirectory( cDirectory );
+		std::string cResultfile;
+		if ( cLatency || cStubLatency ) cResultfile = "Latency";
+		else if ( cThreshold ) cResultfile = "Threshold";
+		else cResultfile = "Commissioning";
+		cCommissioning.InitResultFile( cResultfile );
+		cCommissioning.StartHttpServer();
 
-	if ( !gui ) cCommissioning.ConfigureHw();
+		if ( !gui ) cCommissioning.ConfigureHw();
 
-	// Here comes our Part:
-	if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
-	if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
-	if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
-	cCommissioning.SaveResults();
-
+		// Here comes our Part:
+		if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
+		if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
+		if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
+		cCommissioning.SaveResults();
+	}
 
 	if ( cNoise )
 	{

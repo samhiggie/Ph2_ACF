@@ -8,12 +8,12 @@ void FastCalibration::Initialise()
 	//is to be called after system controller::ReadHW, ReadSettings
 	// populates all the maps
 	// create the canvases
-	fVplusCanvas = new TCanvas( "SCurves", "SCurves", 650, 850 );
-	fVcthVplusCanvas = new TCanvas( "Vplus vs. VCth", "Vplus vs. VCth", 650, 850 );
-	fOffsetCanvas = new TCanvas( "SCurves Offset Tuning", "SCurves Offset Tuning", 650, 850 );
-	fValidationCanvas = new TCanvas( "Occupancy", "Occupancy", 650, 850 );
-	fNoiseCanvas = new TCanvas( "Final SCurves, Noise", "Final SCurves, Noise", 850, 650 );
-	fFeSummaryCanvas = new TCanvas( "Noise for each FE", "Noise for each FE", 850, 650 );
+	fVplusCanvas = new TCanvas( "SCurves", "SCurves", 650, 650 );
+	fVcthVplusCanvas = new TCanvas( "Vplus vs. VCth", "Vplus vs. VCth", 650, 650 );
+	fOffsetCanvas = new TCanvas( "SCurves Offset Tuning", "SCurves Offset Tuning", 650, 650 );
+	fValidationCanvas = new TCanvas( "Occupancy", "Occupancy", 650, 650 );
+	fNoiseCanvas = new TCanvas( "Final SCurves, Noise", "Final SCurves, Noise", 650, 650 );
+	fFeSummaryCanvas = new TCanvas( "Noise for each FE", "Noise for each FE", 650, 650 );
 
 	// count FEs & CBCs
 	uint32_t cCbcCount = 0;
@@ -44,15 +44,6 @@ void FastCalibration::Initialise()
 						cChanVec.push_back( Channel( cBoardId, cFeId, cCbcId, cChan ) );
 
 					fCbcChannelMap[cCbc] = cChanVec;
-
-					// now create the canvasses
-					// TString cCanvasname = Form( "Fe%d_Cbc%d_Calibration", cFeId, cCbcId );
-					// TCanvas* ctmpCanvas = dynamic_cast<TCanvas*>( gROOT->FindObject( cCanvasname ) );
-					// if ( ctmpCanvas ) delete ctmpCanvas;
-					// ctmpCanvas =  new TCanvas( cCanvasname, cCanvasname );
-					// ctmpCanvas->Divide( 2, 2 );
-					// fCanvasMap[cCbc] = ctmpCanvas;
-
 
 					// now the TGraphErrors
 					TString cGraphname = Form( "VplusVcthGraph_Fe%d_Cbc%d", cFeId, cCbcId );
@@ -99,28 +90,13 @@ void FastCalibration::Initialise()
 			fNFe = cFeCount;
 		}
 	}
-	// now divide the canvases according to the number of FE's & CBC's
-	int x = 1;
-	int y = 1;
 
-	if ( cCbcCount == 2 )
-	{
-		x = 1;
-		y = 2;
-	}
-	else if ( cCbcCount == 8 )
-	{
-		x = 2;
-		y = 4;
-	}
-	else if ( cCbcCount == 16 ) x = y = 4;
-
-	fVplusCanvas->Divide( x, y );
-	fVcthVplusCanvas->Divide( x, y );
-	fOffsetCanvas->Divide( x, y );
-	fValidationCanvas->Divide( x, y );
-	fNoiseCanvas->Divide( 2, cCbcCount );
-	fFeSummaryCanvas->Divide( 2, cFeCount );
+	fVplusCanvas->DivideSquare( cCbcCount );
+	fVcthVplusCanvas->DivideSquare( cCbcCount );
+	fOffsetCanvas->DivideSquare( cCbcCount );
+	fValidationCanvas->DivideSquare( cCbcCount );
+	fNoiseCanvas->DivideSquare( 4 );
+	fFeSummaryCanvas->DivideSquare( 4 );
 
 	// now read the settings from the map
 	// fHoleMode = fSettingsMap.find( "HoleMode" )->second;
@@ -246,33 +222,29 @@ void FastCalibration::measureNoise()
 					auto cStripHist = fNoiseStripMap.find( cCbc );
 					if ( cStripHist == std::end( fNoiseStripMap ) ) std::cout << "Error: could not find the Noise Histogram for CBC " << int( cCbc->getCbcId() ) << std::endl;
 					std::cout << BOLDRED << "Average noise on FE " << +cHist->first->getFeId() << " CBC " << +cHist->first->getCbcId() << " is " << cHist->second->GetMean() << " with an RMS of " << cHist->second->GetRMS() << " VCth units." << RESET << std::endl;
-					// auto cCanvas = fCanvasMap.find( cCbc );
-					// if ( cCanvas == std::end( fCanvasMap ) ) std::cout << "Error: could not find the Canvas for CBC " << int( cHist->first->getCbcId() ) << std::endl;
-					// else
-					// {
-					fNoiseCanvas->cd( cCbc->getCbcId() );
-					// cCanvas->second->cd( 2 );
+
+					fNoiseCanvas->cd( cCbc->getCbcId() + 1 );
 					cHist->second->DrawCopy();
-					fNoiseCanvas->cd( fNCbc + cCbc->getCbcId() );
-					// cCanvas->second->Update();
+					fNoiseCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
+					cStripHist->second->DrawCopy();
 					fNoiseCanvas->Update();
 #ifdef __HTTP__
 					fHttpServer->ProcessRequests();
 #endif
-					// }
 					// here add the CBC histos to the module histos
 					cTmpHist->Add( cHist->second );
 					for ( int cBin = 0; cBin < cStripHist->second->GetNbinsX(); cBin++ )
 					{
 						std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
 
-						cTmpProfile->SetBinContent( cCbcId * 254 + cBin, cStripHist->second->GetBinContent( cBin ) );
+						if ( cStripHist->second->GetBinContent( cBin ) > 0 && cStripHist->second->GetBinContent( cBin ) < 256 ) cTmpProfile->Fill( cCbcId * 254 + cBin, cStripHist->second->GetBinContent( cBin ) );
+						else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
 					}
 				}
-				fFeSummaryCanvas->cd( cFeId );
-				cTmpHist->Draw();
-				fFeSummaryCanvas->cd( fNFe + cFeId );
-				cTmpProfile->Draw();
+				fFeSummaryCanvas->cd( cFeId + 1 );
+				cTmpHist->DrawCopy();
+				fFeSummaryCanvas->cd( fNFe + cFeId + 1 );
+				cTmpProfile->DrawCopy();
 				fFeSummaryCanvas->Update();
 #ifdef __HTTP__
 				fHttpServer->ProcessRequests();
@@ -280,30 +252,6 @@ void FastCalibration::measureNoise()
 			}
 		}
 	}
-
-	// 	for ( auto& cHist : fNoiseMap )
-	// 	{
-	// 		cModuleNoise->Add( cHist.second );
-	// 		std::cout << BOLDRED << "Average noise on FE " << +cHist.first->getFeId() << " CBC " << +cHist.first->getCbcId() << " is " << cHist.second->GetMean() << " with an RMS of " << cHist.second->GetRMS() << " VCth units." << RESET << std::endl;
-	// 		// now find the canvas, cd to pad?? and draw
-	// 		auto cCanvas = fCanvasMap.find( cHist.first );
-	// 		if ( cCanvas == std::end( fCanvasMap ) ) std::cout << "Error: could not find the Canvas for CBC " << int( cHist.first->getCbcId() ) << std::endl;
-	// 		else
-	// 		{
-	// 			cCanvas->second->cd( 2 );
-	// 			cHist.second->DrawCopy();
-	// 			cCanvas->second->Update();
-	// #ifdef __HTTP__
-	// 			fHttpServer->ProcessRequests();
-	// #endif
-	// 		}
-	// 	}
-	// 	ctmpNoiseCanvas->cd();
-	// 	cModuleNoise->Draw();
-	// 	ctmpNoiseCanvas->Update();
-	// #ifdef __HTTP__
-	// 	fHttpServer->ProcessRequests();
-	// #endif
 }
 
 
@@ -451,19 +399,8 @@ void FastCalibration::Validate()
 			for ( uint32_t iBin = 0; iBin < cProfile->second->GetNbinsX(); iBin++ )
 				cHist.second->Fill( cProfile->second->GetBinContent( iBin ) );
 		}
-		// now find the canvas, cd to pad?? and draw
-		// auto cCanvas = fCanvasMap.find( cHist.first );
-		// if ( cCanvas == std::end( fCanvasMap ) ) std::cout << "Error: could not find the Canvas for CBC " << int( cHist.first->getCbcId() ) << std::endl;
-		// else
-		// {
-		// 			cCanvas->second->cd( 4 );
-		// 			cHist.second->DrawCopy();
-		// 			cCanvas->second->Update();
-		// #ifdef __HTTP__
-		// 			fHttpServer->ProcessRequests();
-		// #endif
-		// 		}
-		fValidationCanvas->cd( cHist.first->getCbcId() );
+
+		fValidationCanvas->cd( cHist.first->getCbcId() + 1 );
 		cHist.second->DrawCopy();
 		fValidationCanvas->Update();
 #ifdef __HTTP__
@@ -710,22 +647,9 @@ uint32_t FastCalibration::fillSCurves( BeBoard* pBoard,  const Event* pEvent, ui
 void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId )
 {
 	bool cOffset = ( pParameter == "Vplus" ) ? false : true;
-	// uint32_t cPad = ( pParameter == "Vplus" ) ? 1 : 3;
 	// First fitHits for every Channel, then extract the midpoint and noise and fill it in fVplusVcthGraphMap
 	for ( auto& cCbc : fCbcChannelMap )
 	{
-		// Find the Canvas
-		// CanvasMap::iterator cCanvas = fCanvasMap.find( cCbc.first );
-		// if ( pDraw )
-		// {
-		// 	// if ( cCanvas == fCanvasMap.end() )
-		// 	// {
-		// 	// 	std::cout << "Could not find the correct Canvas for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
-		// 	// 	pDraw = false;
-		// 	// }
-		// 	// else cCanvas->second->cd( cPad );
-		// 	cVplusCanvas->cd( cCbc.first->getCbcId() );
-		// }
 
 		// this happens if I am scanning VCth
 		// Find the Graph
@@ -786,10 +710,8 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 				}
 				else cOption = "P same";
 
-				if ( !cOffset ) fVplusCanvas->cd( cCbc.first->getCbcId() );
-				// cCanvas->second->cd( 1 );
-				else fOffsetCanvas->cd( cCbc.first->getCbcId() );
-				// cCanvas->second->cd( 3 );
+				if ( !cOffset ) fVplusCanvas->cd( cCbc.first->getCbcId() + 1 );
+				else fOffsetCanvas->cd( cCbc.first->getCbcId() + 1 );
 				cChan.fScurve->Draw( cOption );
 				if ( fFitted )
 					cChan.fFit->Draw( "same" );
@@ -798,7 +720,6 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 		}
 		if ( pDraw && ! cOffset )
 		{
-			// cCanvas->second->Update();
 			fVplusCanvas->Update();
 #ifdef __HTTP__
 			fHttpServer->ProcessRequests();
@@ -819,7 +740,6 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 			fCbcInterface->WriteCbcMultReg( cCbc.first, cRegVec );
 			std::cout << RED << "Offset Values written to CBC " << int( cCbc.first->getCbcId() ) << RESET << std::endl;
 		}
-		// fResultFile->Flush();
 	}
 
 }
@@ -829,17 +749,6 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 	// process the Scurves: get the pedestal, check if larger or smaller than target Vcth and then toggle back
 	for ( auto& cCbc : fCbcChannelMap )
 	{
-		// Find the Canvas
-		// CanvasMap::iterator cCanvas = fCanvasMap.find( cCbc.first );
-		// if ( pDraw )
-		// {
-		// 	if ( cCanvas == fCanvasMap.end() )
-		// 	{
-		// 		std::cout << "Could not find the correct Canvas for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
-		// 		pDraw = false;
-		// 	}
-		// 	else cCanvas->second->cd( 3 );
-		// }
 
 		// Loop the Channels
 		bool cFirst = true;
@@ -878,11 +787,11 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 				}
 				else cOption = "P same";
 
-				fOffsetCanvas->cd( cCbc.first->getCbcId() );
-				cChan.fScurve->Draw( cOption );
+				fOffsetCanvas->cd( cCbc.first->getCbcId() + 1 );
+				cChan.fScurve->DrawCopy( cOption );
 				if ( fFitted )
-					cChan.fFit->Draw( "same" );
-				else cChan.fDerivative->Draw( "same" );
+					cChan.fFit->DrawCopy( "same" );
+				else cChan.fDerivative->DrawCopy( "same" );
 			}
 		}
 		if ( pDraw )
@@ -898,22 +807,10 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 
 void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId )
 {
-	// uint32_t cPad = 4;
 
 	// First fitHits for every Channel, then extract the midpoint and noise and fill it in fVplusVcthGraphMap
 	for ( auto& cCbc : fCbcChannelMap )
 	{
-		// Find the Canvas
-		// CanvasMap::iterator cCanvas = fCanvasMap.find( cCbc.first );
-		// if ( pDraw )
-		// {
-		// 	if ( cCanvas == fCanvasMap.end() )
-		// 	{
-		// 		std::cout << "Could not find the correct Canvas for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
-		// 		pDraw = false;
-		// 	}
-		// 	else cCanvas->second->cd( cPad );
-		// }
 
 		// use another histogram for the noise
 		HistMap::iterator cHist = fNoiseMap.find( cCbc.first );
@@ -961,11 +858,11 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 				}
 				else cOption = "P same";
 
-				fNoiseCanvas->cd( cCbc.first->getFeId() );
-				cChan.fScurve->Draw( cOption );
+				fNoiseCanvas->cd( cCbc.first->getCbcId() + 1 );
+				cChan.fScurve->DrawCopy( cOption );
 				if ( fFitted )
-					cChan.fFit->Draw( "same" );
-				else cChan.fDerivative->Draw( "same" );
+					cChan.fFit->DrawCopy( "same" );
+				else cChan.fDerivative->DrawCopy( "same" );
 			}
 		}
 		if ( pDraw )
@@ -991,15 +888,10 @@ void FastCalibration::findVplus( bool pDraw )
 		fFitMap[cGraph.first] = cFit;
 		cFit->SetName( Form( "VplusVcthFit_Fe%d_Cbc%d", cGraph.first->getFeId(), cGraph.first->getCbcId() ) );
 
-		// CanvasMap::iterator cCanvas = fCanvasMap.find( cGraph.first );
-
 		if ( pDraw )
 		{
-			// if ( cCanvas != fCanvasMap.end() )
-			// {
 
-			//cCanvas->second->cd( 2 );
-			fVcthVplusCanvas->cd( cGraph.first->getCbcId() );
+			fVcthVplusCanvas->cd( cGraph.first->getCbcId() + 1 );
 			cGraph.second->Draw( "AP" );
 			cFit->Draw( "same" );
 			// cTmpFit->Draw( "same" );
@@ -1007,9 +899,6 @@ void FastCalibration::findVplus( bool pDraw )
 #ifdef __HTTP__
 			fHttpServer->ProcessRequests();
 #endif
-
-			// }
-			// else std::cout << "Could not find the correct Canvas for Fe " << int( cGraph.first->getFeId() ) << " Cbc " << int( cGraph.first->getCbcId() ) << std::endl;
 		}
 
 		// now evaluate the fit at fTargetVcth and write to Cbcs
@@ -1027,6 +916,7 @@ void FastCalibration::findVplus( bool pDraw )
 void FastCalibration::writeGraphs()
 {
 	// just use auto iterators to write everything to disk
+	// this is the old method before Tool class was cool
 	for ( const auto& cGraph : fGraphMap )
 		cGraph.second->Write( cGraph.second->GetName(), TObject::kOverwrite );
 	for ( const auto& cFit : fFitMap )
@@ -1037,6 +927,24 @@ void FastCalibration::writeGraphs()
 		cHist.second->SetDirectory( fResultFile );
 	for ( const auto& cHist : fNoiseMap )
 		cHist.second->SetDirectory( fResultFile );
+	for ( const auto& cNoiseStripHist : fNoiseStripMap )
+		cNoiseStripHist.second->SetDirectory( fResultFile );
+
+	// This is re-implementing the new method for the FE's since they use the cool stuff from tool
+	for ( const auto& cFe : fModuleHistMap )
+	{
+		TString cDirName = Form( "FE%d", cFe.first->getFeId() );
+		TObject* cObj = gROOT->FindObject( cDirName );
+		if ( cObj ) delete cObj;
+		fResultFile->mkdir( cDirName );
+		fResultFile->cd( cDirName );
+
+		for ( const auto& cHist : cFe.second )
+			cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
+		fResultFile->cd();
+	}
+
+	// Save canvasses too
 	fVplusCanvas->Write( fVplusCanvas->GetName(), TObject::kOverwrite );
 	fVcthVplusCanvas->Write( fVcthVplusCanvas->GetName(), TObject::kOverwrite );
 	fOffsetCanvas->Write( fOffsetCanvas->GetName(), TObject::kOverwrite );
