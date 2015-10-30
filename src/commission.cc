@@ -125,7 +125,7 @@ int main( int argc, char* argv[] )
 		cCalibration.Initialise(); // canvases etc. for fast calibration
 		// if ( cOccupancy ) cCalibration.Validate();
 		cCalibration.measureNoise();
-		cCalibration.SaveResults();
+		cCalibration.SaveResults( false );
 
 	}
 
@@ -143,7 +143,7 @@ int main( int argc, char* argv[] )
 		cCalibration.Initialise(); // canvases etc. for fast calibration
 		cCalibration.Validate();
 		// cCalibration.measureNoise();
-		cCalibration.SaveResults();
+		cCalibration.SaveResults( false );
 
 	}
 

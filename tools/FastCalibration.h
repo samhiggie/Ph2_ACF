@@ -81,9 +81,9 @@ class FastCalibration : public Tool
 	void ScanVplus();
 	void ScanOffset();
 
-	void SaveResults() {
+	void SaveResults( bool pDumpConfigFiles = true ) {
 		writeGraphs();
-		dumpConfigFiles();
+		if ( pDumpConfigFiles ) dumpConfigFiles();
 	}
 
 	void Validate();

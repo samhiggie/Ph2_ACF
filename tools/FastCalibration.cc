@@ -32,14 +32,6 @@ void FastCalibration::Initialise()
 				uint32_t cFeId = cFe->getFeId();
 				cFeCount++;
 
-				TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
-				TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 200, 0, 20 );
-				bookHistogram( cFe, "Module_noisehist", cNoise );
-
-				cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
-				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, 255, .5, 255.5 );
-				bookHistogram( cFe, "Module_Stripnoise", cStripnoise );
-
 				for ( auto cCbc : cFe->fCbcVector )
 				{
 					uint32_t cCbcId = cCbc->getCbcId();
@@ -95,7 +87,16 @@ void FastCalibration::Initialise()
 					cHist = new TH1F( cHistname, cHistname, 254, -0.5, 253.5 );
 					fNoiseStripMap[cCbc] =  cHist;
 				}
+				TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
+				TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 200, 0, 20 );
+				bookHistogram( cFe, "Module_noisehist", cNoise );
+
+				cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
+				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, NCHANNELS * cCbcCount + 1, .5, cCbcCount * NCHANNELS + .5 );
+				bookHistogram( cFe, "Module_Stripnoise", cStripnoise );
 			}
+			fNCbc = cCbcCount;
+			fNFe = cFeCount;
 		}
 	}
 	// now divide the canvases according to the number of FE's & CBC's
@@ -133,8 +134,7 @@ void FastCalibration::Initialise()
 	fEventsPerPoint = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 10;
 	cSetting = fSettingsMap.find( "FitSCurves" );
 	fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
-	fNCbc = cCbcCount;
-	fNFe = cFeCount;
+
 	std::cout << "Created Object Maps and parsed settings:" << std::endl;
 	std::cout << "	Hole Mode = " << fHoleMode << std::endl;
 	std::cout << "	Nevents = " << fEventsPerPoint << std::endl;
@@ -474,6 +474,10 @@ void FastCalibration::Validate()
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// PRIVATE METHODS
 
 
 /*Currently this function sets offset for all 1-254 channels. But now to add testgroups, it has to set for 32
@@ -945,7 +949,7 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 				std::cout << "Chanel " << +cChan.fChannelId << " Noise " << cChan.getNoise() << std::endl;
 			}
 
-			cStripHist->second->SetBinContent( cChan.fChannelId, cChan.getNoise() );
+			cStripHist->second->Fill( cChan.fChannelId, cChan.getNoise() );
 
 			//Draw
 			if ( pDraw )
