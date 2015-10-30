@@ -47,8 +47,9 @@
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
             <!-- set to 1 to output L1A signal, 0 for input pulse -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
+            <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar"> 0 </Register>
-
+            
             <!-- Clock -->
             <!-- set to 1 for external clocking -->
             <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel"> 0 </Register>

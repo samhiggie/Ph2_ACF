@@ -11,14 +11,14 @@
                 <!-- <Global_CBC_Register name="Vplus"> 0x78 </Global_CBC_Register> -->
 
                 <CBC_Files path="./settings/"/>
-                <CBC Id="0" configfile="Cbc_default_electron.txt"/>
+                <!-- <CBC Id="0" configfile="Cbc_default_electron.txt"/> -->
                 <CBC Id="1" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="2" configfile="Cbc_default_electron.txt"/>
+                <!-- <CBC Id="2" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="3" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="4" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="5" configfile="Cbc_default_electron.txt"/>
                 <CBC Id="6" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="7" configfile="Cbc_default_electron.txt"/>
+                <CBC Id="7" configfile="Cbc_default_electron.txt"/> -->
             </Module>
 
             <!-- Commissioning Mode -->
@@ -42,6 +42,7 @@
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
             <!-- set to 1 to output L1A signal, 0 for input pulse -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
+            <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar"> 0 </Register>
 
             <!-- Clock -->

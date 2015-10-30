@@ -33,7 +33,7 @@ void FastCalibration::Initialise()
 				cFeCount++;
 
 				TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
-				TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 510, -0.5, 254.5 );
+				TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 200, 0, 20 );
 				bookHistogram( cFe, "Module_noisehist", cNoise );
 
 				cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
@@ -157,7 +157,7 @@ void FastCalibration::ScanVplus()
 		if ( cTGrpM.first > -1 && !fdoTGrpCalib )
 			break;
 		// now loop over Vplus values
-		std::cout << "Enabling Test Group...." << cTGrpM.first << std::endl;
+		std::cout << GREEN << "Enabling Test Group...." << cTGrpM.first << RESET << std::endl;
 		setOffset( 0x50, cTGrpM.first );
 		for ( auto& cVplus : fVplusVec )
 		{
@@ -165,7 +165,7 @@ void FastCalibration::ScanVplus()
 			CbcRegWriter cWriter( fCbcInterface, "Vplus", cVplus );
 			accept( cWriter );
 
-			std::cout << "Vplus = " << int( cVplus ) << std::endl;
+			std::cout << BOLDRED << "Vplus = " << int( cVplus ) << RESET << std::endl;
 
 			// now initialize the Scurves
 			initializeSCurves( "Vplus", cVplus, cTGrpM.first );
@@ -177,7 +177,7 @@ void FastCalibration::ScanVplus()
 			processSCurves( "Vplus", cVplus, true, cTGrpM.first );
 		}
 		// After finishing with one test group, disable it again
-		std::cout << "Disabling Test Group...." << cTGrpM.first << std::endl;
+		std::cout << BLUE << "Disabling Test Group...." << cTGrpM.first << RESET << std::endl;
 		uint8_t cOffset = ( fHoleMode ) ? 0xFF : 0x00;
 		setOffset( cOffset, cTGrpM.first );
 	}
@@ -263,7 +263,11 @@ void FastCalibration::measureNoise()
 					// here add the CBC histos to the module histos
 					cTmpHist->Add( cHist->second );
 					for ( int cBin = 0; cBin < cStripHist->second->GetNbinsX(); cBin++ )
+					{
+						std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
+
 						cTmpProfile->SetBinContent( cCbcId * 254 + cBin, cStripHist->second->GetBinContent( cBin ) );
+					}
 				}
 				fFeSummaryCanvas->cd( cFeId );
 				cTmpHist->Draw();
@@ -628,8 +632,8 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
 
-				if ( pOffset ) std::cout << "Offset " << int( cValue ) << " Hits: " << cHitCounter << std::endl;
-				std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << std::endl;
+				// if ( pOffset ) std::cout << "Offset " << int( cValue ) << " Hits: " << cHitCounter << std::endl;
+				// std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << std::endl;
 
 				// check if the hitcounter is all ones
 				if ( cNonZero == false && cHitCounter != 0 )
@@ -639,11 +643,16 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 					if ( ( cStep > 0 && cValue > 0x14 ) || ( cStep < 0 && cValue < 0xEB ) ) cValue -= 2 * cStep;
 					else cValue -= cStep;
 					cStep /= 10;
+					std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue << RESET << std::endl;
 					continue;
 				}
 				// the above counter counted the CBC objects connected to pBoard
 				if ( cHitCounter > 0.95 * fEventsPerPoint  * cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
-				if ( cAllOneCounter >= 10 ) cAllOne = true;
+				if ( cAllOneCounter >= 10 )
+				{
+					cAllOne = true;
+					std::cout << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET << std::endl;
+				}
 				if ( cAllOne ) break;
 				cValue += cStep;
 			}
@@ -929,8 +938,13 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 
 
 			// instead of the code below, use a histogram to histogram the noise
-			if ( cChan.getNoise() == 0 || cChan.getNoise() > 255 ) std::cout << RED << "Error, SCurve Fit for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << " Channel " << int( cChan.fChannelId ) << " did not work correctly!" << RESET << std::endl;
-			else cHist->second->Fill( cChan.getNoise() );
+			if ( cChan.getNoise() == 0 || cChan.getNoise() > 255 ) std::cout << RED << "Error, SCurve Fit for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << " Channel " << int( cChan.fChannelId ) << " did not work correctly! Noise " << cChan.getNoise() << RESET << std::endl;
+			else
+			{
+				cHist->second->Fill( cChan.getNoise() );
+				std::cout << "Chanel " << +cChan.fChannelId << " Noise " << cChan.getNoise() << std::endl;
+			}
+
 			cStripHist->second->SetBinContent( cChan.fChannelId, cChan.getNoise() );
 
 			//Draw
