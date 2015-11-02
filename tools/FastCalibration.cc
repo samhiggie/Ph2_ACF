@@ -83,7 +83,7 @@ void FastCalibration::Initialise()
 				bookHistogram( cFe, "Module_noisehist", cNoise );
 
 				cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
-				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, NCHANNELS * cCbcCount + 1, .5, cCbcCount * NCHANNELS + .5 );
+				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, NCHANNELS * cCbcCount + 1, -.5, cCbcCount * NCHANNELS - .5 );
 				bookHistogram( cFe, "Module_Stripnoise", cStripnoise );
 			}
 			fNCbc = cCbcCount;
@@ -95,8 +95,8 @@ void FastCalibration::Initialise()
 	fVcthVplusCanvas->DivideSquare( cCbcCount );
 	fOffsetCanvas->DivideSquare( cCbcCount );
 	fValidationCanvas->DivideSquare( cCbcCount );
-	fNoiseCanvas->DivideSquare( 4 );
-	fFeSummaryCanvas->DivideSquare( 4 );
+	fNoiseCanvas->DivideSquare( 2*cCbcCount);
+	fFeSummaryCanvas->DivideSquare( 2*cFeCount );
 
 	// now read the settings from the map
 	// fHoleMode = fSettingsMap.find( "HoleMode" )->second;
@@ -406,7 +406,7 @@ void FastCalibration::Validate()
 #ifdef __HTTP__
 		fHttpServer->ProcessRequests();
 #endif
-		cProfile->second->SetDirectory( fResultFile );
+		//cProfile->second->SetDirectory( fResultFile );
 
 	}
 }
@@ -926,6 +926,8 @@ void FastCalibration::writeGraphs()
 		cHist.second->SetDirectory( fResultFile );
 	for ( const auto& cNoiseStripHist : fNoiseStripMap )
 		cNoiseStripHist.second->SetDirectory( fResultFile );
+
+    fResultFile->cd();
 
 	// This is re-implementing the new method for the FE's since they use the cool stuff from tool
 	for ( const auto& cFe : fModuleHistMap )
