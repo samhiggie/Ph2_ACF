@@ -1,6 +1,6 @@
 #include <arpa/inet.h>
 // FC7 Headers
-#include "fc7/MmcPipeInterface.hpp"
+#include "MmcPipeInterface.h"
 
 // uHal Headers
 #include "uhal/log/log.hpp"

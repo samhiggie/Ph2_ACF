@@ -155,7 +155,8 @@ void FastCalibration::Validate()
 				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 				// Loop over Events from this Acquisition
-				for (auto& ev: events) {
+				for ( auto& ev : events )
+				{
 					uint32_t cHitCounter = 0;
 					for ( auto& cFe : pBoard->fModuleVector )
 					{
@@ -165,18 +166,17 @@ void FastCalibration::Validate()
 							if ( cHitProfile == std::end( cProfileMap ) ) std::cout << "Error: could not find the profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
 							else
 							{
-							        const std::vector<bool>& list = ev->DataBitVector(cFe->getFeId(), cCbc->getCbcId());   
-							        int cChannel = 0;    
-							        for (const auto& b: list) {
-							                cHitProfile->second->Fill( cChannel++, ((b)?1:0) );
-							        }
+								const std::vector<bool>& list = ev->DataBitVector( cFe->getFeId(), cCbc->getCbcId() );
+								int cChannel = 0;
+								for ( const auto& b : list )
+									cHitProfile->second->Fill( cChannel++, ( ( b ) ? 1 : 0 ) );
 							}
 						}
 					}
 					cN++;
 				}
 				cNthAcq++;
-			} 
+			}
 			fBeBoardInterface->Stop( pBoard, cNthAcq );
 		}
 	}
@@ -199,6 +199,9 @@ void FastCalibration::Validate()
 			cCanvas->second->cd( 4 );
 			cHist.second->DrawCopy();
 			cCanvas->second->Update();
+#ifdef __HTTP__
+			fHttpServer->ProcessRequests();
+#endif
 		}
 		cProfile->second->SetDirectory( fResultFile );
 
@@ -439,7 +442,8 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					for (auto& ev: events) {
+					for ( auto& ev : events )
+					{
 						cHitCounter += fillSCurves( pBoard, ev, cValue, pTGrpId ); //pass test group here
 						cN++;
 					}
@@ -448,7 +452,7 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
 
 				if ( pOffset ) std::cout << "Offset " << int( cValue ) << " Hits: " << cHitCounter << std::endl;
-				// std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << std::endl;
+				std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << std::endl;
 
 				// check if the hitcounter is all ones
 				if ( cNonZero == false && cHitCounter != 0 )
@@ -594,12 +598,18 @@ void FastCalibration::processSCurves( TString pParameter, uint8_t pValue, bool p
 					cCanvas->second->cd( 1 );
 				else cCanvas->second->cd( 3 );
 				cChan.fScurve->Draw( cOption );
-				if ( fFitted )	
+				if ( fFitted )
 					cChan.fFit->Draw( "same" );
-				else cChan.fDerivative->Draw("same");	
+				else cChan.fDerivative->Draw( "same" );
 			}
 		}
-		if ( pDraw )  cCanvas->second->Update();
+		if ( pDraw )
+		{
+			cCanvas->second->Update();
+#ifdef __HTTP__
+			fHttpServer->ProcessRequests();
+#endif
+		}
 		// if ( cOffset ) mypause();
 
 		// writing offset midpoints to CBC
@@ -646,7 +656,7 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 			if ( fFitted )
 				cChan.fitHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
 			else cChan.differentiateHist( fEventsPerPoint, fHoleMode, pTargetBit, pParameter, fResultFile );
-			
+
 			// check if the pedestal is larger than the targetVcth
 			// if so, flip bit back down
 			uint8_t cCurrentOffset = cCbc.first->getReg( Form( "Channel%03d", cChan.fChannelId + 1 ) );
@@ -669,12 +679,18 @@ void FastCalibration::processSCurvesOffset( TString pParameter, uint8_t pTargetB
 
 				cCanvas->second->cd( 3 );
 				cChan.fScurve->Draw( cOption );
-				if ( fFitted )	
+				if ( fFitted )
 					cChan.fFit->Draw( "same" );
-				else cChan.fDerivative->Draw("same");
+				else cChan.fDerivative->Draw( "same" );
 			}
 		}
-		if ( pDraw )  cCanvas->second->Update();
+		if ( pDraw )
+		{
+			cCanvas->second->Update();
+#ifdef __HTTP__
+			fHttpServer->ProcessRequests();
+#endif
+		}
 		fCbcInterface->WriteCbcMultReg( cCbc.first, cRegVec );
 	}
 }
@@ -704,6 +720,9 @@ void FastCalibration::findVplus( bool pDraw )
 				cFit->Draw( "same" );
 				// cTmpFit->Draw( "same" );
 				cCanvas->second->Update();
+#ifdef __HTTP__
+				fHttpServer->ProcessRequests();
+#endif
 
 			}
 			else std::cout << "Could not find the correct Canvas for Fe " << int( cGraph.first->getFeId() ) << " Cbc " << int( cGraph.first->getCbcId() ) << std::endl;

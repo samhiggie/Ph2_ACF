@@ -287,7 +287,7 @@ namespace Ph2_HwInterface
 		cVal = ReadReg( fStrFull );
 
 		do
-		{
+		{ 
 			cVal = ReadReg( fStrFull );
 			if ( cVal == 0 )
 				std::this_thread::sleep_for( cWait );
@@ -404,15 +404,14 @@ namespace Ph2_HwInterface
 	}
 
 
-	void GlibFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
-	{
-		if ( runningAcquisition ) return;
+	void GlibFWInterface::StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor){
+		if (runningAcquisition) return;
 
-		runningAcquisition = true;
-		numAcq = 0;
-		nbMaxAcq = uNbAcq;
+		runningAcquisition=true;
+		numAcq=0;
+		nbMaxAcq=uNbAcq;
 
-		thrAcq = boost::thread( &Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
+		thrAcq=boost::thread(&Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor);
 	}
 
 	void GlibFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
@@ -504,36 +503,10 @@ namespace Ph2_HwInterface
 
 		WriteReg( fStrSramUserLogic, 0 );
 
-		pVecReq = ReadBlockRegValue( fStrSram, pVecReq.size() );
-		/*uhal::ValVector<uint32_t> cData = ReadBlockReg( fStrSram, pVecReq.size() );
-		uhal::ValWord<uint32_t> cWord;
-		// To avoid the IPBUS bug
-		//  replace the 256th word
-		if ( pVecReq.size() > 255 )
-		{
-			std::string fSram_256 = fStrSram + "_256";
-			cWord = ReadReg( fSram_256 );
-			std::cout << "WARNING: Reading more than 255 32-bit words from SRAM, thus need to avoid the uHAL-GLIB bug!" << std::endl;
-		}*/
+		pVecReq = ReadBlockRegValue(fStrSram, pVecReq.size() );
+		
 		WriteReg( fStrSramUserLogic, 1 );
 		WriteReg( CBC_I2C_CMD_RQ, 0 );
-
-		/*	std::vector<uint32_t>::iterator it = pVecReq.begin();
-			uhal::ValVector< uint32_t >::const_iterator itValue = cData.begin();
-
-			while ( it != pVecReq.end() )
-			{
-				*it = *itValue;
-				it++;
-				itValue++;
-			}
-			// To avoid the IPBUS bug
-			//  replace the 256th word
-			if ( pVecReq.size() > 255 )
-			{
-				pVecReq.at( 255 ) = cWord.value();
-				// std::cout << "256th ReadbackValue " <<  std::bitset<32>( pVecReq.at( 255 ) ) << " - 2nd read value " <<  std::bitset<32> ( cWord.value() )  << std::endl;
-			}*/
 
 	}
 

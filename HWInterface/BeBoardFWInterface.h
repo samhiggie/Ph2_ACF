@@ -65,13 +65,8 @@ namespace Ph2_HwInterface
 		/*!
 		* \brief Constructor of the BeBoardFWInterface class
 		* \param puHalConfigFileName : path of the uHal Config File
-		*/
+		* \param pFileHandler : pointer to file handler for saving Raw Data*/
 		BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
-		/*!
-		* \brief Constructor of the BeBoardFWInterface class
-		* \param puHalConfigFileName : path of the uHal Config File
-		* \param pFileHandler : pointer to file handler for saving Raw Data
-		*/
 		/*!
 		* \brief Destructor of the BeBoardFWInterface class
 		*/
@@ -186,13 +181,12 @@ namespace Ph2_HwInterface
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-
 	  protected:
 
 		bool runningAcquisition;
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
 		boost::thread thrAcq;
-		// for mini DAQ file IO
+
 	};
 }
 

@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding = 'UTF-8' ?>
 <HwDescription>
-    <Connections name="file://settings/connections_slc6.xml"/>
+    <Connections name="file://settings/connections_2CBC.xml"/>
 
     <Shelve Id="0" >
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
@@ -9,9 +9,9 @@
                 <!-- <Global_CBC_Register name="VCth"> 0x92 </Global_CBC_Register> -->
                 <Global_CBC_Register name="TriggerLatency"> 0x05 </Global_CBC_Register>
      
-                <CBC_Files path="./CalibrationResults/module/"/>
+                <!-- <CBC_Files path="./CalibrationResults/module/"/>
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
-                <CBC Id="1" configfile="FE0CBC1.txt"/>
+                <CBC Id="1" configfile="FE0CBC1.txt"/> -->
             </Module>
 
             <!-- Commissioning Mode -->

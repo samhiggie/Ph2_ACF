@@ -23,8 +23,8 @@ namespace Ph2_HwDescription
 {
 	// C'tors with object FE Description
 
-        Cbc::Cbc( const FrontEndDescription& pFeDesc, uint8_t pCbcId, const std::string& filename ): FrontEndDescription( pFeDesc ),
-												     fCbcId( pCbcId )
+	Cbc::Cbc( const FrontEndDescription& pFeDesc, uint8_t pCbcId, const std::string& filename ): FrontEndDescription( pFeDesc ),
+		fCbcId( pCbcId )
 
 	{
 		loadfRegMap( filename );
@@ -32,7 +32,7 @@ namespace Ph2_HwDescription
 
 	// C'tors which take ShelveID, BeId, FMCId, FeID, CbcId
 
-        Cbc::Cbc( uint8_t pShelveId, uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pCbcId, const std::string& filename ) : FrontEndDescription( pShelveId, pBeId, pFMCId, pFeId ), fCbcId( pCbcId )
+	Cbc::Cbc( uint8_t pShelveId, uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pCbcId, const std::string& filename ) : FrontEndDescription( pShelveId, pBeId, pFMCId, pFeId ), fCbcId( pCbcId )
 
 	{
 		loadfRegMap( filename );
@@ -40,9 +40,9 @@ namespace Ph2_HwDescription
 
 	// Copy C'tor
 
-        Cbc::Cbc( const Cbc& cbcobj ) : FrontEndDescription( cbcobj ),
-					fCbcId( cbcobj.fCbcId ),
-					fRegMap( cbcobj.fRegMap )
+	Cbc::Cbc( const Cbc& cbcobj ) : FrontEndDescription( cbcobj ),
+		fCbcId( cbcobj.fCbcId ),
+		fRegMap( cbcobj.fRegMap )
 	{
 	}
 
@@ -92,7 +92,7 @@ namespace Ph2_HwDescription
 		CbcRegMap::const_iterator i = fRegMap.find( pReg );
 		if ( i == fRegMap.end() )
 		{
-		  std::cout << "The Cbc object: " << +fCbcId << " doesn't have " << pReg << std::endl;
+			std::cout << "The Cbc object: " << +fCbcId << " doesn't have " << pReg << std::endl;
 			return 0;
 		}
 		else
@@ -104,10 +104,22 @@ namespace Ph2_HwDescription
 	{
 		CbcRegMap::iterator i = fRegMap.find( pReg );
 		if ( i == fRegMap.end() )
-		  std::cout << "The Cbc object: " << +fCbcId << " doesn't have " << pReg << std::endl;
+			std::cout << "The Cbc object: " << +fCbcId << " doesn't have " << pReg << std::endl;
 		else
 			i->second.fValue = psetValue;
+	}
 
+	CbcRegItem Cbc::getRegItem( const std::string& pReg )
+	{
+		CbcRegItem cItem;
+		CbcRegMap::iterator i = fRegMap.find( pReg );
+		if ( i != std::end( fRegMap ) ) return ( i->second );
+		else
+		{
+			std::cerr << "Error, no Register " << pReg << " found in the RegisterMap of CBC " << +fCbcId << "!" << std::endl;
+			throw Exception( "Cbc: no matching register found" );
+			return cItem;
+		}
 	}
 
 
@@ -131,9 +143,9 @@ namespace Ph2_HwDescription
 			std::set<CbcRegPair, RegItemComparer> fSetRegItem;
 
 			for ( auto& it : fRegMap )
-			        fSetRegItem.insert( {it.first, it.second} );
+				fSetRegItem.insert( {it.first, it.second} );
 
-			for ( const auto& v: fSetRegItem )
+			for ( const auto& v : fSetRegItem )
 			{
 
 				file << v.first;
@@ -142,7 +154,7 @@ namespace Ph2_HwDescription
 				file.seekp( -v.first.size(), std::ios_base::cur );
 
 
-				file << "0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << std::uppercase << int(v.second.fPage) << "\t0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << std::uppercase << int(v.second.fAddress) << "\t0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << std::uppercase << int(v.second.fDefValue) << "\t0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << std::uppercase << int(v.second.fValue) << std::endl;
+				file << "0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << std::uppercase << int( v.second.fPage ) << "\t0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << std::uppercase << int( v.second.fAddress ) << "\t0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << std::uppercase << int( v.second.fDefValue ) << "\t0x" << std::setfill( '0' ) << std::setw( 2 ) << std::hex << std::uppercase << int( v.second.fValue ) << std::endl;
 
 			}
 			file.close();

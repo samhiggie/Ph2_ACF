@@ -86,9 +86,15 @@ namespace Ph2_HwInterface
 	}
 
 
-        int Event::SetEvent( const std::vector<uint8_t>& list )
+    int Event::SetEvent( const std::vector<uint8_t>& list )
 	{
-	        int vsize = sizeof( uint32_t );
+	    int vsize = sizeof( uint32_t );
+
+	    // Debug
+	 //    for(int i = 0; i< list.size(); i++) {
+	 //    	std::cout << std::bitset<8>(list.at(i)) << " ";
+		// 	if((i+1)%4 == 0 && i != 0) std::cout << std::endl;
+		// }
 
 		fBunch = 0x00FFFFFF & swap_bytes( list, 0 );
 		fOrbit = 0x00FFFFFF & swap_bytes( list, vsize );
@@ -97,19 +103,22 @@ namespace Ph2_HwInterface
 		fEventCountCBC = 0x00FFFFFF & swap_bytes( list, 4*vsize );
 		fTDC = 0x000000FF & swap_bytes( list, list.size() - vsize );
 
-                uint32_t event_size = EVENT_HEADER_SIZE_CHAR;
+        uint32_t event_size = EVENT_HEADER_SIZE_CHAR;
 
-		uint32_t begin = EVENT_HEADER_SIZE_CHAR;
+		// uint32_t begin = EVENT_HEADER_SIZE_CHAR;
+		uint32_t begin = 0;
+
 		uint32_t end = 0; 
 		for ( auto& it: fEventMap )
 		{
 			uint8_t cFeId = static_cast<uint8_t>( it.first );
 			uint8_t cNCbc = static_cast<uint8_t>( it.second.size() );
-                        event_size += cNCbc * CBC_EVENT_SIZE_CHAR;
+            event_size += cNCbc * CBC_EVENT_SIZE_CHAR;
 			for ( auto& jt : it.second )
 			{
 				uint8_t cCbcId = static_cast<uint8_t>( jt.first );
-                                begin += cFeId * CBC_EVENT_SIZE_CHAR * cNCbc + cCbcId * CBC_EVENT_SIZE_CHAR;
+                                // begin += cFeId * CBC_EVENT_SIZE_CHAR * cNCbc + cCbcId * CBC_EVENT_SIZE_CHAR;
+                                begin = EVENT_HEADER_SIZE_CHAR + cFeId * CBC_EVENT_SIZE_CHAR * cNCbc + cCbcId * CBC_EVENT_SIZE_CHAR;
                                 end = begin + CBC_EVENT_SIZE_CHAR -1; 
                                 jt.second = {begin, end};
 

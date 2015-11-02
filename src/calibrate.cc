@@ -86,6 +86,7 @@ int main( int argc, char* argv[] )
 		cCalibration.InitializeSettings( cHWFile );
 		cCalibration.CreateResultDirectory( cDirectory );
 		cCalibration.InitResultFile( "CalibrationResults" );
+		cCalibration.StartHttpServer();
 
 		if ( !isGui ) cCalibration.ConfigureHw();
 

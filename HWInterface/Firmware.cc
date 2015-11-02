@@ -1,4 +1,4 @@
-#include "fc7/Firmware.hpp"
+#include "Firmware.h"
 
 #include <fstream>
 #include <sstream>

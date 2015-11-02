@@ -13,7 +13,7 @@
 #include "../Utils/argvparser.h"
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
-
+#include "../Utils/CommonVisitors.h"
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
@@ -120,23 +120,28 @@ int main( int argc, char* argv[] )
 	{
 		t.start();
 
-		for ( auto cShelve : cSystemController.fShelveVector )
-		{
-			for ( auto cShelve : cSystemController.fShelveVector )
-			{
-				for ( auto cBoard : ( cShelve )->fBoardVector )
-				{
-					for ( auto cFe : cBoard->fModuleVector )
-					{
-						for ( auto cCbc : cFe->fCbcVector )
-							cSystemController.fCbcInterface->WriteCbcReg( cCbc, "VCth", uint8_t( cVcth ) );
-					}
-				}
-			}
-		}
+		// for ( auto cShelve : cSystemController.fShelveVector )
+		// {
+		//  for ( auto cShelve : cSystemController.fShelveVector )
+		//  {
+		//      for ( auto cBoard : ( cShelve )->fBoardVector )
+		//      {
+		//          for ( auto cFe : cBoard->fModuleVector )
+		//          {
+		//              for ( auto cCbc : cFe->fCbcVector )
+		//                  cSystemController.fCbcInterface->WriteCbcReg( cCbc, "VCth", uint8_t( cVcth ) );
+		//          }
+		//      }
+		//  }
+		// }
+
+		CbcRegWriter cWriter( cSystemController.fCbcInterface, "VCth", uint8_t( cVcth ) );
+		cSystemController.accept( cWriter );
 
 		t.stop();
 		t.show( "Time for changing VCth on all CBCs:" );
+		CbcRegReader cReader( cSystemController.fCbcInterface, "VCth" );
+		cSystemController.accept( cReader );
 	}
 
 	BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
@@ -178,4 +183,3 @@ int main( int argc, char* argv[] )
 		t.show( "Time to take data:" );
 	}
 }
-
