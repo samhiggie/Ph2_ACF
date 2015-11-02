@@ -19,15 +19,15 @@ namespace Ph2_HwInterface
 {
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		BeBoardFWInterface( puHalConfigFileName, pBoardId ), 
-		fpgaConfig(nullptr),
+		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
+		fpgaConfig( nullptr ),
 		fData( nullptr )
 	{}
 
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
-		fpgaConfig(nullptr),
+		fpgaConfig( nullptr ),
 		fData( nullptr ),
 
 		fFileHandler( pFileHandler )
@@ -287,7 +287,7 @@ namespace Ph2_HwInterface
 		cVal = ReadReg( fStrFull );
 
 		do
-		{ 
+		{
 			cVal = ReadReg( fStrFull );
 			if ( cVal == 0 )
 				std::this_thread::sleep_for( cWait );
@@ -355,7 +355,8 @@ namespace Ph2_HwInterface
 
 		CbcCounter cCounter;
 		pBoard->accept( cCounter );
-		return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
+		if ( pBoard->getNCbcDataSize() != 0 ) return cNPackets * ( pBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 );
+		else return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
 	}
 
 	std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -400,18 +401,19 @@ namespace Ph2_HwInterface
 		fStrSram = ( pFe ? SRAM2 : SRAM1 );
 		fStrOtherSram = ( pFe ? SRAM1 : SRAM2 );
 		fStrSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
-		fStrOtherSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
+		fStrOtherSramUserLogic = ( pFe ? SRAM1_USR_LOGIC : SRAM2_USR_LOGIC );
 	}
 
 
-	void GlibFWInterface::StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor){
-		if (runningAcquisition) return;
+	void GlibFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
+	{
+		if ( runningAcquisition ) return;
 
-		runningAcquisition=true;
-		numAcq=0;
-		nbMaxAcq=uNbAcq;
+		runningAcquisition = true;
+		numAcq = 0;
+		nbMaxAcq = uNbAcq;
 
-		thrAcq=boost::thread(&Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor);
+		thrAcq = boost::thread( &Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
 	}
 
 	void GlibFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
@@ -503,8 +505,8 @@ namespace Ph2_HwInterface
 
 		WriteReg( fStrSramUserLogic, 0 );
 
-		pVecReq = ReadBlockRegValue(fStrSram, pVecReq.size() );
-		
+		pVecReq = ReadBlockRegValue( fStrSram, pVecReq.size() );
+
 		WriteReg( fStrSramUserLogic, 1 );
 		WriteReg( CBC_I2C_CMD_RQ, 0 );
 
@@ -573,7 +575,7 @@ namespace Ph2_HwInterface
 		fpgaConfig->runUpload( strConfig, pstrFile );
 	}
 
-	void GlibFWInterface::JumpToFpgaConfig( const std::string& strConfig)
+	void GlibFWInterface::JumpToFpgaConfig( const std::string& strConfig )
 	{
 		if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
 			throw Exception( "This board is uploading an FPGA configuration" );
@@ -581,7 +583,7 @@ namespace Ph2_HwInterface
 		if ( !fpgaConfig )
 			fpgaConfig = new GlibFpgaConfig( this );
 
-		fpgaConfig->jumpToImage( strConfig);
+		fpgaConfig->jumpToImage( strConfig );
 	}
 
 }

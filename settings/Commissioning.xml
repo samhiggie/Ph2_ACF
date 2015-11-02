@@ -4,6 +4,7 @@
 
     <Shelve Id="0" >
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+            <FW_Version NCbcDataSize="4"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
                 <!-- <Global_CBC_Register name="VCth"> 0x92 </Global_CBC_Register> -->
@@ -35,8 +36,8 @@
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
             <!-- set to 1 to output L1A signal, 0 for input pulse -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
-            <!-- set to 1 for active low or 1 for active high -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar"> 1 </Register>
+            <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar"> 0 </Register>
 
             <!-- Clock -->
             <!-- set to 1 for external clocking -->
