@@ -183,8 +183,9 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 		if ( !cDir ) cDir = pResultfile->mkdir( cDirName );
 		pResultfile->cd( cDirName );
 
-		// fScurve->SetDirectory( cDir );
-		fFit->Write( fFit->GetName(), TObject::kOverwrite );
+		fScurve->SetDirectory( cDir );
+		fFit->SetDirectory( cDir );
+		// fFit->Write( fFit->GetName(), TObject::kOverwrite );
 		// pResultfile->Flush();
 
 		pResultfile->cd();
@@ -256,8 +257,9 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 		if ( !cDir ) cDir = pResultfile->mkdir( cDirName );
 		pResultfile->cd( cDirName );
 
-		// fScurve->SetDirectory( cDir );
-		fDerivative->Write( fDerivative->GetName(), TObject::kOverwrite );
+		fScurve->SetDirectory( cDir );
+		fDerivative->SetDirectory( cDir );
+		// fDerivative->Write( fDerivative->GetName(), TObject::kOverwrite );
 		// pResultfile->Flush();
 
 		pResultfile->cd();
