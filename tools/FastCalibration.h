@@ -16,7 +16,6 @@
 #include "Channel.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/CommonVisitors.h"
-#include "../miniDAQ/publisher.h"
 
 
 #include <map>
@@ -105,6 +104,9 @@ class FastCalibration : public Tool
 	FitMap fFitMap;
 	HistMap fHistMap;
 	HistMap fNoiseMap;
+	HistMap fSensorNoiseMapEven;
+	HistMap fSensorNoiseMapOdd;
+
 	HistMap fNoiseStripMap;
 	HistMap fPedestalMap;
 
@@ -112,6 +114,9 @@ class FastCalibration : public Tool
 	bool fdoTGrpCalib;
 	bool fdoBitWisetuning;
 	bool fHoleMode;
+	bool fTestPulse;
+	uint8_t fTestPulseAmplitude;
+
 	uint32_t fEventsPerPoint;
 	uint32_t fNCbc;
 	uint32_t fNFe;
@@ -135,11 +140,38 @@ class FastCalibration : public Tool
 	void processSCurves( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
 	void processSCurvesOffset( TString pParameter, uint8_t pTargetBit, bool pDraw, int pTGrpId );
 	void processSCurvesNoise( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
+	void setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pTestGroup );
 	// void fitVplusVcthGraph();
 	void findVplus( bool pDraw );
 	void writeGraphs();
 	void dumpConfigFiles();
 
+
+	uint8_t reverse( uint8_t n ) {
+		// Reverse the top and bottom nibble then swap them.
+		return ( fLookup[n & 0b1111] << 4 ) | fLookup[n >> 4];
+	}
+
+	/*!
+	* \brief reverse the endianess before writing in to the register
+	* \param pDelay: the actual delay
+	* \param pGroup: the actual group number
+	* \return the reversed endianness
+	*/
+	uint8_t to_reg( uint8_t pDelay, uint8_t pGroup ) {
+
+		uint8_t cValue = ( ( reverse( pDelay ) ) & 0xF8 ) |
+						 ( ( reverse( pGroup ) ) >> 5 );
+
+		//std::cout << std::bitset<8>( cValue ) << " cGroup " << +pGroup << " " << std::bitset<8>( pGroup ) << " pDelay " << +pDelay << " " << std::bitset<8>( pDelay ) << std::endl;
+		return cValue;
+	}
+
+	unsigned char fLookup[16] =
+	{
+		0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe,
+		0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf,
+	}; /*!< Lookup table for reverce the endianness */
 };
 
 

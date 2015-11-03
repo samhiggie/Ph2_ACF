@@ -84,6 +84,19 @@ void FastCalibration::Initialise()
 					if ( cHist ) delete cHist;
 					cHist = new TH1F( cHistname, cHistname, 510, -0.5, 254.5 );
 					fPedestalMap[cCbc] =  cHist;
+
+					cHistname = Form( "Fe%dCBC%d_Noise_even", cFe->getFeId(), cCbc->getCbcId() );
+					cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
+					if ( cHist ) delete cHist;
+					cHist = new TH1F( cHistname, cHistname, 128, -0.5, 127.5 );
+					fSensorNoiseMapEven[cCbc] =  cHist;
+
+					cHistname = Form( "Fe%dCBC%d_Noise_odd", cFe->getFeId(), cCbc->getCbcId() );
+					cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
+					if ( cHist ) delete cHist;
+					cHist = new TH1F( cHistname, cHistname, 128, -0.5, 127.5 );
+					cHist->SetLineColor( 2 );
+					fSensorNoiseMapOdd[cCbc] =  cHist;
 				}
 				TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
 				TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 200, 0, 20 );
@@ -118,12 +131,16 @@ void FastCalibration::Initialise()
 	fEventsPerPoint = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 10;
 	cSetting = fSettingsMap.find( "FitSCurves" );
 	fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
-
+	cSetting = fSettingsMap.find( "TestPulseAmplitude" );
+	fTestPulseAmplitude = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
+	if ( fTestPulseAmplitude == 0 )fTestPulse = 0;
+	else fTestPulse = 1;
 	std::cout << "Created Object Maps and parsed settings:" << std::endl;
 	std::cout << "	Hole Mode = " << fHoleMode << std::endl;
 	std::cout << "	Nevents = " << fEventsPerPoint << std::endl;
 	std::cout << "	TargetVcth = " << int( fTargetVcth ) << std::endl;
 	std::cout << "	FitSCurves = " << int( fFitted ) << std::endl;
+	std::cout << "  TestPulseAmplitude = " << int( fTestPulseAmplitude ) << std::endl;
 
 }
 
@@ -136,6 +153,9 @@ void FastCalibration::ScanVplus()
 	std::cout << BOLDBLUE << "Scanning Vplus ..." << RESET << std::endl;
 	for ( auto& cTGrpM : fTestGroupChannelMap )
 	{
+		// enable test group here
+
+
 		if ( cTGrpM.first == -1 && fdoTGrpCalib )
 			continue;
 		if ( cTGrpM.first > -1 && !fdoTGrpCalib )
@@ -231,10 +251,19 @@ void FastCalibration::measureNoise()
 					if ( cPedestalHist == std::end( fNoiseMap ) ) std::cout << "Error: could not find the Pedestal Histogram for CBC " << int( cCbc->getCbcId() ) << std::endl;
 					auto cStripHist = fNoiseStripMap.find( cCbc );
 					if ( cStripHist == std::end( fNoiseStripMap ) ) std::cout << "Error: could not find the Strip Noise Profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
+
+					auto cStripHistEven = fSensorNoiseMapEven.find( cCbc );
+					if ( cStripHistEven == std::end( fSensorNoiseMapEven ) ) std::cout << "Error: could not find the even Strip Noise Profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
+
+					auto cStripHistOdd = fSensorNoiseMapOdd.find( cCbc );
+					if ( cStripHistOdd == std::end( fSensorNoiseMapOdd ) ) std::cout << "Error: could not find the odd Strip Noise Profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
+
 					std::cout << BOLDRED << "Average noise on FE " << +cHist->first->getFeId() << " CBC " << +cHist->first->getCbcId() << " : " << cHist->second->GetMean() << " ; RMS : " << cHist->second->GetRMS() << " ; Pedestal : " << cPedestalHist->second->GetMean() << " VCth units." << RESET << std::endl;
 
 					fNoiseCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
-					cStripHist->second->DrawCopy();
+					// cStripHist->second->DrawCopy();
+					cStripHistEven->second->DrawCopy();
+					cStripHistOdd->second->DrawCopy( "same" );
 
 					fPedestalCanvas->cd( cCbc->getCbcId() + 1 );
 					cHist->second->DrawCopy();
@@ -242,6 +271,7 @@ void FastCalibration::measureNoise()
 					fPedestalCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
 					cPedestalHist->second->DrawCopy();
 					fNoiseCanvas->Update();
+					fPedestalCanvas->Update();
 #ifdef __HTTP__
 					fHttpServer->ProcessRequests();
 #endif
@@ -250,8 +280,8 @@ void FastCalibration::measureNoise()
 					for ( int cBin = 0; cBin < NCHANNELS; cBin++ )
 					{
 						// std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
-						if ( cStripHist->second->GetBinContent( cBin ) > 0 && cStripHist->second->GetBinContent( cBin ) < 256 ) cTmpProfile->Fill( cCbcId * 254 + cBin, cStripHist->second->GetBinContent( cBin ) );
-						else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
+						if ( cStripHist->second->GetBinContent( cBin ) > 0 && cStripHist->second->GetBinContent( cBin ) < 255 ) cTmpProfile->Fill( cCbcId * 254 + cBin, cStripHist->second->GetBinContent( cBin ) );
+						// else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
 					}
 				}
 				fFeSummaryCanvas->cd( cFeId + 1 );
@@ -835,6 +865,12 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 		HistMap::iterator cStripHist = fNoiseStripMap.find( cCbc.first );
 		if ( cStripHist == fNoiseStripMap.end() ) std::cout << "Could not find the correct Noise Strip Histogram for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
 
+		HistMap::iterator cSensorHistEven = fSensorNoiseMapEven.find( cCbc.first );
+		if ( cSensorHistEven == fSensorNoiseMapEven.end() ) std::cout << "Could not find the correct Noise Histogram Even for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
+
+		HistMap::iterator cSensorHistOdd = fSensorNoiseMapOdd.find( cCbc.first );
+		if ( cSensorHistOdd == fNoiseStripMap.end() ) std::cout << "Could not find the correct Sensor Noise Histogram Odd for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
+
 
 		// Loop the Channels
 		bool cFirst = true;
@@ -856,7 +892,15 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 
 			cHist->second->Fill( cChan.getNoise() );
 			cPedestalHist->second->Fill( cChan.getPedestal() );
-			std::cout << "Chanel " << +cChan.fChannelId << " Pedestal " << cChan.getPedestal() << " Noise " << cChan.getNoise() << std::endl;
+
+			// Even and odd channel noise
+			if ( ( int( cChan.fChannelId ) % 2 ) == 0 )
+				cSensorHistEven->second->Fill( int( cChan.fChannelId / 2 ), cChan.getNoise() );
+			else
+				cSensorHistOdd->second->Fill( int( cChan.fChannelId / 2.0 ), cChan.getNoise() );
+
+			// some output
+			std::cout << "FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " Chanel " << +cChan.fChannelId << " Pedestal " << cChan.getPedestal() << " Noise " << cChan.getNoise() << std::endl;
 
 			cStripHist->second->Fill( cChan.fChannelId, cChan.getNoise() );
 
@@ -925,6 +969,26 @@ void FastCalibration::findVplus( bool pDraw )
 
 }
 
+void FastCalibration::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pTestGroup )
+{
+	std::vector<std::pair<std::string, uint8_t>> cRegVec;
+	uint8_t cRegValue =  to_reg( 0, pTestGroup );
+	cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup",  cRegValue ) );
+
+	//set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
+	if ( fHoleMode )
+		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
+	else
+		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux ", 0x61 ) );
+
+	cRegVec.push_back( std::make_pair( "TestPulsePot", pTPAmplitude ) );
+	// cRegVec.push_back( std::make_pair( "Vplus",  fVplus ) );
+
+	CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
+	this->accept( cWriter );
+
+}
+
 void FastCalibration::writeGraphs()
 {
 	// just use auto iterators to write everything to disk
@@ -944,6 +1008,11 @@ void FastCalibration::writeGraphs()
 		cHist.second->SetDirectory( fResultFile );
 	for ( const auto& cNoiseStripHist : fNoiseStripMap )
 		cNoiseStripHist.second->SetDirectory( fResultFile );
+
+	for ( const auto& cNoiseEven : fSensorNoiseMapEven )
+		cNoiseEven.second->SetDirectory( fResultFile );
+	for ( const auto& cNoiseOdd : fSensorNoiseMapOdd )
+		cNoiseOdd.second->SetDirectory( fResultFile );
 
 	fResultFile->cd();
 

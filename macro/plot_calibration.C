@@ -26,6 +26,7 @@ void plot_all(TString fname, Int_t iBoard, Int_t iFnd, Int_t iCBC);
 void plot_SCurve(TFile* file, Int_t iBoard, Int_t iFnd, Int_t iCBC, TString type);
 void plot_Vplus(TFile* file, Int_t iFnd, Int_t iCBC);
 void plot_validation(TFile* file, Int_t iFnd, Int_t iCBC);
+/*void plot_pedestal(TFile* file, Int_t iBoard, Int_t iFnd, Int_t iCBC);*/
 
 void draw_SCurve(TDirectoryFile* dir, Int_t iBoard, Int_t iFnd, Int_t iCBC, TString xtit, Int_t ival);
 void set_style(TH1F* th, TF1* f1, int mcol, int lcol);
@@ -41,7 +42,8 @@ void plot_all(TString fname, Int_t iBoard, Int_t iFnd, Int_t iCBC) {
   plot_SCurve(file, iBoard, iFnd, iCBC, "Vplus");
   plot_Vplus(file, iFnd, iCBC);
   plot_SCurve(file, iBoard, iFnd, iCBC, "Offset");
-  plot_validation(file, iFnd, iCBC);
+  /*plot_validation(file, iFnd, iCBC);*/
+  plot_SCurve(file, iBoard, iFnd, iCBC, "Final");
 }
 
 //

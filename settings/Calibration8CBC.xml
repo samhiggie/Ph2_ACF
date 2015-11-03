@@ -7,8 +7,9 @@
         	<FW_Version NCbcDataSize="8"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
-                <!-- <Global_CBC_Register name="Vplus"> 0x78 </Global_CBC_Register> -->
+                <Global_CBC_Register name="TestPulsePot"> 0x01 </Global_CBC_Register>
+                <Global_CBC_Register name="SelTestPulseDel&ChanGroup"> 0x00 </Global_CBC_Register>
+                <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x01 </Global_CBC_Register>
 
                 <CBC_Files path="./settings/"/>
                 <CBC Id="0" configfile="Cbc_default_electron.txt"/>
