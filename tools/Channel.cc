@@ -184,8 +184,8 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 		pResultfile->cd( cDirName );
 
 		fScurve->SetDirectory( cDir );
-		fFit->SetDirectory( cDir );
-		// fFit->Write( fFit->GetName(), TObject::kOverwrite );
+		// fFit->SetDirectory( cDir );
+		fFit->Write( fFit->GetName(), TObject::kOverwrite );
 		// pResultfile->Flush();
 
 		pResultfile->cd();
