@@ -3,6 +3,7 @@
 #include "../Utils/Utilities.h"
 #include "../tools/Commissioning.h"
 #include "../tools/FastCalibration.h"
+
 #include <TApplication.h>
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
@@ -128,7 +129,6 @@ int main( int argc, char* argv[] )
 		// if ( cOccupancy ) cCalibration.Validate();
 		cCalibration.measureNoise();
 		cCalibration.SaveResults( false );
-
 	}
 
 	else if ( cOccupancy )
@@ -146,8 +146,8 @@ int main( int argc, char* argv[] )
 		cCalibration.Validate();
 		// cCalibration.measureNoise();
 		cCalibration.SaveResults( false );
-
 	}
+
 
 	if ( !batchMode ) cApp.Run();
 

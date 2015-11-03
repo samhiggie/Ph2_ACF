@@ -12,7 +12,8 @@ void FastCalibration::Initialise()
 	fVcthVplusCanvas = new TCanvas( "Vplus vs. VCth", "Vplus vs. VCth", 650, 650 );
 	fOffsetCanvas = new TCanvas( "SCurves Offset Tuning", "SCurves Offset Tuning", 650, 650 );
 	fValidationCanvas = new TCanvas( "Occupancy", "Occupancy", 650, 650 );
-	fNoiseCanvas = new TCanvas( "Final SCurves, Noise", "Final SCurves, Noise", 650, 650 );
+	fNoiseCanvas = new TCanvas( "Final SCurves, Strip Noise", "Final SCurves, Noise", 650, 650 );
+	fPedestalCanvas = new TCanvas( "Pedestal & Noise", "Pedestal & Noise", 650, 650 );
 	fFeSummaryCanvas = new TCanvas( "Noise for each FE", "Noise for each FE", 650, 650 );
 
 	// count FEs & CBCs
@@ -77,13 +78,19 @@ void FastCalibration::Initialise()
 					if ( cHist ) delete cHist;
 					cHist = new TH1F( cHistname, cHistname, 254, -0.5, 253.5 );
 					fNoiseStripMap[cCbc] =  cHist;
+
+					cHistname = Form( "Fe%dCBC%d_Pedestal", cFe->getFeId(), cCbc->getCbcId() );
+					cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
+					if ( cHist ) delete cHist;
+					cHist = new TH1F( cHistname, cHistname, 510, -0.5, 254.5 );
+					fPedestalMap[cCbc] =  cHist;
 				}
 				TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
 				TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 200, 0, 20 );
 				bookHistogram( cFe, "Module_noisehist", cNoise );
 
 				cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
-				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname,( NCHANNELS * cCbcCount) + 1, -.5, cCbcCount * NCHANNELS + .5 );
+				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, ( NCHANNELS * cCbcCount ) + 1, -.5, cCbcCount * NCHANNELS + .5 );
 				bookHistogram( cFe, "Module_Stripnoise", cStripnoise );
 			}
 			fNCbc = cCbcCount;
@@ -95,8 +102,9 @@ void FastCalibration::Initialise()
 	fVcthVplusCanvas->DivideSquare( cCbcCount );
 	fOffsetCanvas->DivideSquare( cCbcCount );
 	fValidationCanvas->DivideSquare( cCbcCount );
-	fNoiseCanvas->DivideSquare( 2*cCbcCount);
-	fFeSummaryCanvas->DivideSquare( 2*cFeCount );
+	fNoiseCanvas->DivideSquare( 2 * cCbcCount );
+	fPedestalCanvas->DivideSquare( 2 * cCbcCount );
+	fFeSummaryCanvas->DivideSquare( 2 * cFeCount );
 
 	// now read the settings from the map
 	// fHoleMode = fSettingsMap.find( "HoleMode" )->second;
@@ -219,21 +227,27 @@ void FastCalibration::measureNoise()
 					// here get the per-CBC histograms
 					auto cHist = fNoiseMap.find( cCbc );
 					if ( cHist == std::end( fNoiseMap ) ) std::cout << "Error: could not find the Noise Histogram for CBC " << int( cCbc->getCbcId() ) << std::endl;
+					auto cPedestalHist = fPedestalMap.find( cCbc );
+					if ( cPedestalHist == std::end( fNoiseMap ) ) std::cout << "Error: could not find the Pedestal Histogram for CBC " << int( cCbc->getCbcId() ) << std::endl;
 					auto cStripHist = fNoiseStripMap.find( cCbc );
-					if ( cStripHist == std::end( fNoiseStripMap ) ) std::cout << "Error: could not find the Noise Histogram for CBC " << int( cCbc->getCbcId() ) << std::endl;
-					std::cout << BOLDRED << "Average noise on FE " << +cHist->first->getFeId() << " CBC " << +cHist->first->getCbcId() << " is " << cHist->second->GetMean() << " with an RMS of " << cHist->second->GetRMS() << " VCth units." << RESET << std::endl;
+					if ( cStripHist == std::end( fNoiseStripMap ) ) std::cout << "Error: could not find the Strip Noise Profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
+					std::cout << BOLDRED << "Average noise on FE " << +cHist->first->getFeId() << " CBC " << +cHist->first->getCbcId() << " : " << cHist->second->GetMean() << " ; RMS : " << cHist->second->GetRMS() << " ; Pedestal : " << cPedestalHist->second->GetMean() << " VCth units." << RESET << std::endl;
 
-					fNoiseCanvas->cd( cCbc->getCbcId() + 1 );
-					cHist->second->DrawCopy();
 					fNoiseCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
 					cStripHist->second->DrawCopy();
+
+					fPedestalCanvas->cd( cCbc->getCbcId() + 1 );
+					cHist->second->DrawCopy();
+
+					fPedestalCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
+					cPedestalHist->second->DrawCopy();
 					fNoiseCanvas->Update();
 #ifdef __HTTP__
 					fHttpServer->ProcessRequests();
 #endif
 					// here add the CBC histos to the module histos
 					cTmpHist->Add( cHist->second );
-					for ( int cBin = 1; cBin < NCHANNELS; cBin++ )
+					for ( int cBin = 0; cBin < NCHANNELS; cBin++ )
 					{
 						// std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
 						if ( cStripHist->second->GetBinContent( cBin ) > 0 && cStripHist->second->GetBinContent( cBin ) < 256 ) cTmpProfile->Fill( cCbcId * 254 + cBin, cStripHist->second->GetBinContent( cBin ) );
@@ -815,6 +829,9 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 		HistMap::iterator cHist = fNoiseMap.find( cCbc.first );
 		if ( cHist == fNoiseMap.end() ) std::cout << "Could not find the correct Noise Histogram for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
 
+		HistMap::iterator cPedestalHist = fPedestalMap.find( cCbc.first );
+		if ( cPedestalHist == fPedestalMap.end() ) std::cout << "Could not find the correct Pedestal Histogram for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
+
 		HistMap::iterator cStripHist = fNoiseStripMap.find( cCbc.first );
 		if ( cStripHist == fNoiseStripMap.end() ) std::cout << "Could not find the correct Noise Strip Histogram for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
 
@@ -836,11 +853,10 @@ void FastCalibration::processSCurvesNoise( TString pParameter, uint8_t pValue, b
 
 			// instead of the code below, use a histogram to histogram the noise
 			if ( cChan.getNoise() == 0 || cChan.getNoise() > 255 ) std::cout << RED << "Error, SCurve Fit for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << " Channel " << int( cChan.fChannelId ) << " did not work correctly! Noise " << cChan.getNoise() << RESET << std::endl;
-			else
-			{
-				cHist->second->Fill( cChan.getNoise() );
-				std::cout << "Chanel " << +cChan.fChannelId << " Noise " << cChan.getNoise() << std::endl;
-			}
+
+			cHist->second->Fill( cChan.getNoise() );
+			cPedestalHist->second->Fill( cChan.getPedestal() );
+			std::cout << "Chanel " << +cChan.fChannelId << " Pedestal " << cChan.getPedestal() << " Noise " << cChan.getNoise() << std::endl;
 
 			cStripHist->second->Fill( cChan.fChannelId, cChan.getNoise() );
 
@@ -913,6 +929,7 @@ void FastCalibration::writeGraphs()
 {
 	// just use auto iterators to write everything to disk
 	// this is the old method before Tool class was cool
+	fResultFile->cd();
 	for ( const auto& cGraph : fGraphMap )
 		cGraph.second->Write( cGraph.second->GetName(), TObject::kOverwrite );
 	for ( const auto& cFit : fFitMap )
@@ -923,10 +940,12 @@ void FastCalibration::writeGraphs()
 		cHist.second->SetDirectory( fResultFile );
 	for ( const auto& cHist : fNoiseMap )
 		cHist.second->SetDirectory( fResultFile );
+	for ( const auto& cHist : fPedestalMap )
+		cHist.second->SetDirectory( fResultFile );
 	for ( const auto& cNoiseStripHist : fNoiseStripMap )
 		cNoiseStripHist.second->SetDirectory( fResultFile );
 
-    fResultFile->cd();
+	fResultFile->cd();
 
 	// This is re-implementing the new method for the FE's since they use the cool stuff from tool
 	for ( const auto& cFe : fModuleHistMap )
@@ -948,6 +967,7 @@ void FastCalibration::writeGraphs()
 	fOffsetCanvas->Write( fOffsetCanvas->GetName(), TObject::kOverwrite );
 	fValidationCanvas->Write( fValidationCanvas->GetName(), TObject::kOverwrite );
 	fNoiseCanvas->Write( fNoiseCanvas->GetName(), TObject::kOverwrite );
+	fPedestalCanvas->Write( fPedestalCanvas->GetName(), TObject::kOverwrite );
 	fFeSummaryCanvas->Write( fFeSummaryCanvas->GetName(), TObject::kOverwrite );
 
 }

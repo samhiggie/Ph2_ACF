@@ -16,10 +16,10 @@ System::
 	$(MAKE) -C $@
 tools::
 	$(MAKE) -C $@
-src::
-	$(MAKE) -C $@
 srcnoroot::
 	$(MAKE) -C src noroot
+src::
+	$(MAKE) -C $@
 GUI::
 	$(MAKE) -C GUI/Macros
 	$(MAKE) -C $@

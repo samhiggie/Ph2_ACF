@@ -16,6 +16,8 @@
 #include "Channel.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/CommonVisitors.h"
+#include "../miniDAQ/publisher.h"
+
 
 #include <map>
 
@@ -95,6 +97,7 @@ class FastCalibration : public Tool
 	TCanvas* fOffsetCanvas;
 	TCanvas* fValidationCanvas;
 	TCanvas* fNoiseCanvas;
+	TCanvas* fPedestalCanvas;
 	TCanvas* fFeSummaryCanvas;
 
 	CbcChannelMap fCbcChannelMap;
@@ -103,6 +106,8 @@ class FastCalibration : public Tool
 	HistMap fHistMap;
 	HistMap fNoiseMap;
 	HistMap fNoiseStripMap;
+	HistMap fPedestalMap;
+
 	TestGroupChannelMap fTestGroupChannelMap;
 	bool fdoTGrpCalib;
 	bool fdoBitWisetuning;
