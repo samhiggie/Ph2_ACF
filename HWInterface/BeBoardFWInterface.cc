@@ -97,12 +97,11 @@ namespace Ph2_HwInterface
 	{
 		// What does pCbcId do here??
 		uint8_t cFeId = ( pWord & cMask7 ) >> 21;
-		pCbcId = ( pWord & cMask5 ) >> 17;
-		if ( cFeId == 1 ) pCbcId += 8;
+		pCbcId = (( pWord & cMask5 ) | (cFeId << 3)) >> 17;
 		pRegItem.fPage = ( pWord & cMask6 ) >> 16;
 		pRegItem.fAddress = ( pWord & cMask2 ) >> 8;
 		pRegItem.fValue = pWord & cMask1;
-		// std::cout << "FEID " << +cFeId << " pCbcID " << +pCbcId << std::endl;
+		//std::cout << "FEID " << +(cFeId) << " pCbcID " << +(pCbcId) << std::endl;
 	}
 
 

@@ -83,7 +83,7 @@ void FastCalibration::Initialise()
 				bookHistogram( cFe, "Module_noisehist", cNoise );
 
 				cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
-				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, NCHANNELS * cCbcCount + 1, -.5, cCbcCount * NCHANNELS - .5 );
+				TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname,( NCHANNELS * cCbcCount) + 1, -.5, cCbcCount * NCHANNELS + .5 );
 				bookHistogram( cFe, "Module_Stripnoise", cStripnoise );
 			}
 			fNCbc = cCbcCount;
@@ -233,10 +233,9 @@ void FastCalibration::measureNoise()
 #endif
 					// here add the CBC histos to the module histos
 					cTmpHist->Add( cHist->second );
-					for ( int cBin = 0; cBin < cStripHist->second->GetNbinsX() - 1; cBin++ )
+					for ( int cBin = 1; cBin < NCHANNELS; cBin++ )
 					{
 						// std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
-
 						if ( cStripHist->second->GetBinContent( cBin ) > 0 && cStripHist->second->GetBinContent( cBin ) < 256 ) cTmpProfile->Fill( cCbcId * 254 + cBin, cStripHist->second->GetBinContent( cBin ) );
 						else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
 					}

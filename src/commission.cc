@@ -42,7 +42,7 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "noise", "scan the CBC noise per strip", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "noise", "n" );
 
-	cmd.defineOption( "occupancy", "Measure the occupancy", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+	cmd.defineOption( "occupancy", "Measure the occupancy", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
 
 	cmd.defineOption( "minimum", "minimum value for latency scan", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "minimum", "m" );
