@@ -7,9 +7,9 @@
         	<FW_Version NCbcDataSize="8"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <Global_CBC_Register name="TestPulsePot"> 0x01 </Global_CBC_Register>
+                <Global_CBC_Register name="TestPulsePot"> 0xFF </Global_CBC_Register>
                 <Global_CBC_Register name="SelTestPulseDel&ChanGroup"> 0x00 </Global_CBC_Register>
-                <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x01 </Global_CBC_Register>
+                <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
 
                 <CBC_Files path="./settings/"/>
                 <CBC Id="0" configfile="Cbc_default_electron.txt"/>
@@ -59,7 +59,7 @@
             <Register name="cbc_stubdata_latency_adjust_fe1"> 1 </Register>
             <Register name="cbc_stubdata_latency_adjust_fe2"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 9 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 19 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
 
             <!-- Polarity -->
@@ -73,10 +73,10 @@
 </HwDescription>
 
 <Settings>
-    <Setting name="TargetVcth"> 0x78 </Setting>
-    <Setting name="Nevents"> 50 </Setting>
+    <Setting name="TargetVcth"> 0x8C </Setting>
+    <Setting name="Nevents"> 20 </Setting>
     <Setting name="EnableTestPulse"> 0 </Setting>
     <Setting name="TestPulsePotentiometer"> 0x00 </Setting>
     <Setting name="HoleMode"> 0 </Setting>
-    <Setting name="FitSCurves"> 0 </Setting>
+    <Setting name="FitSCurves"> 1 </Setting>
 </Settings>

@@ -13,12 +13,12 @@
                 <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x01 </Global_CBC_Register>
 
                 <!-- <CBC_Files path="/cmsuptrackernas/Configurations/Module1/htop/"/> -->
-                 <CBC_Files path="./Calibrations/"/>
+                 <CBC_Files path="./Results/Calibration_Electron_03-11-15_22:48/"/>
 
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
-                <CBC Id="2" configfile="./Calibrations/FE0CBC2.txt"/>
-                <CBC Id="3" configfile="./Calibrations/FE0CBC3.txt"/>
+                <CBC Id="2" configfile="FE0CBC2.txt"/>
+                <CBC Id="3" configfile="FE0CBC3.txt"/>
                 <CBC Id="4" configfile="FE0CBC4.txt"/>
                 <CBC Id="5" configfile="FE0CBC5.txt"/>
                 <CBC Id="6" configfile="FE0CBC6.txt"/>

@@ -140,7 +140,7 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 				{
 					if ( cContent ) cFirstNon0 = fScurve->GetBinCenter( cBin );
 				}
-				else if ( cContent == 1 )
+				else if ( cContent > 0.85 )
 				{
 					cFirst1 = fScurve->GetBinCenter( cBin );
 					break;
@@ -157,7 +157,7 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 				{
 					if ( cContent ) cFirstNon0 = fScurve->GetBinCenter( cBin );
 				}
-				else if ( cContent == 1 )
+				else if ( cContent > 0.85 )
 				{
 					cFirst1 = fScurve->GetBinCenter( cBin );
 					break;
