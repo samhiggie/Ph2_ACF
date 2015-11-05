@@ -97,7 +97,7 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap) {
   dut1C0HitProfH_   = new TH1I( "oddSensor_hitprofile_col0", "Odd Sensor Hitmap(col 0)",   nbin, 0.5, nbin+0.5);
   dut1C1HitProfH_   = new TH1I( "oddSensor_hitprofile_col1", "Odd Sensor Hitmap (col 1)",  nbin, 0.5, nbin+0.5);
 
-  totalNumberHitsH_ = new TH1I("tot_hits", "Total Number of Hits", nCbc*127+1, -0.5, nCbc*127+0.5);
+  totalNumberHitsH_ = new TH1I("tot_hits", "Total Number of Hits", 2*nCbc*127+1, -0.5, 2*nCbc*127+0.5);
   totalNumberStubsH_ = new TH1I("tot_stubs", "Total Number of Stubs", nCbc*127+1, -0.5, nCbc*127+0.5);
  
   // optionally add a Tree 
