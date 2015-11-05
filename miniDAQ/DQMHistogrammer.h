@@ -18,6 +18,8 @@
 #include <map>
 
 class TH1I;
+class TH2I;
+class TProfile;
 class TTree;
 /*!
  * \class DQMHistogrammer
@@ -60,13 +62,26 @@ class DQMHistogrammer : public Tool {
     TH1I* nStubsH;
     TH1I* evenChnOccuH;
     TH1I* oddChnOccuH;
+    TProfile* tdcVsEvenChnOccuH;
+    TProfile* tdcVsOddChnOccuH;
   };
   std::map< std::string, CBCHistos > cbcHMap_;
   
-  TH1I* dut0HitProfH_;
-  TH1I* dut1HitProfH_;
+  TH2I* dut0HitProfH_;
+  TH2I* dut1HitProfH_;
+
+  TH1I* dut0HitProfUnfoldedH_;
+  TH1I* dut1HitProfUnfoldedH_;
+
+  TH1I* dut0C0HitProfH_;
+  TH1I* dut0C1HitProfH_;
+  TH1I* dut1C0HitProfH_;
+  TH1I* dut1C1HitProfH_;
+
   TH1I* sensCorrH_;
   TH1I* l1AcceptH_;
   TH1I* tdcCounterH_;
+  TH1I* totalNumberHitsH_;
+  TH1I* totalNumberStubsH_;
 };
 #endif
