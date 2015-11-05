@@ -227,7 +227,7 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 				cCurrent = fScurve->GetBinContent( fScurve->GetBin( cBin ) );
 				cDiff = cPrev - cCurrent;
 				if ( cPrev > 0.75 ) cActive = true; // sampling begins
-				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ), fabs( cDiff ) );
+				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ),  cDiff  );
 				if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 				if ( cDiffCounter == 8 ) break;
 				cPrev = cCurrent;
@@ -242,7 +242,7 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 				cCurrent = fScurve->GetBinContent( fScurve->GetBin( cBin ) );
 				cDiff = cCurrent - cPrev;
 				if ( cPrev > 0.75 ) cActive = true; // sampling begins
-				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ),  fabs( cDiff ) );
+				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ),   cDiff  );
 				if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 				if ( cDiffCounter == 8 ) break;
 				cPrev = cCurrent;
