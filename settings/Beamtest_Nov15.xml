@@ -8,7 +8,8 @@
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
 
-                <Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register>
+                <Global_CBC_Register name="VCth"> 0x70 </Global_CBC_Register>
+                <Global_CBC_Register name="TriggerLatency"> 0x14 </Global_CBC_Register>
               <!--   <Global_CBC_Register name="TestPulsePot"> 0xFF </Global_CBC_Register>
                 <Global_CBC_Register name="SelTestPulseDel&ChanGroup"> 0x00 </Global_CBC_Register> -->
                 <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
@@ -43,7 +44,7 @@
 
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL"> 0 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ"> 10 </Register>
             <!-- DIO5 threshold: [v]/3.3*256 -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in"> 40 </Register>
@@ -66,10 +67,10 @@
 
             <!-- Acquisition -->
             <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe1"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe2"> 1 </Register>
+            <Register name="cbc_stubdata_latency_adjust_fe1"> 5 </Register>
+            <Register name="cbc_stubdata_latency_adjust_fe2"> 5 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 9 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 9999 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
 
             <!-- Polarity -->
@@ -84,7 +85,7 @@
 
 <Settings>
     <Setting name="TargetVcth"> 0x80 </Setting>
-    <Setting name="Nevents"> 10 </Setting>
+    <Setting name="Nevents"> 5000 </Setting>
     <Setting name="EnableTestPulse"> 0 </Setting>
     <Setting name="TestPulsePotentiometer"> 0x00 </Setting>
     <Setting name="HoleMode"> 0 </Setting>

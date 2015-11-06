@@ -7,19 +7,21 @@
         	<FW_Version NCbcDataSize="8"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
+                <Global_CBC_Register name="VCth"> 0x84 </Global_CBC_Register>
+
                 <Global_CBC_Register name="TestPulsePot"> 0xFF </Global_CBC_Register>
                 <Global_CBC_Register name="SelTestPulseDel&ChanGroup"> 0x00 </Global_CBC_Register>
                 <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
 
-                <CBC_Files path="./settings/"/>
-                <CBC Id="0" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="1" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="2" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="3" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="4" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="5" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="6" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="7" configfile="Cbc_default_electron.txt"/>
+                <CBC_Files path="./Calibrations/"/>
+                <CBC Id="0" configfile="FE0CBC0.txt"/>
+                <CBC Id="1" configfile="FE0CBC1.txt"/>
+                <CBC Id="2" configfile="FE0CBC2.txt"/>
+                <CBC Id="3" configfile="FE0CBC3.txt"/>
+                <CBC Id="4" configfile="FE0CBC4.txt"/>
+                <CBC Id="5" configfile="FE0CBC5.txt"/>
+                <CBC Id="6" configfile="FE0CBC6.txt"/>
+                <CBC Id="7" configfile="FE0CBC7.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->

@@ -43,7 +43,7 @@ void plot_all(TString fname, Int_t iBoard, Int_t iFnd, Int_t iCBC) {
   plot_Vplus(file, iFnd, iCBC);
   plot_SCurve(file, iBoard, iFnd, iCBC, "Offset");
   /*plot_validation(file, iFnd, iCBC);*/
-  plot_SCurve(file, iBoard, iFnd, iCBC, "Final");
+  /*plot_SCurve(file, iBoard, iFnd, iCBC, "Final");*/
 }
 
 //
@@ -140,7 +140,7 @@ void draw_SCurve(TDirectoryFile* dir, Int_t iBoard, Int_t iFnd, Int_t iCBC, TStr
     hname += name;
     fname += name;
     TH1F* hist = dynamic_cast<TH1F*> (dir->Get(hname));
-    TF1* func = dynamic_cast<TF1*> (dir->Get(fname));
+    //TF1* func = dynamic_cast<TF1*> (dir->Get(fname));
     if ( ival == 0 && i == 0) {
       option = "P" ;
       hist->GetXaxis()->SetTitle(xtit);
@@ -156,10 +156,10 @@ void draw_SCurve(TDirectoryFile* dir, Int_t iBoard, Int_t iFnd, Int_t iCBC, TStr
       hist->SetTitle(htit);
     } else option = "Psame";
 
-    set_style(hist, func, marker_col, line_col);
+    //set_style(hist, func, marker_col, line_col);
     hist->SetStats(0);   
     hist->DrawCopy(option);
-    func->DrawCopy("same");
+    //func->DrawCopy("same");
   } 
 }
 //
