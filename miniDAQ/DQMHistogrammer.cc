@@ -104,21 +104,32 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap) {
   if (addTree_) {
     tree_ = new TTree("sensorHitTree", "sensorHitTree from RAW files");
 
-    sensorNhitsEven_ = new std::vector<int>();
-    tree_->Branch("dutEven_channel", "std::vector<int>", &sensorNhitsEven_);
-
-    sensorNhitsOdd_ = new std::vector<int>();
-    tree_->Branch("dutOdd_channel", "std::vector<int>", &sensorNhitsOdd_);
+    dut0C0data_ = new std::vector<int>();
+    dut0C1data_ = new std::vector<int>();
+    dut1C0data_ = new std::vector<int>();
+    dut1C1data_ = new std::vector<int>();
+    tree_->Branch("l1Accept", &l1Accept_);
+    tree_->Branch("tdcCounter", &tdcCounter_);
+    tree_->Branch("totalHits", &totalHits_);
+    tree_->Branch("totalStubs", &totalStubs_);
+    tree_->Branch("dut0Ch0data", "std::vector<int>", &dut0C0data_);
+    tree_->Branch("dut0Ch1data", "std::vector<int>", &dut0C1data_);
+    tree_->Branch("dut1Ch0data", "std::vector<int>", &dut1C0data_);
+    tree_->Branch("dut1Ch1data", "std::vector<int>", &dut1C1data_);
   }
 }  
 void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
   for ( const auto& ev : event_list ) {
     if (addTree_) {
-      sensorNhitsEven_->clear();
-      sensorNhitsOdd_->clear();
+      dut0C0data_->clear();
+      dut0C1data_->clear();
+      dut1C0data_->clear();
+      dut1C1data_->clear();
     }
-    tdcCounterH_->Fill( ev->GetTDC() );
-    l1AcceptH_->Fill( ev->GetEventCount() );
+    tdcCounter_ = ev->GetTDC();
+    tdcCounterH_->Fill( tdcCounter_ );
+    l1Accept_ = ev->GetEventCount();
+    l1AcceptH_->Fill( l1Accept_ );
 
     const EventMap& evmap = ev->GetEventMap();
     for ( auto const& it : evmap ) {
@@ -161,16 +172,28 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
 	      if ( ch % 2 == 0 ) {
 		if (cbc_h.evenChnOccuH) cbc_h.evenChnOccuH->Fill( ichan );
 		if (dut0HitProfH_) dut0HitProfH_->Fill( hitposX, hitposY);
-		if (dut0C0HitProfH_ && hitposY==0) dut0C0HitProfH_->Fill( hitposX);
-		if (dut0C1HitProfH_ && hitposY==1) dut0C1HitProfH_->Fill( hitposX);
+		if (dut0C0HitProfH_ && hitposY==0) {
+                  dut0C0HitProfH_->Fill( hitposX);
+                  dut0C0data_->push_back(hitposX);
+                }
+		if (dut0C1HitProfH_ && hitposY==1) {
+                  dut0C1HitProfH_->Fill( hitposX);
+                  dut0C1data_->push_back(hitposX);
+                }
 		if (dut0HitProfUnfoldedH_) dut0HitProfUnfoldedH_->Fill(hitposY*127*8 + hitposX);
 		//                if (addTree_) sensorNhitsEven_->push_back(hitpos);
 		++even_hits;
 	      } else {
 		if (cbc_h.oddChnOccuH) cbc_h.oddChnOccuH->Fill( ichan );
 		if (dut1HitProfH_) dut1HitProfH_->Fill( hitposX, hitposY);
-		if (dut1C0HitProfH_ && hitposY==0) dut1C0HitProfH_->Fill( hitposX);
-		if (dut1C1HitProfH_ && hitposY==1) dut1C1HitProfH_->Fill( hitposX);
+		if (dut1C0HitProfH_ && hitposY==0) {
+                  dut1C0HitProfH_->Fill( hitposX);
+                  dut1C0data_->push_back(hitposX);
+                }
+		if (dut1C1HitProfH_ && hitposY==1) {
+                  dut1C1HitProfH_->Fill( hitposX);
+                  dut1C1data_->push_back(hitposX);
+                }
 		if (dut1HitProfUnfoldedH_) dut1HitProfUnfoldedH_->Fill(hitposY*127*8 + hitposX);
 		//                if (addTree_) sensorNhitsOdd_->push_back(hitpos);
 		++odd_hits;
@@ -185,6 +208,8 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
       else if (even_hits && odd_hits) sensCorrH_->Fill(4);  
       totalNumberHitsH_->Fill(totalHits);      
       totalNumberStubsH_->Fill(totalStubs);      
+      totalHits_ = totalHits;
+      totalStubs_ = totalStubs;
     }
     if (addTree_) tree_->Fill();
   }

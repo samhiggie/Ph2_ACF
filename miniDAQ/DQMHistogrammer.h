@@ -54,8 +54,15 @@ class DQMHistogrammer : public Tool {
   bool addTree_;
 
   TTree* tree_;
-  std::vector<int>* sensorNhitsEven_;
-  std::vector<int>* sensorNhitsOdd_;
+
+  Int_t           l1Accept_;
+  Int_t           tdcCounter_;
+  Int_t           totalHits_;
+  Int_t           totalStubs_;
+  std::vector<int>     *dut0C0data_;
+  std::vector<int>     *dut0C1data_;
+  std::vector<int>     *dut1C0data_;
+  std::vector<int>     *dut1C1data_;
 
   struct CBCHistos {
     TH1I* errBitH;
