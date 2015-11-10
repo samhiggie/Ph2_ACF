@@ -130,6 +130,7 @@ class FastCalibration : public Tool
 	void measureSCurves( bool pOffset, int  pTGrpId );
 	//void measureSCurves( bool pOffset );
 	void setOffset( uint8_t pOffset, int  pTGrpId );
+	void enableTestGroup( int  pTGrpId );
 	//void setOffset( uint8_t pOffset );
 	void toggleOffsetBit( uint8_t pBit, int  pTGrpId );
 	//void toggleOffsetBit( uint8_t pBit );

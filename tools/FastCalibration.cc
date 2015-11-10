@@ -195,30 +195,43 @@ void FastCalibration::ScanVplus()
 void FastCalibration::measureNoise()
 {
 
-	// TCanvas* ctmpNoiseCanvas = new TCanvas( "Module Noise", "Module Noise" );
-	// TH1F* cModuleNoise = new TH1F( "Module Noise", "Module Noise", 510, -0.5, 254.5 );
-
 	// method to measure one final set of SCurves with the final calibration applied to extract the noise
 	// now measure some SCurves
 	for ( auto& cTGrpM : fTestGroupChannelMap )
 	{
+		// if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
+		if ( fTestPulse )
+		{
+			BeBoardRegWriter cBeBoardWriter( fBeBoardInterface, RQ, 1 );
+			this->accept( cBeBoardWriter );
+			cBeBoardWriter.setRegister( ENABLE_TP, 1 );
+			this->accept( cBeBoardWriter );
+			std::cout << "Enabling Test Pulse for Test Group " << cTGrpM.first << std::endl;
+			setSystemTestPulse( cTGrpM.first, fTestPulseAmplitude );
+		}
+
 		if ( cTGrpM.first == -1 && fdoTGrpCalib )
 			continue;
 		if ( cTGrpM.first > -1 && !fdoTGrpCalib )
 			break;
 
-		std::cout << "Enabling Test Group...." << cTGrpM.first << std::endl;
+		std::cout << "Measuring Test Group...." << cTGrpM.first << std::endl;
+		// this leaves the offset values at the tuned values for cTGrp and disables all other groups
+		enableTestGroup( cTGrpM.first );
 
 		// now initialize the Scurves
-		initializeSCurves( "Final", 0, cTGrpM.first );
+		initializeSCurves( "Final", fTestPulseAmplitude, cTGrpM.first );
 
 		// measure the SCurves, the false is indicating that I am sweeping Vcth
 		measureSCurves( false, cTGrpM.first );
 
 		// now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
-		processSCurvesNoise( "Final", 0, true, cTGrpM.first );
+		processSCurvesNoise( "Final", fTestPulseAmplitude, true, cTGrpM.first );
 		// After finishing with one test group, disable it again
-		std::cout << "Disabling Test Group...." << cTGrpM.first << std::endl;
+
+		// re configure so we have the original offset values before we move to the next group
+		std::cout << BOLDRED << "Re-configuring CBCs to original OffsetValue!" << std::endl;
+		this->ConfigureHw();
 	}
 	std::cout << BOLDBLUE << "Finished measuring the noise ..." << std::endl << RESET << std::endl;
 
@@ -487,11 +500,55 @@ void FastCalibration::setOffset( uint8_t pOffset, int  pTGrpId )
 			fInterface->WriteCbcMultReg( &pCbc, fRegVec );
 		}
 	};
+
 	if ( fTestGroupChannelMap.find( pTGrpId ) != fTestGroupChannelMap.end() )
 	{
 		OffsetWriter cWriter( fCbcInterface, pOffset, fTestGroupChannelMap[pTGrpId] );
 		accept( cWriter );
 	}
+}
+
+void FastCalibration::enableTestGroup( int  pTGrpId )
+{
+
+	// sets the offset to pOffset on each channel
+	struct OffsetWriter : public HwDescriptionVisitor
+	{
+		CbcInterface* fInterface;
+		RegisterVector fRegVec;
+		uint8_t fOffset;
+		std::vector<uint8_t> fTestGrpChannelIdVec;
+		//will have to pass the channel vector to OffsetWriter
+		OffsetWriter( CbcInterface* pInterface, uint8_t pOffset, std::vector<uint8_t> pTestGroupChnlVec ): fInterface( pInterface ),  fOffset( pOffset ) , fTestGrpChannelIdVec( pTestGroupChnlVec ) {
+			//Here the loop will be over channels in the test group
+			for ( auto& cChannel : fTestGrpChannelIdVec ) {
+				TString cRegName = Form( "Channel%03d", cChannel + 1 );
+				fRegVec.push_back( { cRegName.Data(), fOffset } );
+			}
+		}
+		void visit( Cbc& pCbc ) {
+			fInterface->WriteCbcMultReg( &pCbc, fRegVec );
+		}
+	};
+
+	uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
+	std::vector<uint8_t> cDisableVector;
+	// loop over groups, if group is not the current group, push back in the vector
+	for ( auto& cGrp : fTestGroupChannelMap )
+	{
+		if ( cGrp.first != pTGrpId )
+		{
+			for ( auto& cChan : cGrp.second )
+			{
+				cDisableVector.push_back( cChan );
+
+				std::cout << "DEBUG " << cChan << " value " << cOffset << std::endl;
+			}
+		}
+	}
+	std::cout << "Disabling all TGroups except " << pTGrpId << " ! " << std::endl;
+	OffsetWriter cWriter( fCbcInterface, cOffset, cDisableVector );
+	accept( cWriter );
 }
 
 void FastCalibration::toggleOffsetBit( uint8_t pBit, int  pTGrpId )

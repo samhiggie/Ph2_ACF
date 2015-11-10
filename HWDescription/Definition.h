@@ -266,6 +266,9 @@
 //RQ
 #define RQ              "COMMISSIONNING_MODE_RQ"
 
+// Test Pulse in commissioning mode
+#define ENABLE_TP		"COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID"
+
 //Acquisition mode
 #define ACQ_MODE        "user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"
 

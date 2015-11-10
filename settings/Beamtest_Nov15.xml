@@ -7,11 +7,18 @@
             <FW_Version NCbcDataSize="16"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
+		
+		<!-- you can change the threshold by using the -v parameter in the cmd line! -->
+                <Global_CBC_Register name="VCth"> 0x73 </Global_CBC_Register>
+		
+		<!-- don't change this register! -->
+                <Global_CBC_Register name="TriggerLatency"> 0x13 </Global_CBC_Register>
 
-                <Global_CBC_Register name="VCth"> 0x70 </Global_CBC_Register>
-                <Global_CBC_Register name="TriggerLatency"> 0x14 </Global_CBC_Register>
-              <!--   <Global_CBC_Register name="TestPulsePot"> 0xFF </Global_CBC_Register>
-                <Global_CBC_Register name="SelTestPulseDel&ChanGroup"> 0x00 </Global_CBC_Register> -->
+		<!-- modify this to change the stub correlation window -->
+                <Global_CBC_Register name="MiscStubLogic"> 0x5E </Global_CBC_Register>
+		<!-- Do Not change this register -->
+                <Global_CBC_Register name="CwdWindow&Coincid"> 0xC0 </Global_CBC_Register>
+		<!-- don't change this register! -->
                 <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
 
                 <CBC_Files path="/cmsuptrackernas/Configurations/Module1/final/"/>
@@ -67,8 +74,9 @@
 
             <!-- Acquisition -->
             <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe1"> 5 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe2"> 5 </Register>
+	<!-- Dont change this register-->
+            <Register name="cbc_stubdata_latency_adjust_fe1"> 7 </Register>
+            <Register name="cbc_stubdata_latency_adjust_fe2"> 7 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 9999 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
