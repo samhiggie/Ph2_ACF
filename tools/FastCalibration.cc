@@ -18,6 +18,7 @@ void FastCalibration::Initialise()
 
 	// count FEs & CBCs
 	uint32_t cCbcCount = 0;
+	uint32_t cCbcIdMax = 0;
 	uint32_t cFeCount = 0;
 
 	for ( auto cShelve : fShelveVector )
@@ -37,6 +38,7 @@ void FastCalibration::Initialise()
 				{
 					uint32_t cCbcId = cCbc->getCbcId();
 					cCbcCount++;
+					if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
 
 					// populate the channel vector
 					std::vector<Channel> cChanVec;
@@ -110,14 +112,15 @@ void FastCalibration::Initialise()
 			fNFe = cFeCount;
 		}
 	}
+	uint32_t cPads = ( cCbcIdMax > cCbcCount ) ? cCbcIdMax : cCbcCount;
 
-	fVplusCanvas->DivideSquare( cCbcCount );
-	fVcthVplusCanvas->DivideSquare( cCbcCount );
-	fOffsetCanvas->DivideSquare( cCbcCount );
-	fValidationCanvas->DivideSquare( cCbcCount );
-	fNoiseCanvas->DivideSquare( 2 * cCbcCount );
-	fPedestalCanvas->DivideSquare( 2 * cCbcCount );
-	fFeSummaryCanvas->DivideSquare( 2 * cFeCount );
+	fVplusCanvas->DivideSquare( cPads );
+	fVcthVplusCanvas->DivideSquare( cPads );
+	fOffsetCanvas->DivideSquare( cPads );
+	fValidationCanvas->DivideSquare( cPads );
+	fNoiseCanvas->DivideSquare( 2 * cPads );
+	fPedestalCanvas->DivideSquare( 2 * cPads );
+	fFeSummaryCanvas->DivideSquare( 2 * cPads );
 
 	// now read the settings from the map
 	// fHoleMode = fSettingsMap.find( "HoleMode" )->second;
