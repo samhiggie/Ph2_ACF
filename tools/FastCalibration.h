@@ -38,6 +38,9 @@ typedef std::map<Cbc*, TF1*> FitMap;
 typedef std::map<Cbc*, TH1F*> HistMap;
 typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
 typedef std::map< int, std::vector<uint8_t> >  TestGroupChannelMap;
+
+// experimental for Noise Measurement
+typedef std::map<Cbc*, std::map<uint8_t, uint8_t>> OffsetMap;
 /*
 Key=-1 to do calibration on all channels
 Key=0-7 for the 8 Test Groups
@@ -124,13 +127,15 @@ class FastCalibration : public Tool
 	bool fFitted;
 
 	std::vector<uint8_t> fVplusVec;
+	OffsetMap fOffsetMap;
 
 
   protected:
 	void measureSCurves( bool pOffset, int  pTGrpId );
 	//void measureSCurves( bool pOffset );
+	void saveInitialOffsets();
 	void setOffset( uint8_t pOffset, int  pTGrpId );
-	void enableTestGroup( int  pTGrpId );
+	void enableTestGroupforNoise( int  pTGrpId );
 	//void setOffset( uint8_t pOffset );
 	void toggleOffsetBit( uint8_t pBit, int  pTGrpId );
 	//void toggleOffsetBit( uint8_t pBit );

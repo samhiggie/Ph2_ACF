@@ -197,11 +197,15 @@ void FastCalibration::ScanVplus()
 
 void FastCalibration::measureNoise()
 {
-
+	saveInitialOffsets();
 	// method to measure one final set of SCurves with the final calibration applied to extract the noise
 	// now measure some SCurves
 	for ( auto& cTGrpM : fTestGroupChannelMap )
 	{
+		if ( cTGrpM.first == -1 && fdoTGrpCalib )
+			continue;
+		if ( cTGrpM.first > -1 && !fdoTGrpCalib )
+			break;
 		// if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
 		if ( fTestPulse )
 		{
@@ -209,18 +213,15 @@ void FastCalibration::measureNoise()
 			this->accept( cBeBoardWriter );
 			cBeBoardWriter.setRegister( ENABLE_TP, 1 );
 			this->accept( cBeBoardWriter );
-			std::cout << "Enabling Test Pulse for Test Group " << cTGrpM.first << std::endl;
-			setSystemTestPulse( cTGrpM.first, fTestPulseAmplitude );
-		}
+			std::cout << "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +fTestPulseAmplitude << std::endl;
+			setSystemTestPulse( fTestPulseAmplitude, cTGrpM.first );
+			// setSystemTestPulse( fTestPulseAmplitude, 0 );
 
-		if ( cTGrpM.first == -1 && fdoTGrpCalib )
-			continue;
-		if ( cTGrpM.first > -1 && !fdoTGrpCalib )
-			break;
+		}
 
 		std::cout << "Measuring Test Group...." << cTGrpM.first << std::endl;
 		// this leaves the offset values at the tuned values for cTGrp and disables all other groups
-		enableTestGroup( cTGrpM.first );
+		enableTestGroupforNoise( cTGrpM.first );
 
 		// now initialize the Scurves
 		initializeSCurves( "Final", fTestPulseAmplitude, cTGrpM.first );
@@ -230,11 +231,6 @@ void FastCalibration::measureNoise()
 
 		// now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
 		processSCurvesNoise( "Final", fTestPulseAmplitude, true, cTGrpM.first );
-		// After finishing with one test group, disable it again
-
-		// re configure so we have the original offset values before we move to the next group
-		std::cout << BOLDRED << "Re-configuring CBCs to original OffsetValue!" << std::endl;
-		this->ConfigureHw();
 	}
 	std::cout << BOLDBLUE << "Finished measuring the noise ..." << std::endl << RESET << std::endl;
 
@@ -511,47 +507,71 @@ void FastCalibration::setOffset( uint8_t pOffset, int  pTGrpId )
 	}
 }
 
-void FastCalibration::enableTestGroup( int  pTGrpId )
+void FastCalibration::enableTestGroupforNoise( int  pTGrpId )
 {
-
-	// sets the offset to pOffset on each channel
-	struct OffsetWriter : public HwDescriptionVisitor
-	{
-		CbcInterface* fInterface;
-		RegisterVector fRegVec;
-		uint8_t fOffset;
-		std::vector<uint8_t> fTestGrpChannelIdVec;
-		//will have to pass the channel vector to OffsetWriter
-		OffsetWriter( CbcInterface* pInterface, uint8_t pOffset, std::vector<uint8_t> pTestGroupChnlVec ): fInterface( pInterface ),  fOffset( pOffset ) , fTestGrpChannelIdVec( pTestGroupChnlVec ) {
-			//Here the loop will be over channels in the test group
-			for ( auto& cChannel : fTestGrpChannelIdVec ) {
-				TString cRegName = Form( "Channel%03d", cChannel + 1 );
-				fRegVec.push_back( { cRegName.Data(), fOffset } );
-			}
-		}
-		void visit( Cbc& pCbc ) {
-			fInterface->WriteCbcMultReg( &pCbc, fRegVec );
-		}
-	};
-
 	uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
-	std::vector<uint8_t> cDisableVector;
-	// loop over groups, if group is not the current group, push back in the vector
-	for ( auto& cGrp : fTestGroupChannelMap )
-	{
-		if ( cGrp.first != pTGrpId )
-		{
-			for ( auto& cChan : cGrp.second )
-			{
-				cDisableVector.push_back( cChan );
 
-				std::cout << "DEBUG " << cChan << " value " << cOffset << std::endl;
+	for ( auto cShelve : fShelveVector )
+	{
+		uint32_t cShelveId = cShelve->getShelveId();
+
+		for ( auto cBoard : cShelve->fBoardVector )
+		{
+			uint32_t cBoardId = cBoard->getBeId();
+
+			for ( auto cFe : cBoard->fModuleVector )
+			{
+				uint32_t cFeId = cFe->getFeId();
+
+				for ( auto cCbc : cFe->fCbcVector )
+				{
+					uint32_t cCbcId = cCbc->getCbcId();
+
+					// first, find the offset Map for this CBC
+					auto cOrigOffsetMap = fOffsetMap.find(cCbc);
+					if(cOrigOffsetMap == std::end(fOffsetMap))std::cout << "Error, could not find the original offset map for CBC " << cCbcId << std::endl;
+					// cOrigOffsetMap.second is the map of channel number vs original offset
+
+					RegisterVector cRegVec;
+					// iterate the groups (first is ID, second is vec<uint8_t>)
+					for ( auto& cGrp : fTestGroupChannelMap )
+					{
+						// if grpid = -1, do nothing (all channels)
+						if(cGrp.first == -1) continue;
+						// if the group is not my current grout
+						if ( cGrp.first != pTGrpId )
+						{
+							// iterate the channels and push back 0 or FF
+							for ( auto& cChan : cGrp.second )
+							{
+								TString cRegName = Form( "Channel%03d", cChan + 1 );
+								cRegVec.push_back( { cRegName.Data(), cOffset } );
+								// std::cout << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << +cOffset << std::endl;
+							}
+						}
+						// if it is the current group, get the original offset values
+						else if (cGrp.first == pTGrpId)
+						{
+							// iterate over the channels in the test group and find the corresponding offset in the original offset map
+							for ( auto& cChan : cGrp.second )
+							{
+								auto cChanOffset = cOrigOffsetMap->second.find(cChan);
+								if(cChanOffset == std::end(cOrigOffsetMap->second)) std::cout << "Error, could not find original offset for channel " << +cChan << "on CBC " << cCbcId << std::endl;
+								TString cRegName = Form( "Channel%03d", cChan + 1 );
+								cRegVec.push_back( { cRegName.Data(), cChanOffset->second } );
+								// std::cout << GREEN << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << +cChanOffset->second << RESET << std::endl;
+							}
+						}
+					}
+
+					// now I should have 0 or FF as offset for all channels except the one in my test group
+					// this now needs to be written to the CBCs
+					fCbcInterface->WriteCbcMultReg(cCbc, cRegVec); 
+				}
 			}
 		}
 	}
 	std::cout << "Disabling all TGroups except " << pTGrpId << " ! " << std::endl;
-	OffsetWriter cWriter( fCbcInterface, cOffset, cDisableVector );
-	accept( cWriter );
 }
 
 void FastCalibration::toggleOffsetBit( uint8_t pBit, int  pTGrpId )
@@ -677,7 +697,7 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
 
 				// if ( pOffset ) std::cout << "Offset " << int( cValue ) << " Hits: " << cHitCounter << std::endl;
-				// std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << std::endl;
+				std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint  * cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
 
 				// check if the hitcounter is all ones
 				if ( cNonZero == false && cHitCounter != 0 )
@@ -685,13 +705,15 @@ void FastCalibration::measureSCurves( bool pOffset, int  pTGrpId )
 					cDoubleValue = cValue;
 					cNonZero = true;
 					if ( ( cStep > 0 && cValue > 0x14 ) || ( cStep < 0 && cValue < 0xEB ) ) cValue -= 2 * cStep;
+					else if(cValue == 255) cValue = 255; 
+					else if(cValue == 0) cValue =0;
 					else cValue -= cStep;
 					cStep /= 10;
-					std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue << RESET << std::endl;
+					std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET << std::endl;
 					continue;
 				}
 				// the above counter counted the CBC objects connected to pBoard
-				if ( cHitCounter > 0.95 * fEventsPerPoint  * cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
+				if ( cHitCounter > 0.95 * fEventsPerPoint  * fNCbc * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
 				if ( cAllOneCounter >= 10 )
 				{
 					cAllOne = true;
@@ -1033,19 +1055,23 @@ void FastCalibration::setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pTestGro
 {
 	std::vector<std::pair<std::string, uint8_t>> cRegVec;
 	uint8_t cRegValue =  to_reg( 0, pTestGroup );
+
 	cRegVec.push_back( std::make_pair( "SelTestPulseDel&ChanGroup",  cRegValue ) );
 
 	//set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
 	if ( fHoleMode )
 		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
 	else
-		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux ", 0x61 ) );
+		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0x61 ) );
 
 	cRegVec.push_back( std::make_pair( "TestPulsePot", pTPAmplitude ) );
 	// cRegVec.push_back( std::make_pair( "Vplus",  fVplus ) );
-
 	CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
 	this->accept( cWriter );
+	CbcRegReader cReader (fCbcInterface, "MiscTestPulseCtrl&AnalogMux");
+	this->accept(cReader);
+	cReader.setRegister("TestPulsePot");
+	this->accept(cReader);
 
 }
 
@@ -1122,4 +1148,42 @@ void FastCalibration::dumpConfigFiles()
 	accept( cDumper );
 
 	std::cout << BOLDBLUE << "Configfiles for all Cbcs written to " << fDirectoryName << RESET << std::endl;
+}
+
+void FastCalibration::saveInitialOffsets()
+{
+	std::cout << "Initializing map with original Offsets for later ... " << std::endl;
+	// save the initial offsets for Noise measurement in a map
+	for ( auto cShelve : fShelveVector )
+	{
+		uint32_t cShelveId = cShelve->getShelveId();
+
+		for ( auto cBoard : cShelve->fBoardVector )
+		{
+			uint32_t cBoardId = cBoard->getBeId();
+
+			for ( auto cFe : cBoard->fModuleVector )
+			{
+				uint32_t cFeId = cFe->getFeId();
+
+				for ( auto cCbc : cFe->fCbcVector )
+				{
+					uint32_t cCbcId = cCbc->getCbcId();
+
+					// map to instert in fOffsetMap
+					// <cChan, Offset>
+					std::map<uint8_t, uint8_t> cCbcOffsetMap;
+
+					for(uint8_t cChan = 0; cChan < NCHANNELS; cChan++)
+					{
+						TString cRegName = Form( "Channel%03d", cChan + 1 );
+						uint8_t cOffset = cCbc->getReg(cRegName.Data());	
+						cCbcOffsetMap[cChan] = cOffset;
+						// std::cout << "DEBUG Original Offset for CBC " << cCbcId << " channel " << +cChan << " " << +cOffset << std::endl;				
+					}
+					fOffsetMap[cCbc] = cCbcOffsetMap;
+				}
+			}
+		}
+	}
 }

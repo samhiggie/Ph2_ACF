@@ -97,7 +97,7 @@ int main( int argc, char* argv[] )
 
 		if ( !isGui ) cCalibration.ConfigureHw();
 
-		cCalibration.Initialise(); // canvases etc. for fast calibration
+		cCalibration.Initialise( ); // canvases etc. for fast calibration
 		if ( !cVplus ) cCalibration.ScanVplus();
 		cCalibration.ScanOffset();
 		if ( cValidate ) cCalibration.Validate();
