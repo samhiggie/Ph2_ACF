@@ -80,6 +80,8 @@ class FastCalibration : public Tool
 			fResultFile->Close();
 		}
 	}
+
+
 	// methods
 	void Initialise();  // wants to be called after SystemController::ReadHW, ReadSettings
 	void ScanVplus();
@@ -93,7 +95,7 @@ class FastCalibration : public Tool
 	void Validate();
 	void measureNoise();
 
-  private:
+  protected:
 	TCanvas* fVplusCanvas;
 	TCanvas* fVcthVplusCanvas;
 	TCanvas* fOffsetCanvas;
