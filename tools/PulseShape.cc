@@ -358,7 +358,7 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude )
 	if ( fHoleMode )
 		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
 	else
-		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux ", 0x61 ) );
+		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0x61 ) );
 
 	cRegVec.push_back( std::make_pair( "TestPulsePot", pTPAmplitude ) );
 	cRegVec.push_back( std::make_pair( "Vplus",  fVplus ) );

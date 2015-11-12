@@ -35,8 +35,8 @@ endif
 # %.o: %.cc %.h
 # 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-binaries=print systemtest datatest interfacetest hybridtest cmtest calibrate commission fpgaconfig pulseshape
-binariesNoRoot=systemtest datatest interfacetest fpgaconfig
+binaries=print systemtest datatest interfacetest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure
+binariesNoRoot=systemtest datatest interfacetest fpgaconfig configure
 
 
 all: rootflags clean $(binaries) 
@@ -63,6 +63,10 @@ interfacetest: interfacetest.cc
 	cp $@ ../bin
 
 datatest: datatest.cc
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+
+configure: configure.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 

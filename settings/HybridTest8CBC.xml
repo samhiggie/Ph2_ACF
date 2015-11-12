@@ -7,12 +7,13 @@
             <FW_Version NCbcDataSize="8"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register>
-                <!-- <Global_CBC_Register name="VPlus"> 0x78 </Global_CBC_Register> -->
+                <Global_CBC_Register name="VCth"> 0x70 </Global_CBC_Register>
+              
                 <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
+				<!-- <Global_CBC_Register name="TriggerLatency"> 0x13 </Global_CBC_Register> -->
 
-                <CBC_Files path="/cmsuptrackernas/Configurations/Module1/hbot/"/>
-                 <!-- <CBC_Files path="./Results/Calibration_Electron_30-10-15_12:19/"/> -->
+                <!-- <CBC_Files path="/cmsuptrackernas/Configurations/Module1/final/"/> -->
+                <CBC_Files path="/cmsuptrackernas/Configurations/Module1/final/"/>
 
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
@@ -58,8 +59,8 @@
 
             <!-- Acquisition -->
             <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe1"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe2"> 1 </Register>
+            <Register name="cbc_stubdata_latency_adjust_fe1"> 7 </Register>
+            <Register name="cbc_stubdata_latency_adjust_fe2"> 7 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 9 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
@@ -77,6 +78,14 @@
     <!-- <Setting name="Nevents"> 5000 </Setting> -->
     <Setting name="HoleMode"> 0 </Setting>
     <Setting name="Threshold_NSigmas"> 4 </Setting>
-    <Setting name="Nevents"> 50 </Setting>
+    <Setting name="Nevents"> 10 </Setting>
+    <Setting name="TestPulseAmplitude"> 0x00 </Setting>
     <Setting name="FitSCurves"> 0 </Setting>
+
+    <!--   <Setting name="Vplus" > 0x50 </Setting>
+    <Setting name="TPAmplitude" > 0xF0 </Setting>
+    <Setting name="Channel" > 1 </Setting>
+    <Setting name="TestGroup" > 1 </Setting>
+    <Setting name="ChannelOffset" > 0x40 </Setting>
+    <Setting name="StepSize" > 5 </Setting> -->
 </Settings>
