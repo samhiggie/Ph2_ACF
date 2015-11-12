@@ -174,11 +174,11 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
 		if (dut0HitProfH_) dut0HitProfH_->Fill( hitposX, hitposY);
 		if (dut0C0HitProfH_ && hitposY==0) {
                   dut0C0HitProfH_->Fill( hitposX);
-                  dut0C0data_->push_back(hitposX);
+                  if (addTree_) dut0C0data_->push_back(hitposX);
                 }
 		if (dut0C1HitProfH_ && hitposY==1) {
                   dut0C1HitProfH_->Fill( hitposX);
-                  dut0C1data_->push_back(hitposX);
+                  if (addTree_) dut0C1data_->push_back(hitposX);
                 }
 		if (dut0HitProfUnfoldedH_) dut0HitProfUnfoldedH_->Fill(hitposY*127*8 + hitposX);
 		//                if (addTree_) sensorNhitsEven_->push_back(hitpos);
@@ -188,11 +188,11 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
 		if (dut1HitProfH_) dut1HitProfH_->Fill( hitposX, hitposY);
 		if (dut1C0HitProfH_ && hitposY==0) {
                   dut1C0HitProfH_->Fill( hitposX);
-                  dut1C0data_->push_back(hitposX);
+                  if (addTree_) dut1C0data_->push_back(hitposX);
                 }
 		if (dut1C1HitProfH_ && hitposY==1) {
                   dut1C1HitProfH_->Fill( hitposX);
-                  dut1C1data_->push_back(hitposX);
+                  if (addTree_) dut1C1data_->push_back(hitposX);
                 }
 		if (dut1HitProfUnfoldedH_) dut1HitProfUnfoldedH_->Fill(hitposY*127*8 + hitposX);
 		//                if (addTree_) sensorNhitsOdd_->push_back(hitpos);
@@ -216,6 +216,19 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
 }
 void DQMHistogrammer::saveHistos(const std::string& out_file){
   TFile* fout = TFile::Open( out_file.c_str(), "RECREATE" );
+
+  fout->mkdir("Sensor");
+  fout->cd("Sensor");
+  if (dut0HitProfH_) dut0HitProfH_->Write();
+  if (dut1HitProfH_) dut1HitProfH_->Write();
+  if (dut0HitProfUnfoldedH_) dut0HitProfUnfoldedH_->Write();
+  if (dut1HitProfUnfoldedH_) dut1HitProfUnfoldedH_->Write();
+  if (dut0C0HitProfH_) dut0C0HitProfH_->Write();
+  if (dut0C1HitProfH_) dut0C1HitProfH_->Write();
+  if (dut1C0HitProfH_) dut1C0HitProfH_->Write();
+  if (dut1C1HitProfH_) dut1C1HitProfH_->Write();
+  if (sensCorrH_) sensCorrH_->Write();
+
   for ( auto& imap : cbcHMap_ ) {
     CBCHistos& cbc_h = imap.second;
     fout->mkdir( imap.first.c_str() );
@@ -233,18 +246,6 @@ void DQMHistogrammer::saveHistos(const std::string& out_file){
   if (tdcCounterH_) tdcCounterH_->Write();
   if (totalNumberHitsH_) totalNumberHitsH_->Write();
   if (totalNumberStubsH_) totalNumberStubsH_->Write();
-
-  fout->mkdir("Sensor");
-  fout->cd("Sensor");
-  if (dut0HitProfH_) dut0HitProfH_->Write();
-  if (dut1HitProfH_) dut1HitProfH_->Write();
-  if (dut0HitProfUnfoldedH_) dut0HitProfUnfoldedH_->Write();
-  if (dut1HitProfUnfoldedH_) dut1HitProfUnfoldedH_->Write();
-  if (dut0C0HitProfH_) dut0C0HitProfH_->Write();
-  if (dut0C1HitProfH_) dut0C1HitProfH_->Write();
-  if (dut1C0HitProfH_) dut1C0HitProfH_->Write();
-  if (dut1C1HitProfH_) dut1C1HitProfH_->Write();
-  if (sensCorrH_) sensCorrH_->Write();
 
   fout->Close();
 
