@@ -71,9 +71,6 @@ void FastCalibration::Initialise()
 	fOffsetCanvas->DivideSquare( cPads );
 
 	// now read the settings from the map
-	// fHoleMode = fSettingsMap.find( "HoleMode" )->second;
-	// fEventsPerPoint = fSettingsMap.find( "Nevents" )->second;
-	// fTargetVcth = fSettingsMap.find( "TargetVcth" )->second;
 	auto cSetting = fSettingsMap.find( "HoleMode" );
 	fHoleMode = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 1;
 	cSetting = fSettingsMap.find( "TargetVcth" );
@@ -84,14 +81,16 @@ void FastCalibration::Initialise()
 	fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
 	cSetting = fSettingsMap.find( "TestPulseAmplitude" );
 	fTestPulseAmplitude = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
+
 	if ( fTestPulseAmplitude == 0 )fTestPulse = 0;
 	else fTestPulse = 1;
+
 	std::cout << "Created Object Maps and parsed settings:" << std::endl;
 	std::cout << "	Hole Mode = " << fHoleMode << std::endl;
 	std::cout << "	Nevents = " << fEventsPerPoint << std::endl;
 	std::cout << "	TargetVcth = " << int( fTargetVcth ) << std::endl;
 	std::cout << "	FitSCurves = " << int( fFitted ) << std::endl;
-	std::cout << "  TestPulseAmplitude = " << int( fTestPulseAmplitude ) << std::endl;
+	std::cout << "	TestPulseAmplitude = " << int( fTestPulseAmplitude ) << std::endl;
 
 }
 

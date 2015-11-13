@@ -49,7 +49,7 @@ class PedeNoise : public FastCalibration
 	PedeNoise( bool pPedeNoise = true ) :
 		FastCalibration( false, false ),
 		fPedeNoise( pPedeNoise ) {
-	};
+	}
 
 	void Initialise();
 	void measureNoise();
