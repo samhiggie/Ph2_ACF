@@ -2,11 +2,11 @@
 
 #include "../Utils/Utilities.h"
 #include "../tools/Commissioning.h"
-#include "../tools/FastCalibration.h"
+#include "../tools/PedeNoise.h"
 
-#include <TApplication.h>
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
+#include "TApplication.h"
 
 
 using namespace Ph2_HwDescription;
@@ -79,7 +79,9 @@ int main( int argc, char* argv[] )
 	bool cNoise = ( cmd.foundOption( "noise" ) ) ? true : false;
 	bool cOccupancy = ( cmd.foundOption( "occupancy" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
-	cDirectory += "Commissioning";
+	if ( !cNoise && ! cOccupancy )cDirectory += "Commissioning";
+	else if ( cNoise ) cDirectory += "NoiseScan";
+	else if ( cOccupancy ) cDirectory += "OccupancyScan";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 	bool gui = ( cmd.foundOption( "gui" ) ) ? true : false;
 
@@ -116,36 +118,32 @@ int main( int argc, char* argv[] )
 
 	if ( cNoise )
 	{
-		FastCalibration cCalibration( false, false );
-		cCalibration.InitializeHw( cHWFile );
-		cCalibration.InitializeSettings( cHWFile );
-		cCalibration.CreateResultDirectory( cDirectory );
+		PedeNoise cPedeNoise( cNoise );
+		cPedeNoise.InitializeHw( cHWFile );
+		cPedeNoise.InitializeSettings( cHWFile );
+		cPedeNoise.CreateResultDirectory( cDirectory );
 		std::string cResultfile = "NoiseScan";
-		cCalibration.InitResultFile( cResultfile );
-		cCalibration.StartHttpServer();
-		cCalibration.ConfigureHw();
-
-		cCalibration.Initialise(); // canvases etc. for fast calibration
-		// if ( cOccupancy ) cCalibration.Validate();
-		cCalibration.measureNoise();
-		cCalibration.SaveResults( false );
+		cPedeNoise.InitResultFile( cResultfile );
+		cPedeNoise.StartHttpServer();
+		cPedeNoise.ConfigureHw();
+		cPedeNoise.Initialise(); // canvases etc. for fast calibration
+		cPedeNoise.measureNoise();
+		cPedeNoise.SaveResults( );
 	}
 
 	else if ( cOccupancy )
 	{
-		FastCalibration cCalibration( false, false );
-		cCalibration.InitializeHw( cHWFile );
-		cCalibration.InitializeSettings( cHWFile );
-		cCalibration.CreateResultDirectory( cDirectory );
+		PedeNoise cPedeNoise( false );
+		cPedeNoise.InitializeHw( cHWFile );
+		cPedeNoise.InitializeSettings( cHWFile );
+		cPedeNoise.CreateResultDirectory( cDirectory );
 		std::string cResultfile = "NoiseScan";
-		cCalibration.InitResultFile( cResultfile );
-		cCalibration.StartHttpServer();
-		cCalibration.ConfigureHw();
-
-		cCalibration.Initialise(); // canvases etc. for fast calibration
-		cCalibration.Validate();
-		// cCalibration.measureNoise();
-		cCalibration.SaveResults( false );
+		cPedeNoise.InitResultFile( cResultfile );
+		cPedeNoise.StartHttpServer();
+		cPedeNoise.ConfigureHw();
+		cPedeNoise.Initialise(); // canvases etc. for fast calibration
+		cPedeNoise.Validate();
+		cPedeNoise.SaveResults( );
 	}
 
 

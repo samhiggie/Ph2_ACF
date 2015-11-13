@@ -48,7 +48,7 @@ class Tool : public SystemController
 
 
 
-  protected:
+  public:
 	CanvasMap fCanvasMap;
 	CbcHistogramMap fCbcHistMap;
 	ModuleHistogramMap fModuleHistMap;
@@ -61,7 +61,7 @@ class Tool : public SystemController
 	 */
   public:
 
-void bookHistogram( Cbc* pCbc, std::string pName, TObject* pObject );
+	void bookHistogram( Cbc* pCbc, std::string pName, TObject* pObject );
 
 	void bookHistogram( Module* pModule, std::string pName, TObject* pObject );
 
@@ -80,10 +80,10 @@ void bookHistogram( Cbc* pCbc, std::string pName, TObject* pObject );
 	void InitResultFile( const std::string& pFilename );
 
 	void StartHttpServer( const int pPort = 8082, const int pRefreshTime = 100, bool pReadonly = true );
-        void ProcessRequests() { 
+	void ProcessRequests() {
 #ifdef __HTTP__
-	     fHttpServer->ProcessRequests();
+		fHttpServer->ProcessRequests();
 #endif
-        }
+	}
 };
 #endif

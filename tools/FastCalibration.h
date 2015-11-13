@@ -32,6 +32,7 @@ using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
 
+// Typedefs for Containers
 typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
 typedef std::map<Cbc*, TGraphErrors*> GraphMap;
 typedef std::map<Cbc*, TF1*> FitMap;
@@ -39,8 +40,6 @@ typedef std::map<Cbc*, TH1F*> HistMap;
 typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
 typedef std::map< int, std::vector<uint8_t> >  TestGroupChannelMap;
 
-// experimental for Noise Measurement
-typedef std::map<Cbc*, std::map<uint8_t, uint8_t>> OffsetMap;
 /*
 Key=-1 to do calibration on all channels
 Key=0-7 for the 8 Test Groups
@@ -49,6 +48,7 @@ Key=0-7 for the 8 Test Groups
 class FastCalibration : public Tool
 {
   public:
+	// C'tor
 	FastCalibration( bool pbitwisetune , bool pAllChan ) {
 		fVplusVec.push_back( 0x58 );
 		fVplusVec.push_back( 0x78 );
@@ -74,6 +74,8 @@ class FastCalibration : public Tool
 		}
 
 	}
+
+	// D'tor
 	~FastCalibration() {
 		if ( fResultFile ) {
 			fResultFile->Write();
@@ -81,79 +83,64 @@ class FastCalibration : public Tool
 		}
 	}
 
-
 	// methods
 	void Initialise();  // wants to be called after SystemController::ReadHW, ReadSettings
 	void ScanVplus();
 	void ScanOffset();
-
 	void SaveResults( bool pDumpConfigFiles = true ) {
 		writeGraphs();
 		if ( pDumpConfigFiles ) dumpConfigFiles();
 	}
 
-	void Validate();
-	void measureNoise();
-
   protected:
+	// Canvases
 	TCanvas* fVplusCanvas;
 	TCanvas* fVcthVplusCanvas;
 	TCanvas* fOffsetCanvas;
-	TCanvas* fValidationCanvas;
-	TCanvas* fNoiseCanvas;
-	TCanvas* fPedestalCanvas;
-	TCanvas* fFeSummaryCanvas;
 
+	// Containers
 	CbcChannelMap fCbcChannelMap;
 	GraphMap fGraphMap;
 	FitMap fFitMap;
-	HistMap fHistMap;
-	HistMap fNoiseMap;
-	HistMap fSensorNoiseMapEven;
-	HistMap fSensorNoiseMapOdd;
-
-	HistMap fNoiseStripMap;
-	HistMap fPedestalMap;
-
 	TestGroupChannelMap fTestGroupChannelMap;
+	std::vector<uint8_t> fVplusVec;
+
+	// Flags
 	bool fdoTGrpCalib;
 	bool fdoBitWisetuning;
+
+	// Counters
+	uint32_t fNCbc;
+	uint32_t fNFe;
+
+	// Settings
 	bool fHoleMode;
 	bool fTestPulse;
 	uint8_t fTestPulseAmplitude;
-
 	uint32_t fEventsPerPoint;
-	uint32_t fNCbc;
-	uint32_t fNFe;
 	uint8_t fTargetVcth;
 	bool fFitted;
 
-	std::vector<uint8_t> fVplusVec;
-	OffsetMap fOffsetMap;
 
 
   protected:
-	void measureSCurves( bool pOffset, int  pTGrpId );
-	//void measureSCurves( bool pOffset );
-	void saveInitialOffsets();
+	// for changing channel offsets
 	void setOffset( uint8_t pOffset, int  pTGrpId );
-	void enableTestGroupforNoise( int  pTGrpId );
-	//void setOffset( uint8_t pOffset );
 	void toggleOffsetBit( uint8_t pBit, int  pTGrpId );
-	//void toggleOffsetBit( uint8_t pBit );
+
+	// SCurve related
+	void measureSCurves( bool pOffset, int  pTGrpId );
 	uint32_t fillSCurves( BeBoard* pBoard,  const Event* pEvent, uint8_t pValue, int  pTGrpId, bool pDraw = false );
-	//uint32_t fillSCurves( BeBoard* pBoard,  const Event* pEvent, uint8_t pValue, bool pDraw = false );
 	void initializeSCurves( TString pParameter, uint8_t pValue, int  pTGrpId );
-	//void initializeSCurves( TString pParameter, uint8_t pValue );
 	void processSCurves( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
 	void processSCurvesOffset( TString pParameter, uint8_t pTargetBit, bool pDraw, int pTGrpId );
-	void processSCurvesNoise( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
-	void setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pTestGroup );
-	// void fitVplusVcthGraph();
+
+	// general stuff
 	void findVplus( bool pDraw );
+	void setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pTestGroup );
+
 	void writeGraphs();
 	void dumpConfigFiles();
-
 
 	uint8_t reverse( uint8_t n ) {
 		// Reverse the top and bottom nibble then swap them.
