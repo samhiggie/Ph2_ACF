@@ -78,7 +78,7 @@ int main( int argc, char* argv[] )
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
-	if ( !cOld )
+	if ( cOld )
 	{
 		FastCalibration cCalibration( cOffsetTuneMode, cCalibrateTGrp );
 		cCalibration.InitializeHw( cHWFile );
@@ -102,14 +102,29 @@ int main( int argc, char* argv[] )
 		cCalibration.InitializeSettings( cHWFile );
 		cCalibration.CreateResultDirectory( cDirectory );
 		cCalibration.InitResultFile( "CalibrationResults" );
-		cCalibration.InitialiseTestGroup();
+		cCalibration.StartHttpServer();
 
-		if ( !isGui ) cCalibration.ConfigureHw();
-
-		if ( !cVplus ) cCalibration.VplusScan();
-		cCalibration.OffsetScan();
+		cCalibration.ConfigureHw();
+		cCalibration.Initialise( false );
+		cCalibration.FindVplus();
+		cCalibration.FindOffsets( false );
 		cCalibration.SaveResults();
 	}
+	// else
+	// {
+	// 	Calibration cCalibration;
+	// 	cCalibration.InitializeHw( cHWFile );
+	// 	cCalibration.InitializeSettings( cHWFile );
+	// 	cCalibration.CreateResultDirectory( cDirectory );
+	// 	cCalibration.InitResultFile( "CalibrationResults" );
+	// 	cCalibration.InitialiseTestGroup();
+
+	// 	if ( !isGui ) cCalibration.ConfigureHw();
+
+	// 	if ( !cVplus ) cCalibration.VplusScan();
+	// 	cCalibration.OffsetScan();
+	// 	cCalibration.SaveResults();
+	// }
 
 	if ( !batchMode ) cApp.Run();
 

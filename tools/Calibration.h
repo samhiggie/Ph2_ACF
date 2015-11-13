@@ -51,25 +51,26 @@ class Calibration : public Tool
 	}
 
 	void Initialise( bool pAllChan = false );
-	void MakeTestGroups( bool pAllChan = false );
 	void FindVplus();
 	void FindOffsets( bool pStandalone = false );
-	void SaveFiles() {
+	void SaveResults() {
 		writeGraphs();
 		dumpConfigFiles();
 	}
 
 
   protected:
-	void bitwiseVplus();
+	void MakeTestGroups( bool pAllChan = false );
 
-	void bitwiseOffset();
+	void bitwiseVplus( int pTGroup );
+
+	void bitwiseOffset( int pTGroup );
 
 	void setOffset( uint8_t pOffset, int  pTGroupId );
 
 	void toggleOffset( uint8_t pGroup, uint8_t pBit, bool pBegin );
 
-	void takeNEvents();
+	const std::vector<Event*>  takeNEvents( uint32_t pNEvents );
 
 	float findOccupancy( Cbc* pCbc, int pTGroup, const std::vector<Event*> pEvents );
 
@@ -77,7 +78,7 @@ class Calibration : public Tool
 
 	void clearVPlusMap();
 
-	void updateHists( TString pHistname );
+	void updateHists( std::string pHistname );
 
 	void writeGraphs();
 
@@ -86,11 +87,11 @@ class Calibration : public Tool
   private:
 	// helper methods
 	void setRegBit( uint8_t& pRegValue, uint8_t pPos, bool pValue ) {
-		pRegValue ^= ( -pValue ^ cRegValue ) & ( 1 << pPos );
+		pRegValue ^= ( -pValue ^ pRegValue ) & ( 1 << pPos );
 	}
 
 	void toggleRegBit( uint8_t& pRegValue, uint8_t pPos ) {
-		cRegValue ^= 1 << pPos;
+		pRegValue ^= 1 << pPos;
 	}
 
 	bool getBit( uint8_t& pRegValue, uint8_t pPos ) {
