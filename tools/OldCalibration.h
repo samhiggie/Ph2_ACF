@@ -1,6 +1,6 @@
 /*!
  *
- * \file Calibration.h
+ * \file OldCalibration.h
  * \brief Calibration class, calibration of the hardware
  * \author Lorenzo BIDEGAIN
  * \date 13/08/14
@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef Calibration_h__
-#define Calibration_h__
+#ifndef OldCalibration_h__
+#define OldCalibration_h__
 
 #include "Tool.h"
 #include "../HWDescription/BeBoard.h"
@@ -39,15 +39,15 @@ using namespace Ph2_System;
  * \class Calibration
  * \brief Read/Write Cbc's registers on a file
  */
-class Calibration : public Tool
+class OldCalibration : public Tool
 {
 
   public:
 	// Default C'tor
-	Calibration();
+	OldCalibration();
 
 	// D'Tor
-	~Calibration();
+	~OldCalibration();
 
 	void InitialiseTestGroup();
 

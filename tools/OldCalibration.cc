@@ -1,7 +1,7 @@
 /*!
  *
- * \file Calibration.cc
- * \brief Calibration class, calibration of the hardware
+ * \file OldCalibration.cc
+ * \brief OldCalibration class, calibration of the hardware
  * \author Georg Auzinger
  * \date 13/08/14
  *
@@ -9,20 +9,20 @@
  *
  */
 
-#include "Calibration.h"
+#include "OldCalibration.h"
 
-Calibration::Calibration()
+OldCalibration::OldCalibration()
 {
 }
 
-Calibration::~Calibration()
+OldCalibration::~OldCalibration()
 {
 
 	fResultFile->Write();
 	fResultFile->Close();
 }
 
-void Calibration::InitialiseTestGroup()
+void OldCalibration::InitialiseTestGroup()
 {
 	// Iterating over the Shelves
 	for ( Shelve* cShelve : fShelveVector )
@@ -46,7 +46,7 @@ void Calibration::InitialiseTestGroup()
 }
 
 
-void Calibration::ConstructTestGroup( uint8_t pShelveId, uint8_t pBeId, uint8_t pFeId, uint8_t pCbcId )
+void OldCalibration::ConstructTestGroup( uint8_t pShelveId, uint8_t pBeId, uint8_t pFeId, uint8_t pCbcId )
 {
 	for ( uint8_t lgroup = 0; lgroup < 8; lgroup++ )
 	{
@@ -85,7 +85,7 @@ void Calibration::ConstructTestGroup( uint8_t pShelveId, uint8_t pBeId, uint8_t 
 }
 
 
-void Calibration::OffsetScan()
+void OldCalibration::OffsetScan()
 {
 
 	// Read values from Settings
@@ -136,7 +136,7 @@ void Calibration::OffsetScan()
 	}
 }
 
-uint32_t Calibration::SetOffsetTargetBitTestGroup( BeBoard* pBoard, uint8_t pGroupId, bool pHoleMode, uint8_t pTargetBit, uint8_t pTargetVcth )
+uint32_t OldCalibration::SetOffsetTargetBitTestGroup( BeBoard* pBoard, uint8_t pGroupId, bool pHoleMode, uint8_t pTargetBit, uint8_t pTargetVcth )
 {
 
 	uint32_t cTotalNChannels = 0;
@@ -186,7 +186,7 @@ uint32_t Calibration::SetOffsetTargetBitTestGroup( BeBoard* pBoard, uint8_t pGro
 
 
 
-void Calibration::processSCurvesOffset( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pTargetVcth, uint8_t pTargetBit, TString pParameter, bool pHoleMode, bool pDoDraw )
+void OldCalibration::processSCurvesOffset( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pTargetVcth, uint8_t pTargetBit, TString pParameter, bool pHoleMode, bool pDoDraw )
 {
 	// Here Loop over all FE's Cbc's, Test Groups & Channels to fill Histograms
 	for ( auto& cGroupIt : fTestGroupMap )
@@ -280,7 +280,7 @@ void Calibration::processSCurvesOffset( BeBoard* pBoard, uint8_t pGroupId, uint3
 	// std::cout << "Processed SCurves for Target Bit " << GREEN <<  +pTargetBit << RESET << std::endl;
 }
 
-void Calibration::UpdateCbcObject( BeBoard* pBoard, uint8_t pGroupId )
+void OldCalibration::UpdateCbcObject( BeBoard* pBoard, uint8_t pGroupId )
 {
 
 	for ( auto& cGroupIt : fTestGroupMap )
@@ -304,7 +304,7 @@ void Calibration::UpdateCbcObject( BeBoard* pBoard, uint8_t pGroupId )
 
 
 
-void Calibration::VplusScan()
+void OldCalibration::VplusScan()
 {
 
 	fVplusValues.push_back( 0x40 );
@@ -357,7 +357,7 @@ void Calibration::VplusScan()
 
 
 
-void Calibration::FitVplusVcth( BeBoard* pBoard, uint8_t pTargetVcth,  bool pDoDraw )
+void OldCalibration::FitVplusVcth( BeBoard* pBoard, uint8_t pTargetVcth,  bool pDoDraw )
 {
 
 	for ( Module* cFe : pBoard->fModuleVector )
@@ -435,7 +435,7 @@ void Calibration::FitVplusVcth( BeBoard* pBoard, uint8_t pTargetVcth,  bool pDoD
 	} // End of Fe Loop
 }
 
-void Calibration::setGlobalReg( BeBoard* pBoard, const std::string& pRegName, uint8_t pRegValue )
+void OldCalibration::setGlobalReg( BeBoard* pBoard, const std::string& pRegName, uint8_t pRegValue )
 {
 	for ( Module* cFe : pBoard->fModuleVector )
 	{
@@ -445,7 +445,7 @@ void Calibration::setGlobalReg( BeBoard* pBoard, const std::string& pRegName, ui
 	if ( pRegName != "VCth" ) std::cout << "Setting " << RED << pRegName << RESET << " to Value " << GREEN << +pRegValue << RESET << " on all CBCs connected to Be " << YELLOW << int( pBoard->getBeId() ) << RESET << std::endl;
 }
 
-void Calibration::initializeSCurves( BeBoard* pBoard, uint8_t pGroupId, uint8_t pValue, TString pParameter )
+void OldCalibration::initializeSCurves( BeBoard* pBoard, uint8_t pGroupId, uint8_t pValue, TString pParameter )
 {
 
 	for ( auto& cGroupIt : fTestGroupMap )
@@ -459,7 +459,7 @@ void Calibration::initializeSCurves( BeBoard* pBoard, uint8_t pGroupId, uint8_t 
 	// std::cout << "Initialized SCurves for " << pParameter << " = " << +pValue << " and Test group " << GREEN <<  +pGroupId << RESET << " on all Cbc's connected to Be " << RED <<  int(pBoard->getBeId()) << RESET << std::endl;
 }
 
-void Calibration::measureSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint32_t pTotalChannels, bool pHoleMode )
+void OldCalibration::measureSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint32_t pTotalChannels, bool pHoleMode )
 {
 
 	// This is a smart Loop that scans the necessary Vcth range
@@ -548,7 +548,7 @@ void Calibration::measureSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pE
 
 
 
-void Calibration::processSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pValue, TString pParameter, bool pHoleMode, bool pDoDraw )
+void OldCalibration::processSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pValue, TString pParameter, bool pHoleMode, bool pDoDraw )
 {
 	// Here Loop over all FE's Cbc's, Test Groups & Channels to fill Histograms
 	for ( auto& cGroupIt : fTestGroupMap )
@@ -624,7 +624,7 @@ void Calibration::processSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pE
 	// std::cout << "Processed SCurves for Test group " << GREEN <<  +pGroupId << RESET << " on all Cbc's connected to Be " << RED << int(pBoard->getBeId()) << RESET << std::endl;
 }
 
-uint32_t Calibration::fillScurveHists( BeBoard* pBoard, uint8_t pGroupId, uint8_t pVcth, const Event* pEvent )
+uint32_t OldCalibration::fillScurveHists( BeBoard* pBoard, uint8_t pGroupId, uint8_t pVcth, const Event* pEvent )
 {
 	// Here Loop over all FE's Cbc's, Test Groups & Channels to fill Histograms
 	uint32_t cNHits = 0;
@@ -652,7 +652,7 @@ uint32_t Calibration::fillScurveHists( BeBoard* pBoard, uint8_t pGroupId, uint8_
 	return cNHits;
 }
 
-uint32_t Calibration::ToggleTestGroup( BeBoard* pBoard, uint8_t pGroupId, bool pHoleMode, bool pEnable )
+uint32_t OldCalibration::ToggleTestGroup( BeBoard* pBoard, uint8_t pGroupId, bool pHoleMode, bool pEnable )
 {
 
 	uint32_t cTotalNChannels = 0;
@@ -691,7 +691,7 @@ uint32_t Calibration::ToggleTestGroup( BeBoard* pBoard, uint8_t pGroupId, bool p
 }
 
 
-void Calibration::SaveResults()
+void OldCalibration::SaveResults()
 {
 	uint8_t cTargetVCth = fSettingsMap.find( "TargetVcth" )->second;
 
@@ -712,7 +712,7 @@ void Calibration::SaveResults()
 
 						std::string cPathname = fDirectoryName + cFilename.Data();
 
-						std::cout << "Dumping Calibration Results to file: " << cPathname << std::endl;
+						std::cout << "Dumping OldCalibration Results to file: " << cPathname << std::endl;
 
 						cCbc->saveRegMap( cPathname );
 					}
