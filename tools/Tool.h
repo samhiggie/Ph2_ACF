@@ -44,7 +44,9 @@ class Tool : public SystemController
 #endif
 	Tool() {}
 
-	~Tool() {}
+	~Tool() {
+		fResultFile->Close();
+	}
 
 
 

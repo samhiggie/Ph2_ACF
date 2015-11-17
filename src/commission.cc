@@ -43,7 +43,6 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "noise", "scan the CBC noise per strip", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "noise", "n" );
 
-	cmd.defineOption( "occupancy", "Measure the occupancy", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
 
 	cmd.defineOption( "minimum", "minimum value for latency scan", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "minimum", "m" );
@@ -77,11 +76,9 @@ int main( int argc, char* argv[] )
 	bool cThreshold = ( cmd.foundOption( "threshold" ) ) ? true : false;
 	bool cScanPedestal = ( cmd.foundOption( "pedestal" ) ) ? true : false;
 	bool cNoise = ( cmd.foundOption( "noise" ) ) ? true : false;
-	bool cOccupancy = ( cmd.foundOption( "occupancy" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
-	if ( !cNoise && ! cOccupancy )cDirectory += "Commissioning";
+	if ( !cNoise )cDirectory += "Commissioning";
 	else if ( cNoise ) cDirectory += "NoiseScan";
-	else if ( cOccupancy ) cDirectory += "OccupancyScan";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 	bool gui = ( cmd.foundOption( "gui" ) ) ? true : false;
 
@@ -118,7 +115,7 @@ int main( int argc, char* argv[] )
 
 	if ( cNoise )
 	{
-		PedeNoise cPedeNoise( cNoise );
+		PedeNoise cPedeNoise;
 		cPedeNoise.InitializeHw( cHWFile );
 		cPedeNoise.InitializeSettings( cHWFile );
 		cPedeNoise.CreateResultDirectory( cDirectory );
@@ -128,21 +125,6 @@ int main( int argc, char* argv[] )
 		cPedeNoise.ConfigureHw();
 		cPedeNoise.Initialise(); // canvases etc. for fast calibration
 		cPedeNoise.measureNoise();
-		cPedeNoise.SaveResults( );
-	}
-
-	else if ( cOccupancy )
-	{
-		PedeNoise cPedeNoise( false );
-		cPedeNoise.InitializeHw( cHWFile );
-		cPedeNoise.InitializeSettings( cHWFile );
-		cPedeNoise.CreateResultDirectory( cDirectory );
-		std::string cResultfile = "NoiseScan";
-		cPedeNoise.InitResultFile( cResultfile );
-		cPedeNoise.StartHttpServer();
-		cPedeNoise.ConfigureHw();
-		cPedeNoise.Initialise(); // canvases etc. for fast calibration
-		cPedeNoise.Validate();
 		cPedeNoise.SaveResults( );
 	}
 

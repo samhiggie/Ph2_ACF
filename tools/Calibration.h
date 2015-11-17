@@ -34,8 +34,8 @@ using namespace Ph2_System;
 
 // Typedefs for Containers
 typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
-typedef std::map<Cbc*, TF1*> FitMap;
-typedef std::map<Cbc*, TH1F*> HistMap;
+// typedef std::map<Cbc*, TF1*> FitMap;
+// typedef std::map<Cbc*, TH1F*> HistMap;
 typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
 typedef std::map< int, std::vector<uint8_t> >  TestGroupChannelMap;
 
@@ -77,6 +77,8 @@ class Calibration : public Tool
 	void findOccupancyChannel( int pTGroup, const std::vector<Event*> pEvents );
 
 	void clearVPlusMap();
+
+	void setRegValues();
 
 	void updateHists( std::string pHistname );
 

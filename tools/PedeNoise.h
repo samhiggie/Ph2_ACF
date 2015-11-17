@@ -46,9 +46,8 @@ class PedeNoise : public FastCalibration
 {
 
   public:
-	PedeNoise( bool pPedeNoise = true ) :
-		FastCalibration( false, false ),
-		fPedeNoise( pPedeNoise ) {
+	PedeNoise() :
+		FastCalibration( false, false ) {
 	}
 
 	void Initialise();
@@ -64,25 +63,19 @@ class PedeNoise : public FastCalibration
 	TCanvas* fPedestalCanvas;
 	TCanvas* fFeSummaryCanvas;
 
-	// Canvas for Occupancy plot
-	TCanvas* fValidationCanvas;
 
-
-	// HistMaps for Noise Histos
-	HistMap fNoiseMap;
-	HistMap fSensorNoiseMapEven;
-	HistMap fSensorNoiseMapOdd;
-	HistMap fNoiseStripMap;
-	HistMap fPedestalMap;
+	// // HistMaps for Noise Histos
+	// HistMap fNoiseMap;
+	// HistMap fSensorNoiseMapEven;
+	// HistMap fSensorNoiseMapOdd;
+	// HistMap fNoiseStripMap;
+	// HistMap fPedestalMap;
 
 	// Map for Occupancy Measurement
-	HistMap fHistMap;
-
-	bool fPedeNoise;
 
 
 	// Map for initial Offsets
-	OffsetMap fOffsetMap;
+	// OffsetMap fOffsetMap;
 
   protected:
 	void saveInitialOffsets();
