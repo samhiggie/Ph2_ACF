@@ -2,10 +2,10 @@ all: Utils HWDescription HWInterface System tools RootWeb src miniDAQ
 
 libs: Utils HWDescription HWInterface System srcnoroot
 
-gui: Utils HWDescription HWInterface System tools src miniDAQ GUI
+#gui: Utils HWDescription HWInterface System tools src miniDAQ GUI
 
 simple: Utils HWDescription HWInterface System tools RootWeb src miniDAQ
-	
+
 HWDescription::
 	$(MAKE) -C $@
 Utils::
@@ -20,10 +20,10 @@ srcnoroot::
 	$(MAKE) -C src noroot
 src::
 	$(MAKE) -C $@
-GUI::
-	$(MAKE) -C GUI/Macros
-	$(MAKE) -C $@
-	cp $@/Ph2_ACF ./bin
+	#GUI::
+	#$(MAKE) -C GUI/Macros
+	#$(MAKE) -C $@
+	#cp $@/Ph2_ACF ./bin
 RootWeb::
 	$(MAKE) -C $@
 miniDAQ::
@@ -40,8 +40,8 @@ clean:
 	(cd tools; make clean)
 	(cd RootWeb; make clean)
 	(cd miniDAQ; make clean)
-	(cd GUI; make clean)
-	(cd GUI; make clean; cd GUI/Macros; make clean)
+	#(cd GUI; make clean)
+	#(cd GUI; make clean; cd GUI/Macros; make clean)
 	(cd doc; make clean)
 	(rm -f lib/* bin/*)
 
