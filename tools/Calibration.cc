@@ -458,8 +458,6 @@ void Calibration::toggleOffset( uint8_t pGroup, uint8_t pBit, bool pBegin )
 								cRegVec.push_back( {cRegName.Data(), cOffset} );
 							}
 
-							// std::cout << "DEBUG Toggling offset bit " << +pBit << " for channel " << +cChannel << " of group " << +pGroup << " to " << +cOffset << " (=0b" << std::bitset<8>( cOffset ) << ") ; Occupancy was " << cOccupancy << std::endl;
-
 							// since I extracted the info from the occupancy profile for this bit (this iteration), i need to clear the corresponding bins
 							cOccHist->SetBinContent( iBin, 0 );
 						}

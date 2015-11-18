@@ -66,7 +66,7 @@ int main( int argc, char* argv[] )
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Calibration2CBC.xml";
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	cDirectory += "Calibration";
-	bool cVplus = ( cmd.foundOption( "skip" ) ) ? true : false;
+	bool cVplus = ( cmd.foundOption( "skip" ) ) ? false : true;
 	bool cOld = ( cmd.foundOption( "old" ) ) ? true : false;
 
 	bool cOffsetTuneMode = ( cmd.foundOption( "bitmode" ) ) ? true : false;
@@ -94,7 +94,7 @@ int main( int argc, char* argv[] )
 		if ( !isGui ) cCalibration.ConfigureHw();
 
 		cCalibration.Initialise( ); // canvases etc. for fast calibration
-		if ( !cVplus ) cCalibration.ScanVplus();
+		if ( cVplus ) cCalibration.ScanVplus();
 		cCalibration.ScanOffset();
 		cCalibration.SaveResults();
 
@@ -113,7 +113,7 @@ int main( int argc, char* argv[] )
 
 		cCalibration.ConfigureHw();
 		cCalibration.Initialise( false );
-		if ( !cVplus ) cCalibration.FindVplus();
+		if ( cVplus ) cCalibration.FindVplus();
 		cCalibration.FindOffsets();
 		cCalibration.SaveResults();
 		t.stop();
