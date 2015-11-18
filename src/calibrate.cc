@@ -10,6 +10,7 @@
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
 #include "TApplication.h"
+#include "../Utils/Timer.h"
 
 
 
@@ -78,8 +79,11 @@ int main( int argc, char* argv[] )
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
+	Timer t;
+
 	if ( cOld )
 	{
+		t.start();
 		FastCalibration cCalibration( cOffsetTuneMode, cCalibrateTGrp );
 		cCalibration.InitializeHw( cHWFile );
 		cCalibration.InitializeSettings( cHWFile );
@@ -94,9 +98,12 @@ int main( int argc, char* argv[] )
 		cCalibration.ScanOffset();
 		cCalibration.SaveResults();
 
+		t.stop();
+		t.show( "Time to Calibrate the system: " );
 	}
 	else
 	{
+		t.start();
 		Calibration cCalibration;
 		cCalibration.InitializeHw( cHWFile );
 		cCalibration.InitializeSettings( cHWFile );
@@ -109,22 +116,10 @@ int main( int argc, char* argv[] )
 		cCalibration.FindVplus();
 		cCalibration.FindOffsets( false );
 		cCalibration.SaveResults();
+		t.stop();
+		t.show( "Time to Calibrate the system: " );
 	}
-	// else
-	// {
-	// 	Calibration cCalibration;
-	// 	cCalibration.InitializeHw( cHWFile );
-	// 	cCalibration.InitializeSettings( cHWFile );
-	// 	cCalibration.CreateResultDirectory( cDirectory );
-	// 	cCalibration.InitResultFile( "CalibrationResults" );
-	// 	cCalibration.InitialiseTestGroup();
 
-	// 	if ( !isGui ) cCalibration.ConfigureHw();
-
-	// 	if ( !cVplus ) cCalibration.VplusScan();
-	// 	cCalibration.OffsetScan();
-	// 	cCalibration.SaveResults();
-	// }
 
 	if ( !batchMode ) cApp.Run();
 

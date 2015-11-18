@@ -35,12 +35,6 @@ using namespace Ph2_System;
 
 typedef std::map<Cbc*, TH1F*> HistMap;
 
-// experimental for Noise Measurement
-typedef std::map<Cbc*, std::map<uint8_t, uint8_t>> OffsetMap;
-/*
-Key=-1 to do calibration on all channels
-Key=0-7 for the 8 Test Groups
-*/
 
 class PedeNoise : public FastCalibration
 {
@@ -62,20 +56,6 @@ class PedeNoise : public FastCalibration
 	TCanvas* fNoiseCanvas;
 	TCanvas* fPedestalCanvas;
 	TCanvas* fFeSummaryCanvas;
-
-
-	// // HistMaps for Noise Histos
-	// HistMap fNoiseMap;
-	// HistMap fSensorNoiseMapEven;
-	// HistMap fSensorNoiseMapOdd;
-	// HistMap fNoiseStripMap;
-	// HistMap fPedestalMap;
-
-	// Map for Occupancy Measurement
-
-
-	// Map for initial Offsets
-	// OffsetMap fOffsetMap;
 
   protected:
 	void saveInitialOffsets();

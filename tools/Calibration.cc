@@ -22,9 +22,10 @@ void Calibration::Initialise( bool pAllChan )
 
 
 	// Canvases
-	fVplusCanvas = new TCanvas( "VPlus", "VPlus", 650, 650 );
-	fOffsetCanvas = new TCanvas( "Offset", "Offset", 650, 650 );
-	fOccupancyCanvas = new TCanvas( "Occupancy", "Occupancy", 650, 650 );
+	fVplusCanvas = new TCanvas( "VPlus", "VPlus", 515, 0, 500, 500 );
+	fOffsetCanvas = new TCanvas( "Offset", "Offset", 10, 0, 500, 500 );
+	fOccupancyCanvas = new TCanvas( "Occupancy", "Occupancy", 10, 505, 500, 500 );
+
 	// count FEs & CBCs
 	uint32_t cCbcCount = 0;
 	uint32_t cCbcIdMax = 0;
@@ -54,9 +55,9 @@ void Calibration::Initialise( bool pAllChan )
 					TString cName = Form( "h_VplusValues_Fe%dCbc%d", cFeId, cCbcId );
 					TObject* cObj = gROOT->FindObject( cName );
 					if ( cObj ) delete cObj;
-					TProfile* cHist = new TProfile( cName, Form( "Vplus Values for Test Groups FE%d CBC%d ; CBCId; Vplus", cFeId, cCbcId ), 9, -.5, 8.5 );
-					cHist->SetLineColor( 9 );
-					cHist->SetLineWidth( 2 );
+					TProfile* cHist = new TProfile( cName, Form( "Vplus Values for Test Groups FE%d CBC%d ; Test Group; Vplus", cFeId, cCbcId ), 8, -.5, 7.5 );
+					cHist->SetMarkerStyle( 20 );
+					// cHist->SetLineWidth( 2 );
 					bookHistogram( cCbc, "Vplus", cHist );
 
 					cName = Form( "h_Offsets_Fe%dCbc%d", cFeId, cCbcId );
@@ -144,13 +145,15 @@ void Calibration::FindVplus()
 
 		// looping over the test groups, enable it
 		std::cout << GREEN << "Enabling Test Group...." << cTGroup.first << RESET << std::endl;
-		setOffset( fTargetOffset, cTGroup.first );  // takes the group ID
+		setOffset( fTargetOffset, cTGroup.first, true );  // takes the group ID
+		updateHists( "Offsets" );
 
 		bitwiseVplus( cTGroup.first );
 
-		std::cout << GREEN << "Disabling Test Group...." << cTGroup.first << RESET << std::endl;
+		std::cout << RED << "Disabling Test Group...." << cTGroup.first << RESET << std::endl << std::endl;
 		uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
-		setOffset( cOffset, cTGroup.first );
+		setOffset( cOffset, cTGroup.first, true );
+
 		// done looping all the bits - I should now have the Vplus value that corresponds to 50% occupancy at the desired VCth and Offset for this test group mapped against CBC
 		for ( auto& cCbc : fVplusMap )
 		{
@@ -167,7 +170,7 @@ void Calibration::FindVplus()
 		cCbc.second = cTmpProfile->GetMean( 2 );
 
 		fCbcInterface->WriteCbcReg( cCbc.first, "Vplus", cCbc.second );
-		std::cout << BOLDGREEN <<  "Mean Vplus value found considering all test groups is " << BOLDRED << +cCbc.second << RESET << std::endl;
+		std::cout << BOLDGREEN <<  "Mean Vplus value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET << std::endl;
 	}
 }
 
@@ -184,20 +187,39 @@ void Calibration::bitwiseVplus( int pTGroup )
 		}
 		// now each CBC has the MSB Vplus Bit written
 		// now take data
-		const std::vector<Event*> events = takeNEvents( fEventsPerPoint );
+		measureOccupancy( fEventsPerPoint, pTGroup );
+		updateHists( "Occupancy" );
 
 		// done taking data, now find the occupancy per CBC
-		for ( auto& cCbc : fVplusMap ) //this toggles bit i on Vplus for each
+		for ( auto& cCbc : fVplusMap )
 		{
 			// if the occupancy is larger than 0.5 I need to flip the bit back to 0, else leave it
-			float cOccupancy = findOccupancy( cCbc.first, pTGroup, events );
-			if ( cOccupancy > 0.50 )
+			float cOccupancy = findCbcOccupancy( cCbc.first, pTGroup, fEventsPerPoint );
+			if ( fHoleMode && cOccupancy > 0.56 )
+			{
+				toggleRegBit( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
+				fCbcInterface->WriteCbcReg( cCbc.first, "Vplus", cCbc.second );
+			}
+			else if ( !fHoleMode && cOccupancy < 0.45 )
 			{
 				toggleRegBit( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
 				fCbcInterface->WriteCbcReg( cCbc.first, "Vplus", cCbc.second );
 			}
 
-			if ( iBit == 0 ) std::cout << "DEBUG Found Occupancy of " << cOccupancy << "for CBC " << +cCbc.first->getCbcId() << " , test Group " << pTGroup << " to " << +cCbc.second << " (= 0b" << std::bitset<8>( cCbc.second ) << ")" << std::endl;
+			// clear the occupancy histogram for the next bit
+			clearOccupancyHists( cCbc.first );
+		}
+
+	}
+
+	if ( fCheckLoop )
+	{
+		measureOccupancy( fEventsPerPoint, pTGroup );
+		for ( auto& cCbc : fVplusMap )
+		{
+			float cOccupancy = findCbcOccupancy( cCbc.first, pTGroup, fEventsPerPoint );
+			std::cout << BOLDBLUE << "Found Occupancy of " << BOLDRED << cOccupancy << BOLDBLUE << " for CBC " << +cCbc.first->getCbcId() << " , test Group " << pTGroup << " using VPlus " << BOLDRED << +cCbc.second << BOLDBLUE << " (= 0x" << std::hex << +cCbc.second << std::dec << "; 0b" << std::bitset<8>( cCbc.second ) << ")" << RESET << std::endl;
+			clearOccupancyHists( cCbc.first );
 		}
 	}
 }
@@ -209,10 +231,6 @@ void Calibration::FindOffsets( bool pStandalone )
 	// just to be sure, configure the correct VCth and VPlus values
 	CbcRegWriter cWriter( fCbcInterface, "VCth", fTargetVcth );
 	accept( cWriter );
-
-	// uint8_t cInitialOffset = ( fHoleMode ) ? 0x00 : 0xFF;
-	// initializeOffsetMap( cInitialOffset );
-
 	// ok, done, all the offsets are at the starting value, VCth & Vplus are written
 
 	// now loop over test groups
@@ -222,18 +240,19 @@ void Calibration::FindOffsets( bool pStandalone )
 
 		bitwiseOffset( cTGroup.first );
 
-
-		// now all the bits are toggled or not, I still want to verify that the occupancy is ok
-		int cMultiple = 3;
-		std::cout << "Verifying Occupancy with final offsets by taking " << fEventsPerPoint* cMultiple << " Triggers!" << std::endl;
-		const std::vector<Event*> events = takeNEvents( fEventsPerPoint * cMultiple );
-		// now find the occupancy for each channel and update the TProfile
-		// findOccupancyChannel( cTGroup.first, events );
-		updateHists( "Occupancy" );
+		if ( fCheckLoop )
+		{
+			// now all the bits are toggled or not, I still want to verify that the occupancy is ok
+			int cMultiple = 3;
+			std::cout << "Verifying Occupancy with final offsets by taking " << fEventsPerPoint* cMultiple << " Triggers!" << std::endl;
+			measureOccupancy( fEventsPerPoint  * cMultiple, cTGroup.first );
+			// now find the occupancy for each channel and update the TProfile
+			updateHists( "Occupancy" );
+		}
 
 		uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
 		setOffset( cOffset, cTGroup.first );
-		std::cout << GREEN << "Disabling Test Group...." << cTGroup.first << RESET << std::endl;
+		std::cout << RED << "Disabling Test Group...." << cTGroup.first << RESET << std::endl << std::endl;
 	}
 	setRegValues();
 }
@@ -252,9 +271,7 @@ void Calibration::bitwiseOffset( int pTGroup )
 
 		// now the offset for the current group is changed
 		// now take data
-		const std::vector<Event*> events = takeNEvents( fEventsPerPoint );
-		// now find the occupancy for each channel and update the TProfile
-		findOccupancyChannel( pTGroup, events );
+		measureOccupancy( fEventsPerPoint, pTGroup );
 
 		updateHists( "Occupancy" );
 
@@ -265,81 +282,71 @@ void Calibration::bitwiseOffset( int pTGroup )
 }
 
 
-const std::vector<Event*> Calibration::takeNEvents( uint32_t pNEvents )
+void Calibration::measureOccupancy( uint32_t pNEvents, int pTGroup )
 {
-	uint32_t cN = 0;
-	uint32_t cNthAcq = 0;
-	std::vector<Event*> events;
-
 	for ( auto cShelve : fShelveVector )
 	{
 		for ( BeBoard* pBoard : cShelve->fBoardVector )
 		{
-			// Counter cCounter;
-			// pBoard->accept( cCounter );
+
+			uint32_t cN = 0;
+			uint32_t cNthAcq = 0;
 
 			fBeBoardInterface->Start( pBoard );
 
 			while ( cN < pNEvents )
 			{
 				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				std::vector<Event*> tmpevents = fBeBoardInterface->GetEvents( pBoard );
+				std::vector<Event*> events = fBeBoardInterface->GetEvents( pBoard );
 
-				events.insert( std::end( events ), std::begin( tmpevents ), std::end( tmpevents ) );
-				cN = events.size();
+				// if this is for channelwise offset tuning, iterate the events and fill the occupancy histogram
+
+				for ( auto& cEvent : events )
+				{
+					for ( auto cFe : pBoard->fModuleVector )
+					{
+						for ( auto cCbc : cFe->fCbcVector )
+							fillOccupancyHist( cCbc, pTGroup, cEvent );
+					}
+					cN++;
+				}
 				cNthAcq++;
 			}
 			fBeBoardInterface->Stop( pBoard, cNthAcq );
 		}
 	}
-	return events;
 }
 
-float Calibration::findOccupancy( Cbc* pCbc, int pTGroup, const std::vector<Event*> pEvents )
-{
-	float cOccupancy = 0;
 
-	// iterate the events
-	for ( auto& cEvent : pEvents )
-	{
-		// iterate the channels in current group
-		for ( auto& cChanId : fTestGroupChannelMap[pTGroup] )
-		{
-			// I am counting all hits in a group for each event
-			if ( cEvent->DataBit( pCbc->getFeId(), pCbc->getCbcId(), cChanId ) ) cOccupancy++;
-		}
-	}
+float Calibration::findCbcOccupancy( Cbc* pCbc, int pTGroup, int pEventsPerPoint )
+{
+	TH1F* cOccHist = static_cast<TH1F*>( getHist( pCbc, "Occupancy" ) );
+	float cOccupancy = cOccHist->GetEntries();
 	// return the hitcount divided by the the number of channels and events
-	return cOccupancy / ( static_cast<float>( fTestGroupChannelMap[pTGroup].size() * pEvents.size() ) );
+	return cOccupancy / ( static_cast<float>( fTestGroupChannelMap[pTGroup].size() * pEventsPerPoint ) );
 }
 
-void Calibration::findOccupancyChannel( int pTGroup, const std::vector<Event*> pEvents )
+void Calibration::fillOccupancyHist( Cbc* pCbc, int pTGroup, const Event* pEvent )
 {
-	// iterate the events
-	for ( auto& cEvent : pEvents )
+	// Find the Occupancy histogram for the current Cbc
+	TH1F* cOccHist = static_cast<TH1F*>( getHist( pCbc, "Occupancy" ) );
+	// iterate the channels in current group
+	int cHits = 0;
+	for ( auto& cChanId : fTestGroupChannelMap[pTGroup] )
 	{
-		for ( auto cShelve : fShelveVector )
+		// I am filling the occupancy profile for each CBC for the current test group
+		if ( pEvent->DataBit( pCbc->getFeId(), pCbc->getCbcId(), cChanId ) )
 		{
-			for ( auto cBoard : cShelve->fBoardVector )
-			{
-				for ( auto cFe : cBoard->fModuleVector )
-				{
-					for ( auto cCbc : cFe->fCbcVector )
-					{
-						// find the TProfile for occupancy measurment of current channel
-						TH1F* cOccHist = static_cast<TH1F*>( getHist( cCbc, "Occupancy" ) );
-						// iterate the channels in current group
-						for ( auto& cChanId : fTestGroupChannelMap[pTGroup] )
-						{
-							// I am filling the occupancy profile for each CBC for the current test group
-							if ( cEvent->DataBit( cCbc->getFeId(), cCbc->getCbcId(), cChanId ) )
-								cOccHist->Fill( cChanId );
-						}
-					}
-				}
-			}
+			cOccHist->Fill( cChanId );
+			cHits++;
 		}
 	}
+}
+
+void Calibration::clearOccupancyHists( Cbc* pCbc )
+{
+	TH1F* cOccHist = static_cast<TH1F*>( getHist( pCbc, "Occupancy" ) );
+	cOccHist->Reset( "ICESM" );
 }
 
 void Calibration::clearVPlusMap()
@@ -357,35 +364,38 @@ void Calibration::clearVPlusMap()
 	}
 }
 
-void Calibration::setOffset( uint8_t pOffset, int  pTGroupId )
+void Calibration::setOffset( uint8_t pOffset, int  pGroup, bool pVPlus )
 {
-
-	// sets the offset to pOffset on each channel
-	struct OffsetWriter : public HwDescriptionVisitor
+	// std::cout << "Setting offsets of Test Group " << pGroup << " to 0x" << std::hex << +pOffset << std::dec << std::endl;
+	for ( auto cShelve : fShelveVector )
 	{
-		CbcInterface* fInterface;
-		RegisterVector fRegVec;
-		uint8_t fOffset;
-		std::vector<uint8_t> fTestGrpChannelIdVec;
-		//will have to pass the channel vector to OffsetWriter
-		OffsetWriter( CbcInterface* pInterface, uint8_t pOffset, std::vector<uint8_t> pTestGroupChnlVec ): fInterface( pInterface ),  fOffset( pOffset ) , fTestGrpChannelIdVec( pTestGroupChnlVec ) {
-			//Here the loop will be over channels in the test group
-			for ( auto& cChannel : fTestGrpChannelIdVec ) {
-				TString cRegName = Form( "Channel%03d", cChannel + 1 );
-				fRegVec.push_back( { cRegName.Data(), fOffset } );
+		for ( auto cBoard : cShelve->fBoardVector )
+		{
+			for ( auto cFe : cBoard->fModuleVector )
+			{
+				uint32_t cFeId = cFe->getFeId();
+
+				for ( auto cCbc : cFe->fCbcVector )
+				{
+					uint32_t cCbcId = cCbc->getCbcId();
+
+					// first, find the offset Histogram for this CBC
+					TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
+
+					RegisterVector cRegVec;   // vector of pairs for the write operation
+
+					// loop the channels of the current group and toggle bit i in the global map
+					for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
+					{
+						TString cRegName = Form( "Channel%03d", cChannel + 1 );
+						cRegVec.push_back( {cRegName.Data(), pOffset} );
+						if ( pVPlus ) cOffsetHist->SetBinContent( cChannel, pOffset );
+					}
+					fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
+				}
 			}
 		}
-		void visit( Cbc& pCbc ) {
-			fInterface->WriteCbcMultReg( &pCbc, fRegVec );
-		}
-	};
-
-	if ( fTestGroupChannelMap.find( pTGroupId ) != fTestGroupChannelMap.end() )
-	{
-		OffsetWriter cWriter( fCbcInterface, pOffset, fTestGroupChannelMap[pTGroupId] );
-		accept( cWriter );
 	}
-	else std::cout << "Error, could not find the channels for this test group: " << pTGroupId << std::endl;
 }
 
 void Calibration::toggleOffset( uint8_t pGroup, uint8_t pBit, bool pBegin )
@@ -406,7 +416,7 @@ void Calibration::toggleOffset( uint8_t pGroup, uint8_t pBit, bool pBegin )
 					TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
 					// find the TProfile for occupancy measurment of current channel
 					TH1F* cOccHist = static_cast<TH1F*>( getHist( cCbc, "Occupancy" ) );
-					cOccHist->Scale( 1 / double( fEventsPerPoint ) );
+					// cOccHist->Scale( 1 / double( fEventsPerPoint ) );
 					RegisterVector cRegVec;   // vector of pairs for the write operation
 
 					// loop the channels of the current group and toggle bit i in the global map
@@ -417,35 +427,34 @@ void Calibration::toggleOffset( uint8_t pGroup, uint8_t pBit, bool pBegin )
 						{
 							// get the offset
 							uint8_t cOffset = cOffsetHist->GetBinContent( cChannel );
+
 							// toggle Bit i
 							toggleRegBit( cOffset, pBit );
+
 							// modify the histogram
 							cOffsetHist->SetBinContent( cChannel, cOffset );
 
 							// push in a vector for CBC write transaction
-
 							cRegVec.push_back( {cRegName.Data(), cOffset} );
-
-							// std::cout << "DEBUG Toggling offset bit " << +pBit << " for channel " << +cChannel << " of group " << +pGroup << " to " << +cOffset << " (=0b" << std::bitset<8>( cOffset ) << ")" << std::endl;
 						}
 						else  //here it is interesting since now I will check if the occupancy is smaller or larger 50% and decide wether to toggle or not to toggle
 						{
 							// if the occupancy is larger than 50%, flip the bit back, if it is smaller, don't do anything
 							// get the offset
 							uint8_t cOffset = cOffsetHist->GetBinContent( cChannel );
+
 							// get the occupancy
-							// for ( int iBin = 0; iBin < cOccHist->GetNbinsX(); iBin++ )
-							// 	std::cout << "Bin " << iBin << " occupancy " << cOccHist->GetBinContent( iBin ) << std::endl;
 							int iBin = cOccHist->GetXaxis()->FindBin( cChannel );
 							float cOccupancy = cOccHist->GetBinContent( iBin );
-							// std::cout << +cChannel << " Offset " << +cOffset << " occupancy " << cOccupancy << std::endl;
+
 							// only if the occupancy is too high I need to flip the bit back and write, if not, I can leave it
-							if ( cOccupancy > 0.5 )
+							if ( cOccupancy > 0.57 * fEventsPerPoint )
 							{
 								toggleRegBit( cOffset, pBit ); // toggle the bit back that was previously flipped
 								cOffsetHist->SetBinContent( cChannel, cOffset );
 								cRegVec.push_back( {cRegName.Data(), cOffset} );
 							}
+
 							// std::cout << "DEBUG Toggling offset bit " << +pBit << " for channel " << +cChannel << " of group " << +pGroup << " to " << +cOffset << " (=0b" << std::bitset<8>( cOffset ) << ") ; Occupancy was " << cOccupancy << std::endl;
 
 							// since I extracted the info from the occupancy profile for this bit (this iteration), i need to clear the corresponding bins
@@ -473,7 +482,7 @@ void Calibration::updateHists( std::string pHistname )
 			{
 				fVplusCanvas->cd( cCbc.first->getCbcId() + 1 );
 				TProfile* cTmpProfile = static_cast<TProfile*>( cHist->second );
-				cTmpProfile->DrawCopy();
+				cTmpProfile->DrawCopy( "HP0" );
 				fVplusCanvas->Update();
 			}
 			if ( pHistname == "Offsets" )
@@ -515,7 +524,7 @@ void Calibration::setRegValues()
 					// first, find the offset Histogram for this CBC
 					TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
 
-					for ( int iChan = 0; iChan <= NCHANNELS; iChan++ )
+					for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
 					{
 						uint8_t cOffset = cOffsetHist->GetBinContent( iChan );
 						cCbc->setReg( Form( "Channel%03d", iChan + 1 ), cOffset );

@@ -66,15 +66,17 @@ class Calibration : public Tool
 
 	void bitwiseOffset( int pTGroup );
 
-	void setOffset( uint8_t pOffset, int  pTGroupId );
+	void setOffset( uint8_t pOffset, int  pTGroupId, bool pVPlus = false );
 
 	void toggleOffset( uint8_t pGroup, uint8_t pBit, bool pBegin );
 
-	const std::vector<Event*>  takeNEvents( uint32_t pNEvents );
+	void measureOccupancy( uint32_t pNEvents, int pTGroup );
 
-	float findOccupancy( Cbc* pCbc, int pTGroup, const std::vector<Event*> pEvents );
+	float findCbcOccupancy( Cbc* pCbc, int pTGroup, int pEventsPerPoint );
 
-	void findOccupancyChannel( int pTGroup, const std::vector<Event*> pEvents );
+	void fillOccupancyHist( Cbc* pCbc, int pTGroup, const Event* pEvent );
+
+	void clearOccupancyHists( Cbc* pCbc );
 
 	void clearVPlusMap();
 
@@ -120,6 +122,7 @@ class Calibration : public Tool
 	uint32_t fEventsPerPoint;
 	uint8_t fTargetVcth;
 	uint8_t fTargetOffset;
+	bool fCheckLoop = true;
 
 };
 

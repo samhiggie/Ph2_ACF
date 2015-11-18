@@ -76,40 +76,6 @@ void PedeNoise::Initialise()
 					cHist->SetLineColor( 2 );
 					bookHistogram( cCbc, "Cbc_noise_odd", cHist );
 
-
-					// // old
-
-					// cHistname = Form( "Fe%dCBC%d_Noise", cFe->getFeId(), cCbc->getCbcId() );
-					// cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
-					// if ( cHist ) delete cHist;
-					// cHist = new TH1F( cHistname, cHistname, 200, 0, 20 );
-					// fNoiseMap[cCbc] =  cHist;
-
-					// cHistname = Form( "Fe%dCBC%d_StripNoise", cFe->getFeId(), cCbc->getCbcId() );
-					// cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
-					// if ( cHist ) delete cHist;
-					// cHist = new TH1F( cHistname, cHistname, 254, -0.5, 253.5 );
-					// fNoiseStripMap[cCbc] =  cHist;
-
-					// cHistname = Form( "Fe%dCBC%d_Pedestal", cFe->getFeId(), cCbc->getCbcId() );
-					// cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
-					// if ( cHist ) delete cHist;
-					// cHist = new TH1F( cHistname, cHistname, 510, -0.5, 254.5 );
-					// fPedestalMap[cCbc] =  cHist;
-
-					// cHistname = Form( "Fe%dCBC%d_Noise_even", cFe->getFeId(), cCbc->getCbcId() );
-					// cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
-					// if ( cHist ) delete cHist;
-					// cHist = new TH1F( cHistname, cHistname, 128, -0.5, 127.5 );
-					// fSensorNoiseMapEven[cCbc] =  cHist;
-
-					// cHistname = Form( "Fe%dCBC%d_Noise_odd", cFe->getFeId(), cCbc->getCbcId() );
-					// cHist = dynamic_cast<TH1F*>( gROOT->FindObject( cHistname ) );
-					// if ( cHist ) delete cHist;
-					// cHist = new TH1F( cHistname, cHistname, 128, -0.5, 127.5 );
-					// cHist->SetLineColor( 2 );
-					// fSensorNoiseMapOdd[cCbc] =  cHist;
-
 				}
 
 				TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
@@ -221,18 +187,6 @@ void PedeNoise::measureNoise()
 					TH1F* cStripHist = static_cast<TH1F*>( getHist( cCbc, "Cbc_Stripnoise" ) );
 					TH1F* cEvenHist  = static_cast<TH1F*>( getHist( cCbc, "Cbc_Noise_even" ) );
 					TH1F* cOddHist   = static_cast<TH1F*>( getHist( cCbc, "Cbc_noise_odd" ) );
-					// auto cHist = fNoiseMap.find( cCbc );
-					// if ( cHist == std::end( fNoiseMap ) ) std::cout << "Error: could not find the Noise Histogram for CBC " << int( cCbc->getCbcId() ) << std::endl;
-					// auto cPedestalHist = fPedestalMap.find( cCbc );
-					// if ( cPedestalHist == std::end( fNoiseMap ) ) std::cout << "Error: could not find the Pedestal Histogram for CBC " << int( cCbc->getCbcId() ) << std::endl;
-					// auto cStripHist = fNoiseStripMap.find( cCbc );
-					// if ( cStripHist == std::end( fNoiseStripMap ) ) std::cout << "Error: could not find the Strip Noise Profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
-
-					// auto cStripHistEven = fSensorNoiseMapEven.find( cCbc );
-					// if ( cStripHistEven == std::end( fSensorNoiseMapEven ) ) std::cout << "Error: could not find the even Strip Noise Profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
-
-					// auto cStripHistOdd = fSensorNoiseMapOdd.find( cCbc );
-					// if ( cStripHistOdd == std::end( fSensorNoiseMapOdd ) ) std::cout << "Error: could not find the odd Strip Noise Profile for CBC " << int( cCbc->getCbcId() ) << std::endl;
 
 					std::cout << BOLDRED << "Average noise on FE " << +cCbc->getFeId() << " CBC " << +cCbc->getCbcId() << " : " << cNoiseHist->GetMean() << " ; RMS : " << cNoiseHist->GetRMS() << " ; Pedestal : " << cPedeHist->GetMean() << " VCth units." << RESET << std::endl;
 
@@ -299,11 +253,6 @@ void PedeNoise::enableTestGroupforNoise( int  pTGrpId )
 
 					TH1F* cOffsets = static_cast<TH1F*>( getHist( cCbc, "Cbc_Offsets" ) );
 
-					// first, find the offset Map for this CBC
-					// auto cOrigOffsetMap = fOffsetMap.find( cCbc );
-					// if ( cOrigOffsetMap == std::end( fOffsetMap ) )std::cout << "Error, could not find the original offset map for CBC " << cCbcId << std::endl;
-					// cOrigOffsetMap.second is the map of channel number vs original offset
-
 					RegisterVector cRegVec;
 					// iterate the groups (first is ID, second is vec<uint8_t>)
 					for ( auto& cGrp : fTestGroupChannelMap )
@@ -327,8 +276,7 @@ void PedeNoise::enableTestGroupforNoise( int  pTGrpId )
 							// iterate over the channels in the test group and find the corresponding offset in the original offset map
 							for ( auto& cChan : cGrp.second )
 							{
-								// auto cChanOffset = cOrigOffsetMap->second.find( cChan );
-								// if ( cChanOffset == std::end( cOrigOffsetMap->second ) ) std::cout << "Error, could not find original offset for channel " << +cChan << "on CBC " << cCbcId << std::endl;
+
 								uint8_t cEnableOffset = cOffsets->GetBinContent( cChan );
 								TString cRegName = Form( "Channel%03d", cChan + 1 );
 								cRegVec.push_back( { cRegName.Data(), cEnableOffset } );
@@ -360,23 +308,6 @@ void PedeNoise::processSCurvesNoise( TString pParameter, uint8_t pValue, bool pD
 		TH1F* cStripHist = static_cast<TH1F*>( getHist( cCbc.first, "Cbc_Stripnoise" ) );
 		TH1F* cEvenHist  = static_cast<TH1F*>( getHist( cCbc.first, "Cbc_Noise_even" ) );
 		TH1F* cOddHist   = static_cast<TH1F*>( getHist( cCbc.first, "Cbc_noise_odd" ) );
-
-		// use another histogram for the noise
-		// HistMap::iterator cHist = fNoiseMap.find( cCbc.first );
-		// if ( cHist == fNoiseMap.end() ) std::cout << "Could not find the correct Noise Histogram for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
-
-		// HistMap::iterator cPedestalHist = fPedestalMap.find( cCbc.first );
-		// if ( cPedestalHist == fPedestalMap.end() ) std::cout << "Could not find the correct Pedestal Histogram for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
-
-		// HistMap::iterator cStripHist = fNoiseStripMap.find( cCbc.first );
-		// if ( cStripHist == fNoiseStripMap.end() ) std::cout << "Could not find the correct Noise Strip Histogram for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
-
-		// HistMap::iterator cSensorHistEven = fSensorNoiseMapEven.find( cCbc.first );
-		// if ( cSensorHistEven == fSensorNoiseMapEven.end() ) std::cout << "Could not find the correct Noise Histogram Even for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
-
-		// HistMap::iterator cSensorHistOdd = fSensorNoiseMapOdd.find( cCbc.first );
-		// if ( cSensorHistOdd == fNoiseStripMap.end() ) std::cout << "Could not find the correct Sensor Noise Histogram Odd for Fe " << int( cCbc.first->getFeId() ) << " Cbc " << int( cCbc.first->getCbcId() ) << std::endl;
-
 
 		// Loop the Channels
 		bool cFirst = true;
@@ -482,43 +413,6 @@ void PedeNoise::writeGraphs()
 	// just use auto iterators to write everything to disk
 	// this is the old method before Tool class was cool
 	fResultFile->cd();
-	// if ( !fPedeNoise )
-	// {
-	// 	for ( const auto& cHist : fHistMap )
-	// 		cHist.second->SetDirectory( fResultFile );
-	// }
-	// else
-	// {
-	// 	for ( const auto& cHist : fNoiseMap )
-	// 		cHist.second->SetDirectory( fResultFile );
-	// 	for ( const auto& cHist : fPedestalMap )
-	// 		cHist.second->SetDirectory( fResultFile );
-	// 	for ( const auto& cNoiseStripHist : fNoiseStripMap )
-	// 		cNoiseStripHist.second->SetDirectory( fResultFile );
-
-	// 	for ( const auto& cNoiseEven : fSensorNoiseMapEven )
-	// 		cNoiseEven.second->SetDirectory( fResultFile );
-	// 	for ( const auto& cNoiseOdd : fSensorNoiseMapOdd )
-	// 		cNoiseOdd.second->SetDirectory( fResultFile );
-	// }
-	// fResultFile->cd();
-
-	// // This is re-implementing the new method for the FE's since they use the cool stuff from tool
-	// if ( fPedeNoise )
-	// {
-	// 	for ( const auto& cFe : fModuleHistMap )
-	// 	{
-	// 		TString cDirName = Form( "FE%d", cFe.first->getFeId() );
-	// 		TObject* cObj = gROOT->FindObject( cDirName );
-	// 		if ( cObj ) delete cObj;
-	// 		fResultFile->mkdir( cDirName );
-	// 		fResultFile->cd( cDirName );
-
-	// 		for ( const auto& cHist : cFe.second )
-	// 			cHist.second->Write( cHist.second->GetName(), TObject::kOverwrite );
-	// 		fResultFile->cd();
-	// 	}
-	// }
 	Tool::SaveResults();
 
 	// Save canvasses too
