@@ -14,7 +14,7 @@
 
 #include "Tool.h"
 #include "Channel.h"
-#include "FastCalibration.h"
+#include "SCurve.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/CommonVisitors.h"
 
@@ -36,20 +36,25 @@ using namespace Ph2_System;
 typedef std::map<Cbc*, TH1F*> HistMap;
 
 
-class PedeNoise : public FastCalibration
+class PedeNoise : public SCurve
 {
 
   public:
-	PedeNoise() :
-		FastCalibration( false, false ) {
+	PedeNoise() {
+		SCurve::MakeTestGroups( false );
+	}
+
+	~PedeNoise() {
+		if ( fResultFile ) {
+			fResultFile->Write();
+			fResultFile->Close();
+		}
 	}
 
 	void Initialise();
 	void measureNoise();
 	void Validate();
-	void SaveResults() {
-		writeGraphs();
-	}
+	void SaveResults();
 
   private:
 	// Canvases for Pede/Noise Plots

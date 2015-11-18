@@ -1,112 +1,97 @@
 /*!
- *
- * \file OldCalibration.h
- * \brief Calibration class, calibration of the hardware
- * \author Lorenzo BIDEGAIN
- * \date 13/08/14
- *
- * Support : no support!
- *
- */
+*
+* \file Calibration.h
+* \brief Calibration class, calibration of the hardware
+* \author Georg AUZINGER
+* \date 16 / 10 / 14
+*
+* \Support : georg.auzinger@cern.ch
+*
+*/
 
 #ifndef OldCalibration_h__
 #define OldCalibration_h__
 
-#include "Tool.h"
-#include "../HWDescription/BeBoard.h"
-#include "../HWInterface/CbcInterface.h"
-#include "../HWInterface/BeBoardInterface.h"
-#include "../Utils/ConsoleColor.h"
-#include "../Utils/CommonVisitors.h"
+#include "SCurve.h"
 #include "Channel.h"
+#include "../Utils/Visitor.h"
+#include "../Utils/CommonVisitors.h"
 
-#include "TMultiGraph.h"
-#include "TCanvas.h"
-#include "TFitResultPtr.h"
-#include "TStyle.h"
 
-#include <time.h>
 #include <map>
-// #include <system>
 
-#define READBACK true
+#include "TCanvas.h"
+#include "TProfile.h"
+#include "TString.h"
+#include "TGraphErrors.h"
+#include "TString.h"
+#include "TText.h"
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
-/*!
- * \class Calibration
- * \brief Read/Write Cbc's registers on a file
- */
-class OldCalibration : public Tool
+
+// Typedefs for Containers
+typedef std::map<Cbc*, TGraphErrors*> GraphMap;
+typedef std::map<Cbc*, TF1*> FitMap;
+typedef std::map<Cbc*, TH1F*> HistMap;
+
+
+
+class OldCalibration : public SCurve
 {
-
   public:
-	// Default C'tor
-	OldCalibration();
+	// C'tor
+	OldCalibration( bool pAllChan ) {
+		SCurve::MakeTestGroups( pAllChan );
+		fVplusVec.push_back( 0x58 );
+		fVplusVec.push_back( 0x78 );
+		fVplusVec.push_back( 0x98 );
+	}
 
-	// D'Tor
-	~OldCalibration();
+	// D'tor
+	~OldCalibration() {
+		if ( fResultFile ) {
+			fResultFile->Write();
+			fResultFile->Close();
+		}
+	}
 
-	void InitialiseTestGroup();
+	// methods
+	void Initialise();  // wants to be called after SystemController::ReadHW, ReadSettings
+	void ScanVplus();
+	void ScanOffset();
+	void SaveResults( bool pDumpConfigFiles = true ) {
+		writeGraphs();
+		if ( pDumpConfigFiles ) SCurve::dumpConfigFiles();
+	}
 
-	void VplusScan();
-	void OffsetScan();
+  protected:
+	// Canvases
+	TCanvas* fVplusCanvas;
+	TCanvas* fVcthVplusCanvas;
+	TCanvas* fOffsetCanvas;
 
-	void SaveResults();
+	// Containers
+	GraphMap fGraphMap;
+	FitMap fFitMap;
+	std::vector<uint8_t> fVplusVec;
 
-  private:
-	TestGroupMap fTestGroupMap;
-	TestGroupGraphMap fTestGroupGraphMap;
-	std::vector<uint8_t> fVplusValues;
-	std::map<Cbc*, TCanvas*> fCbcCanvasMap;
 
-  private:
-	void ConstructTestGroup( uint8_t pShelveId, uint8_t pBeId, uint8_t pFeId, uint8_t pCbcId );
+	// Settings
+	uint8_t fTargetVcth;
 
-	void FitVplusVcth( BeBoard* pBoard, uint8_t pTargetVcth,  bool pDoDraw );
-	void setGlobalReg( BeBoard* pBoard, const std::string& pRegName, uint8_t pRegValue );
-	void initializeSCurves( BeBoard* pBoard, uint8_t pGroupId, uint8_t pValue, TString pParameter );
-	void measureSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint32_t pTotalChannels, bool pHoleMode );
-	void processSCurves( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pValue, TString pParameter, bool pHoleMode, bool pDoDraw );
-	uint32_t fillScurveHists( BeBoard* pBoard, uint8_t pGroupId, uint8_t pVcth, const Event* pEvent );
-	uint32_t ToggleTestGroup( BeBoard* pBoard, uint8_t pGroupId, bool pHoleMode, bool pEnable );
-	uint32_t SetOffsetTargetBitTestGroup( BeBoard* pBoard, uint8_t pGroupId, bool pHoleMode, uint8_t pTargetBit, uint8_t pTargetVcth );
-	void processSCurvesOffset( BeBoard* pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pTargetVcth, uint8_t pTargetBit, TString pParameter, bool pHoleMode, bool pDoDraw );
-	void UpdateCbcObject( BeBoard* pBoard, uint8_t pGroupId );
+  protected:
 
-	// Use BeBoard reference
-	void FitVplusVcth( BeBoard& pBoard, uint8_t pTargetVcth,  bool pDoDraw ) {
-		FitVplusVcth( &pBoard, pTargetVcth,  pDoDraw );
-	}
-	void setGlobalReg( BeBoard& pBoard, const std::string& pRegName, uint8_t pRegValue ) {
-		setGlobalReg( &pBoard, pRegName, pRegValue );
-	}
-	void initializeSCurves( BeBoard& pBoard, uint8_t pGroupId, uint8_t pValue, TString pParameter ) {
-		initializeSCurves( &pBoard, pGroupId, pValue, pParameter );
-	}
-	void measureSCurves( BeBoard& pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint32_t pTotalChannels, bool pHoleMode ) {
-		measureSCurves( &pBoard, pGroupId, pEventsperVcth, pTotalChannels, pHoleMode );
-	}
-	void processSCurves( BeBoard& pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pValue, TString pParameter, bool pHoleMode, bool pDoDraw ) {
-		processSCurves( &pBoard, pGroupId, pEventsperVcth, pValue, pParameter, pHoleMode, pDoDraw );
-	}
-	uint32_t fillScurveHists( BeBoard& pBoard, uint8_t pGroupId, uint8_t pVcth, const Event* pEvent ) {
-		return fillScurveHists( &pBoard, pGroupId, pVcth, pEvent );
-	}
-	uint32_t ToggleTestGroup( BeBoard& pBoard, uint8_t pGroupId, bool pHoleMode, bool pEnable ) {
-		return ToggleTestGroup( &pBoard, pGroupId, pHoleMode, pEnable );
-	}
-	uint32_t SetOffsetTargetBitTestGroup( BeBoard& pBoard, uint8_t pGroupId, bool pHoleMode, uint8_t pTargetBit, uint8_t pTargetVcth ) {
-		return SetOffsetTargetBitTestGroup( &pBoard, pGroupId, pHoleMode, pTargetBit, pTargetVcth );
-	}
-	void processSCurvesOffset( BeBoard& pBoard, uint8_t pGroupId, uint32_t pEventsperVcth, uint8_t pTargetVcth, uint8_t pTargetBit, TString pParameter, bool pHoleMode, bool pDoDraw ) {
-		processSCurvesOffset( &pBoard, pGroupId, pEventsperVcth, pTargetVcth, pTargetBit, pParameter, pHoleMode, pDoDraw );
-	}
-	void UpdateCbcObject( BeBoard& pBoard, uint8_t pGroupId ) {
-		UpdateCbcObject( &pBoard, pGroupId );
-	}
+	// SCurve related
+	void processSCurves( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
+
+	// general stuff
+	void findVplus( bool pDraw );
+
+	void writeGraphs();
 };
+
 
 #endif

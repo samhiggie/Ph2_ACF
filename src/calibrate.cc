@@ -6,7 +6,7 @@
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
 #include "../tools/Calibration.h"
-#include "../tools/FastCalibration.h"
+#include "../tools/OldCalibration.h"
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
 #include "TApplication.h"
@@ -43,8 +43,7 @@ int main( int argc, char* argv[] )
 
 	cmd.defineOption( "old", "Use old calibration algorithm", ArgvParser::NoOptionAttribute );
 
-	cmd.defineOption( "bitmode", "Turn on bitwise offset tuning. Default: false", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "bitmode" , "bm" );
+
 
 	cmd.defineOption( "allChan", "Do calibration using all channels? Default: false", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "allChan", "a" );
@@ -52,8 +51,6 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "batch", "b" );
 
-	cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "gui", "g" );
 
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
@@ -69,11 +66,9 @@ int main( int argc, char* argv[] )
 	bool cVplus = ( cmd.foundOption( "skip" ) ) ? false : true;
 	bool cOld = ( cmd.foundOption( "old" ) ) ? true : false;
 
-	bool cOffsetTuneMode = ( cmd.foundOption( "bitmode" ) ) ? true : false;
 	bool cCalibrateTGrp = ( cmd.foundOption( "allChan" ) ) ? true : false;
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 
-	bool isGui = ( cmd.foundOption( "gui" ) ) ? true : false;
 
 	TApplication cApp( "Root Application", &argc, argv );
 	if ( batchMode ) gROOT->SetBatch( true );
@@ -81,27 +76,7 @@ int main( int argc, char* argv[] )
 
 	Timer t;
 
-	if ( cOld )
-	{
-		t.start();
-		FastCalibration cCalibration( cOffsetTuneMode, cCalibrateTGrp );
-		cCalibration.InitializeHw( cHWFile );
-		cCalibration.InitializeSettings( cHWFile );
-		cCalibration.CreateResultDirectory( cDirectory );
-		cCalibration.InitResultFile( "CalibrationResults" );
-		cCalibration.StartHttpServer();
-
-		if ( !isGui ) cCalibration.ConfigureHw();
-
-		cCalibration.Initialise( ); // canvases etc. for fast calibration
-		if ( cVplus ) cCalibration.ScanVplus();
-		cCalibration.ScanOffset();
-		cCalibration.SaveResults();
-
-		t.stop();
-		t.show( "Time to Calibrate the system: " );
-	}
-	else
+	if ( !cOld )
 	{
 		t.start();
 		Calibration cCalibration;
@@ -119,7 +94,24 @@ int main( int argc, char* argv[] )
 		t.stop();
 		t.show( "Time to Calibrate the system: " );
 	}
+	else
+	{
+		t.start();
+		OldCalibration cCalibration( cCalibrateTGrp );
+		cCalibration.InitializeHw( cHWFile );
+		cCalibration.InitializeSettings( cHWFile );
+		cCalibration.CreateResultDirectory( cDirectory );
+		cCalibration.InitResultFile( "CalibrationResults" );
+		cCalibration.StartHttpServer();
 
+		cCalibration.Initialise( ); // canvases etc. for fast calibration
+		if ( cVplus ) cCalibration.ScanVplus();
+		cCalibration.ScanOffset();
+		cCalibration.SaveResults();
+
+		t.stop();
+		t.show( "Time to Calibrate the system: " );
+	}
 
 	if ( !batchMode ) cApp.Run();
 

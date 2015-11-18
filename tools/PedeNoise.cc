@@ -8,9 +8,10 @@ void PedeNoise::Initialise()
 	// create the canvases
 
 
-	fNoiseCanvas = new TCanvas( "Final SCurves, Strip Noise", "Final SCurves, Noise", 650, 650 );
 	fPedestalCanvas = new TCanvas( "Pedestal & Noise", "Pedestal & Noise", 650, 650 );
 	fFeSummaryCanvas = new TCanvas( "Noise for each FE", "Noise for each FE", 650, 650 );
+	fNoiseCanvas = new TCanvas( "Final SCurves, Strip Noise", "Final SCurves, Noise", 650, 650 );
+
 
 	// count FEs & CBCs
 	uint32_t cCbcCount = 0;
@@ -126,10 +127,6 @@ void PedeNoise::measureNoise()
 	// now measure some SCurves
 	for ( auto& cTGrpM : fTestGroupChannelMap )
 	{
-		if ( cTGrpM.first == -1 && fdoTGrpCalib )
-			continue;
-		if ( cTGrpM.first > -1 && !fdoTGrpCalib )
-			break;
 		// if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
 		if ( fTestPulse )
 		{
@@ -137,12 +134,12 @@ void PedeNoise::measureNoise()
 			this->accept( cBeBoardWriter );
 			cBeBoardWriter.setRegister( ENABLE_TP, 1 );
 			this->accept( cBeBoardWriter );
-			std::cout << "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +fTestPulseAmplitude << std::endl;
+			std::cout << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +fTestPulseAmplitude << RESET << std::endl;
 			setSystemTestPulse( fTestPulseAmplitude, cTGrpM.first );
 
 		}
 
-		std::cout << "Measuring Test Group...." << cTGrpM.first << std::endl;
+		std::cout << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET << std::endl;
 		// this leaves the offset values at the tuned values for cTGrp and disables all other groups
 		enableTestGroupforNoise( cTGrpM.first );
 
@@ -150,7 +147,7 @@ void PedeNoise::measureNoise()
 		initializeSCurves( "Final", fTestPulseAmplitude, cTGrpM.first );
 
 		// measure the SCurves, the false is indicating that I am sweeping Vcth
-		measureSCurves( false, cTGrpM.first );
+		measureSCurves( cTGrpM.first );
 
 		// now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
 		processSCurvesNoise( "Final", fTestPulseAmplitude, true, cTGrpM.first );
@@ -280,7 +277,7 @@ void PedeNoise::enableTestGroupforNoise( int  pTGrpId )
 								uint8_t cEnableOffset = cOffsets->GetBinContent( cChan );
 								TString cRegName = Form( "Channel%03d", cChan + 1 );
 								cRegVec.push_back( { cRegName.Data(), cEnableOffset } );
-								std::cout << GREEN << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << std::hex << "0x" << +cEnableOffset << std::dec << RESET << std::endl;
+								// std::cout << GREEN << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << std::hex << "0x" << +cEnableOffset << std::dec << RESET << std::endl;
 							}
 						}
 					}
@@ -408,7 +405,7 @@ void PedeNoise::saveInitialOffsets()
 	}
 }
 
-void PedeNoise::writeGraphs()
+void PedeNoise::SaveResults()
 {
 	// just use auto iterators to write everything to disk
 	// this is the old method before Tool class was cool

@@ -7,9 +7,10 @@ Data/*
        html/
        latex/
     *.bin
-*.raw
-Results/*
-settings/connections_slc6.xml
+    *.raw
+    Results/*
+    settings/connections_slc6.xml
 # just for G. Auzingers sanity
 Calibrations
 .run_number.txt
+settings/connections_186.xml
