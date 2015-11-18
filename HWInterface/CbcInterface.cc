@@ -141,7 +141,6 @@ namespace Ph2_HwInterface
 								std::cout << RED << "\nERROR !!!\nReadback value not the same after 5 Iteration for Register @ Page: "  << int( cRegItemWrite.fPage ) << " Address: " << int( cRegItemWrite.fAddress ) << "\n" << std::hex << "Written Value : 0x" << int( cRegItemWrite.fValue ) << "\nReadback Value : 0x" << int( cRegItemRead.fValue ) << std::dec << std::endl;
 								std::cout << "Cbc Id : " << int( pCbc->getCbcId() ) << RESET << std::endl << std::endl;
 								std::cout << BOLDRED << "Failed to write register in " << cIterationCounter << " trys! Giving up!" << RESET << std::endl;
-								break;
 							}
 
 							cMismatchWord = std::mismatch( ++cMismatchWord.first, cVecWrite.end(), ++cMismatchWord.second );
@@ -156,6 +155,7 @@ namespace Ph2_HwInterface
 						fBoardFW->ReadCbcBlockReg( pCbc->getFeId(), cRead_again );
 						if ( cWrite_again != cRead_again )
 						{
+							if ( cIterationCounter == 5 ) break;
 							cVecWrite.clear();
 							cVecWrite = cWrite_again;
 							cVecRead.clear();
@@ -236,7 +236,6 @@ namespace Ph2_HwInterface
 						std::cout << "Register Adress : " << int( cRegItem.fAddress ) << std::endl;
 						std::cout << "Cbc Id : " << +cCbcId << RESET << std::endl << std::endl;
 						std::cout << BOLDRED << "Failed to write register in " << cIterationCounter << " trys! Giving up!" << RESET << std::endl;
-						break;
 					}
 
 					EncodeReg( cWriteItem, cCbcId, cWrite_again );
@@ -248,6 +247,7 @@ namespace Ph2_HwInterface
 
 					if ( cWrite_again != cRead_again )
 					{
+						if ( cIterationCounter == 5 ) break;
 						cVecWrite.clear();
 						cVecWrite = cWrite_again;
 						cVecRead.clear();
@@ -342,7 +342,6 @@ namespace Ph2_HwInterface
 							std::cout << RED << "\nERROR !!!\nReadback value not the same for Register : " << cMismatchName << " @ Page: " << int( cRegItemWrite.fPage ) << " Address: " << int( cRegItemWrite.fAddress ) << "\n"  << std::hex << "Written Value : 0x" << int( cRegItemWrite.fValue ) << "\nReadback Value : 0x" << int( cRegItemRead.fValue ) << std::dec << std::endl;
 							std::cout << "Cbc Id : " << int( pCbc->getCbcId() ) << RESET << std::endl << std::endl;
 							std::cout << BOLDRED << "Failed to write register in " << cIterationCounter << " trys! Giving up!" << RESET << std::endl;
-							break;
 						}
 						cMismatchWord = std::mismatch( ++cMismatchWord.first, cVecWrite.end(), ++cMismatchWord.second );
 
@@ -356,6 +355,7 @@ namespace Ph2_HwInterface
 
 					if ( cWrite_again != cRead_again )
 					{
+						if ( cIterationCounter == 5 ) break;
 						cVecWrite.clear();
 						cVecWrite = cWrite_again;
 						cVecRead.clear();
