@@ -113,8 +113,8 @@ int main( int argc, char* argv[] )
 
 		cCalibration.ConfigureHw();
 		cCalibration.Initialise( false );
-		cCalibration.FindVplus();
-		cCalibration.FindOffsets( false );
+		if ( !cVplus ) cCalibration.FindVplus();
+		cCalibration.FindOffsets();
 		cCalibration.SaveResults();
 		t.stop();
 		t.show( "Time to Calibrate the system: " );

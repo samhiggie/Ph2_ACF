@@ -16,6 +16,8 @@ void Calibration::Initialise( bool pAllChan )
 	fEventsPerPoint = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 10;
 	cSetting = fSettingsMap.find( "TestPulseAmplitude" );
 	fTestPulseAmplitude = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
+	cSetting = fSettingsMap.find( "VerificationLoop" );
+	fCheckLoop = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 1;
 
 	if ( fTestPulseAmplitude == 0 )fTestPulse = 0;
 	else fTestPulse = 1;
@@ -224,9 +226,10 @@ void Calibration::bitwiseVplus( int pTGroup )
 	}
 }
 
-void Calibration::FindOffsets( bool pStandalone )
+void Calibration::FindOffsets()
 {
 	// do a binary search for the correct offset value
+
 
 	// just to be sure, configure the correct VCth and VPlus values
 	CbcRegWriter cWriter( fCbcInterface, "VCth", fTargetVcth );

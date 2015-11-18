@@ -52,7 +52,7 @@ class Calibration : public Tool
 
 	void Initialise( bool pAllChan = false );
 	void FindVplus();
-	void FindOffsets( bool pStandalone = false );
+	void FindOffsets();
 	void SaveResults() {
 		writeGraphs();
 		dumpConfigFiles();
@@ -122,7 +122,7 @@ class Calibration : public Tool
 	uint32_t fEventsPerPoint;
 	uint8_t fTargetVcth;
 	uint8_t fTargetOffset;
-	bool fCheckLoop = true;
+	bool fCheckLoop;
 
 };
 
