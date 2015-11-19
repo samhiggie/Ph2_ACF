@@ -97,7 +97,7 @@ void PedeNoise::Initialise()
 
 	fNoiseCanvas->DivideSquare( 2 * cPads );
 	fPedestalCanvas->DivideSquare( 2 * cPads );
-	fFeSummaryCanvas->DivideSquare( 2 * cPads );
+	fFeSummaryCanvas->DivideSquare( fNFe );
 
 	// now read the settings from the map
 	auto cSetting = fSettingsMap.find( "HoleMode" );

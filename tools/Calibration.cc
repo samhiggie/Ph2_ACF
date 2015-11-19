@@ -26,7 +26,7 @@ void Calibration::Initialise( bool pAllChan )
 	// Canvases
 	fVplusCanvas = new TCanvas( "VPlus", "VPlus", 515, 0, 500, 500 );
 	fOffsetCanvas = new TCanvas( "Offset", "Offset", 10, 0, 500, 500 );
-	fOccupancyCanvas = new TCanvas( "Occupancy", "Occupancy", 10, 505, 500, 500 );
+	fOccupancyCanvas = new TCanvas( "Occupancy", "Occupancy", 10, 525, 500, 500 );
 
 	// count FEs & CBCs
 	uint32_t cCbcCount = 0;
@@ -207,6 +207,7 @@ void Calibration::bitwiseVplus( int pTGroup )
 				toggleRegBit( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
 				fCbcInterface->WriteCbcReg( cCbc.first, "Vplus", cCbc.second );
 			}
+			// std::cout << "VPlus " << +cCbc.second << " = 0b" << std::bitset<8>( cCbc.second ) << " on CBC " << +cCbc.first->getCbcId() << " Occupancy : " << cOccupancy << std::endl;
 
 			// clear the occupancy histogram for the next bit
 			clearOccupancyHists( cCbc.first );
@@ -483,7 +484,7 @@ void Calibration::updateHists( std::string pHistname )
 			{
 				fVplusCanvas->cd( cCbc.first->getCbcId() + 1 );
 				TProfile* cTmpProfile = static_cast<TProfile*>( cHist->second );
-				cTmpProfile->DrawCopy( "HP0" );
+				cTmpProfile->DrawCopy( "H P0 E" );
 				fVplusCanvas->Update();
 			}
 			if ( pHistname == "Offsets" )

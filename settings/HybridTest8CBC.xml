@@ -38,7 +38,9 @@
             <Register name="cbc_stubdata_latency_adjust_fe1">1</Register>
             <Register name="cbc_stubdata_latency_adjust_fe2">1</Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER">9</Register>
-
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
+            
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
             <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">0</Register>

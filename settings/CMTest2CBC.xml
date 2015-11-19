@@ -24,7 +24,9 @@
             <Register name="COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET">50</Register>
             <Register name="COMMISSIONNING_MODE_DELAY_AFTER_L1A">400</Register>
             <Register name="COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE">201</Register>
-
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
+            
             <!-- Acquisition -->
             <Register name="cbc_stubdata_latency_adjust_fe1">1</Register>
             <Register name="cbc_stubdata_latency_adjust_fe2">1</Register>
