@@ -101,11 +101,12 @@ On this Repo, you can find different version of the software :
     - CTA FW interface
     - revised Root-web DQM structure
 - 18/11/2015: new features added (v1-30):
+    - BeBoard configuration option that specifies the # of CBCs that are in the data coming from the FW
     - compatability with 16 CBC firmware
     - handling of 16 CBC modules as one FE  in SW (2 FEs in FW)
     - new SCurve BaseClass for Calibraton & noise scans
     - iterative readback-error correction (SW tries to write every register agin that produced an error for 5 times)
-    - simplified FastCalibrationi
+    - simplified FastCalibration
     - removed old Calibration algorithm
     - introduced new, bitwise and super-fast calibration algorithm 
 
