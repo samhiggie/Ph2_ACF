@@ -18,7 +18,7 @@ else
 	ExtObjectsRoot= $(RootLibraryPaths)
 endif
 
-IncludeDirs     =  /opt/cactus/include ../
+IncludeDirs     =  /opt/cactus/include ../ ../../CMSPh2_AntennaDriver
 
 IncludePaths            = $(IncludeDirs:%=-I%)
 

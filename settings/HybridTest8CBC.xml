@@ -13,7 +13,7 @@
 				<!-- <Global_CBC_Register name="TriggerLatency"> 0x13 </Global_CBC_Register> -->
 
                 <!-- <CBC_Files path="/cmsuptrackernas/Configurations/Module1/final/"/> -->
-                <CBC_Files path="/settings/"/>
+                <CBC_Files path="./settings/"/>
 
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
@@ -37,13 +37,13 @@
             <!-- Acquisition -->
             <Register name="cbc_stubdata_latency_adjust_fe1">1</Register>
             <Register name="cbc_stubdata_latency_adjust_fe2">1</Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER">9</Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER">999</Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
             
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">0</Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">1</Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ">10</Register>
 
             <!-- Clock -->
@@ -75,7 +75,7 @@
 <Settings>
     <Setting name="HoleMode"> 0 </Setting>
     <Setting name="Threshold_NSigmas"> 4 </Setting>
-    <Setting name="Nevents"> 10 </Setting>
+    <Setting name="Nevents"> 1000 </Setting>
     <Setting name="TestPulseAmplitude"> 0x00 </Setting>
     <Setting name="FitSCurves"> 0 </Setting>
 </Settings>

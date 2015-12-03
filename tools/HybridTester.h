@@ -16,7 +16,7 @@
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/CommonVisitors.h"
-#include "../Utils/Antenna.h"
+#include "Antenna.h"
 
 
 #include "TCanvas.h"
