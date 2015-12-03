@@ -1,11 +1,11 @@
-Objs                    = RegManager.o BeBoardFWInterface.o GlibFWInterface.o CbcInterface.o BeBoardInterface.o FpgaConfig.o
+Objs            = RegManager.o BeBoardFWInterface.o GlibFWInterface.o CtaFWInterface.o BeBoardInterface.o FpgaConfig.o GlibFpgaConfig.o CtaFpgaConfig.o CbcInterface.o MmcPipeInterface.o Firmware.o
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC  -Wcpp
 #DevFlags                   = -D__CBCDAQ_DEV__
-DevFlags		=
+DevFlags	=
 
-IncludeDirs     =  /opt/cactus/include ../
+IncludeDirs     =  /opt/cactus/include ../ .
 
 IncludePaths            = $(IncludeDirs:%=-I%)
 

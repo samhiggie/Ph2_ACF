@@ -13,21 +13,21 @@
 #include <chrono>
 #include <uhal/uhal.hpp>
 #include "GlibFWInterface.h"
-#include "FpgaConfig.h"
+#include "GlibFpgaConfig.h"
 
 namespace Ph2_HwInterface
 {
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
-		BeBoardFWInterface( puHalConfigFileName, pBoardId ), 
-		fpgaConfig(nullptr),
+		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
+		fpgaConfig( nullptr ),
 		fData( nullptr )
 	{}
 
 
 	GlibFWInterface::GlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
-		fpgaConfig(nullptr),
+		fpgaConfig( nullptr ),
 		fData( nullptr ),
 
 		fFileHandler( pFileHandler )
@@ -302,7 +302,7 @@ namespace Ph2_HwInterface
 
 		//Read SRAM
 		std::vector<uint32_t> cData =  ReadBlockRegValue( fStrSram, cBlockSize );
- 		
+
 		WriteReg( fStrSramUserLogic, 1 );
 		WriteReg( fStrReadout, 1 );
 
@@ -355,7 +355,8 @@ namespace Ph2_HwInterface
 
 		CbcCounter cCounter;
 		pBoard->accept( cCounter );
-		return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
+		if ( pBoard->getNCbcDataSize() != 0 ) return cNPackets * ( pBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 );
+		else return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
 	}
 
 	std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -400,7 +401,7 @@ namespace Ph2_HwInterface
 		fStrSram = ( pFe ? SRAM2 : SRAM1 );
 		fStrOtherSram = ( pFe ? SRAM1 : SRAM2 );
 		fStrSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
-		fStrOtherSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
+		fStrOtherSramUserLogic = ( pFe ? SRAM1_USR_LOGIC : SRAM2_USR_LOGIC );
 	}
 
 
@@ -505,35 +506,9 @@ namespace Ph2_HwInterface
 		WriteReg( fStrSramUserLogic, 0 );
 
 		pVecReq = ReadBlockRegValue( fStrSram, pVecReq.size() );
-		/*uhal::ValVector<uint32_t> cData = ReadBlockReg( fStrSram, pVecReq.size() );
-		uhal::ValWord<uint32_t> cWord;
-		// To avoid the IPBUS bug
-		//  replace the 256th word
-		if ( pVecReq.size() > 255 )
-		{
-			std::string fSram_256 = fStrSram + "_256";
-			cWord = ReadReg( fSram_256 );
-			std::cout << "WARNING: Reading more than 255 32-bit words from SRAM, thus need to avoid the uHAL-GLIB bug!" << std::endl;
-		}*/
+
 		WriteReg( fStrSramUserLogic, 1 );
 		WriteReg( CBC_I2C_CMD_RQ, 0 );
-
-		/*	std::vector<uint32_t>::iterator it = pVecReq.begin();
-			uhal::ValVector< uint32_t >::const_iterator itValue = cData.begin();
-
-			while ( it != pVecReq.end() )
-			{
-				*it = *itValue;
-				it++;
-				itValue++;
-			}
-			// To avoid the IPBUS bug
-			//  replace the 256th word
-			if ( pVecReq.size() > 255 )
-			{
-				pVecReq.at( 255 ) = cWord.value();
-				// std::cout << "256th ReadbackValue " <<  std::bitset<32>( pVecReq.at( 255 ) ) << " - 2nd read value " <<  std::bitset<32> ( cWord.value() )  << std::endl;
-			}*/
 
 	}
 
@@ -589,26 +564,26 @@ namespace Ph2_HwInterface
 		EnableI2c( 0 );
 	}
 
-	void GlibFWInterface::FlashProm( uint16_t numConfig, const char* pstrFile )
+	void GlibFWInterface::FlashProm( const std::string& strConfig, const char* pstrFile )
 	{
 		if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
 			throw Exception( "This board is already uploading an FPGA configuration" );
 
 		if ( !fpgaConfig )
-			fpgaConfig = new FpgaConfig( this );
+			fpgaConfig = new GlibFpgaConfig( this );
 
-		fpgaConfig->runUpload( numConfig, pstrFile );
+		fpgaConfig->runUpload( strConfig, pstrFile );
 	}
 
-	void GlibFWInterface::JumpToFpgaConfig( uint16_t numConfig)
+	void GlibFWInterface::JumpToFpgaConfig( const std::string& strConfig )
 	{
 		if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
 			throw Exception( "This board is uploading an FPGA configuration" );
 
 		if ( !fpgaConfig )
-			fpgaConfig = new FpgaConfig( this );
+			fpgaConfig = new GlibFpgaConfig( this );
 
-		fpgaConfig->jumpToImage( numConfig == 1 ? 0 : numConfig);
+		fpgaConfig->jumpToImage( strConfig );
 	}
 
 }

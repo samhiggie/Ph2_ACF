@@ -10,47 +10,82 @@
 #include <mutex>
 #include <thread>
 
+/*!
+ * \class FileHandler
+ * \brief Class to write Data objects in binary file using multithreading
+*/
+
 class FileHandler
 
 {
   private:
-	// for mini DAQ file IO
+
 	std::string fBinaryFileName;
-	char fOption;
-	std::thread fThread;
-	std::mutex fMutex;
-	bool fFileIsOpened ;
-	bool is_set;
+	char fOption;/*!< option for read or write */
+	std::thread fThread;/*!< a thread for the multitrading */
+	std::mutex fMutex;/*!< Mutex */
+	bool fFileIsOpened ;/*!< to check if the file is opened */
+	bool is_set;/*!< check if fdata is set */
 
 
   public:
 
-	std::fstream fBinaryFile;
-	std::vector<uint32_t> fData;
+	std::fstream fBinaryFile;/*!< the stream of the binary file */
+	std::vector<uint32_t> fData;/*!< the vector of data */
 
-	//Constructor
+	/*!
+	* \brief constructor for the class
+	* \param pBinaryFileName: set the fbinaryFileName to pbinaryFileName
+	* \param  pOption: set fOption to pOption
+	*/
 	FileHandler( std::string pBinaryFileName, char pOption );
 
-	//destructor
+	/*!
+	* \brief destructor
+	*/
 	~FileHandler();
+
+
+	/*!
+	* \brief set fData to pVector
+	*/
 	void set( std::vector<uint32_t> pVector );
 
+
+	/*!
+	* \brief get the name of the binary file
+	* \param return the name of the file
+	*/
 	std::string getFilename() {
 		return fBinaryFileName;
 	}
 
+	/*!
+	* \brief Open file
+	* \return 0 if the file cannot be opened
+	*/
 	bool openFile( );
-
+	/*!
+	* \brief close the file
+	*/
 	void closeFile();
-
+	/*!
+	* \brief check if the file is open
+	* \return true if the file is already opened
+	*/
 	bool file_open() {
 		return fFileIsOpened;
 	}
-
-	//read from raw file to vector
+	/*!
+	 * \brief read from raw file
+	 * \return a vector with the data read from file
+	 */
 	std::vector<uint32_t> readFile( );
 
   private:
+	/*!
+	* \brief Write data to file
+	*/
 	void writeFile() ;
 };
 

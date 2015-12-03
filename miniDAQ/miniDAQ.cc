@@ -14,6 +14,7 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 #include "TString.h"
+#include <sys/stat.h>
 
 
 using namespace Ph2_HwDescription;

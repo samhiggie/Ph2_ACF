@@ -95,7 +95,6 @@ void HybridTester::InitialiseSettings()
 	// std::cout << "Read the following Settings: " << std::endl;
 	// std::cout << "Hole Mode: " << fHoleMode << std::endl << "NEvents: " << fTotalEvents << std::endl << "NSigmas: " << fSigmas << std::endl;
 }
-
 void HybridTester::InitialiseGUI( int pVcth, int pNevents, bool pTestreg, bool pScanthreshold, bool pHolemode )
 {
 	fThresholdScan = pScanthreshold;
@@ -108,7 +107,7 @@ void HybridTester::InitialiseGUI( int pVcth, int pNevents, bool pTestreg, bool p
 
 	gStyle->SetOptStat( 000000 );
 	gStyle->SetTitleOffset( 1.3, "Y" );
-	//  special Visitor class to count objects
+	//  special Visito class to count objects
 	Counter cCbcCounter;
 	accept( cCbcCounter );
 	fNCbc = cCbcCounter.getNCbc();
@@ -144,7 +143,6 @@ void HybridTester::Initialize( bool pThresholdScan )
 		fSCurveCanvas = new TCanvas( "fSCurveCanvas", "Noise Occupancy as function of VCth" );
 		fSCurveCanvas->Divide( fNCbc );
 	}
-
 	InitializeHists();
 	InitialiseSettings();
 }
@@ -196,7 +194,7 @@ void HybridTester::ScanThreshold()
 					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 					// Loop over Events from this Acquisition
-					for ( auto& cEvent: events )
+					for ( auto& cEvent : events )
 					{
 						// loop over Modules & Cbcs and count hits separately
 						cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
@@ -205,7 +203,7 @@ void HybridTester::ScanThreshold()
 					cNthAcq++;
 				}
 				fBeBoardInterface->Stop( pBoard, cNthAcq );
-				std::cout << +cVcth << " " << cHitCounter << std::endl;
+				// std::cout << +cVcth << " " << cHitCounter << std::endl;
 				// Draw the thing after each point
 				updateSCurveCanvas( pBoard );
 
@@ -339,6 +337,9 @@ void HybridTester::processSCurves( uint32_t pEventsperVcth )
 
 	}
 	fSCurveCanvas->Update();
+#ifdef __HTTP__
+	fHttpServer->ProcessRequests();
+#endif
 
 	// Write and Save the Canvas as PDF
 	fSCurveCanvas->Write( fSCurveCanvas->GetName(), TObject::kOverwrite );
@@ -391,6 +392,9 @@ void HybridTester::updateSCurveCanvas( BeBoard* pBoard )
 		}
 	}
 	fSCurveCanvas->Update();
+#ifdef __HTTP__
+	fHttpServer->ProcessRequests();
+#endif
 }
 
 
@@ -557,7 +561,9 @@ void HybridTester::Measure()
 					fHistBottom->SetContent( ( double* ) zero_fill );
 					fHistTop->SetContent( ( double* ) zero_fill );
 				}
+
 			}
+
 		}
 	}
 

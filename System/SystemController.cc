@@ -34,6 +34,12 @@ namespace Ph2_System
 
 		fFileHandler = new FileHandler( pFilename, pOption );
 	}
+
+	void SystemController::readFile( std::vector<uint32_t>& pVec )
+	{
+		pVec = fFileHandler->readFile( );
+	}
+
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )
 	{
 		if ( pFilename.find( ".xml" ) != std::string::npos )
@@ -153,6 +159,13 @@ namespace Ph2_System
 				cBeId = cBeBoardNode.attribute( "Id" ).as_int();
 				BeBoard* cBeBoard = new BeBoard( cShelveId, cBeId );
 
+				pugi::xml_node cBeBoardFWVersionNode = cBeBoardNode.child( "FW_Version" );
+				uint16_t cNCbcDataSize = 0;
+				cNCbcDataSize = uint16_t( cBeBoardFWVersionNode.attribute( "NCbcDataSize" ).as_int() );
+
+				if ( cNCbcDataSize != 0 ) os << BOLDCYAN << "|" << "	" << "|" << "----" << cBeBoardFWVersionNode.name() << " NCbcDataSize: " << cNCbcDataSize  <<  RESET << std:: endl;
+				cBeBoard->setNCbcDataSize( cNCbcDataSize );
+
 				// Iterate the BeBoardRegister Nodes
 				for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child( "Register" ); cBeBoardRegNode/* != cBeBoardNode.child( "Module" )*/; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
 				{
@@ -162,17 +175,10 @@ namespace Ph2_System
 
 				fShelveVector[cNShelve]->addBoard( cBeBoard );
 
-				BeBoardFWInterface* cBeBoardFWInterface;
-
-				if ( std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "Glib" ) ) )
-				{
-
-
-					cBeBoardFWInterface = new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
-
-
-					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
-				}
+				if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "GLIB" ) ) )
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
+				else if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "CTA" ) ) )
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
 				/*else
 				        cBeBoardFWInterface = new OtherFWInterface();*/
 
@@ -314,8 +320,8 @@ namespace Ph2_System
 					cBeBoardFWInterface = new GlibFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}
-				/*else
-				        cBeBoardFWInterface = new OtherFWInterface();*/
+				else if ( cBoard.get( "boardType" ).get<std::string>() == "Cta" )
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
 
 				// now grab the modules
 				picojson::array cModules = cBoard.get( "Modules" ).get<picojson::array>();

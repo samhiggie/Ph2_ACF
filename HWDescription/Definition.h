@@ -19,6 +19,7 @@
 
 #define XML_DESCRIPTION_FILE_2CBC "settings/HWDescription_2CBC.xml"
 #define XML_DESCRIPTION_FILE_8CBC "settings/HWDescription_8CBC.xml"
+#define XML_DESCRIPTION_FILE_16CBC "settings/Beamtest_Nov15.xml"
 
 //------------------------------------------------------------------------------
 //Cbc Config Files
@@ -264,6 +265,9 @@
 
 //RQ
 #define RQ              "COMMISSIONNING_MODE_RQ"
+
+// Test Pulse in commissioning mode
+#define ENABLE_TP		"COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID"
 
 //Acquisition mode
 #define ACQ_MODE        "user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"

@@ -60,18 +60,14 @@ namespace Ph2_HwInterface
 		static const uint32_t cMask4 = 0xff000000;
 		static const uint32_t cMask5 = 0x1e0000;
 		static const uint32_t cMask6 = 0x10000;
+		static const uint32_t cMask7 = 0x200000;
 	  public:
 
 		/*!
 		* \brief Constructor of the BeBoardFWInterface class
 		* \param puHalConfigFileName : path of the uHal Config File
-		*/
+		* \param pFileHandler : pointer to file handler for saving Raw Data*/
 		BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
-		/*!
-		* \brief Constructor of the BeBoardFWInterface class
-		* \param puHalConfigFileName : path of the uHal Config File
-		* \param pFileHandler : pointer to file handler for saving Raw Data
-		*/
 		/*!
 		* \brief Destructor of the BeBoardFWInterface class
 		*/
@@ -86,13 +82,20 @@ namespace Ph2_HwInterface
 		virtual void getBoardInfo();
 
 		/*! \brief Upload a configuration in a board FPGA */
-		virtual void FlashProm( uint16_t numConfig, const char* pstrFile ) {}
+		virtual void FlashProm( const std::string& strConfig, const char* pstrFile ) {}
 		/*! \brief Jump to an FPGA configuration */
-		virtual void JumpToFpgaConfig( uint16_t numConfig){}
+		virtual void JumpToFpgaConfig( const std::string& strConfig ) {}
+		/*! \brief Current FPGA configuration*/
 		virtual const FpgaConfig* getConfiguringFpga() {
 			return nullptr;
 		}
 		virtual void ProgramCdce() {}
+		/*! \brief Get the list of available FPGA configuration (or firmware images)*/
+		virtual std::vector<std::string> getFpgaConfigList( ) {
+			return std::vector<std::string>();
+		}
+		/*! \brief Delete one Fpga configuration (or firmware image)*/
+		virtual void DeleteFpgaConfig( const std::string& strId ) {}
 
 		//Encode/Decode Cbc values
 		/*!
@@ -181,13 +184,12 @@ namespace Ph2_HwInterface
 
 		virtual std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-
 	  protected:
 
 		bool runningAcquisition;
 		uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
 		boost::thread thrAcq;
-		// for mini DAQ file IO
+
 	};
 }
 

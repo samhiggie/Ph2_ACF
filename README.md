@@ -11,14 +11,13 @@ Hybrids, Boards) and their properties(values, status)
 
 - a tools/ directory with several utilities (currently: calibration, hybrid testing, common-mode analysis)
 
-- some applications: datatest, interfacetest, hybridtest, system, calibrate
+- some applications: datatest, interfacetest, hybridtest, system, calibrate, commission, fpgaconfig
 
 ##### Different versions
 
 On this Repo, you can find different version of the software :
 - a hopefully working and stable version on the master branch
 - An in-progress version in the Dev branch
-- A development version wiht a GUI
 <br>
 
 ### Changelog:
@@ -91,11 +90,28 @@ On this Repo, you can find different version of the software :
     - adding miniDAQ executable that saves to file and handles runnumber in a hidden Data/.run_number.txt file
     - miniDQM code based on BT DQM still available for playing back the binary data
     - datatest now has a -s option to specify a filename where binary data should be saved (optionally)
-    
+- 06/10/2015: adding several new features:
+    - bugfix w.r.t. 8CBC data format
+    - bugfixed 8CBC_DIO5 firmware
+    - a mechanism that throws an exception if a non-existing CBC register is to be written
+    - a binary to measure the pulseshape of the CBC on all channels of a test-group
+    - added support for THttp Server support (web access to histograms & root objects)
+    - a webgui
+    - re-worked Fpga configuration options
+    - CTA FW interface
+    - revised Root-web DQM structure
+- 18/11/2015: new features added (v1-30):
+    - BeBoard configuration option that specifies the # of CBCs that are in the data coming from the FW
+    - compatability with 16 CBC firmware
+    - handling of 16 CBC modules as one FE  in SW (2 FEs in FW)
+    - new SCurve BaseClass for Calibraton & noise scans
+    - iterative readback-error correction (SW tries to write every register agin that produced an error for 5 times)
+    - simplified FastCalibration
+    - removed old Calibration algorithm
+    - introduced new, bitwise and super-fast calibration algorithm 
 
 
 ### Setup
-
 
 Firmware for the GLIB can be found in /firmware. Since the "old" FMC flavour is deprecated, only new FMCs (both connectors on the same side) are supported.
 You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnell.com/xilinx/hw-usb-ii-g/platform-cable-configuration-prog/dp/1649384)
@@ -179,28 +195,6 @@ Note: You may also need to set the environment variables:
     $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
     $> export PATH=/opt/cactus/bin:$PATH
 
-
-#### The GUI :
-
- These instructions are provided to install the optional GUI.
-
-
-1. Source the variables:
-
-    $> source setup.sh
-        
-2. Make the GUI:
-
-        $> make
-    or
-
-        $> make GUI
-
-3. Run it:
-        
-        $> ./Ph2_ACF
-
-
 ### The Ph2_ACF Software : 
 
 Follow these instructions to install and compile the libraries:
@@ -240,6 +234,14 @@ Follow these instructions to install and compile the libraries:
 
     to run the CM noise study
 
+        $> pulseshape --help
+
+    to measure the analog pulseshape of the cbc
+
+        $> configure --help
+
+    to apply a configuration to the CBCs
+
 7. Launch
 
         $> commission --help
@@ -264,8 +266,6 @@ Follow these instructions to install and compile the libraries:
 
     to run the DQM code from the June '15 beamtest
 
-an example of how to use visitors can be found in src/interfacetest.cc or in the HybridTester class
-
 
 ##### What can you do with the software ?
 
@@ -283,6 +283,7 @@ At the moment the package provides the following features:
 - perform simple commissioning procedures
 - save binary data to file
 - create simple DQM histograms from binary data
+- measure the pulseshape of the CBC amp
 - any other routine you want to implement yourself ... 
 
 
@@ -310,89 +311,69 @@ For instructions on how to use it, see this [file](https://github.com/gauzinge/P
 
 <?xml version='1.0' encoding = 'UTF-8' ?>
 <HwDescription>
-
-    <!-- The file containing the connection data & IP addresses -->
     <Connections name="file://settings/connections_2CBC.xml"/>
 
     <Shelve Id="0" >
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+            <FW_Version NCbcDataSize="4"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-
-                <!-- Global CBC registers are applied to all CBCs and override register values from the config files -->
-                <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register> -->
-
-                <!-- a base path to the CBC files -->
+                <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
+                <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
+     
                 <CBC_Files path="./settings/"/>
-
                 <CBC Id="0" configfile="Cbc_default_hole.txt"/>
                 <CBC Id="1" configfile="Cbc_default_hole.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->
             <!-- set to 1 to enable commissioning mode -->
-            <Register name="COMMISSIONNING_MODE_RQ"> 0 </Register>
+            <Register name="COMMISSIONNING_MODE_RQ">0</Register>
             <!-- set to 1 to enable test pulse in commissioning mode -->
-            <Register name="COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID"> 0 </Register>
-            <!-- Delays after testpulse / L1A -->
-            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET"> 50 </Register>
-            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_L1A"> 400 </Register>
-            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE"> 201 </Register>
+            <Register name="COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID">0</Register>
+            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET">50</Register>
+            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_L1A">400</Register>
+            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE">201</Register>
+
+            <!-- Acquisition -->
+            <Register name="cbc_stubdata_latency_adjust_fe1">1</Register>
+            <Register name="cbc_stubdata_latency_adjust_fe2">1</Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER">9</Register>
 
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL"> 0 </Register>
-            <!-- internal trigger frequency: see address_table*.xml for details -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ"> 10 </Register>
-
-            <!-- ************************************ -->
-            <!-- This part is only required with the DIO5 mezzanine -->
-
-            <!-- DIO5 threshold: [v]/3.3*256 -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in"> 40 </Register>
-            <!-- set to 0 for rising edge, 1 for falling -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge"> 0 </Register>
-            <!-- Leave as default -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms" > 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
-            <!-- set to 1 to output L1A signal, 0 for input pulse -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">0</Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ">10</Register>
 
             <!-- Clock -->
             <!-- set to 1 for external clocking -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel"> 0 </Register>
+            <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel">0</Register>
+
+            <!-- DIO5 Config -->
+            <!-- set to 0 for rising edge, 1 for falling -->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge">0</Register>
+            <!-- set to 1 to output L1A signal, 0 for input pulse -->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel">1</Register>
+            <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar">0</Register>
+
             <!-- DIO5 threshold: [v]/3.3*256 -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in"> 40 </Register>
-            <!-- Leave as default -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms"> 0 </Register>
-
-           <!-- End of DIO5 registers -->
-            <!-- ************************************ -->
-
-            <!-- Acquisition -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe1"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe2"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 10 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
-
-            <!-- Polarity -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC"> 0 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.negative_logic_sTTS"> 0 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.polarity_tlu"> 0 </Register>
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in">40</Register>
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in">40</Register>
+            
+            <!-- DIO5 Termination -->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms">1</Register>
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms">0</Register>
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms">1</Register>
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms">0</Register>
         </BeBoard>
     </Shelve>
 </HwDescription>
 
-<!-- Settings node to pass any std::string - int combination to applications -->
 <Settings>
     <Setting name="RunNumber"> 1 </Setting>
-    <!-- Hole mode from settings overrides  "negative_logic_CBC" register-->
     <Setting name="HoleMode"> 1 </Setting>
 </Settings>
-
 
 ```
 
@@ -518,8 +499,6 @@ Several bugs / problematic behavior has been reported by various users that is n
         gStyle->Set ... ;
 
     statements. This has been observed by several users on the VM and can be fixed by re-compiling ROOT using GCC 4.8
-
-
 
 
 ### Support, Suggestions ?
