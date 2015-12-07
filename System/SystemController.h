@@ -180,6 +180,10 @@ namespace Ph2_System
 		 *\param os : ostream to dump output
 		 */
 		void parseSettingsjson( const std::string& pFilename, std::ostream& os );
+		/*! \brief Expand environment variables in string
+		 * \param s input string
+		 * \return Result with variables expanded */
+		std::string expandEnvironmentVariables( std::string s ) ;
 	};
 }
 

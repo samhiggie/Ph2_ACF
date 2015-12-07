@@ -154,7 +154,7 @@ namespace Ph2_System
 			for ( pugi::xml_node cBeBoardNode = cShelveNode.child( "BeBoard" ); cBeBoardNode; cBeBoardNode = cBeBoardNode.next_sibling() )
 			{
 
-				os << BOLDCYAN << "|" << "----" << cBeBoardNode.name() << "  " << cBeBoardNode.first_attribute().name() << " :" << cBeBoardNode.attribute( "Id" ).value() << RESET << std:: endl;
+				os << BOLDCYAN << "|" << "----" << cBeBoardNode.name() << "  " << cBeBoardNode.first_attribute().name() << " :" << cBeBoardNode.attribute( "Id" ).value() <<", type: "<<cBeBoardNode.attribute("boardType").value()<< RESET << std:: endl;
 
 				cBeId = cBeBoardNode.attribute( "Id" ).as_int();
 				BeBoard* cBeBoard = new BeBoard( cShelveId, cBeId );
@@ -175,10 +175,11 @@ namespace Ph2_System
 
 				fShelveVector[cNShelve]->addBoard( cBeBoard );
 
+				std::string strUhalConfig = expandEnvironmentVariables(doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value()); 
 				if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "GLIB" ) ) )
-					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface( strUhalConfig.c_str(), cBeId, fFileHandler );
 				else if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "CTA" ) ) )
-					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value(), cBeId, fFileHandler );
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( strUhalConfig.c_str(), cBeId, fFileHandler );
 				/*else
 				        cBeBoardFWInterface = new OtherFWInterface();*/
 
@@ -199,7 +200,7 @@ namespace Ph2_System
 							fShelveVector[cNShelve]->getBoard( cBeId )->addModule( cModule );
 
 							pugi::xml_node cCbcPathPrefixNode = cModuleNode.child( "CBC_Files" );
-							std::string cFilePrefix = std::string( cCbcPathPrefixNode.attribute( "path" ).value() );
+							std::string cFilePrefix = expandEnvironmentVariables(std::string( cCbcPathPrefixNode.attribute( "path" ).value() ));
 							if ( !cFilePrefix.empty() ) os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC Files Path : " << cFilePrefix << RESET << std::endl;
 
 							// Iterate the CBC node
@@ -210,8 +211,8 @@ namespace Ph2_System
 
 								std::string cFileName;
 								if ( !cFilePrefix.empty() )
-									cFileName = cFilePrefix + cCbcNode.attribute( "configfile" ).value();
-								else cFileName = cCbcNode.attribute( "configfile" ).value();
+									cFileName = cFilePrefix + "/"+expandEnvironmentVariables(cCbcNode.attribute( "configfile" ).value());
+								else cFileName = expandEnvironmentVariables(cCbcNode.attribute( "configfile" ).value());
 
 								Cbc* cCbc = new Cbc( cShelveId, cBeId, cModuleNode.attribute( "FMCId" ).as_int(), cModuleNode.attribute( "FeId" ).as_int(), cCbcNode.attribute( "Id" ).as_int(), cFileName );
 
@@ -314,14 +315,14 @@ namespace Ph2_System
 
 				// now need to find out what the boardType is to load the apropriate FWInterface
 				BeBoardFWInterface* cBeBoardFWInterface;
-
+				std::string strUhalConnection = cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>();
 				if ( cBoard.get( "boardType" ).get<std::string>() == "Glib" )
 				{
-					cBeBoardFWInterface = new GlibFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
+					cBeBoardFWInterface = new GlibFWInterface( strUhalConnection.c_str(), cBeId, fFileHandler );
 					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
 				}
 				else if ( cBoard.get( "boardType" ).get<std::string>() == "Cta" )
-					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
+					fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( strUhalConnection.c_str(), cBeId, fFileHandler );
 
 				// now grab the modules
 				picojson::array cModules = cBoard.get( "Modules" ).get<picojson::array>();
@@ -342,7 +343,7 @@ namespace Ph2_System
 
 						std::string cFilePrefix;
 						// conditional parsing
-						if ( !cModuleNode.get( "CbcFilePath" ).is<picojson::null>() ) cFilePrefix = cModuleNode.get( "CbcFilePath" ).get<std::string>();
+						if ( !cModuleNode.get( "CbcFilePath" ).is<picojson::null>() ) cFilePrefix = expandEnvironmentVariables(cModuleNode.get( "CbcFilePath" ).get<std::string>());
 						if ( !cFilePrefix.empty() ) os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC Files Path : " << cFilePrefix << RESET << std::endl;
 
 						// get the CBC array
@@ -354,8 +355,8 @@ namespace Ph2_System
 							cCbcId = static_cast<uint32_t>( cCbcNode.get( "Id" ).get<double>() );
 							std::string cFileName;
 							if ( !cFilePrefix.empty() )
-								cFileName = cFilePrefix + cCbcNode.get( "configfile" ).get<std::string>();
-							else cFileName = cCbcNode.get( "configfile" ).get<std::string>();
+								cFileName = cFilePrefix + expandEnvironmentVariables(cCbcNode.get( "configfile" ).get<std::string>());
+							else cFileName = expandEnvironmentVariables(cCbcNode.get( "configfile" ).get<std::string>());
 							Cbc* cCbc = new Cbc( cShelveId, cBeId, cFMCId , cFeId, cCbcId, cFileName );
 							os << BOLDCYAN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC" << "  " << "Id" << " :" << cCbcId << ", File: " << cFileName << RESET << std:: endl;
 
@@ -444,5 +445,23 @@ namespace Ph2_System
 			fSettingsMap[cSetting.first] = static_cast<int>( cSetting.second.get<double>() );
 			os << RED << "Setting" << RESET << " --" << BOLDCYAN << cSetting.first << RESET << ":" << BOLDYELLOW << static_cast<int>( cSetting.second.get<double>() ) << RESET << std:: endl;
 		}
+	}
+
+	std::string SystemController::expandEnvironmentVariables( std::string s ) {
+		if( s.find( "${" ) == std::string::npos ) return s;
+
+		std::string pre  = s.substr( 0, s.find( "${" ) );
+		std::string post = s.substr( s.find( "${" ) + 2 );
+
+		if( post.find( '}' ) == std::string::npos ) return s;
+
+		std::string variable = post.substr( 0, post.find( '}' ) );
+		std::string value    = "";
+
+		post = post.substr( post.find( '}' ) + 1 );
+
+		if( getenv( variable.c_str() ) != NULL ) value = std::string( getenv( variable.c_str() ) );
+
+		return expandEnvironmentVariables( pre + value + post );
 	}
 }
