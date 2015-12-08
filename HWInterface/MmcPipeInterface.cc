@@ -288,6 +288,7 @@ namespace fc7
           lEnd = lSrcData.end();
         }
 
+	//std::cout<<"begin: "<<std::dec<<distance(lSrcData.begin(),lBegin)<<", end: "<<distance(lSrcData.begin(),lEnd)<<" ("<<distance(lBegin, lEnd)<<")"<<std::endl;
         lVector.assign ( lBegin , lEnd );
         this->getNode ( "FIFO" ).writeBlock ( lVector );
         this->getClient().dispatch();
@@ -304,12 +305,13 @@ namespace fc7
 
     if (pProgressStr) pProgressStr->assign("Done loading firmware image");
     Receive ();
+//std::cout<<"Out of Receive()"<<std::endl;
   }
 
 
 
 
-  XilinxBitStream MmcPipeInterface::FileFromSD ( const std::string& aFilename )
+  XilinxBitStream MmcPipeInterface::FileFromSD ( const std::string& aFilename, uint32_t *pProgress , uint32_t uOffset)
   {
     SetTextSpace ( aFilename );
     Send ( 0x00000009 );
@@ -328,9 +330,9 @@ namespace fc7
 
     std::vector< uint32_t > lRet;
     lRet.reserve( 5120000 );
-    uint32_t lWordCount = lHeader[1];
+    uint32_t lWordCount = lHeader[1], lTot=lWordCount;
 
-    std::cout << "Retrieving firmware image" << std::endl;
+    //std::cout << "Retrieving firmware image" << std::endl;
     uint32_t i ( 0 );
 
     while ( lWordCount )
@@ -354,18 +356,18 @@ namespace fc7
   
         lRet.insert( lRet.end() , lPayload.begin() , lPayload.end() );
 
-        if ( ! ( i++ %500 ) )
+        if ( ! ( i++ %500 ) && pProgress )
         {
-          std::cout << "." << std::flush;
+	  *pProgress=33-lWordCount*33/lTot + uOffset;
+          //std::cout << "." << std::flush;
         }
       }
       else{
         usleep ( 1000 ); //Otherwise we get serious bus contention
       }
     }
-    std::cout << std::endl;
-
-    std::cout << "Done retrieving firmware image" << std::endl;
+    //std::cout << std::endl; 
+    //std::cout << "Done retrieving firmware image" << std::endl;
 
     if ( lHeader[0] )
     {
@@ -490,7 +492,7 @@ namespace fc7
     mFPGAtoMMCSpaceAvailable = 511 - mFPGAtoMMCDataAvailable;
     mMMCtoFPGADataAvailable = ( ( ( lMMCtoFPGAcounters>>1 ) & 0x00007FFF ) - ( ( lMMCtoFPGAcounters>>16 ) & 0x0000FFFF ) + 1 ) % 512;
     mMMCtoFPGASpaceAvailable = 511 - mMMCtoFPGADataAvailable;
-    //     std::cout << std::dec << "mFPGAtoMMCDataAvailable:" << mFPGAtoMMCDataAvailable << "\tmFPGAtoMMCSpaceAvailable:" << mFPGAtoMMCSpaceAvailable << "\tmMMCtoFPGADataAvailable:" << mMMCtoFPGADataAvailable << "\tmMMCtoFPGASpaceAvailable:" << mMMCtoFPGASpaceAvailable << std::endl;
+    //std::cout << std::dec << "mFPGAtoMMCDataAvailable:" << mFPGAtoMMCDataAvailable << "\tmFPGAtoMMCSpaceAvailable:" << mFPGAtoMMCSpaceAvailable << "\tmMMCtoFPGADataAvailable:" << mMMCtoFPGADataAvailable << "\tmMMCtoFPGASpaceAvailable:" << mMMCtoFPGASpaceAvailable <<std::endl;//"\tlFpgaToMmc:"<< std::hex << lFPGAtoMMCcounters<<"\tlMmcToFpga:"<<  lMMCtoFPGAcounters<<std::endl;
   }
 
 

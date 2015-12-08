@@ -24,9 +24,14 @@ namespace Ph2_HwInterface
  * \param pbbi Reference to the BeBoardFWInterface
  */
 			FpgaConfig(BeBoardFWInterface* pbbi);
+/*! \brief Launch the firmware download in a separate thread
+ * \param strConfig FPGA configuration number or name
+ * \param pstrFile absolute path to the configuration file
+ */
+			virtual void runDownload(const std::string& strConfig, const char* pstrFile) throw (std::string)=0;
 /*! \brief Launch the firmware upload in a separate thread
  * \param strConfig FPGA configuration number or name
- * \param pstrFile absolute path to the MCS file
+ * \param pstrFile absolute path to the configuration file
  */
 			virtual void runUpload(const std::string& strConfig, const char* pstrFile) throw (std::string)=0;
 /*! \brief Tells if a configuration is currently been uploaded

@@ -47,7 +47,7 @@ namespace fc7
       void SetDummySensor ( const uint8_t& aValue );
 
       void FileToSD ( const std::string& aFilename, Firmware& aFirmware , uint32_t *pProgress=NULL, std::string *pProgressStr=NULL);
-      XilinxBitStream FileFromSD ( const std::string& aFilename );
+      XilinxBitStream FileFromSD ( const std::string& aFilename , uint32_t *pProgress, uint32_t uOffset );
 
       void RebootFPGA ( const std::string& aFilename , const std::string& aPassword );
       void BoardHardReset ( const std::string& aPassword );

@@ -551,6 +551,13 @@ namespace Ph2_HwInterface
 		fpgaConfig->jumpToImage( strConfig);
 	}
 
+	void CtaFWInterface::DownloadFpgaConfig( const std::string& strConfig, const std::string& strDest)
+	{
+		checkIfUploading();
+
+		fpgaConfig->runDownload( strConfig, strDest.c_str());
+	}
+
 	std::vector<std::string> CtaFWInterface::getFpgaConfigList()
 	{
 		checkIfUploading();

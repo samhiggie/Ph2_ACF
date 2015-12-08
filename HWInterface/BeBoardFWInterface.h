@@ -85,6 +85,8 @@ namespace Ph2_HwInterface
 		virtual void FlashProm( const std::string& strConfig, const char* pstrFile ) {}
 		/*! \brief Jump to an FPGA configuration */
 		virtual void JumpToFpgaConfig( const std::string& strConfig ) {}
+
+		virtual void DownloadFpgaConfig( const std::string& strConfig, const std::string& strDest ) {}
 		/*! \brief Current FPGA configuration*/
 		virtual const FpgaConfig* getConfiguringFpga() {
 			return nullptr;
