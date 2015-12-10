@@ -158,6 +158,8 @@ void SystemController::parseHWxml( const std::string& pFilename, std::ostream& o
         {
 
             os << BOLDCYAN << "|" << "----" << cBeBoardNode.name() << "  " << cBeBoardNode.first_attribute().name() << " :" << cBeBoardNode.attribute( "Id" ).value() << RESET << std:: endl;
+            pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child("connection");
+            std::cout << BOLDBLUE <<  "|" << "----" << "Board Id: " << BOLDYELLOW << cBeBoardConnectionNode.attribute("id").value() << BOLDBLUE << " URI: " << BOLDYELLOW << cBeBoardConnectionNode.attribute("uri").value() << BOLDBLUE << " Address Table: " << BOLDYELLOW << cBeBoardConnectionNode.attribute("address_table").value() << RESET << std::endl;
 
             cBeId = cBeBoardNode.attribute( "Id" ).as_int();
             BeBoard* cBeBoard = new BeBoard( cShelveId, cBeId );
@@ -178,7 +180,6 @@ void SystemController::parseHWxml( const std::string& pFilename, std::ostream& o
 
             fShelveVector[cNShelve]->addBoard( cBeBoard );
 
-            pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child("connection");
 
             if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "GLIB" ) ) )
                 fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface( cBeBoardConnectionNode.attribute( "id" ).value(), cBeBoardConnectionNode.attribute( "uri" ).value(), cBeBoardConnectionNode.attribute("address_table").value(), fFileHandler );
