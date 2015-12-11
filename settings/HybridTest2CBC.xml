@@ -1,18 +1,18 @@
 <?xml version='1.0' encoding = 'UTF-8' ?>
 <HwDescription>
-    <Connections name="file://settings/connections_2CBC.xml"/>
 
     <Shelve Id="0" >
-        <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+        <BeBoard Id="0" boardType="GLIB">
+            <connection id="board" uri="ipbusudp-2.0://192.168.000.162:50001" address_table="file://settings/address_table_2CBC.xml" />
             <FW_Version NCbcDataSize="4"/>
-
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
                 <Global_CBC_Register name="VCth"> 0x70 </Global_CBC_Register>
                 <Global_CBC_Register name="TriggerLatency"> 0x03 </Global_CBC_Register>
 		        <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0xAB </Global_CBC_Register>
-                <CBC_Files path="settings/"/>
-                 <CBC Id="0" configfile="Cbc_default_hole.txt"/>
-                 <CBC Id="1" configfile="Cbc_default_hole.txt"/>
+
+                <CBC_Files path="./settings/"/>
+                <CBC Id="0" configfile="FE0CBC0.txt"/>
+                <CBC Id="1" configfile="FE0CBC1.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->
@@ -32,20 +32,18 @@
             
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ"> 10 </Register>
-            <!-- DIO5 threshold: [v]/3.3*256 -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in"> 40 </Register>
-            <!-- set to 0 for rising edge, 1 for falling -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge"> 0 </Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms" > 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
-            <!-- set to 1 to output L1A signal, 0 for input pulse -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
-
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">0</Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ">10</Register>
             <!-- Clock -->
             <!-- set to 1 for external clocking -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel"> 0 </Register>
+            <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel">0</Register>
+            <!-- DIO5 Config -->
+            <!-- set to 0 for rising edge, 1 for falling -->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge">0</Register>
+            <!-- set to 1 to output L1A signal, 0 for input pulse -->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel">1</Register>
+            <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
+            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar">0</Register>
             <!-- DIO5 threshold: [v]/3.3*256 -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in">40</Register>
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in">40</Register>
