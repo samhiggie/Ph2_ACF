@@ -109,6 +109,10 @@ On this Repo, you can find different version of the software :
     - simplified FastCalibration
     - removed old Calibration algorithm
     - introduced new, bitwise and super-fast calibration algorithm 
+- 11/12/2015: new uHAL connection configuration:
+    - added new Constructors to RegManager, BeBoardFWInterface, GlibFWInterface, CtaFWInterface that take uhal connection: id, uri, address_table
+    - modified system controller accordingly so these strings are passed to the constructor
+    - adapted config files
 
 
 ### Setup

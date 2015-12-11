@@ -1,8 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <HwDescription>
-    <Connections name="file://settings/connections_186.xml" />
     <Shelve Id="0">
-        <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+        <BeBoard Id="0" boardType="GLIB">
+        	<connection id="board" uri="ipbusudp-2.0://192.168.000.162:50001" address_table="file://settings/address_table_8CBC.xml" />
+
             <FW_Version NCbcDataSize="8" />
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
                 <!-- <Global_CBC_Register name="VCth">0x84</Global_CBC_Register> -->
