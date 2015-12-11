@@ -156,12 +156,12 @@ private:
      * \param pVecReq : Block of words to send
      * \param pWrite : 1/0 -> Write/Read
      */
-    void SendBlockCbcI2cRequest( std::vector<uint32_t>& pVecReq, bool pWrite );
+    void WriteI2C( std::vector<uint32_t>& pVecReq, bool pWrite );
     /*!
      * \brief Read blocks from SRAM via I2C
      * \param pVecReq : Vector to stack the read words
      */
-    void ReadI2cBlockValuesInSRAM( std::vector<uint32_t>& pVecReq );
+    void ReadI2C( std::vector<uint32_t>& pVecReq );
     /*!
      * \brief Enable I2C communications
      * \param pEnable : 1/0 -> Enable/Disable

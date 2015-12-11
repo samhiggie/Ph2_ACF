@@ -58,156 +58,79 @@ GlibFWInterface::GlibFWInterface( const char* pId, const char* pUri, const char*
 void GlibFWInterface::ConfigureBoard( const BeBoard* pBoard )
 {
 
-    //We may here switch in the future with the StackReg method of the RegManager
-    //when the timeout thing will be implemented in a transparent and pretty way
-
     std::vector< std::pair<std::string, uint32_t> > cVecReg;
-    std::pair<std::string, uint32_t> cPairReg;
 
     std::chrono::milliseconds cPause( 200 );
 
     //Primary Configuration
-    cPairReg.first = PC_CONFIG_OK;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM1_END_READOUT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM2_END_READOUT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM1_USR_LOGIC;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM2_USR_LOGIC;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
+    uint32_t cI2CEnableValue = 0x000009F4;
+    cVecReg.push_back({I2C_SETTINGS, cI2CEnableValue});
+    cVecReg.push_back({PC_CONFIG_OK, 1});
+    cVecReg.push_back({SRAM1_END_READOUT, 0});
+    cVecReg.push_back({SRAM2_END_READOUT, 0});
+    cVecReg.push_back({SRAM1_USR_LOGIC, 1});
+    cVecReg.push_back({SRAM2_USR_LOGIC, 1});
 
-    WriteStackReg( cVecReg );
+    //WriteStackReg( cVecReg );
 
-    cVecReg.clear();
+    //cVecReg.clear();
 
-    std::this_thread::sleep_for( cPause );
+    //std::this_thread::sleep_for( cPause );
 
-    /*
-            GlibRegMap : map<std::string,uint8_t> created from Glib class
-
-       Mandatory to go through a created cGlibRegMap.
-       If you want to put directly pGlib.getGlibRegMap(), you'll end up with
-       a seg fault error, as it is not putting all the map in mem but only
-       begin() and end().
-     */
-
+    // iterate the BeBoardRegMap to get the user configuration
     BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
     for ( auto const& it : cGlibRegMap )
-    {
-        cPairReg.first = it.first;
-        cPairReg.second = it.second;
-        cVecReg.push_back( cPairReg );
-    }
+        cVecReg.push_back({it.first, it.second});
+
+    //WriteStackReg( cVecReg );
+
+    //cVecReg.clear();
+
+    cVecReg.push_back({SPURIOUS_FRAME, 0});
+    cVecReg.push_back({FORCE_BG0_START, 0});
+    cVecReg.push_back({CBC_TRIGGER_1SHOT, 0});
+
+    cVecReg.push_back({PC_CONFIG_OK, 0});
+    //WriteStackReg( cVecReg );
+
+    //cVecReg.clear();
 
     WriteStackReg( cVecReg );
 
     cVecReg.clear();
 
-    cPairReg.first = SPURIOUS_FRAME;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = FORCE_BG0_START;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = CBC_TRIGGER_1SHOT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    // cPairReg.first = BREAK_TRIGGER;
-    // cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-
-    WriteStackReg( cVecReg );
-
-    cVecReg.clear();
-
-
-    cPairReg.first = PC_CONFIG_OK;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM1_END_READOUT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM2_END_READOUT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM1_USR_LOGIC;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM2_USR_LOGIC;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-
-    WriteStackReg( cVecReg );
-
-    cVecReg.clear();
-
-    std::this_thread::sleep_for( cPause );
-
-    cPairReg.first = SPURIOUS_FRAME;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = FORCE_BG0_START;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = CBC_TRIGGER_1SHOT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    // cPairReg.first = BREAK_TRIGGER;
-    // cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-
-    WriteStackReg( cVecReg );
-
-    cVecReg.clear();
-
-    std::this_thread::sleep_for( cPause * 3 );
-
+    //std::this_thread::sleep_for( cPause * 3 );
 }
 
 
 void GlibFWInterface::SelectFEId()
 {
-    if ( static_cast<uint32_t>( ReadReg( HYBRID_TYPE ) ) == 8 )
-    {
-        fCbcStubLat  = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_STUB_LATENCY_FE1 : CBC_STUB_LATENCY_FE2 );
-        fCbcI2CCmdAck = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_I2C_CMD_ACK_FE1 : CBC_I2C_CMD_ACK_FE2 );
-        fCbcI2CCmdRq = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_I2C_CMD_RQ_FE1 : CBC_I2C_CMD_RQ_FE2 );
-        fCbcHardReset = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_HARD_RESET_FE1 : CBC_HARD_RESET_FE2 );
-        fCbcFastReset = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_FAST_RESET_FE1 : CBC_FAST_RESET_FE2 );
-    }
-    else
-    {
-        fCbcStubLat  = CBC_STUB_LATENCY;
-        fCbcI2CCmdAck =  CBC_I2C_CMD_ACK;
-        fCbcI2CCmdRq = CBC_I2C_CMD_RQ;
-        fCbcHardReset = CBC_HARD_RESET;
-        fCbcFastReset = CBC_FAST_RESET;
-    }
+    //if ( static_cast<uint32_t>( ReadReg( HYBRID_TYPE ) ) == 8 )
+    //{
+    //fCbcStubLat  = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_STUB_LATENCY_FE1 : CBC_STUB_LATENCY_FE2 );
+    //fCbcI2CCmdAck = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_I2C_CMD_ACK_FE1 : CBC_I2C_CMD_ACK_FE2 );
+    //fCbcI2CCmdRq = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_I2C_CMD_RQ_FE1 : CBC_I2C_CMD_RQ_FE2 );
+    //fCbcHardReset = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_HARD_RESET_FE1 : CBC_HARD_RESET_FE2 );
+    //fCbcFastReset = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_FAST_RESET_FE1 : CBC_FAST_RESET_FE2 );
+    //}
+    //else
+    //{
+    fCbcStubLat  = CBC_STUB_LATENCY;
+    fCbcI2CCmdAck =  CBC_I2C_CMD_ACK;
+    fCbcI2CCmdRq = CBC_I2C_CMD_RQ;
+    fCbcHardReset = CBC_HARD_RESET;
+    fCbcFastReset = CBC_FAST_RESET;
+    //}
 }
 
 void GlibFWInterface::Start()
 {
     std::vector< std::pair<std::string, uint32_t> > cVecReg;
-    std::pair<std::string, uint32_t> cPairReg;
 
     //Starting the DAQ
-
-    cPairReg.first = BREAK_TRIGGER;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = PC_CONFIG_OK;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = FORCE_BG0_START;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
+    cVecReg.push_back({BREAK_TRIGGER, 0});
+    cVecReg.push_back({PC_CONFIG_OK, 1});
+    cVecReg.push_back({FORCE_BG0_START, 1});
 
     WriteStackReg( cVecReg );
 
@@ -222,36 +145,24 @@ void GlibFWInterface::Start()
     do
     {
         cVal = ReadReg( CMD_START_VALID );
-
         if ( cVal == 0 )
             std::this_thread::sleep_for( cWait );
-
     }
     while ( cVal == 0 );
-
 }
 
 void GlibFWInterface::Stop( uint32_t pNthAcq )
 {
-
     std::vector< std::pair<std::string, uint32_t> > cVecReg;
-    std::pair<std::string, uint32_t> cPairReg;
 
     uhal::ValWord<uint32_t> cVal;
 
     //Select SRAM
     SelectDaqSRAM( pNthAcq );
-
     //Stop the DAQ
-    cPairReg.first = BREAK_TRIGGER;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = PC_CONFIG_OK;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = FORCE_BG0_START;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
+    cVecReg.push_back({BREAK_TRIGGER, 1});
+    cVecReg.push_back({PC_CONFIG_OK, 0});
+    cVecReg.push_back({FORCE_BG0_START, 0});
 
     WriteStackReg( cVecReg );
     cVecReg.clear();
@@ -262,10 +173,8 @@ void GlibFWInterface::Stop( uint32_t pNthAcq )
     do
     {
         cVal = ReadReg( fStrFull );
-
         if ( cVal == 1 )
             std::this_thread::sleep_for( cWait );
-
     }
     while ( cVal == 1 );
 
@@ -276,15 +185,12 @@ void GlibFWInterface::Stop( uint32_t pNthAcq )
 
 void GlibFWInterface::Pause()
 {
-
     WriteReg( BREAK_TRIGGER, 1 );
-
 }
 
 
 void GlibFWInterface::Resume()
 {
-
     WriteReg( BREAK_TRIGGER, 0 );
 }
 
@@ -328,10 +234,8 @@ uint32_t GlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool 
     do
     {
         cVal = ReadReg( fStrFull );
-
         if ( cVal == 1 )
             std::this_thread::sleep_for( cWait );
-
     }
     while ( cVal == 1 );
 
@@ -351,6 +255,7 @@ uint32_t GlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool 
         fFileHandler->set( cData );
     return cNPackets;
 }
+
 /** compute the block size according to the number of CBC's on this board
  * this will have to change with a more generic FW */
 uint32_t GlibFWInterface::computeBlockSize( BeBoard* pBoard )
@@ -383,6 +288,7 @@ std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue( const std::string& pRe
 {
     uhal::ValVector<uint32_t> valBlock = ReadBlockReg( pRegNode, pBlocksize );
     std::vector<uint32_t> vBlock = valBlock.value();
+
     // To avoid the IPBUS bug
     // need to convert uHal::ValVector to vector<uint32_t> so we can replace the 256th word
     if ( pBlocksize > 255 )
@@ -415,14 +321,14 @@ void GlibFWInterface::SelectDaqSRAM( uint32_t pNthAcq )
 
 //Methods for Cbc's:
 
-void GlibFWInterface::SelectFeSRAM( uint32_t pFe )
-{
-    pFe = 0;
-    fStrSram = ( pFe ? SRAM2 : SRAM1 );
-    fStrOtherSram = ( pFe ? SRAM1 : SRAM2 );
-    fStrSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
-    fStrOtherSramUserLogic = ( pFe ? SRAM1_USR_LOGIC : SRAM2_USR_LOGIC );
-}
+//void GlibFWInterface::SelectFeSRAM( uint32_t pFe )
+//{
+//pFe = 0;
+//fStrSram = ( pFe ? SRAM2 : SRAM1 );
+//fStrOtherSram = ( pFe ? SRAM1 : SRAM2 );
+//fStrSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
+//fStrOtherSramUserLogic = ( pFe ? SRAM1_USR_LOGIC : SRAM2_USR_LOGIC );
+//}
 
 
 void GlibFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
@@ -489,26 +395,24 @@ bool GlibFWInterface::I2cCmdAckWait( uint32_t pAckVal, uint8_t pNcount )
     return true;
 }
 
-void GlibFWInterface::SendBlockCbcI2cRequest( std::vector<uint32_t>& pVecReq, bool pWrite )
+void GlibFWInterface::WriteI2C( std::vector<uint32_t>& pVecReq, bool pWrite )
 {
-    WriteReg( fStrSramUserLogic, 1 );
+    //pVecReq.push_back( 0xFFFFFFFF );
 
-    pVecReq.push_back( 0xFFFFFFFF );
+    WriteReg( SRAM1_USR_LOGIC, 0 );
 
-    WriteReg( fStrSramUserLogic, 0 );
+    WriteBlockReg( SRAM1, pVecReq );
+    //WriteReg( fStrOtherSram, 0xFFFFFFFF );
 
-    WriteBlockReg( fStrSram, pVecReq );
-    WriteReg( fStrOtherSram, 0xFFFFFFFF );
-
-    WriteReg( fStrSramUserLogic, 1 );
+    //WriteReg( fStrSramUserLogic, 1 );
+    WriteReg( SRAM1_USR_LOGIC, 1 );
 
     WriteReg( CBC_HARD_RESET, 0 );
 
     //r/w request
     WriteReg( CBC_I2C_CMD_RQ, pWrite ? 3 : 1 );
-    // WriteReg( CBC_I2C_CMD_RQ, 1 );
 
-    pVecReq.pop_back();
+    //pVecReq.pop_back();
 
     if ( I2cCmdAckWait( ( uint32_t )1, pVecReq.size() ) == 0 )
         throw Exception( "CbcInterface: I2cCmdAckWait 1 failed." );
@@ -517,43 +421,32 @@ void GlibFWInterface::SendBlockCbcI2cRequest( std::vector<uint32_t>& pVecReq, bo
 
     if ( I2cCmdAckWait( ( uint32_t )0, pVecReq.size() ) == 0 )
         throw Exception( "CbcInterface: I2cCmdAckWait 0 failed." );
-
 }
 
-void GlibFWInterface::ReadI2cBlockValuesInSRAM( std::vector<uint32_t>& pVecReq )
+void GlibFWInterface::ReadI2C( std::vector<uint32_t>& pVecReq )
 {
-
-    WriteReg( fStrSramUserLogic, 0 );
-
-    pVecReq = ReadBlockRegValue( fStrSram, pVecReq.size() );
-
-    WriteReg( fStrSramUserLogic, 1 );
+    WriteReg( SRAM1_USR_LOGIC, 0 );
+    pVecReq = ReadBlockRegValue( SRAM1, pVecReq.size() );
+    WriteReg( SRAM1_USR_LOGIC, 1 );
     WriteReg( CBC_I2C_CMD_RQ, 0 );
-
 }
 
 
 void GlibFWInterface::EnableI2c( bool pEnable )
 {
-    uint32_t cValue = I2C_CTRL_ENABLE;
-
-    if ( !pEnable )
-        cValue = I2C_CTRL_DISABLE;
-
+    uint32_t cValue = ( pEnable ) ? 0x000009F4 : 0;
     WriteReg( I2C_SETTINGS, cValue );
-
     if ( pEnable )
         usleep( 100000 );
 }
 
 void GlibFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
 {
-    SelectFeSRAM( pFeId );
-    EnableI2c( 1 );
+    //EnableI2c( 1 );
 
     try
     {
-        SendBlockCbcI2cRequest( pVecReq, true );
+        WriteI2C( pVecReq, true );
     }
 
     catch ( Exception& except )
@@ -561,17 +454,16 @@ void GlibFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pV
         throw except;
     }
 
-    EnableI2c( 0 );
+    //EnableI2c( 0 );
 }
 
 void GlibFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
 {
-    SelectFeSRAM( pFeId );
-    EnableI2c( 1 );
+    //EnableI2c( 1 );
 
     try
     {
-        SendBlockCbcI2cRequest( pVecReq, false );
+        WriteI2C( pVecReq, false );
     }
 
     catch ( Exception& e )
@@ -579,9 +471,9 @@ void GlibFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVe
         throw e;
     }
 
-    ReadI2cBlockValuesInSRAM( pVecReq );
+    ReadI2C( pVecReq );
 
-    EnableI2c( 0 );
+    //EnableI2c( 0 );
 }
 
 void GlibFWInterface::FlashProm( const std::string& strConfig, const char* pstrFile )
