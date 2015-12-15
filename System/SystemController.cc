@@ -92,7 +92,7 @@ void SystemController::ConfigureHw( std::ostream& os , bool bIgnoreI2c )
             fBeBoardInterface->ConfigureBoard( &pBoard );
 
             if ( fCheck )
-                fBeBoardInterface->WriteBoardReg( &pBoard, NEG_LOGIC_CBC, ( ( fHoleMode ) ? 0 : 1 ) );
+                fBeBoardInterface->WriteBoardReg( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
             los_ << GREEN << "Successfully configured Board " << int( pBoard.getBeId() ) << RESET << std::endl;
         }
 

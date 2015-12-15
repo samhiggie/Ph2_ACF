@@ -26,160 +26,161 @@ using namespace CommandLineProcessing;
 //Class used to process events acquired by a parallel acquisition
 class AcqVisitor: public HwInterfaceVisitor
 {
-	int cN;
-  public:
-	AcqVisitor() {
-		cN = 0;
-	}
-	//void init(std::ofstream* pfSave, bool bText);
-	virtual void visit( const Ph2_HwInterface::Event& pEvent ) {
-		cN++;
-		std::cout << ">>> Event #" << cN << std::endl;
-		std::cout << pEvent << std::endl;
-	}
+    int cN;
+public:
+    AcqVisitor()
+    {
+        cN = 0;
+    }
+    //void init(std::ofstream* pfSave, bool bText);
+    virtual void visit( const Ph2_HwInterface::Event& pEvent )
+    {
+        cN++;
+        std::cout << ">>> Event #" << cN << std::endl;
+        std::cout << pEvent << std::endl;
+    }
 };
 
 void syntax( int argc )
 {
-	if ( argc > 4 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
-	else if ( argc < 3 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
-	else return;
+    if ( argc > 4 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
+    else if ( argc < 3 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
+    else return;
 }
 
 
 std::string getFileName()
 {
-	std::string line;
-	std::fstream cFile;
-	int cRunNumber;
-	if ( boost::filesystem::exists( ".run_number.txt" ) )
-	{
+    std::string line;
+    std::fstream cFile;
+    int cRunNumber;
+    if ( boost::filesystem::exists( ".run_number.txt" ) )
+    {
 
-		cFile.open( ".run_number.txt", std::fstream::out | std::fstream::in );
-		if ( cFile.is_open() )
-		{
-			cFile >> cRunNumber ;
+        cFile.open( ".run_number.txt", std::fstream::out | std::fstream::in );
+        if ( cFile.is_open() )
+        {
+            cFile >> cRunNumber ;
 
-			cRunNumber ++;
-			cFile.clear();
-			cFile.seekp( 0 );
-			cFile << cRunNumber;
-			cFile.close();
-		}
-		else
-			std::cout << "File not opened!" << std::endl;
-	}
-	else
-	{
-		cRunNumber = 1;
-		cFile.open( ".run_number.txt", std::fstream::out );
-		cFile << cRunNumber;
-		cFile.close();
-	}
-	TString cRunString = Form( "run_%03d.raw", cRunNumber );
-	return cRunString.Data();
+            cRunNumber ++;
+            cFile.clear();
+            cFile.seekp( 0 );
+            cFile << cRunNumber;
+            cFile.close();
+        }
+        else
+            std::cout << "File not opened!" << std::endl;
+    }
+    else
+    {
+        cRunNumber = 1;
+        cFile.open( ".run_number.txt", std::fstream::out );
+        cFile << cRunNumber;
+        cFile.close();
+    }
+    TString cRunString = Form( "run_%03d.raw", cRunNumber );
+    return cRunString.Data();
 }
 
 int main( int argc, char* argv[] )
 {
 
-	int pEventsperVcth;
-	int cVcth;
+    int pEventsperVcth;
+    int cVcth;
 
-	SystemController cSystemController;
-	ArgvParser cmd;
+    SystemController cSystemController;
+    ArgvParser cmd;
 
-	// init
-	cmd.setIntroductoryDescription( "CMS Ph2_ACF  Data acquisition test and Data dump" );
-	// error codes
-	cmd.addErrorCode( 0, "Success" );
-	cmd.addErrorCode( 1, "Error" );
-	// options
-	cmd.setHelpOption( "h", "help", "Print this help page" );
+    // init
+    cmd.setIntroductoryDescription( "CMS Ph2_ACF  Data acquisition test and Data dump" );
+    // error codes
+    cmd.addErrorCode( 0, "Success" );
+    cmd.addErrorCode( 1, "Error" );
+    // options
+    cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "file", "f" );
+    cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative( "file", "f" );
 
-	cmd.defineOption( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "events", "e" );
+    cmd.defineOption( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative( "events", "e" );
 
-	cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
-	cmd.defineOptionAlternative( "parallel", "p" );
+    cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
+    cmd.defineOptionAlternative( "parallel", "p" );
 
-	cmd.defineOption( "dqm", "Print every i-th event.  ", ArgvParser::OptionRequiresValue );
-	cmd.defineOptionAlternative( "dqm", "d" );
+    cmd.defineOption( "dqm", "Print every i-th event.  ", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative( "dqm", "d" );
 
-	int result = cmd.parse( argc, argv );
-	if ( result != ArgvParser::NoParserError )
-	{
-		std::cout << cmd.parseErrorDescription( result );
-		exit( 1 );
-	}
+    int result = cmd.parse( argc, argv );
+    if ( result != ArgvParser::NoParserError )
+    {
+        std::cout << cmd.parseErrorDescription( result );
+        exit( 1 );
+    }
 
-	//bool cSaveToFile = false;
-	std::string cOutputFile;
-	// now query the parsing results
-	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_2CBC.xml";
+    //bool cSaveToFile = false;
+    std::string cOutputFile;
+    // now query the parsing results
+    std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_2CBC.xml";
 
-	const char* cDirectory = "Data";
-	mkdir( cDirectory ,  777 );
-	cOutputFile = "Data/" + getFileName() ;
+    const char* cDirectory = "Data";
+    mkdir( cDirectory ,  777 );
+    cOutputFile = "Data/" + getFileName() ;
 
-	pEventsperVcth = ( cmd.foundOption( "events" ) ) ? convertAnyInt( cmd.optionValue( "events" ).c_str() ) : 10;
+    pEventsperVcth = ( cmd.foundOption( "events" ) ) ? convertAnyInt( cmd.optionValue( "events" ).c_str() ) : 10;
 
-	cSystemController.addFileHandler( cOutputFile, 'w' );
+    cSystemController.addFileHandler( cOutputFile, 'w' );
 
-	cSystemController.InitializeHw( cHWFile );
-	cSystemController.ConfigureHw( std::cout );
+    cSystemController.InitializeHw( cHWFile );
+    cSystemController.ConfigureHw( std::cout );
 
-	BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
-	if ( cmd.foundOption( "parallel" ) )
-	{
-		uint32_t nbPacket = pBoard->getReg( CBC_PACKET_NB ), nbAcq = pEventsperVcth / ( nbPacket + 1 ) + ( pEventsperVcth % ( nbPacket + 1 ) != 0 ? 1 : 0 );
-		std::cout << "Packet number=" << nbPacket << ", Nb events=" << pEventsperVcth << " -> Nb acquisition iterations=" << nbAcq << std::endl;
+    BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
+    if ( cmd.foundOption( "parallel" ) )
+    {
+        uint32_t nbPacket = pBoard->getReg( "pc_commands.CBC_DATA_PACKET_NUMBER" ), nbAcq = pEventsperVcth / ( nbPacket + 1 ) + ( pEventsperVcth % ( nbPacket + 1 ) != 0 ? 1 : 0 );
+        std::cout << "Packet number=" << nbPacket << ", Nb events=" << pEventsperVcth << " -> Nb acquisition iterations=" << nbAcq << std::endl;
 
-		AcqVisitor visitor;
-		std::cout << "Press Enter to start the acquisition, press Enter again to stop i" << std::endl;
-		std::cin.ignore();
-		cSystemController.fBeBoardInterface->StartThread( pBoard, nbAcq, &visitor );
-		std::cin.ignore();
-		cSystemController.fBeBoardInterface->StopThread( pBoard );
-	}
-	else
-	{
-		// make event counter start at 1 as does the L1A counter
-		uint32_t cN = 1;
-		uint32_t cNthAcq = 0;
-		uint32_t count = 0;
+        AcqVisitor visitor;
+        std::cout << "Press Enter to start the acquisition, press Enter again to stop i" << std::endl;
+        std::cin.ignore();
+        cSystemController.fBeBoardInterface->StartThread( pBoard, nbAcq, &visitor );
+        std::cin.ignore();
+        cSystemController.fBeBoardInterface->StopThread( pBoard );
+    }
+    else
+    {
+        // make event counter start at 1 as does the L1A counter
+        uint32_t cN = 1;
+        uint32_t cNthAcq = 0;
+        uint32_t count = 0;
 
-		cSystemController.fBeBoardInterface->Start( pBoard );
-		while ( cN <= pEventsperVcth )
-		{
-			uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+        cSystemController.fBeBoardInterface->Start( pBoard );
+        while ( cN <= pEventsperVcth )
+        {
+            uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 
-			if ( cN + cPacketSize >= pEventsperVcth )
-				cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
+            if ( cN + cPacketSize >= pEventsperVcth )
+                cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
 
-			const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
+            const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
 
-			for ( auto& ev : events )
-			{
-				count++;
-				cN++;
-				if ( cmd.foundOption( "dqm" ) )
-				{
-					if ( count % atoi( cmd.optionValue( "dqm" ).c_str() ) == 0 )
-					{
-						std::cout << ">>> Event #" << count << std::endl;
-						std::cout << *ev << std::endl;
-					}
-				}
-				if ( count % 100  == 0 )
-					std::cout << ">>> Recorded Event #" << count << std::endl;
-			}
-			cNthAcq++;
-		}
-	}
+            for ( auto& ev : events )
+            {
+                count++;
+                cN++;
+                if ( cmd.foundOption( "dqm" ) )
+                {
+                    if ( count % atoi( cmd.optionValue( "dqm" ).c_str() ) == 0 )
+                    {
+                        std::cout << ">>> Event #" << count << std::endl;
+                        std::cout << *ev << std::endl;
+                    }
+                }
+                if ( count % 100  == 0 )
+                    std::cout << ">>> Recorded Event #" << count << std::endl;
+            }
+            cNthAcq++;
+        }
+    }
 }
-
 

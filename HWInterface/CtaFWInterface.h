@@ -88,10 +88,6 @@ public:
      */
     void ConfigureBoard( const BeBoard* pBoard ) override;
     /*!
-     * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
-     */
-    void SelectFEId();
-    /*!
      * \brief Start a DAQ
      */
     void Start() override;
@@ -137,6 +133,7 @@ public:
      * \return Vector of validated 32-bit values
      */
     std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) override;
+    bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues ) override;
 
     void StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) override;
     //Methods for the Cbc's:
@@ -157,19 +154,17 @@ private:
      * \param pVecReq : Block of words to send
      * \param pWrite : 1/0 -> Write/Read
      */
-    void SendBlockCbcI2cRequest( std::vector<uint32_t>& pVecReq, bool pWrite );
+    void WriteI2C( std::vector<uint32_t>& pVecReq, bool pWrite );
     /*!
      * \brief Read blocks from SRAM via I2C
      * \param pVecReq : Vector to stack the read words
      */
-    void ReadI2cBlockValuesInSRAM( std::vector<uint32_t>& pVecReq );
+    void ReadI2C( std::vector<uint32_t>& pVecReq );
     /*!
      * \brief Enable I2C communications
      * \param pEnable : 1/0 -> Enable/Disable
      */
     void EnableI2c( bool pEnable );
-
-    void SelectFeSRAM( uint32_t pFe );
 
     /*! Compute the size of an acquisition data block
      * \return Number of 32-bit words to be read at each iteration */
