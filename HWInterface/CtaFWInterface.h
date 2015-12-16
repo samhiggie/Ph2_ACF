@@ -57,20 +57,22 @@ namespace Ph2_HwInterface
 		 */
 		void SelectDaqSRAM( uint32_t pNthAcq );
 
-	  public:
-		/*!
-		 * \brief Constructor of the CtaFWInterface class
-		 * \param puHalConfigFileName : path of the uHal Config File
-		 * \param pBoardId
-		 */
-		CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
-		/*!
-		 * \brief Constructor of the CtaFWInterface class
-		 * \param puHalConfigFileName : path of the uHal Config File
-		 * \param pBoardId
-		 * \param pFileHandler : pointer to file handler for saving Raw Data
-		 */
-		CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+public:
+    /*!
+    * \brief Constructor of the CtaFWInterface class
+    * \param puHalConfigFileName : path of the uHal Config File
+    * \param pBoardId
+    */
+    CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
+    CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+    /*!
+    * \brief Constructor of the CtaFWInterface class
+    * \param pId : ID string
+    * \param pUri: URI string
+    * \param pAddressTable: address tabel string
+    */
+    CtaFWInterface( const char* pId, const char* pUri, const char* pAddressTable );
+    CtaFWInterface( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
 
 		/*!
 		 * \brief Destructor of the CtaFWInterface class

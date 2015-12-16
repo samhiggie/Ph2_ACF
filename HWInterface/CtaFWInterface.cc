@@ -36,6 +36,22 @@ namespace Ph2_HwInterface
 		else fSaveToFile = true;
 	}
 
+CtaFWInterface::CtaFWInterface( const char* pId, const char* pUri, const char* pAddressTable ) :
+    BeBoardFWInterface(pId, pUri, pAddressTable),
+    fpgaConfig( nullptr ),
+    fData( nullptr )
+{}
+
+CtaFWInterface::CtaFWInterface( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler ) :
+    BeBoardFWInterface(pId, pUri, pAddressTable),
+    fpgaConfig( nullptr ),
+    fData( nullptr ),
+
+    fFileHandler( pFileHandler )
+{
+    if ( fFileHandler == nullptr ) fSaveToFile = false;
+    else fSaveToFile = true;
+}
 
 	void CtaFWInterface::ConfigureBoard( const BeBoard* pBoard )
 	{

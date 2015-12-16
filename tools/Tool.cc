@@ -99,9 +99,7 @@ void Tool::SaveResults()
 	}
 
 	fResultFile->Write();
-	fResultFile->Close();
-
-	// dumpConfigFiles();
+	// fResultFile->Close();
 
 	std::cout << "Results saved!" << std::endl;
 }

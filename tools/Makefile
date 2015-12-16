@@ -1,4 +1,4 @@
-Objs                    = Tool.o Calibration.o FastCalibration.o Channel.o HybridTester.o CMTester.o Commissioning.o PulseShape.o
+Objs                    = Tool.o SCurve.o Calibration.o OldCalibration.o Channel.o HybridTester.o CMTester.o Commissioning.o PulseShape.o PedeNoise.o
 
 CC              = gcc
 CXX             = g++

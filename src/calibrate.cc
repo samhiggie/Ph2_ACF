@@ -6,10 +6,11 @@
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
 #include "../tools/Calibration.h"
-#include "../tools/FastCalibration.h"
-#include <TApplication.h>
+#include "../tools/OldCalibration.h"
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
+#include "TApplication.h"
+#include "../Utils/Timer.h"
 
 
 
@@ -42,23 +43,13 @@ int main( int argc, char* argv[] )
 
 	cmd.defineOption( "old", "Use old calibration algorithm", ArgvParser::NoOptionAttribute );
 
-	cmd.defineOption( "bitmode", "Turn on bitwise offset tuning. Default: false", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "bitmode" , "bm" );
+
 
 	cmd.defineOption( "allChan", "Do calibration using all channels? Default: false", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "allChan", "a" );
 
 	cmd.defineOption( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "batch", "b" );
-
-	cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "gui", "g" );
-
-	cmd.defineOption( "validate", "option to measure the channel occupancy", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "validate", "v" );
-
-	cmd.defineOption( "noise", "option to measure the noise after the calibration has finished", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "noise", "n" );
 
 
 	int result = cmd.parse( argc, argv );
@@ -72,53 +63,54 @@ int main( int argc, char* argv[] )
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Calibration2CBC.xml";
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	cDirectory += "Calibration";
-	bool cVplus = ( cmd.foundOption( "skip" ) ) ? true : false;
+	bool cVplus = ( cmd.foundOption( "skip" ) ) ? false : true;
 	bool cOld = ( cmd.foundOption( "old" ) ) ? true : false;
 
-	bool cOffsetTuneMode = ( cmd.foundOption( "bitmode" ) ) ? true : false;
 	bool cCalibrateTGrp = ( cmd.foundOption( "allChan" ) ) ? true : false;
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 
-	bool isGui = ( cmd.foundOption( "gui" ) ) ? true : false;
-	bool cValidate = ( cmd.foundOption( "validate" ) ) ? true : false;
-	bool cNoise = ( cmd.foundOption( "noise" ) ) ? true : false;
+
 	TApplication cApp( "Root Application", &argc, argv );
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
+	Timer t;
+
 	if ( !cOld )
 	{
-		FastCalibration cCalibration( cOffsetTuneMode, cCalibrateTGrp );
+		t.start();
+		Calibration cCalibration;
 		cCalibration.InitializeHw( cHWFile );
 		cCalibration.InitializeSettings( cHWFile );
 		cCalibration.CreateResultDirectory( cDirectory );
 		cCalibration.InitResultFile( "CalibrationResults" );
 		cCalibration.StartHttpServer();
 
-		if ( !isGui ) cCalibration.ConfigureHw();
-
-		cCalibration.Initialise(); // canvases etc. for fast calibration
-		if ( !cVplus ) cCalibration.ScanVplus();
-		cCalibration.ScanOffset();
-		if ( cValidate ) cCalibration.Validate();
-		if ( cNoise ) cCalibration.measureNoise();
+		cCalibration.ConfigureHw();
+		cCalibration.Initialise( false );
+		if ( cVplus ) cCalibration.FindVplus();
+		cCalibration.FindOffsets();
 		cCalibration.SaveResults();
-
+		t.stop();
+		t.show( "Time to Calibrate the system: " );
 	}
 	else
 	{
-		Calibration cCalibration;
+		t.start();
+		OldCalibration cCalibration( cCalibrateTGrp );
 		cCalibration.InitializeHw( cHWFile );
 		cCalibration.InitializeSettings( cHWFile );
 		cCalibration.CreateResultDirectory( cDirectory );
 		cCalibration.InitResultFile( "CalibrationResults" );
-		cCalibration.InitialiseTestGroup();
+		cCalibration.StartHttpServer();
 
-		if ( !isGui ) cCalibration.ConfigureHw();
-
-		if ( !cVplus ) cCalibration.VplusScan();
-		cCalibration.OffsetScan();
+		cCalibration.Initialise( ); // canvases etc. for fast calibration
+		if ( cVplus ) cCalibration.ScanVplus();
+		cCalibration.ScanOffset();
 		cCalibration.SaveResults();
+
+		t.stop();
+		t.show( "Time to Calibrate the system: " );
 	}
 
 	if ( !batchMode ) cApp.Run();

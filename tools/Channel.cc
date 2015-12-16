@@ -140,7 +140,7 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 				{
 					if ( cContent ) cFirstNon0 = fScurve->GetBinCenter( cBin );
 				}
-				else if ( cContent == 1 )
+				else if ( cContent > 0.85 )
 				{
 					cFirst1 = fScurve->GetBinCenter( cBin );
 					break;
@@ -157,7 +157,7 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 				{
 					if ( cContent ) cFirstNon0 = fScurve->GetBinCenter( cBin );
 				}
-				else if ( cContent == 1 )
+				else if ( cContent > 0.85 )
 				{
 					cFirst1 = fScurve->GetBinCenter( cBin );
 					break;
@@ -184,6 +184,7 @@ void Channel::fitHist( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TStr
 		pResultfile->cd( cDirName );
 
 		fScurve->SetDirectory( cDir );
+		// fFit->SetDirectory( cDir );
 		fFit->Write( fFit->GetName(), TObject::kOverwrite );
 		// pResultfile->Flush();
 
@@ -225,8 +226,8 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 			{
 				cCurrent = fScurve->GetBinContent( fScurve->GetBin( cBin ) );
 				cDiff = cPrev - cCurrent;
-				if ( cPrev > 0.9 ) cActive = true; // sampling begins
-				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ), fabs( cDiff ) );
+				if ( cPrev > 0.75 ) cActive = true; // sampling begins
+				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ),  cDiff  );
 				if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 				if ( cDiffCounter == 8 ) break;
 				cPrev = cCurrent;
@@ -240,8 +241,8 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 			{
 				cCurrent = fScurve->GetBinContent( fScurve->GetBin( cBin ) );
 				cDiff = cCurrent - cPrev;
-				if ( cPrev > 0.9 ) cActive = true; // sampling begins
-				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ),  fabs( cDiff ) );
+				if ( cPrev > 0.75 ) cActive = true; // sampling begins
+				if ( cActive ) fDerivative->SetBinContent( fDerivative->GetBin( cBin - 0.5 ),   cDiff  );
 				if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 				if ( cDiffCounter == 8 ) break;
 				cPrev = cCurrent;
@@ -257,7 +258,8 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 		pResultfile->cd( cDirName );
 
 		fScurve->SetDirectory( cDir );
-		fDerivative->Write( fDerivative->GetName(), TObject::kOverwrite );
+		fDerivative->SetDirectory( cDir );
+		// fDerivative->Write( fDerivative->GetName(), TObject::kOverwrite );
 		// pResultfile->Flush();
 
 		pResultfile->cd();

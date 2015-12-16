@@ -237,8 +237,6 @@ void PulseShape::fitGraph( int pLow )
 
 std::vector<uint32_t> PulseShape::findChannelsInTestGroup( uint32_t pTestGroup )
 {
-
-
 	std::vector<uint32_t> cChannelVector;
 	for ( int idx = 0; idx < 16; idx++ )
 	{
@@ -248,10 +246,6 @@ std::vector<uint32_t> PulseShape::findChannelsInTestGroup( uint32_t pTestGroup )
 		if ( ctemp2 < 254 )  cChannelVector.push_back( ctemp2 );
 	}
 	return cChannelVector;
-
-
-
-
 }
 
 void PulseShape::enableTestGroup( )
@@ -358,7 +352,7 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude )
 	if ( fHoleMode )
 		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
 	else
-		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux ", 0x61 ) );
+		cRegVec.push_back( std::make_pair( "MiscTestPulseCtrl&AnalogMux", 0x61 ) );
 
 	cRegVec.push_back( std::make_pair( "TestPulsePot", pTPAmplitude ) );
 	cRegVec.push_back( std::make_pair( "Vplus",  fVplus ) );
