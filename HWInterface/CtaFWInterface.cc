@@ -248,6 +248,12 @@ std::vector<uint32_t> CtaFWInterface::ReadBlockRegValue( const std::string& pReg
     return valBlock.value();
 }
 
+bool CtaFWInterface::WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
+{
+    bool cWriteCorr = RegManager::WriteBlockReg( pRegNode, pValues );
+    return cWriteCorr;
+}
+
 void CtaFWInterface::SelectDaqSRAM( uint32_t pNthAcq )
 {
     fStrSram  = ( ( pNthAcq % 2 + 1 ) == 1 ? "sram1" : "sram2" );
