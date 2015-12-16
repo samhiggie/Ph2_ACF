@@ -25,6 +25,7 @@
 
 //------------------------------------------------------------------------------
 //Events
+#define NCHANNELS                   254
 
 //in uint32_t words
 #define CBC_EVENT_SIZE_32   9 // 9 32bit words per CBC
