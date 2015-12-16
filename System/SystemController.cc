@@ -35,9 +35,9 @@ namespace Ph2_System
 		fFileHandler = new FileHandler( pFilename, pOption );
 	}
 
-        void SystemController::readFile( std::vector<uint32_t>& pVec )
+	void SystemController::readFile( std::vector<uint32_t>& pVec )
 	{
-	  pVec = fFileHandler->readFile( );
+		pVec = fFileHandler->readFile( );
 	}
 
 	void SystemController::InitializeHw( const std::string& pFilename, std::ostream& os )
@@ -158,6 +158,13 @@ namespace Ph2_System
 
 				cBeId = cBeBoardNode.attribute( "Id" ).as_int();
 				BeBoard* cBeBoard = new BeBoard( cShelveId, cBeId );
+
+				pugi::xml_node cBeBoardFWVersionNode = cBeBoardNode.child( "FW_Version" );
+				uint16_t cNCbcDataSize = 0;
+				cNCbcDataSize = uint16_t( cBeBoardFWVersionNode.attribute( "NCbcDataSize" ).as_int() );
+
+				if ( cNCbcDataSize != 0 ) os << BOLDCYAN << "|" << "	" << "|" << "----" << cBeBoardFWVersionNode.name() << " NCbcDataSize: " << cNCbcDataSize  <<  RESET << std:: endl;
+				cBeBoard->setNCbcDataSize( cNCbcDataSize );
 
 				// Iterate the BeBoardRegister Nodes
 				for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child( "Register" ); cBeBoardRegNode/* != cBeBoardNode.child( "Module" )*/; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )

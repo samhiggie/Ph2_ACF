@@ -86,17 +86,22 @@ namespace Ph2_HwInterface
 
 	void BeBoardFWInterface::EncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq )
 	{
-		pVecReq.push_back( pCbcId << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+		// temporary for 16CBC readout FW  (Beamtest NOV 15)
+		// (pCbcId >> 3) becomes FE ID and is encoded starting from bit21 (not used so far)
+		// (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
+		pVecReq.push_back( ( pCbcId >> 3 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
 	}
 
 
 	void BeBoardFWInterface::DecodeReg( CbcRegItem& pRegItem, uint8_t pCbcId, uint32_t pWord )
 	{
 		// What does pCbcId do here??
-		pCbcId = ( pWord & cMask5 ) >> 17;
+		uint8_t cFeId = ( pWord & cMask7 ) >> 21;
+		pCbcId = (( pWord & cMask5 ) | (cFeId << 3)) >> 17;
 		pRegItem.fPage = ( pWord & cMask6 ) >> 16;
 		pRegItem.fAddress = ( pWord & cMask2 ) >> 8;
 		pRegItem.fValue = pWord & cMask1;
+		//std::cout << "FEID " << +(cFeId) << " pCbcID " << +(pCbcId) << std::endl;
 	}
 
 

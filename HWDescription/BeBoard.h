@@ -63,7 +63,7 @@ namespace Ph2_HwDescription
 		* \brief Destructor
 		*/
 		~BeBoard() {
-		        for ( auto& pModule: fModuleVector )
+			for ( auto& pModule : fModuleVector )
 				delete pModule;
 			fModuleVector.clear();
 		}
@@ -172,6 +172,19 @@ namespace Ph2_HwDescription
 		void setShelveId( uint8_t pShelveId ) {
 			fShelveId = pShelveId;
 		};
+		/*!
+		* \brief Set the Number of CBCs that are used to compute the data blob size of the BeBoard (according to FW version)
+		* \param pNCbcDataSize
+		*/
+		void setNCbcDataSize( uint16_t pNCbcDataSize ) {
+			fNCbcDataSize = pNCbcDataSize;
+		};
+		/*!
+		* \brief Get the Number of CBCs that are used to compute the data blob size of the BeBoard (according to FW version)
+		*/
+		uint16_t getNCbcDataSize() const {
+			return fNCbcDataSize;
+		};
 
 		// Vector of FEModules, each module is supposed to know which FMC slot it is connected to...
 		std::vector< Module* > fModuleVector;
@@ -180,6 +193,7 @@ namespace Ph2_HwDescription
 		//Connection Members
 		uint8_t fShelveId;
 		uint8_t fBeId;
+		uint16_t fNCbcDataSize;
 
 
 		BeBoardRegMap fRegMap;             /*!< Map of BeBoard Register Names vs. Register Values */

@@ -54,6 +54,12 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "gui", "g" );
 
+	cmd.defineOption( "validate", "option to measure the channel occupancy", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "validate", "v" );
+
+	// cmd.defineOption( "noise", "option to measure the noise after the calibration has finished", ArgvParser::NoOptionAttribute );
+	// cmd.defineOptionAlternative( "noise", "n" );
+
 
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
@@ -74,7 +80,8 @@ int main( int argc, char* argv[] )
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 
 	bool isGui = ( cmd.foundOption( "gui" ) ) ? true : false;
-
+	bool cValidate = ( cmd.foundOption( "validate" ) ) ? true : false;
+	// bool cNoise = ( cmd.foundOption( "noise" ) ) ? true : false;
 	TApplication cApp( "Root Application", &argc, argv );
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
@@ -90,10 +97,11 @@ int main( int argc, char* argv[] )
 
 		if ( !isGui ) cCalibration.ConfigureHw();
 
-		cCalibration.Initialise(); // canvases etc. for fast calibration
+		cCalibration.Initialise( ); // canvases etc. for fast calibration
 		if ( !cVplus ) cCalibration.ScanVplus();
 		cCalibration.ScanOffset();
-		cCalibration.Validate();
+		if ( cValidate ) cCalibration.Validate();
+		// if ( cNoise ) cCalibration.measureNoise();
 		cCalibration.SaveResults();
 
 	}

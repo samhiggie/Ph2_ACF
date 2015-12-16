@@ -4,17 +4,23 @@
 
     <Shelve Id="0" >
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+        	<FW_Version NCbcDataSize="8"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
+                <Global_CBC_Register name="VCth"> 0x84 </Global_CBC_Register>
+
+               
+                <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
+
                 <CBC_Files path="./settings/"/>
-                <CBC Id="0" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="1" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="2" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="3" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="4" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="5" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="6" configfile="Cbc_default_electron.txt"/>
-                <CBC Id="7" configfile="Cbc_default_electron.txt"/>
+                <CBC Id="0" configfile="FE0CBC0.txt"/>
+                <CBC Id="1" configfile="FE0CBC1.txt"/>
+                <CBC Id="2" configfile="FE0CBC2.txt"/>
+                <CBC Id="3" configfile="FE0CBC3.txt"/>
+                <CBC Id="4" configfile="FE0CBC4.txt"/>
+                <CBC Id="5" configfile="FE0CBC5txt"/>
+                <CBC Id="6" configfile="FE0CBC6.txt"/>
+                <CBC Id="7" configfile="FE0CBC7.txt"/>
             </Module>
 
             <!-- Commissioning Mode -->
@@ -38,6 +44,7 @@
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
             <!-- set to 1 to output L1A signal, 0 for input pulse -->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
+            <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
             <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar"> 0 </Register>
 
             <!-- Clock -->
@@ -50,8 +57,8 @@
 
             <!-- Acquisition -->
             <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe1"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe2"> 1 </Register>
+            <Register name="cbc_stubdata_latency_adjust_fe1"> 7 </Register>
+            <Register name="cbc_stubdata_latency_adjust_fe2"> 7 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 9 </Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
@@ -67,10 +74,10 @@
 </HwDescription>
 
 <Settings>
-    <Setting name="TargetVcth"> 0x80 </Setting>
-    <Setting name="Nevents"> 10 </Setting>
-    <Setting name="EnableTestPulse"> 0 </Setting>
-    <Setting name="TestPulsePotentiometer"> 0xF1 </Setting>
+    <Setting name="TargetVcth"> 0x84 </Setting>
+    <Setting name="Nevents"> 50 </Setting>
+  <!--   <Setting name="EnableTestPulse"> 0 </Setting>
+    <Setting name="TestPulsePotentiometer"> 0x00 </Setting> -->
     <Setting name="HoleMode"> 0 </Setting>
     <Setting name="FitSCurves"> 0 </Setting>
 </Settings>

@@ -2,14 +2,14 @@
 ._*
 *~
 Data/*
-latex/*
-html/*
-html/
-latex/
-*.bin
+       latex/*
+       html/*
+       html/
+       latex/
+    *.bin
 *.raw
 Results/*
 settings/connections_slc6.xml
 # just for G. Auzingers sanity
-CalibrationResults
+Calibrations
 .run_number.txt
