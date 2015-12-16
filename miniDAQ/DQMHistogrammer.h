@@ -18,6 +18,8 @@
 #include <map>
 
 class TH1I;
+class TH2I;
+class TProfile;
 class TTree;
 /*!
  * \class DQMHistogrammer
@@ -52,21 +54,44 @@ class DQMHistogrammer : public Tool {
   bool addTree_;
 
   TTree* tree_;
-  std::vector<int>* sensorNhitsEven_;
-  std::vector<int>* sensorNhitsOdd_;
+  //Following same convention as HitProfile histo naming
+  std::vector<int>* dut0C0chData_;
+  std::vector<int>* dut0C1chData_;
+  std::vector<int>* dut1C0chData_;
+  std::vector<int>* dut1C1chData_;
+  int l1Accept_;
+  int tdcCounter_;
+  int totalHits_;  
+  int totalStubs_;  
 
   struct CBCHistos {
     TH1I* errBitH;
     TH1I* nStubsH;
     TH1I* evenChnOccuH;
     TH1I* oddChnOccuH;
+    TProfile* tdcVsEvenChnOccuH;
+    TProfile* tdcVsOddChnOccuH;
   };
   std::map< std::string, CBCHistos > cbcHMap_;
   
-  TH1I* dut0HitProfH_;
-  TH1I* dut1HitProfH_;
+  TH2I* hitCorrC0H_;
+  TH2I* hitCorrC1H_;
+
+  TH2I* dut0HitProfH_;
+  TH2I* dut1HitProfH_;
+
+  TH1I* dut0HitProfUnfoldedH_;
+  TH1I* dut1HitProfUnfoldedH_;
+
+  TH1I* dut0C0HitProfH_;
+  TH1I* dut0C1HitProfH_;
+  TH1I* dut1C0HitProfH_;
+  TH1I* dut1C1HitProfH_;
+
   TH1I* sensCorrH_;
   TH1I* l1AcceptH_;
   TH1I* tdcCounterH_;
+  TH1I* totalNumberHitsH_;
+  TH1I* totalNumberStubsH_;
 };
 #endif

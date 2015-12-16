@@ -15,6 +15,7 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 
+#include "TROOT.h"
 #include "publisher.h"
 #include "DQMHistogrammer.h"
 
@@ -78,12 +79,20 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "swap", "Swap endianness in Data::set. Default = true (Ph2_ACF); should be false for GlibStreamer Data", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "swap", "s" );
 
+<<<<<<< HEAD
+	//cmd.defineOption( "8cbc", "Use 8CBC system. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+=======
+>>>>>>> beamtest
 	cmd.defineOption( "tree", "Create a ROOT tree also. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
 
 	cmd.defineOption( "cbcType", "Specify the CBC type(2,8 or 16).", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "cbcType", "c" );
 
+<<<<<<< HEAD
+        std::map<std::string,pair<int, string>>  cbcTypeEvtSizeMap;
+=======
         std::map<std::string,pair<int, std::string>>  cbcTypeEvtSizeMap;
+>>>>>>> beamtest
         cbcTypeEvtSizeMap["2"] = std::make_pair( 4, XML_DESCRIPTION_FILE_2CBC );
         cbcTypeEvtSizeMap["8"] = std::make_pair( 8, XML_DESCRIPTION_FILE_8CBC );
         cbcTypeEvtSizeMap["16"] = std::make_pair( 16, XML_DESCRIPTION_FILE_16CBC );
@@ -140,6 +149,8 @@ int main( int argc, char* argv[] )
 
 	if ( cDQMPage && elist.size() > 0 )
 	{
+                gROOT->SetBatch( true );
+	
 	        DQMHistogrammer* dqmh = new DQMHistogrammer(addTree);
 		dqmh->bookHistos(elist[0]->GetEventMap());
 		dqmh->fillHistos(elist);
