@@ -101,6 +101,11 @@ void BeBoardFWInterface::EncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, 
     pVecReq.push_back( ( pCbcId >> 3 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
 }
 
+void BeBoardFWInterface::EncodeReg( const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq )
+{
+    // (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
+    pVecReq.push_back( pFeId >> 3 ) << 21 | pCbcId << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+}
 
 void BeBoardFWInterface::DecodeReg( CbcRegItem& pRegItem, uint8_t pCbcId, uint32_t pWord )
 {

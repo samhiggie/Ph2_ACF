@@ -111,6 +111,13 @@ public:
     */
     virtual void EncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq ); /*!< Encode a/several word(s) readable for a Cbc*/
     /*!
+    * \brief Encode a/several word(s) readable for a Cbc
+    * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to write
+    * \param pCbcId : Id of the Cbc to work with
+    * \param pVecReq : Vector to stack the encoded words
+    */
+    virtual void EncodeReg( const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq ); /*!< Encode a/several word(s) readable for a Cbc*/
+    /*!
     * \brief Decode a word from a read of a register of the Cbc
     * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to read
     * \param pCbcId : Id of the Cbc to work with
