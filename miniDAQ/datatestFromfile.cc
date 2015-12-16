@@ -15,6 +15,7 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 
+#include "TROOT.h"
 #include "publisher.h"
 #include "DQMHistogrammer.h"
 
@@ -114,7 +115,6 @@ int main( int argc, char* argv[] )
 	bool cDQMPage = ( cmd.foundOption( "dqm" ) ) ? true : false;
 	bool addTree = ( cmd.foundOption( "tree" ) ) ? true : false;
 
-
         // Read the raw data file
 	SystemController cSystemController;
 	cSystemController.addFileHandler( rawFilename, 'r' );
@@ -140,6 +140,8 @@ int main( int argc, char* argv[] )
 
 	if ( cDQMPage && elist.size() > 0 )
 	{
+                gROOT->SetBatch( true );
+	
 	        DQMHistogrammer* dqmh = new DQMHistogrammer(addTree);
 		dqmh->bookHistos(elist[0]->GetEventMap());
 		dqmh->fillHistos(elist);

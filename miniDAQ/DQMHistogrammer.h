@@ -54,15 +54,15 @@ class DQMHistogrammer : public Tool {
   bool addTree_;
 
   TTree* tree_;
-
-  Int_t           l1Accept_;
-  Int_t           tdcCounter_;
-  Int_t           totalHits_;
-  Int_t           totalStubs_;
-  std::vector<int>     *dut0C0data_;
-  std::vector<int>     *dut0C1data_;
-  std::vector<int>     *dut1C0data_;
-  std::vector<int>     *dut1C1data_;
+  //Following same convention as HitProfile histo naming
+  std::vector<int>* dut0C0chData_;
+  std::vector<int>* dut0C1chData_;
+  std::vector<int>* dut1C0chData_;
+  std::vector<int>* dut1C1chData_;
+  int l1Accept_;
+  int tdcCounter_;
+  int totalHits_;  
+  int totalStubs_;  
 
   struct CBCHistos {
     TH1I* errBitH;
@@ -74,6 +74,9 @@ class DQMHistogrammer : public Tool {
   };
   std::map< std::string, CBCHistos > cbcHMap_;
   
+  TH2I* hitCorrC0H_;
+  TH2I* hitCorrC1H_;
+
   TH2I* dut0HitProfH_;
   TH2I* dut1HitProfH_;
 
