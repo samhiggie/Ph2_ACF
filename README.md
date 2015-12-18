@@ -1,25 +1,23 @@
-# CMS Ph2 ACF (Acquisition & Control Framework) 
+Cbc_default_electron# CMS Ph2 ACF (Acquisition & Control Framework) 
 
 ##### Contains:
 
-- A middleware API layer, implemented in C++, which wraps the firmware calls and handshakes into abstracted functions
+    - A middleware API layer, implemented in C++, which wraps the firmware calls and handshakes into abstracted functions
 
 - A C++ object-based library describing the system components (CBCs,
-Hybrids, Boards) and their properties(values, status)
+        Hybrids, Boards) and their properties(values, status)
 
 - several utilities (like visitors to execute certain tasks for each item in the hierarchical Item description)
 
 - a tools/ directory with several utilities (currently: calibration, hybrid testing, common-mode analysis)
 
-- some applications: datatest, interfacetest, hybridtest, system, calibrate
+    - some applications: datatest, interfacetest, hybridtest, system, calibrate, commission, fpgaconfig
 
 ##### Different versions
 
-On this Repo, you can find different version of the software :
-- a hopefully working and stable version on the master branch
-- An in-progress version in the Dev branch
-- A development version wiht a GUI
-<br>
+    On this Repo, you can find different version of the software :
+    - a hopefully working and stable version on the master branch
+    - An in-progress version in the Dev branch
 
 ### Changelog:
 
@@ -27,12 +25,12 @@ On this Repo, you can find different version of the software :
 - 09/07/14 : Added threading for stack writing registers
 - 12/08/14 : Working agnostic version of the new structure on Master
 - 15/08/14 : System Controller Class working
-- 19/08/14 : Project wrapped, called ACF for Acquisition & Control Framework
-- 09/10/14 : added Visitor class and the corresponding accept methods to the HWDescription objects
-- 15/10/14 : re-wrote the GlibFWInterface::ReadData() method, completeley re-wrote the parsing of the raw buffer and the offsets, modified the Data and Event classes to be more lightweight and less complex
-- 17/10/14 : renamed the project to Ph2_ACF & re-structured the folder architecture and added command line parsing to the executables (v1-00)
+- 19/08/14 : Project wrapped, called ACF for Acquisition & ContFramework
+- 09/10/14 : added Visitor class and the corresponding accept methodsthe HWDescription objects
+- 15/10/14 : re-wrote the GlibFWInterface::ReadData() method, completere-wrote the parsing of the raw buffer and the offsets, modified the Dand Event classes to be more lightweight and less complex
+- 17/10/14 : renamed the project to Ph2_ACF & re-structured the folarchitecture and added command line parsing to the executables (v1-00)
 - 17/12/14 : major update (v1-01) including:
-    - performance improvements (use of C++11 features)
+- performance improvements (use of C++11 features)
     - general bugfixes
     - a new, faster calibration routine
     - a common-mode-noise tester tool
@@ -48,10 +46,10 @@ On this Repo, you can find different version of the software :
     - added a loop to the Destructors of HWDescription Objects that explicityl delete the child-objects in the HWDescription ownership strucuter to avoid memory leaks
     - added a parameter to some methods of the SystemController class that allow to pass an ostream - this allows to redirect the output from std::cout as desired
     - new Methods:
-        - RegManager::GetHWInterface and RegManager::getUhalNode methods
-        - BeBoardInterface::ReadBlockBoardReg and a BeBoardInterface::WriteBlockBoardReg
-        - BeBoard::getReg & BeBoard::setReg use uint32_t instead of uint16_t
-        - BeBoardFWInterface::ReadBlockRegValue pure virtual method and GlibFWInterface::ReadBlockRegValue that implements the uHAL bug workaround
+    - RegManager::GetHWInterface and RegManager::getUhalNode methods
+    - BeBoardInterface::ReadBlockBoardReg and a BeBoardInterface::WriteBlockBoardReg
+    - BeBoard::getReg & BeBoard::setReg use uint32_t instead of uint16_t
+    - BeBoardFWInterface::ReadBlockRegValue pure virtual method and GlibFWInterface::ReadBlockRegValue that implements the uHAL bug workaround
 - 24/02/15 : new update (v1-03) with the following changes:
     - CbcInterface::WriteReg() now return the written Register value
     - writing to the Glib now also takes care of avoiding the 256th word uHAL bug
@@ -91,11 +89,37 @@ On this Repo, you can find different version of the software :
     - adding miniDAQ executable that saves to file and handles runnumber in a hidden Data/.run_number.txt file
     - miniDQM code based on BT DQM still available for playing back the binary data
     - datatest now has a -s option to specify a filename where binary data should be saved (optionally)
-    
-
+- 06/10/2015: adding several new features:
+    - bugfix w.r.t. 8CBC data format
+    - bugfixed 8CBC_DIO5 firmware
+    - a mechanism that throws an exception if a non-existing CBC register is to be written
+    - a binary to measure the pulseshape of the CBC on all channels of a test-group
+    - added support for THttp Server support (web access to histograms & root objects)
+    - a webgui
+    - re-worked Fpga configuration options
+    - CTA FW interface
+    - revised Root-web DQM structure
+- 18/11/2015: new features added (v1-30):
+    - BeBoard configuration option that specifies the # of CBCs that are in the data coming from the FW
+    - compatability with 16 CBC firmware
+    - handling of 16 CBC modules as one FE  in SW (2 FEs in FW)
+    - new SCurve BaseClass for Calibraton & noise scans
+    - iterative readback-error correction (SW tries to write every register agin that produced an error for 5 times)
+    - simplified FastCalibration
+    - removed old Calibration algorithm
+    - introduced new, bitwise and super-fast calibration algorithm 
+- 11/12/2015: new uHAL connection configuration:
+      - added new Constructors to RegManager, BeBoardFWInterface, GlibFWInterface, CtaFWInterface that take uhal connection: id, uri, address_table
+      - modified system controller accordingly so these strings are passed to the constructor
+      - adapted config files
+- 15/12/2015: simplified Glib/CtaFWInterfaces (v1-31):
+    - adapted and simplifeid FWInterfaces
+    - removed #define statements for FW registers - are now called directly as string from code
+    - simplified Definitions.h
+    - added an Encode Reg method that can be passed the FE ID instead of decoding it from the CBC id
+    - merged DQM code from Nov15 beamtest
 
 ### Setup
-
 
 Firmware for the GLIB can be found in /firmware. Since the "old" FMC flavour is deprecated, only new FMCs (both connectors on the same side) are supported.
 You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnell.com/xilinx/hw-usb-ii-g/platform-cable-configuration-prog/dp/1649384)
@@ -104,36 +128,36 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
 
 1. Remove the current gcc and old boost libraries:
 
-        $> sudo yum remove devtoolset-1.1-gcc-debuginfo
-        $> sudo yum remove boost
+          $> sudo yum remove devtoolset-1.1-gcc-debuginfo
+          $> sudo yum remove boost
 
 2. Install the latest gcc compiler:
 
-        $> sudo yum install devtoolset-2
-        $> sudo ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
-        $> hash -r
+          $> sudo yum install devtoolset-2
+          $> sudo ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
+          $> hash -r
 
-   This should give you gcc 4.8.1:
+This should give you gcc 4.8.1:
 
-        $> gcc --version
+          $> gcc --version
 
 3. Finally, update uHAL to version 2.3:
 
-        $> sudo yum groupremove uhal
-        $>wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
+          $> sudo yum groupremove uhal
+          $>wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
 
-    (You may need the --no-check-certificate)
+(You may need the --no-check-certificate)
 
-        $> sudo cp cactus.slc5.x86_64.repo /etc/yum.repos.d/cactus.repo
-        $> sudo yum clean all
-        $> sudo yum groupinstall uhal
+          $> sudo cp cactus.slc5.x86_64.repo /etc/yum.repos.d/cactus.repo
+          $> sudo yum clean all
+          $> sudo yum groupinstall uhal
 
 4. Re-compile ROOT using the new gcc 4.8: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation"
 
-Note: You may also need to set the environment variables:
+Note: You may also need to set the environment variables (or source setup.sh):
 
-    $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
-    $> export PATH=/opt/cactus/bin:$PATH
+          $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
+          $> export PATH=/opt/cactus/bin:$PATH
 
 #### Setup on SLC5/6
 
@@ -143,63 +167,41 @@ Note: You may also need to set the environment variables:
         $> sudo ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
         $> hash -r
 
-   This should give you gcc 4.8.1:
+This should give you gcc 4.8.1:
 
         $> gcc --version
 
 2. Install uHAL  version 2.3:
 
-    For SLC5:
+For SLC5:
 
         $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
-   
-    or for SLC6:
+
+or for SLC6:
 
         $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc6.x86_64.repo 
 
-    (You may need the --no-check-certificate)
+(You may need the --no-check-certificate)
 
-    for SLC5:
+for SLC5:
 
         $> sudo cp cactus.slc5.x86_64.repo /etc/yum.repos.d/cactus.repo
 
-    for SLC6:
+for SLC6:
 
         $> sudo cp cactus.slc6.x86_64.repo /etc/yum.repos.d/cactus.repo
 
-    then
+then
 
         $> sudo yum clean all
         $> sudo yum groupinstall uhal
 
 3. Install CERN ROOT: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation"
 
-Note: You may also need to set the environment variables:
+Note: You may also need to set the environment variables (or source setup.sh):
 
-    $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
-    $> export PATH=/opt/cactus/bin:$PATH
-
-
-#### The GUI :
-
- These instructions are provided to install the optional GUI.
-
-
-1. Source the variables:
-
-    $> source setup.sh
-        
-2. Make the GUI:
-
-        $> make
-    or
-
-        $> make GUI
-
-3. Run it:
-        
-        $> ./Ph2_ACF
-
+        $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
+        $> export PATH=/opt/cactus/bin:$PATH
 
 ### The Ph2_ACF Software : 
 
@@ -207,92 +209,97 @@ Follow these instructions to install and compile the libraries:
 (provided you installed the latest version of gcc, µHal, boost as mentioned above)
 
 1. Clone the GitHub repo.
+  
 
-2.      
-    
         $> source setup.sh
 
 3. Do a make in the root of the repo (make sure you have all µHal, root, boost... libraries on your computer).
 
 3. Launch 
-        
+
         $> systemtest --help
-     
-     command if you want to test the parsing of the HWDescription.xml file
+
+command if you want to test the parsing of the HWDescription.xml file
 
 4. Launch
 
         $> datatest --help
-        
-    command if you want to test if you can correctly read data.
+
+command if you want to test if you can correctly read data.
 
 6. Launch
 
         $> calibrate --help
 
-    to calibrate a hybrid,
+to calibrate a hybrid,
 
         $> hybridtest --help
 
-    to test a hybird's I2C registers and input channel connectivity
+to test a hybird's I2C registers and input channel connectivity
 
-        $> cmtest --help
+          $> cmtest --help
 
-    to run the CM noise study
+to run the CM noise study
+
+          $> pulseshape --help
+
+to measure the analog pulseshape of the cbc
+
+          $> configure --help
+
+to apply a configuration to the CBCs
 
 7. Launch
 
-        $> commission --help
+          $> commission --help
 
-    to do latency & threshold scans
+to do latency & threshold scans
 
 8. Launch 
 
-        $> fpgaconfig --help
+          $> fpgaconfig --help
 
-    to upload a new FW image to the GLIB
+to upload a new FW image to the GLIB
 
 9. Launch
 
-        $> miniDAQ --help
+          $> miniDAQ --help
 
-    to save binary data from the GLIB to file
+to save binary data from the GLIB to file
 
 10. Launch
 
-        $> miniDQM --help
+          $> miniDQM --help
 
-    to run the DQM code from the June '15 beamtest
-
-an example of how to use visitors can be found in src/interfacetest.cc or in the HybridTester class
+to run the DQM code from the June '15 beamtest
 
 
 ##### What can you do with the software ?
 
 At the moment the package provides the following features:
 
-- Configure the Glib & Cbcs
-- Manipulate the registers in the Glib
-- Manipulate the registers in the Cbcs
-- Read Data
-- Calibrate Hybrids
-- Validate Hybrids
-- Perform CM noise tests
-- user external trigger and clock signals for your tests
-- upload .mcs files to the GLIB
-- perform simple commissioning procedures
-- save binary data to file
-- create simple DQM histograms from binary data
-- any other routine you want to implement yourself ... 
+  - Configure the Glib & Cbcs
+  - Manipulate the registers in the Glib
+  - Manipulate the registers in the Cbcs
+  - Read Data
+  - Calibrate Hybrids
+  - Validate Hybrids
+  - Perform CM noise tests
+  - user external trigger and clock signals for your tests
+  - upload .mcs files to the GLIB
+  - perform simple commissioning procedures
+  - save binary data to file
+  - create simple DQM histograms from binary data
+  - measure the pulseshape of the CBC amp
+  - any other routine you want to implement yourself ... 
 
 
 ##### Nota Bene:
-When you write a register in the Glib or the Cbc, the corresponding map of the HWDescription object in memory is also updated, 
-so that you always have an exact replica of the HW Status in the memory.
+When you write a register in the Glib or the Cbc, the corresponding map of the HWDescription object in memory is also updated, so that you always have an exact replica of the HW Status in the memory.
 
 Register values are:
-- 8-bit unsigend integers for the CBCs that should be edited in hex notation, i.e. '0xFF'
-- 32-bit unsigned integers for the GLIB: decimal values
+  - 8-bit unsigend integers for the CBCs that should be edited in hex notation, i.e. '0xFF'
+  - 32-bit unsigned integers for the GLIB: decimal values
 
 For debugging purpose, you can activate DEV_FLAG in the sources or in the Makefile and also activate the uHal log in RegManager.cc.
 
@@ -308,91 +315,71 @@ For instructions on how to use it, see this [file](https://github.com/gauzinge/P
 
 ```xml
 
-<?xml version='1.0' encoding = 'UTF-8' ?>
-<HwDescription>
+          <?xml version='1.0' encoding = 'UTF-8' ?>
+          <HwDescription>
+          <Connections name="file://settings/connections_2CBC.xml"/>
 
-    <!-- The file containing the connection data & IP addresses -->
-    <Connections name="file://settings/connections_2CBC.xml"/>
+          <Shelve Id="0" >
+          <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+          <FW_Version NCbcDataSize="4"/>
 
-    <Shelve Id="0" >
-        <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+          <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
+          <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
+          <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
 
-            <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
+          <CBC_Files path="./settings/"/>
+          <CBC Id="0" configfile="Cbc_default_hole.txt"/>
+          <CBC Id="1" configfile="Cbc_default_hole.txt"/>
+          </Module>
 
-                <!-- Global CBC registers are applied to all CBCs and override register values from the config files -->
-                <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register> -->
+          <!-- Commissioning Mode -->
+          <!-- set to 1 to enable commissioning mode -->
+          <Register name="COMMISSIONNING_MODE_RQ">0</Register>
+          <!-- set to 1 to enable test pulse in commissioning mode -->
+          <Register name="COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID">0</Register>
+          <Register name="COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET">50</Register>
+          <Register name="COMMISSIONNING_MODE_DELAY_AFTER_L1A">400</Register>
+          <Register name="COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE">201</Register>
 
-                <!-- a base path to the CBC files -->
-                <CBC_Files path="./settings/"/>
+          <!-- Acquisition -->
+          <Register name="cbc_stubdata_latency_adjust_fe1">1</Register>
+          <Register name="cbc_stubdata_latency_adjust_fe2">1</Register>
+          <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER">9</Register>
 
-                <CBC Id="0" configfile="Cbc_default_hole.txt"/>
-                <CBC Id="1" configfile="Cbc_default_hole.txt"/>
-            </Module>
+          <!-- Trigger -->
+          <!-- set to 1 to use external triggers -->
+          <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">0</Register>
+          <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ">10</Register>
 
-            <!-- Commissioning Mode -->
-            <!-- set to 1 to enable commissioning mode -->
-            <Register name="COMMISSIONNING_MODE_RQ"> 0 </Register>
-            <!-- set to 1 to enable test pulse in commissioning mode -->
-            <Register name="COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID"> 0 </Register>
-            <!-- Delays after testpulse / L1A -->
-            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET"> 50 </Register>
-            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_L1A"> 400 </Register>
-            <Register name="COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE"> 201 </Register>
+          <!-- Clock -->
+          <!-- set to 1 for external clocking -->
+          <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel">0</Register>
 
-            <!-- Trigger -->
-            <!-- set to 1 to use external triggers -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL"> 0 </Register>
-            <!-- internal trigger frequency: see address_table*.xml for details -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ"> 10 </Register>
+          <!-- DIO5 Config -->
+          <!-- set to 0 for rising edge, 1 for falling -->
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge">0</Register>
+          <!-- set to 1 to output L1A signal, 0 for input pulse -->
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel">1</Register>
+          <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar">0</Register>
 
-            <!-- ************************************ -->
-            <!-- This part is only required with the DIO5 mezzanine -->
+          <!-- DIO5 threshold: [v]/3.3*256 -->
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in">40</Register>
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in">40</Register>
 
-            <!-- DIO5 threshold: [v]/3.3*256 -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in"> 40 </Register>
-            <!-- set to 0 for rising edge, 1 for falling -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge"> 0 </Register>
-            <!-- Leave as default -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms" > 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms"> 0 </Register>
-            <!-- set to 1 to output L1A signal, 0 for input pulse -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel"> 1 </Register>
+          <!-- DIO5 Termination -->
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms">1</Register>
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms">0</Register>
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms">1</Register>
+          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms">0</Register>
+          </BeBoard>
+          </Shelve>
+          </HwDescription>
 
-            <!-- Clock -->
-            <!-- set to 1 for external clocking -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel"> 0 </Register>
-            <!-- DIO5 threshold: [v]/3.3*256 -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in"> 40 </Register>
-            <!-- Leave as default -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms"> 0 </Register>
-
-           <!-- End of DIO5 registers -->
-            <!-- ************************************ -->
-
-            <!-- Acquisition -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe1"> 1 </Register>
-            <Register name="cbc_stubdata_latency_adjust_fe2"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER"> 10 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.clock_shift"> 0 </Register>
-
-            <!-- Polarity -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC"> 0 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.negative_logic_sTTS"> 0 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands2.polarity_tlu"> 0 </Register>
-        </BeBoard>
-    </Shelve>
-</HwDescription>
-
-<!-- Settings node to pass any std::string - int combination to applications -->
-<Settings>
-    <Setting name="RunNumber"> 1 </Setting>
-    <!-- Hole mode from settings overrides  "negative_logic_CBC" register-->
-    <Setting name="HoleMode"> 1 </Setting>
-</Settings>
-
+          <Settings>
+          <Setting name="RunNumber"> 1 </Setting>
+          <Setting name="HoleMode"> 1 </Setting>
+          </Settings>
 
 ```
 
@@ -402,93 +389,93 @@ For instructions on how to use it, see this [file](https://github.com/gauzinge/P
 {
     "HwDescription":{
         "Connections":"file://settings/connections_2CBC.xml",
-        "Shelves":[
+            "Shelves":[
             {
                 "Id":0,
                 "BeBoards":[
+                {
+                    "Id":0,
+                    "boardType":"Glib",
+                    "connectionId":"board0",
+                    "Modules":[
                     {
-                        "Id":0,
-                        "boardType":"Glib",
-                        "connectionId":"board0",
-                        "Modules":[
-                            {
-                                "FeId":0,
-                                "FMCId":0,
-                                "ModuleId":0,
-                                "Status":1,
-                                "Global_CBC_Registers":{
-                                    "VCth":"0x78",
-                                    "TriggerLatency":"0x0C"
-                                },
-                                "CbcFilePath":"./settings/",
-                                "CBCs":[
-                                    {
-                                        "Id":0,
-                                        "configfile":"Cbc_default_hole.txt",
-                                        "Register":{
-                                            "VCth":"0x78"
-                                        }
-                                    },
-                                    {
-                                        "Id":1,
-                                        "configfile":"Cbc_default_hole.txt"
-                                    }
-                                ]
+                        "FeId":0,
+                        "FMCId":0,
+                        "ModuleId":0,
+                        "Status":1,
+                        "Global_CBC_Registers":{
+                            "VCth":"0x78",
+                            "TriggerLatency":"0x0C"
+                        },
+                        "CbcFilePath":"./settings/",
+                        "CBCs":[
+                        {
+                            "Id":0,
+                            "configfile":"Cbc_default_hole.txt",
+                            "Register":{
+                                "VCth":"0x78"
                             }
-                        ],
-                        "RegisterName":{
-                            "COMMISSIONNING_MODE_RQ":"//COMMISSIONING MODE REGISTERS",
-                            "COMMISSIONNING_MODE_RQ":"//set to 1 to enable commissioning mode",
-                            "COMMISSIONNING_MODE_RQ":1,
-                            "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID":"//set to 1 to enable test pulses in comissioningn mode",
-                            "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID":1,
-                            "COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET":50,
-                            "COMMISSIONNING_MODE_DELAY_AFTER_L1A":400,
-                            "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE":201,
-
-                            "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":"//TRIGGER",
-                            "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":"//set to 1 to enable external triggers",
-                            "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":0,
-                            "user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ":10,
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in":"//DIO5 threshold: [v]/3.3*256",
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in":40,
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge":"//set to 0 for rising edge, 1 for falling",
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge":0,
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms":1,
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms":0,
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel":"//set to 1 to output L1A signal, 0 for input pulse ",
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel":1,
-
-                            "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":"//CLOCK",
-                            "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":"//set to 1 to enable external clocking",
-                            "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":0,
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in":"//DIO5 threshold: [v]/3.3*256",
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in":40,
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms":1,
-                            "user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms":0,
-
-                            "user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE":"//ACQUISITION",
-                            "user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE":1,
-                            "cbc_stubdata_latency_adjust_fe1":1,
-                            "cbc_stubdata_latency_adjust_fe2":1,
-                            "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE":1,
-                            "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER":10,
-                            "user_wb_ttc_fmc_regs.pc_commands2.clock_shift":0,
-                            
-                            "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC":"//POLARITY",
-                            "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC":1,
-                            "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_sTTS":0,
-                            "user_wb_ttc_fmc_regs.pc_commands2.polarity_tlu":0
+                        },
+                        {
+                            "Id":1,
+                            "configfile":"Cbc_default_hole.txt"
                         }
+                        ]
                     }
+                    ],
+                    "RegisterName":{
+                        "COMMISSIONNING_MODE_RQ":"//COMMISSIONING MODE REGISTERS",
+                        "COMMISSIONNING_MODE_RQ":"//set to 1 to enable commissioning mode",
+                        "COMMISSIONNING_MODE_RQ":1,
+                        "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID":"//set to 1 to enable test pulses in comissioningn mode",
+                        "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID":1,
+                        "COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET":50,
+                        "COMMISSIONNING_MODE_DELAY_AFTER_L1A":400,
+                        "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE":201,
+
+                        "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":"//TRIGGER",
+                        "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":"//set to 1 to enable external triggers",
+                        "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":0,
+                        "user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ":10,
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in":"//DIO5 threshold: [v]/3.3*256",
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in":40,
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge":"//set to 0 for rising edge, 1 for falling",
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge":0,
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms":1,
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms":0,
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel":"//set to 1 to output L1A signal, 0 for input pulse ",
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel":1,
+
+                        "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":"//CLOCK",
+                        "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":"//set to 1 to enable external clocking",
+                        "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":0,
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in":"//DIO5 threshold: [v]/3.3*256",
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in":40,
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms":1,
+                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms":0,
+
+                        "user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE":"//ACQUISITION",
+                        "user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE":1,
+                        "cbc_stubdata_latency_adjust_fe1":1,
+                        "cbc_stubdata_latency_adjust_fe2":1,
+                        "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE":1,
+                        "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER":10,
+                        "user_wb_ttc_fmc_regs.pc_commands2.clock_shift":0,
+
+                        "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC":"//POLARITY",
+                        "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC":1,
+                        "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_sTTS":0,
+                        "user_wb_ttc_fmc_regs.pc_commands2.polarity_tlu":0
+                    }
+                }
                 ]
             }
         ]
     },
-    "Settings":{
-        "RunNumber":1,
-        "HoleMode":1
-    }
+        "Settings":{
+            "RunNumber":1,
+            "HoleMode":1
+        }
 }
 ```
 
@@ -499,27 +486,25 @@ Several bugs / problematic behavior has been reported by various users that is n
 - When configuring a CBC object (writing all registers at once), the MSB of the Register "FrontEncControl" is read back incorrectly. This only manifests in electron mode (0xC3 instead of 0x43). The cause of this problem is identified as a FW artefact and the error itself can be safely ignored until the problem is solved. The chips will still properly configure and data quality should not be affected.
 
 - uHAL exceptions and UDP timeouts when reading larger packet sizes from the GLIB board: 
-    this can happen for some users (cause not yet identified) but can be circumvented by changing the line
+this can happen for some users (cause not yet identified) but can be circumvented by changing the line
 
-        "ipbusudp-2.0://192.168.000.175:50001"
+"ipbusudp-2.0://192.168.000.175:50001"
 
-    in the connections.xml file to
+in the connections.xml file to
 
-        "chtcp-2.0://localhost:10203?target=192.168.000.175:50001"
+"chtcp-2.0://localhost:10203?target=192.168.000.175:50001"
 
-    & then launching the CACTUS control hub by the command:
+& then launching the CACTUS control hub by the command:
 
-        /opt/cactus/bin/controlhub_start
+/opt/cactus/bin/controlhub_start
 
-    This uses TCP protocol instead of UDP which accounts for packet loss but decreases the performance.
+This uses TCP protocol instead of UDP which accounts for packet loss but decreases the performance.
 
 - SegmentationViolations on lines that contain
-        
-        gStyle->Set ... ;
 
-    statements. This has been observed by several users on the VM and can be fixed by re-compiling ROOT using GCC 4.8
+gStyle->Set ... ;
 
-
+statements. This has been observed by several users on the VM and can be fixed by re-compiling ROOT using GCC 4.8
 
 
 ### Support, Suggestions ?

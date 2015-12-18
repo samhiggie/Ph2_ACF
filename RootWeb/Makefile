@@ -2,10 +2,13 @@ ROOTFLAGS=`root-config --cflags`
 ROOTLIBDIR=`root-config --libdir`
 ROOTLIBFLAGS=`root-config --libs`
 ROOTLIBFLAGS+=-lHistPainter
+ifneq ($(strip $(BOOST_INCLUDE)),)
 INCLUDEFLAGS=-I$(BOOST_INCLUDE)
-
+endif
+ifneq ($(strip $(BOOST_LIB)),)
 BOOSTLIBFLAGS=-L$(BOOST_LIB)
-BOOSTLIBFLAGS+=-L$(BOOST_LIB) -lboost_system$(BOOST_SUFFIX) -lboost_filesystem$(BOOST_SUFFIX) -lboost_program_options$(BOOST_SUFFIX)
+endif
+BOOSTLIBFLAGS+=-lboost_system$(BOOST_SUFFIX) -lboost_filesystem$(BOOST_SUFFIX) -lboost_program_options$(BOOST_SUFFIX)
 GLIBFLAGS=`root-config --glibs`
 INCLUDEFLAGS+=-Iinclude/
 SRCDIR=src
@@ -30,16 +33,12 @@ all: lib
 $(LIBDIR)/rootweb.o: $(SRCDIR)/rootweb.cpp $(INCDIR)/rootweb.hh
 	$(COMP) $(ROOTFLAGS) -c -o $(LIBDIR)/rootweb.o $(SRCDIR)/rootweb.cpp
 
-$(LIBDIR)/publisher.o: $(SRCDIR)/publisher.cpp
-	$(COMP) $(ROOTFLAGS) -c $(SRCDIR)/publisher.cpp -o $(LIBDIR)/publisher.o
-
 # Binary
-lib: $(LIBDIR)/rootweb.o $(LIBDIR)/publisher.o 
-	$(COMP) -shared -o $(LIBDIR)/libRootWeb.so $(LIBDIR)/rootweb.o $(LIBDIR)/publisher.o -pthread $(BOOSTLIBFLAGS)
+lib: $(LIBDIR)/rootweb.o
+	$(COMP) -shared -o $(LIBDIR)/libRootWeb.so $(LIBDIR)/rootweb.o -pthread $(BOOSTLIBFLAGS)
 
 #CLEANUP
 cleanall:
 	@rm -rf $(LIBDIR)/*
 
 clean: cleanall
-

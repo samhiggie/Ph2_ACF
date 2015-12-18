@@ -54,7 +54,7 @@ namespace Ph2_System
 		BeBoardInterface*       fBeBoardInterface;                     /*!< Interface to the BeBoard */
 		CbcInterface*           fCbcInterface;                     /*!< Interface to the Cbc */
 		ShelveVec fShelveVector;                                           /*!< Vector of Shelve pointers */
-		BeBoardFWMap fBeBoardFWMap;                                /*!< Map of connections to the BeBoard */
+		BeBoardFWMap fBeBoardFWMap;
 		SettingsMap fSettingsMap;                                         /*!< Maps the settings */
 		FileHandler* fFileHandler;
 
@@ -72,8 +72,13 @@ namespace Ph2_System
 		* \brief create a FileHandler object with
 		 * \param pFilename : the filename of the binary file
 		*/
-		void addFileHandler( std::string pFilename0, char pOption );
+		void addFileHandler( std::string pFilename, char pOption );
 
+		/*!
+		* \brief read file in the a FileHandler object
+		 * \param pVec : the data vector 
+		*/
+     	void readFile(std::vector<uint32_t>& pVec );
 		/*!
 		 * \brief acceptor method for HwDescriptionVisitor
 		 * \param pVisitor
@@ -175,6 +180,10 @@ namespace Ph2_System
 		 *\param os : ostream to dump output
 		 */
 		void parseSettingsjson( const std::string& pFilename, std::ostream& os );
+		/*! \brief Expand environment variables in string
+		 * \param s input string
+		 * \return Result with variables expanded */
+		std::string expandEnvironmentVariables( std::string s ) ;
 	};
 }
 

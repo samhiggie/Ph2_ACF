@@ -2,9 +2,11 @@
 
 #include "../Utils/Utilities.h"
 #include "../tools/Commissioning.h"
-#include <TApplication.h>
+#include "../tools/PedeNoise.h"
+
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
+#include "TApplication.h"
 
 
 using namespace Ph2_HwDescription;
@@ -16,7 +18,6 @@ using namespace CommandLineProcessing;
 
 int main( int argc, char* argv[] )
 {
-	Commissioning cCommissioning;
 	ArgvParser cmd;
 
 	// init
@@ -38,6 +39,10 @@ int main( int argc, char* argv[] )
 
 	cmd.defineOption( "stublatency", "scan the stub latency", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "stublatency", "s" );
+
+	cmd.defineOption( "noise", "scan the CBC noise per strip", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "noise", "n" );
+
 
 	cmd.defineOption( "minimum", "minimum value for latency scan", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "minimum", "m" );
@@ -70,8 +75,10 @@ int main( int argc, char* argv[] )
 	bool cStubLatency = ( cmd.foundOption( "stublatency" ) ) ? true : false;
 	bool cThreshold = ( cmd.foundOption( "threshold" ) ) ? true : false;
 	bool cScanPedestal = ( cmd.foundOption( "pedestal" ) ) ? true : false;
+	bool cNoise = ( cmd.foundOption( "noise" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
-	cDirectory += "Commissioning";
+	if ( !cNoise )cDirectory += "Commissioning";
+	else if ( cNoise ) cDirectory += "NoiseScan";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 	bool gui = ( cmd.foundOption( "gui" ) ) ? true : false;
 
@@ -83,22 +90,43 @@ int main( int argc, char* argv[] )
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
-	cCommissioning.InitializeHw( cHWFile );
-	cCommissioning.InitializeSettings( cHWFile );
-	cCommissioning.Initialize( );
-	cCommissioning.CreateResultDirectory( cDirectory );
-	std::string cResultfile;
-	if ( cLatency || cStubLatency ) cResultfile = "Latency";
-	else if ( cThreshold ) cResultfile = "Threshold";
-	else cResultfile = "Commissioning";
-	cCommissioning.InitResultFile( cResultfile );
-	if ( !gui ) cCommissioning.ConfigureHw();
+	if ( !cNoise )
+	{
+		Commissioning cCommissioning;
+		cCommissioning.InitializeHw( cHWFile );
+		cCommissioning.InitializeSettings( cHWFile );
+		cCommissioning.Initialize( );
+		cCommissioning.CreateResultDirectory( cDirectory );
+		std::string cResultfile;
+		if ( cLatency || cStubLatency ) cResultfile = "Latency";
+		else if ( cThreshold ) cResultfile = "Threshold";
+		else cResultfile = "Commissioning";
+		cCommissioning.InitResultFile( cResultfile );
+		cCommissioning.StartHttpServer();
 
-	// Here comes our Part:
-	if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
-	if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
-	if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
-	cCommissioning.SaveResults();
+		if ( !gui ) cCommissioning.ConfigureHw();
+
+		// Here comes our Part:
+		if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
+		if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
+		if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
+		cCommissioning.SaveResults();
+	}
+
+	if ( cNoise )
+	{
+		PedeNoise cPedeNoise;
+		cPedeNoise.InitializeHw( cHWFile );
+		cPedeNoise.InitializeSettings( cHWFile );
+		cPedeNoise.CreateResultDirectory( cDirectory );
+		std::string cResultfile = "NoiseScan";
+		cPedeNoise.InitResultFile( cResultfile );
+		cPedeNoise.StartHttpServer();
+		cPedeNoise.ConfigureHw();
+		cPedeNoise.Initialise(); // canvases etc. for fast calibration
+		cPedeNoise.measureNoise();
+		cPedeNoise.SaveResults( );
+	}
 
 
 	if ( !batchMode ) cApp.Run();
