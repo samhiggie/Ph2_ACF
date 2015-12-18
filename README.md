@@ -121,8 +121,8 @@ Cbc_default_electron# CMS Ph2 ACF (Acquisition & Control Framework)
 
 ### Setup
 
-          Firmware for the GLIB can be found in /firmware. Since the "old" FMC flavour is deprecated, only new FMCs (both connectors on the same side) are supported.
-          You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnell.com/xilinx/hw-usb-ii-g/platform-cable-configuration-prog/dp/1649384)
+Firmware for the GLIB can be found in /firmware. Since the "old" FMC flavour is deprecated, only new FMCs (both connectors on the same side) are supported.
+You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnell.com/xilinx/hw-usb-ii-g/platform-cable-configuration-prog/dp/1649384)
 
 #### Setup on the Strasbourg [VM v1.1.0] (http://sbgcmstrackerupgrade.in2p3.fr/) 
 
