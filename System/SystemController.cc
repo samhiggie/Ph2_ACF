@@ -159,7 +159,8 @@ void SystemController::parseHWxml( const std::string& pFilename, std::ostream& o
 
             os << BOLDCYAN << "|" << "----" << cBeBoardNode.name() << "  " << cBeBoardNode.first_attribute().name() << " :" << cBeBoardNode.attribute( "Id" ).value() << RESET << std:: endl;
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child("connection");
-            std::cout << BOLDBLUE <<  "|" << "----" << "Board Id: " << BOLDYELLOW << cBeBoardConnectionNode.attribute("id").value() << BOLDBLUE << " URI: " << BOLDYELLOW << cBeBoardConnectionNode.attribute("uri").value() << BOLDBLUE << " Address Table: " << BOLDYELLOW << cBeBoardConnectionNode.attribute("address_table").value() << RESET << std::endl;
+	    std::string strAddrTable = expandEnvironmentVariables(cBeBoardConnectionNode.attribute("address_table").value());
+            std::cout << BOLDBLUE <<  "|" << "----" << "Board Id: " << BOLDYELLOW << cBeBoardConnectionNode.attribute("id").value() << BOLDBLUE << " URI: " << BOLDYELLOW << cBeBoardConnectionNode.attribute("uri").value() << BOLDBLUE << " Address Table: " << BOLDYELLOW << strAddrTable << RESET << std::endl;
 
             cBeId = cBeBoardNode.attribute( "Id" ).as_int();
             BeBoard* cBeBoard = new BeBoard( cShelveId, cBeId );
@@ -182,10 +183,10 @@ void SystemController::parseHWxml( const std::string& pFilename, std::ostream& o
 
 
             if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "GLIB" ) ) )
-                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface( cBeBoardConnectionNode.attribute( "id" ).value(), cBeBoardConnectionNode.attribute( "uri" ).value(), cBeBoardConnectionNode.attribute("address_table").value(), fFileHandler );
+                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface( cBeBoardConnectionNode.attribute( "id" ).value(), cBeBoardConnectionNode.attribute( "uri" ).value(), strAddrTable.c_str(), fFileHandler );
 
             else if ( !std::string( cBeBoardNode.attribute( "boardType" ).value() ).compare( std::string( "CTA" ) ) )
-                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( cBeBoardConnectionNode.attribute( "id" ).value(), cBeBoardConnectionNode.attribute( "uri" ).value(), cBeBoardConnectionNode.attribute("address_table").value(), fFileHandler );
+                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( cBeBoardConnectionNode.attribute( "id" ).value(), cBeBoardConnectionNode.attribute( "uri" ).value(), strAddrTable.c_str(), fFileHandler );
             /*else
                     cBeBoardFWInterface = new OtherFWInterface();*/
 
@@ -206,7 +207,7 @@ void SystemController::parseHWxml( const std::string& pFilename, std::ostream& o
                         fShelveVector[cNShelve]->getBoard( cBeId )->addModule( cModule );
 
                         pugi::xml_node cCbcPathPrefixNode = cModuleNode.child( "CBC_Files" );
-                        std::string cFilePrefix = std::string( cCbcPathPrefixNode.attribute( "path" ).value() );
+                        std::string cFilePrefix = expandEnvironmentVariables(std::string( cCbcPathPrefixNode.attribute( "path" ).value() ));
                         if ( !cFilePrefix.empty() ) os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC Files Path : " << cFilePrefix << RESET << std::endl;
 
                         // Iterate the CBC node
@@ -217,8 +218,8 @@ void SystemController::parseHWxml( const std::string& pFilename, std::ostream& o
 
                             std::string cFileName;
                             if ( !cFilePrefix.empty() )
-                                cFileName = cFilePrefix + cCbcNode.attribute( "configfile" ).value();
-                            else cFileName = cCbcNode.attribute( "configfile" ).value();
+                                cFileName = cFilePrefix + "/" + expandEnvironmentVariables(cCbcNode.attribute( "configfile" ).value());
+                            else cFileName = expandEnvironmentVariables(cCbcNode.attribute( "configfile" ).value());
 
                             Cbc* cCbc = new Cbc( cShelveId, cBeId, cModuleNode.attribute( "FMCId" ).as_int(), cModuleNode.attribute( "FeId" ).as_int(), cCbcNode.attribute( "Id" ).as_int(), cFileName );
 
@@ -451,5 +452,23 @@ void SystemController::parseSettingsjson( const std::string& pFilename, std::ost
         fSettingsMap[cSetting.first] = static_cast<int>( cSetting.second.get<double>() );
         os << RED << "Setting" << RESET << " --" << BOLDCYAN << cSetting.first << RESET << ":" << BOLDYELLOW << static_cast<int>( cSetting.second.get<double>() ) << RESET << std:: endl;
     }
+}
+
+std::string SystemController::expandEnvironmentVariables( std::string s ) {
+	if( s.find( "${" ) == std::string::npos ) return s;
+
+	std::string pre  = s.substr( 0, s.find( "${" ) );
+	std::string post = s.substr( s.find( "${" ) + 2 );
+
+	if( post.find( '}' ) == std::string::npos ) return s;
+
+	std::string variable = post.substr( 0, post.find( '}' ) );
+	std::string value    = "";
+
+	post = post.substr( post.find( '}' ) + 1 );
+
+	if( getenv( variable.c_str() ) != NULL ) value = std::string( getenv( variable.c_str() ) );
+
+	return expandEnvironmentVariables( pre + value + post );
 }
 }
