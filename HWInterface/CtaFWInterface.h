@@ -190,6 +190,8 @@ public:
     void FlashProm( const std::string& strConfig, const char* pstrFile );
     /*! \brief Jump to an FPGA configuration */
     void JumpToFpgaConfig( const std::string& strConfig);
+
+    void DownloadFpgaConfig( const std::string& strConfig, const std::string& strDest );
     /*! \brief Is the FPGA being configured ?
      * \return FPGA configuring process or NULL if configuration occurs */
     const FpgaConfig* getConfiguringFpga()
