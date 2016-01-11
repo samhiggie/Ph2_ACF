@@ -8,14 +8,13 @@ FileHandler::FileHandler( std::string pBinaryFileName, char pOption ):
 	is_set( false )
 {
 	openFile();
-	if ( fOption == 'w' )
-		fThread = std::thread( &FileHandler::writeFile, this );
+	//if ( fOption == 'w' ) fThread = std::thread( &FileHandler::writeFile, this );
 }
 
 //destructor
 FileHandler::~FileHandler()
 {
-	fThread.join();
+	//fThread.join();
 	closeFile();
 }
 void FileHandler::set( std::vector<uint32_t> pVector )
@@ -67,8 +66,7 @@ std::vector<uint32_t> FileHandler::readFile( )
 
 void FileHandler::writeFile()
 {
-	while ( true )
-	{
+	//while ( true ) {
 		if ( is_set )
 		{
 			fMutex.lock();
@@ -78,15 +76,15 @@ void FileHandler::writeFile()
 			fData.clear();
 			is_set = false;
 			fMutex.unlock();
-			continue;
+			//continue;
 		}
 
 		else
 		{
 			fMutex.lock();
 			fMutex.unlock();
-			continue;
+			//continue;
 		}
 
-	}
+	//}
 }

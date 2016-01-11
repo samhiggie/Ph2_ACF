@@ -24,6 +24,7 @@ SystemController::SystemController()
 
 SystemController::~SystemController()
 {
+    delete fFileHandler;
     for ( auto& el : fShelveVector )
         delete el;
     fShelveVector.clear();

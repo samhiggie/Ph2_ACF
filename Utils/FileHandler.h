@@ -82,7 +82,6 @@ class FileHandler
 	 */
 	std::vector<uint32_t> readFile( );
 
-  private:
 	/*!
 	* \brief Write data to file
 	*/

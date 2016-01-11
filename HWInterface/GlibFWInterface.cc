@@ -209,8 +209,10 @@ namespace Ph2_HwInterface
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
 		fData->Set( pBoard, cData , cNPackets, true );
-		if ( fSaveToFile )
+		if ( fSaveToFile ){
 			fFileHandler->set( cData );
+			fFileHandler->writeFile();
+		}
 		return cNPackets;
 	}
 
