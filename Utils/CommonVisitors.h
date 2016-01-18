@@ -82,10 +82,12 @@ class Counter : public HwDescriptionVisitor
 	uint32_t fNFe;
 	uint32_t fNBe;
 	uint32_t fNShelve;
+	uint32_t fCbcMask;
   public:
-	Counter() : fNCbc( 0 ), fNFe( 0 ), fNBe( 0 ), fNShelve( 0 ) {}
+	Counter() : fNCbc( 0 ), fNFe( 0 ), fNBe( 0 ), fNShelve( 0 ), fCbcMask(0) {}
 	void visit( Ph2_HwDescription::Cbc& pCbc ) {
 		fNCbc++;
+		fCbcMask |= (1 << pCbc.getCbcId());
 	}
 	void visit( Ph2_HwDescription::Module& pModule ) {
 		fNFe++;
@@ -107,7 +109,10 @@ class Counter : public HwDescriptionVisitor
 	}
 	uint32_t getNShelves() const {
 		return fNShelve;
-	};
+	}
+	uint32_t getCbcMask() const { 		
+		return fCbcMask;
+	}
 };
 
 // Configurator

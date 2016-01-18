@@ -4,6 +4,7 @@
 
     <Shelve Id="0" >
         <BeBoard Id="0" connectionId="board0" boardType="GLIB">
+            <FW_Version NCbcDataSize="8" />
 
         	<Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         		<!-- <Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register> -->

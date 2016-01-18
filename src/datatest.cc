@@ -1,4 +1,5 @@
 #include <cstring>
+#include <fstream>
 #include "../Utils/Utilities.h"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
@@ -14,12 +15,14 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 #include "../Utils/CommonVisitors.h"
+#include "../Tracker/TrackerEvent.h"
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
 using namespace CommandLineProcessing;
+using namespace std;
 
 //Class used to process events acquired by a parallel acquisition
 class AcqVisitor: public HwInterfaceVisitor
@@ -81,6 +84,9 @@ int main( int argc, char* argv[] )
     cmd.defineOption( "save", "Save the data to a raw file.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative( "save", "s" );
 
+    cmd.defineOption( "daq", "Save the data into a .daq file using the phase-2 Tracker data format.  ", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative( "daq", "d" );
+
     // cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
     // cmd.defineOptionAlternative( "option", "o" );
 
@@ -94,6 +100,7 @@ int main( int argc, char* argv[] )
 
     bool cSaveToFile = false;
     std::string cOutputFile;
+    ofstream filNewDaq;
     // now query the parsing results
     std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_2CBC.xml";
 
@@ -102,6 +109,8 @@ int main( int argc, char* argv[] )
     if ( cSaveToFile )
         cOutputFile =  cmd.optionValue( "save" );
 
+    if (cmd.foundOption( "daq"))
+	filNewDaq.open(cmd.optionValue( "daq" ), ios_base::binary);
 
     std::cout << "save:   " << cOutputFile << std::endl;
     // std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
@@ -167,6 +176,10 @@ int main( int argc, char* argv[] )
         uint32_t cNthAcq = 0;
 
         cSystemController.fBeBoardInterface->Start( pBoard );
+	Counter cCbcCounter;
+	pBoard->accept( cCbcCounter );
+	uint32_t uFeMask = (1<<cCbcCounter.getNFe())-1;
+	char arrSize[4];
         while ( cN <= pEventsperVcth )
         {
             uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
@@ -178,10 +191,20 @@ int main( int argc, char* argv[] )
             {
                 std::cout << ">>> Event #" << cN++ << std::endl;
                 std::cout << *ev << std::endl;
+		if (filNewDaq.is_open()){
+			TrackerEvent evtTracker(ev, pBoard->getNCbcDataSize(), uFeMask, cCbcCounter.getCbcMask(), nullptr );
+			uint32_t uSize= evtTracker.getDaqSize();
+			arrSize[0]=uSize & 255; arrSize[1] = (uSize>>8)&255; arrSize[2] = (uSize>>16)&255; arrSize[3] = (uSize>>24)&255;
+			filNewDaq.write(arrSize, 4); 
+			filNewDaq.write(evtTracker.getData(), uSize);
+			filNewDaq.flush();
+		}
             }
             cNthAcq++;
         }
         t.stop();
         t.show( "Time to take data:" );
+	if (filNewDaq.is_open())
+		filNewDaq.close();
     }
 }
