@@ -72,13 +72,12 @@ using namespace Ph2_HwInterface;
  * @param buffer GLIB data buffer
  * @param idxBuf index of the event data in buffer 
  */ 
-TrackerEvent::TrackerEvent(  Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, ParamSet* pPSet){
+TrackerEvent::TrackerEvent(  Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, bool bFakeData, ParamSet* pPSet){
 	data_=NULL;
 	size_=0;
 
 	uint32_t uAcqMode = STREAMER_ACQ_MODE_FULLDEBUG;
 	bool bZeroSuppr=false;
-	bool bFakeData=false;
 
 	uint32_t nbBitsPayload=0, nbBitsCondition=0, nbBitsHeader = 128;//at least 2 64-bits words
 	uint32_t nbCondition = 0;
@@ -115,8 +114,10 @@ TrackerEvent::TrackerEvent(  Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32
 
 	//Condition data
 	nbCondition = countConditionData(pPSet);
-	nbBitsCondition=(nbCondition+1)*64;
 	bool bConditionData=(nbCondition>0);
+	if (bConditionData) 
+		nbBitsCondition=(nbCondition+1)*64;
+
 	nbBitsHeader=nbBitsHeader/64*64 + (nbBitsHeader%64>0 ? 64 :0);//padded to 64 bits
 	nbBitsPayload=nbBitsPayload/64*64 + (nbBitsPayload%64>0 ? 64 :0);//padded to 64 bits
 	size_=(nbBitsHeader + nbBitsPayload + nbBitsCondition)/8;
@@ -141,30 +142,29 @@ uint32_t TrackerEvent::getDaqSize() const{
 							
 ///Fill the tracker header
 void TrackerEvent::fillTrackerHeader( Event* pEvt, uint64_t uFE, uint32_t nbCBC, uint32_t nbCbcFe, uint32_t uAcqMode, bool bZeroSuppr, bool bConditionData, bool bFakeData){
-	uint32_t uIdx=DAQ_HEADER_SIZE;
-	data_[uIdx+IDX_FORMAT] = FORMAT_VERSION<<4 | uAcqMode<<2 | (bZeroSuppr ? ZERO_SUPPRESSION : VIRGIN_RAW);//Data format version, Header format, 
-	data_[uIdx+IDX_EVENT_TYPE] = (bConditionData ? 1 : 0)<<7 | (bFakeData ? 0 : 1)<<6 | (GLIB_STATUS_REGISTERS&0x3F000000)>>24;//Event type, DTC status registers
-	data_[uIdx+IDX_GLIB_STATUS+2]= (GLIB_STATUS_REGISTERS&0xFF0000)>>16;
-	data_[uIdx+IDX_GLIB_STATUS+1]= (GLIB_STATUS_REGISTERS&0xFF00)>>8;
-	data_[uIdx+IDX_GLIB_STATUS]	= (GLIB_STATUS_REGISTERS&0xFF);
-	data_[uIdx+IDX_FRONT_END_STATUS_MSB] = 0;//(uFE>>64)&0xFF;//Front End status (72 bits but only 64 for now: temporary)
+	data_[DAQ_HEADER_SIZE+IDX_FORMAT] = FORMAT_VERSION<<4 | uAcqMode<<2 | (bZeroSuppr ? ZERO_SUPPRESSION : VIRGIN_RAW);//Data format version, Header format, 
+	data_[DAQ_HEADER_SIZE+IDX_EVENT_TYPE] = (bConditionData ? 1 : 0)<<7 | (bFakeData ? 0 : 1)<<6 | (GLIB_STATUS_REGISTERS&0x3F000000)>>24;//Event type, DTC status registers
+	data_[DAQ_HEADER_SIZE+IDX_GLIB_STATUS+2]= (GLIB_STATUS_REGISTERS&0xFF0000)>>16;
+	data_[DAQ_HEADER_SIZE+IDX_GLIB_STATUS+1]= (GLIB_STATUS_REGISTERS&0xFF00)>>8;
+	data_[DAQ_HEADER_SIZE+IDX_GLIB_STATUS]	= (GLIB_STATUS_REGISTERS&0xFF);
+	data_[DAQ_HEADER_SIZE+IDX_FRONT_END_STATUS_MSB] = 0;//(uFE>>64)&0xFF;//Front End status (72 bits but only 64 for now: temporary)
 	for (uint32_t uIdx=0; uIdx<8; uIdx++)
-		data_[uIdx+IDX_FRONT_END_STATUS+uIdx]=(uFE>>(uIdx*8))&0xFF;
+		data_[DAQ_HEADER_SIZE+IDX_FRONT_END_STATUS+uIdx]=(uFE>>(uIdx*8))&0xFF;
 		
 	//Total number of CBC chips
-	data_[uIdx+IDX_NUMBER_CBC+1]	= (nbCBC&0xFF00)>>8;
-	data_[uIdx+IDX_NUMBER_CBC]	= (nbCBC&0xFF);
+	data_[DAQ_HEADER_SIZE+IDX_NUMBER_CBC+1]	= (nbCBC&0xFF00)>>8;
+	data_[DAQ_HEADER_SIZE+IDX_NUMBER_CBC]	= (nbCBC&0xFF);
 	
 	uint32_t uChip, uStatus;
 	for (uChip = 0; uChip<nbCBC; uChip++)//CBC status in header
 		switch (uAcqMode){
 			case STREAMER_ACQ_MODE_FULLDEBUG://10 bits always over 2 bytes
 				uStatus = pEvt->PipelineAddress(uChip / nbCbcFe, uChip%nbCbcFe);
-				data_[uIdx+littleEndian8(IDX_CBC_STATUS + uChip*10/8)] 		|= uStatus>>((uChip*2+2)%10) & 0xFF;
-				data_[uIdx+littleEndian8(IDX_CBC_STATUS + uChip*10/8 + 1)] 	|= uStatus<<(8-(uChip*2+2)%10) & 0xFF;
+				data_[DAQ_HEADER_SIZE+littleEndian8(IDX_CBC_STATUS + uChip*10/8)] 		|= uStatus>>((uChip*2+2)%10) & 0xFF;
+				data_[DAQ_HEADER_SIZE+littleEndian8(IDX_CBC_STATUS + uChip*10/8 + 1)] 	|= uStatus<<(8-(uChip*2+2)%10) & 0xFF;
 				break;
 			case STREAMER_ACQ_MODE_CBCERROR:
-				data_[uIdx+littleEndian8(IDX_CBC_STATUS + uChip/4/* *2/8 */)] |= pEvt->Error(uChip/nbCbcFe, uChip%nbCbcFe)<<(8-(uChip*2)%8);
+				data_[DAQ_HEADER_SIZE+littleEndian8(IDX_CBC_STATUS + uChip/4/* *2/8 */)] |= pEvt->Error(uChip/nbCbcFe, uChip%nbCbcFe)<<(8-(uChip*2)%8);
 				break;
 		}//nothing if STREAMER_ACQ_MODE_SUMMARYERROR
 }
@@ -187,7 +187,8 @@ void TrackerEvent::fillTrackerPayload(Event* pEvt, uint32_t nbFE, uint32_t nbCBC
 				pEvt->GetCbcEvent(uFront, uChip, cbcData);
 				for (uOct=0; uOct<NB_STRIPS_CBC2/8; uOct++){
 					// Jonni: so we need to skip 2 CBC error bits and then 8 Pipeline Address Bits then we need to reconstruct nibbles from half nibbles
-					data_[littleEndian8(idxPayload)] =  cbcData[uOct];
+					data_[littleEndian8(idxPayload)] =  ((cbcData[uOct] << 2) & 0xfc) | (uOct==NB_STRIPS_CBC2/8-1 ? 0 : ((cbcData[uOct+1] >> 6) & 0x03));
+
 					reverseByte(data_[littleEndian8(idxPayload++)]);
 				}
 				//cout<<endl;
@@ -360,14 +361,14 @@ void TrackerEvent::fillDaqHeaderAndTrailer(Event *pEvt){
 //	globalDaqHeader_ = boe_ | eventType_ | l1aCounter_ | bxCounter_ | sourceFedID_ | fov_;
 	data_[IDX_DAQ_HEADER_TYPE]		= (BOE_1<<4) | EVENT_TYPE;
 	data_[IDX_DAQ_HEADER_LV1_MSB]		= (pEvt->GetEventCount()>>16)&255;
-	data_[IDX_DAQ_HEADER_LV1_1]		= (pEvt->GetEventCountCBC()>>8)&255;
-	data_[IDX_DAQ_HEADER_LV1_LSB]		= pEvt->GetEventCountCBC()&255;
+	data_[IDX_DAQ_HEADER_LV1_1]		= (pEvt->GetEventCount()>>8)&255;
+	data_[IDX_DAQ_HEADER_LV1_LSB]		= pEvt->GetEventCount()&255;
 	data_[IDX_DAQ_HEADER_BX]			= (pEvt->GetBunch()>>4)&255;
 	data_[IDX_DAQ_HEADER_SOURCE_MSB]	= ((pEvt->GetBunch()&15)<<4) | ((SOURCE_FED_ID>>8)&255);
 	data_[IDX_DAQ_HEADER_SOURCE_LSB]	= (SOURCE_FED_ID)&255;
 	data_[IDX_DAQ_HEADER_FOV]			= (FOV<<4) | (0<<3) /*one word header*/ | 0; /*reserved*/
 //DAQ trailer
-	uint32_t len = size_ + 2;
+	uint32_t len = (size_+7)/8 + 2;
 	uint16_t crc = Crc16(data_, DAQ_HEADER_SIZE, 0xFFFF);
 	crc = Crc16(data_ + DAQ_HEADER_SIZE, size_, crc);
 	data_[DAQ_HEADER_SIZE+size_+IDX_DAQ_TRAILER_EOE]	= EOE_1;
@@ -398,5 +399,14 @@ uint16_t TrackerEvent::Crc16(const char *Adresse_tab , uint32_t Taille_max, uint
 		} // "ou exclusif" entre le CRC et le polynome generateur.
 	}
 	return(Crc);
+}
+
+
+void TrackerEvent::fillArrayWithSize(char *arrSize){
+	uint32_t uSize = getDaqSize();
+	arrSize[0] = uSize & 255; 
+	arrSize[1] = (uSize>>8)&255;
+	arrSize[2] = (uSize>>16)&255; 
+	arrSize[3] = (uSize>>24)&255;
 }
 

@@ -6,11 +6,12 @@
 
 class TrackerEvent{
 public:
-	TrackerEvent( Ph2_HwInterface::Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, ParamSet* pPSet);
+	TrackerEvent( Ph2_HwInterface::Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, bool bFakeData, ParamSet* pPSet);
 	virtual ~TrackerEvent();
 	uint32_t getDaqSize() const;
 	uint32_t getSize() const{ return size_;}
 	char* getData() const { return data_;}
+	void fillArrayWithSize(char *arrSize);
 private : 
 	char *data_;
 	uint32_t size_;

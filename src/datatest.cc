@@ -87,6 +87,9 @@ int main( int argc, char* argv[] )
     cmd.defineOption( "daq", "Save the data into a .daq file using the phase-2 Tracker data format.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative( "daq", "d" );
 
+    cmd.defineOption( "read", "Read the data from a raw file instead of the board.  ", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative( "read", "r" );
+
     // cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
     // cmd.defineOptionAlternative( "option", "o" );
 
@@ -122,7 +125,8 @@ int main( int argc, char* argv[] )
     cSystemController.addFileHandler( cOutputFile, 'w' );
 
     cSystemController.InitializeHw( cHWFile );
-    cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
+    if (!cmd.foundOption("read"))
+	    cSystemController.ConfigureHw( std::cout, cmd.foundOption( "ignoreI2c" ) );
 
     t.stop();
     t.show( "Time to Initialize/configure the system: " );
@@ -175,28 +179,39 @@ int main( int argc, char* argv[] )
         uint32_t cN = 1;
         uint32_t cNthAcq = 0;
 
-        cSystemController.fBeBoardInterface->Start( pBoard );
+        if (!cmd.foundOption( "read")) 	
+		cSystemController.fBeBoardInterface->Start( pBoard );
+
 	Counter cCbcCounter;
 	pBoard->accept( cCbcCounter );
 	uint32_t uFeMask = (1<<cCbcCounter.getNFe())-1;
 	char arrSize[4];
+	Data data;
+	const std::vector<Event*>* pEvents ;
         while ( cN <= pEventsperVcth )
         {
-            uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+	    if (cmd.foundOption( "read")){
+		FileHandler fFile(cmd.optionValue("read"), 'r');
+		data.Set( pBoard, fFile.readFile(), pEventsperVcth, false);
+		pEvents = &data.GetEvents( pBoard);
+	    } else {
+            	uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
 
-            if ( cN + cPacketSize >= pEventsperVcth ) cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
-            const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
+		if ( cN + cPacketSize > pEventsperVcth ) 
+			cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
 
-            for ( auto& ev : events )
+		pEvents = &cSystemController.GetEvents( pBoard );
+	    }
+
+            for ( auto& ev : *pEvents )
             {
                 std::cout << ">>> Event #" << cN++ << std::endl;
                 std::cout << *ev << std::endl;
 		if (filNewDaq.is_open()){
-			TrackerEvent evtTracker(ev, pBoard->getNCbcDataSize(), uFeMask, cCbcCounter.getCbcMask(), nullptr );
-			uint32_t uSize= evtTracker.getDaqSize();
-			arrSize[0]=uSize & 255; arrSize[1] = (uSize>>8)&255; arrSize[2] = (uSize>>16)&255; arrSize[3] = (uSize>>24)&255;
+			TrackerEvent evtTracker(ev, pBoard->getNCbcDataSize(), uFeMask, cCbcCounter.getCbcMask(), cmd.foundOption("read"), nullptr );
+			evtTracker.fillArrayWithSize(arrSize);
 			filNewDaq.write(arrSize, 4); 
-			filNewDaq.write(evtTracker.getData(), uSize);
+			filNewDaq.write(evtTracker.getData(), evtTracker.getDaqSize());
 			filNewDaq.flush();
 		}
             }
@@ -204,7 +219,7 @@ int main( int argc, char* argv[] )
         }
         t.stop();
         t.show( "Time to take data:" );
-	if (filNewDaq.is_open())
-		filNewDaq.close();
     }
+    if (filNewDaq.is_open())
+	filNewDaq.close();
 }
