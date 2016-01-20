@@ -3,13 +3,12 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-//#include <boost/algorithm/string.hpp>
-//#include "toolbox/string.h"
 #include "ParamSet.h"
 
 using namespace std;
 
-ParamSet::ParamSet(){
+ParamSet::ParamSet(const std::string& strFile){	
+	loadParamValuePairsFromFile(strFile);
 }
 
 uint32_t ParamSet::setValue(const std::string& strName, uint32_t uVal){
@@ -23,6 +22,13 @@ void ParamSet::setValue(const std::string& strName, const std::string& strVal){
 
 uint32_t ParamSet::getValue(const std::string& strName){
 	return mapIntValues[strName];
+}
+	
+uint32_t ParamSet::getValueDef(const std::string& strName, uint32_t uDefault){
+	if (containsIntValue(strName))
+		return mapIntValues[strName];
+	else
+		return uDefault;
 }
 	
 std::string ParamSet::getStrValue(const std::string& strName){
@@ -52,7 +58,7 @@ std::string ParamSet::nameAndValuePairs(){
 		
 	return ostream.str();
 }
-/// Read parameter and value pairs from a text file and write them into the board
+/// Read parameter and value pairs from a text file
 bool ParamSet::loadParamValuePairsFromFile(const std::string& strFile){
     ifstream fValues(strFile.c_str());
     string strLig;
@@ -62,7 +68,7 @@ bool ParamSet::loadParamValuePairsFromFile(const std::string& strFile){
     	while (fValues.good()){
         	getline(fValues, strLig);
         	size_t iEqual=strLig.find('=');
-        	if (iEqual!=string::npos && iEqual>0){
+        	if (iEqual!=string::npos && iEqual>0 && strLig.at(0)!='#'){
         		if (strLig[iEqual+1]=='\'')//string value
         			setValue(strLig.substr(0,iEqual), strLig.substr(iEqual+2, strLig.length()-iEqual-3).c_str());
         		else //Numeric value
@@ -80,4 +86,3 @@ void ParamSet::clearValues(){
 	mapStrValues.clear();
 }
 	
-

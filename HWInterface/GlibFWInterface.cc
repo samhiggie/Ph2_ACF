@@ -296,7 +296,7 @@ namespace Ph2_HwInterface
 		cBlockSize = computeBlockSize( pBoard );
 		while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
 		{
-			ReadData( nullptr, numAcq, true );
+			ReadData( pBoard, numAcq, true );
 			for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent( pBoard ); cEvent; cEvent = GetNextEvent( pBoard ) )
 				visitor->visit( *cEvent );
 

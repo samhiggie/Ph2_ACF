@@ -32,18 +32,18 @@
 #define IDX_GLIB_STATUS 		3
 #define IDX_FRONT_END_STATUS 		8
 #define IDX_FRONT_END_STATUS_MSB 	0
-//littleEndian8 index
 #define IDX_CBC_STATUS 			16
 
 #define FORMAT_VERSION 			2
 #define ZERO_SUPPRESSION		1
 #define VIRGIN_RAW			2
 #define GLIB_STATUS_REGISTERS		0
+#define STREAMER_SPARSIFIED_MODE	"zeroSuppressed"
 #define STREAMER_ACQ_MODE		"acqMode"
 #define STREAMER_ACQ_MODE_FULLDEBUG	1		
 #define STREAMER_ACQ_MODE_CBCERROR	2		
 #define STREAMER_ACQ_MODE_SUMMARYERROR	0
-#define STREAMER_ACQ_MODE_OLD		3		
+#define STREAMER_ACQ_MODE_OLD		3
 
 #define CONDITION_DATA_ENABLED		"enabled_%02d"
 #define CONDITION_DATA_FE_ID		"FE_ID_%02d"
@@ -62,16 +62,6 @@ using namespace std;
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 
-/** Construct one event from GLIB data. One fiber out of 12 is filled with data and the others are empty.
- * @param uAcqMode Acquisition mode (1:Full debug, 2:CBC error, 0:Summary error)
- * @param uFE Front Ends available (one bit per FE)
- * @param nbCBC Total number of CBC
- * @param uCBC Available CBCs (one bit per CBC) on each FE. temporary : only one CBC status
- * @param bZeroSuppr Sparsified mode
- * @param pPSetCondition pointer on the condition data parameter set
- * @param buffer GLIB data buffer
- * @param idxBuf index of the event data in buffer 
- */ 
 TrackerEvent::TrackerEvent(  Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, bool bFakeData, ParamSet* pPSet){
 	data_=NULL;
 	size_=0;
@@ -79,6 +69,10 @@ TrackerEvent::TrackerEvent(  Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32
 	uint32_t uAcqMode = STREAMER_ACQ_MODE_FULLDEBUG;
 	bool bZeroSuppr=false;
 
+	if (pPSet){
+		uAcqMode=pPSet->getValueDef(STREAMER_ACQ_MODE, uAcqMode);
+		bZeroSuppr=(pPSet->getValueDef(STREAMER_SPARSIFIED_MODE, bZeroSuppr)!=0);
+	}
 	uint32_t nbBitsPayload=0, nbBitsCondition=0, nbBitsHeader = 128;//at least 2 64-bits words
 	uint32_t nbCondition = 0;
 	
@@ -228,8 +222,6 @@ void TrackerEvent::fillTrackerConditionData(Event* pEvt,  uint32_t idxPayload, u
 			data_[littleEndian8(idxPayload++)]=pPSet->getValue((boost::format(CONDITION_DATA_TYPE)%uCond).str())&0xFF;
 			switch(pPSet->getValue((boost::format(CONDITION_DATA_TYPE)%uCond).str())){//Value
 				case 3://Trigger phase (TDC)
-		//				uFront = pPSet->getValue((boost::format(CONDITION_DATA_FE_ID)%uCond).str());
-		
 					uVal=pEvt->GetTDC();
 					break;
 				case 6://Error bits
@@ -261,16 +253,6 @@ void TrackerEvent::fillTrackerConditionData(Event* pEvt,  uint32_t idxPayload, u
 	}//for
 }
 
-	/**Data buffer construction and data size computing for one FE in sparsified mode for 2S modules. Two pass are necessary: <ul>
-	 * <li> one to compute size with NULL as destination buffer</li>
-	 * <li> one to construct destination buffer</li></ul>
-	 * @return Data size in bits
-	 * @param buffer GLIB data buffer
-	 * @param index idxBuf of event data in buffer
-	 * @param dest destination buffer. Set to NULL to only compute size.
-	 * @param bitDest index to put data for this fiber into destination buffer
-	 * @param nbCBC Number of CBCs in this FE
-	 */
 uint32_t TrackerEvent::calcBitsForFE(Event* pEvt, uint32_t uFront, char* dest, uint32_t bitDest, uint32_t nbCBC){
 	uint32_t uChip, uBit, nbCluster=0, uClusterSize, nbMax=63, uPos;
 	uint32_t nbBits=7;//FE header size for 2S modules
@@ -408,5 +390,26 @@ void TrackerEvent::fillArrayWithSize(char *arrSize){
 	arrSize[1] = (uSize>>8)&255;
 	arrSize[2] = (uSize>>16)&255; 
 	arrSize[3] = (uSize>>24)&255;
+}
+
+void TrackerEvent::setI2CValuesForConditionData(BeBoard *beBoard, ParamSet* pPSet){
+	uint32_t uCond, numFE, numCBC;//, numPage;
+	for (uCond=0; uCond<NB_CONDITION_DATA; uCond++){//first loop pass
+		if (pPSet->getValue((boost::format(CONDITION_DATA_ENABLED)%uCond).str())==1
+				&& pPSet->getValue((boost::format(CONDITION_DATA_TYPE)%uCond).str())==1 ){//FE configuration parameter
+			numFE =  pPSet->getValue((boost::format(CONDITION_DATA_FE_ID)%uCond).str());
+			numCBC = pPSet->getValue((boost::format(CONDITION_DATA_CBC)%uCond).str());
+			//numPage = pPSet->getValue((boost::format(CONDITION_DATA_PAGE)%uCond).str());
+//		cout<<"Value to be read: CBC "<<(numCBC&0x0F)<<", page "<<(numCBC>>4)<<", register "<<pPSet->getValue((boost::format(CONDITION_DATA_REGISTER)%uCond).str())<<endl;
+			Module* module= beBoard->getModule(numFE);
+			if (module){
+				Cbc*    pCbc = module->getCbc(numCBC);
+				if (pCbc){
+					uint8_t uVal = pCbc->getReg(pPSet->getStrValue((boost::format(CONDITION_DATA_NAME)%uCond).str()));
+					pPSet->setValue((boost::format(CONDITION_DATA_VALUE)%uCond).str(), uVal);
+				}
+			}
+		}
+	}
 }
 

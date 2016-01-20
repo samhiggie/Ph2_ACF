@@ -78,7 +78,7 @@ int main( int argc, char* argv[] )
     cmd.defineOption( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative( "events", "e" );
 
-    cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
+    cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread (only prints events)" );
     cmd.defineOptionAlternative( "parallel", "p" );
 
     cmd.defineOption( "save", "Save the data to a raw file.  ", ArgvParser::OptionRequiresValue );
@@ -89,6 +89,9 @@ int main( int argc, char* argv[] )
 
     cmd.defineOption( "read", "Read the data from a raw file instead of the board.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative( "read", "r" );
+
+    cmd.defineOption( "condition", "Read condition data and other parameters required to generate the phase-2 tracker data file (.daq) from a text file with key=value format", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative( "condition", "c" );
 
     // cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
     // cmd.defineOptionAlternative( "option", "o" );
@@ -187,6 +190,11 @@ int main( int argc, char* argv[] )
 	uint32_t uFeMask = (1<<cCbcCounter.getNFe())-1;
 	char arrSize[4];
 	Data data;
+	ParamSet *pPSet=nullptr;
+	if (cmd.foundOption( "condition")){
+		pPSet=new ParamSet(cmd.optionValue("condition"));
+		TrackerEvent::setI2CValuesForConditionData(pBoard, pPSet);
+	}
 	const std::vector<Event*>* pEvents ;
         while ( cN <= pEventsperVcth )
         {
@@ -208,7 +216,7 @@ int main( int argc, char* argv[] )
                 std::cout << ">>> Event #" << cN++ << std::endl;
                 std::cout << *ev << std::endl;
 		if (filNewDaq.is_open()){
-			TrackerEvent evtTracker(ev, pBoard->getNCbcDataSize(), uFeMask, cCbcCounter.getCbcMask(), cmd.foundOption("read"), nullptr );
+			TrackerEvent evtTracker(ev, pBoard->getNCbcDataSize(), uFeMask, cCbcCounter.getCbcMask(), cmd.foundOption("read"), pPSet );
 			evtTracker.fillArrayWithSize(arrSize);
 			filNewDaq.write(arrSize, 4); 
 			filNewDaq.write(evtTracker.getData(), evtTracker.getDaqSize());
@@ -219,6 +227,7 @@ int main( int argc, char* argv[] )
         }
         t.stop();
         t.show( "Time to take data:" );
+	delete pPSet;
     }
     if (filNewDaq.is_open())
 	filNewDaq.close();
