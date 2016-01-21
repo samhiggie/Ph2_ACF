@@ -1,6 +1,7 @@
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC 
+CCFlags         = -g -O0 -w -Wall -pedantic -std=c++11 -fPIC 
+#CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC 
 CCFlagsRoot	= `root-config --cflags --evelibs --glibs`
 ROOTVERSION := $(shell root-config --has-http)
 HttpFlag = -D__HTTP__
@@ -20,7 +21,7 @@ RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 
 ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
-                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils
+                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker
 
 # ifeq "5.34" "$(word 1, $(sort 5.34 $(RootVersion)))"
 ifneq (,$(findstring yes,$(ROOTVERSION)))

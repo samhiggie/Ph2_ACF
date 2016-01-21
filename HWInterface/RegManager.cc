@@ -87,7 +87,7 @@ bool RegManager::WriteReg( const std::string& pRegNode, const uint32_t& pVal )
 
         if ( comp == pVal )
         {
-            std::cout << "Values written correctly !" << comp << "=" << pVal << std::endl;
+            std::cout << "Values written correctly !" << pRegNode << "=" << pVal << std::endl;
             return true;
         }
 
@@ -125,7 +125,7 @@ bool RegManager::WriteStackReg( const std::vector< std::pair<std::string, uint32
             comp = static_cast<uint32_t>( reply );
 
             if ( comp ==  v.second )
-                std::cout << "Values written correctly !" << comp << "=" << v.second << std::endl;
+                std::cout << "Values written correctly !" << v.first << "=" << v.second << std::endl;
         }
 
         if ( cNbErrors == 0 )
@@ -222,7 +222,7 @@ uhal::ValWord<uint32_t> RegManager::ReadReg( const std::string& pRegNode )
     if ( DEV_FLAG )
     {
         uint32_t read = ( uint32_t ) cValRead;
-        std::cout << "\nValue in register ID " << pRegNode << " : " << read << std::endl;
+        std::cout << "Value in register ID " << pRegNode << " : " << read << std::endl;
     }
 
     return cValRead;
@@ -238,7 +238,7 @@ uhal::ValWord<uint32_t> RegManager::ReadAtAddress( uint32_t uAddr, uint32_t uMas
     if ( DEV_FLAG )
     {
         uint32_t read = ( uint32_t ) cValRead;
-        std::cout << "\nValue at address " << std::hex << uAddr << std::dec << " : " << read << std::endl;
+        std::cout << "Value at address " << std::hex << uAddr << std::dec << " : " << read << std::endl;
     }
 
     return cValRead;
@@ -254,7 +254,7 @@ uhal::ValVector<uint32_t> RegManager::ReadBlockReg( const std::string& pRegNode,
 
     if ( DEV_FLAG )
     {
-        std::cout << "\nValues in register block " << pRegNode << " : " << std::endl;
+        std::cout << "Values in register block " << pRegNode << " : " << std::endl;
 
         //Use size_t and not an iterator as op[] only works with size_t type
         for ( std::size_t i = 0; i != cBlockRead.size(); i++ )
