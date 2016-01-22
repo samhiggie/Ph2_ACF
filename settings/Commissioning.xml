@@ -11,7 +11,10 @@
                 <!-- <Global_CBC_Register name="VCth"> 0x92 </Global_CBC_Register> -->
 <!--                 <Global_CBC_Register name="TriggerLatency"> 0x05 </Global_CBC_Register>
  -->     
-                <CBC_Files path="./Results/Calibration_Hole_11-12-15_14:50/"/>
+
+
+                <CBC_Files path="./settings/"/>
+
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
                 <CBC Id="2" configfile="FE0CBC2.txt"/>
@@ -35,36 +38,36 @@
             <!-- Acquisition -->
             <Register name="cbc_stubdata_latency_adjust_fe1">1</Register>
             <Register name="cbc_stubdata_latency_adjust_fe2">1</Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER">9</Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE"> 1 </Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE"> 1 </Register>
+            <Register name="pc_commands.CBC_DATA_PACKET_NUMBER">9</Register>
+            <Register name="pc_commands.CBC_DATA_GENE"> 1 </Register>
+            <Register name="pc_commands.ACQ_MODE"> 1 </Register>
 
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">1</Register>
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ">10</Register>
+            <Register name="pc_commands.TRIGGER_SEL">0</Register>
+            <Register name="pc_commands.INT_TRIGGER_FREQ">10</Register>
 
             <!-- Clock -->
             <!-- set to 1 for external clocking -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel">0</Register>
+            <Register name="dio5.clk_mux_sel">0</Register>
 
             <!-- DIO5 Config -->
             <!-- set to 0 for rising edge, 1 for falling -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge">0</Register>
+            <Register name="dio5.fmcdio5_trig_in_edge">0</Register>
             <!-- set to 1 to output L1A signal, 0 for input pulse -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel">1</Register>
+            <Register name="dio5.fmcdio5_lemo2_sig_sel">1</Register>
             <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar">0</Register>
+            <Register name="dio5.fmcdio5_backpressure_out_polar">0</Register>
 
             <!-- DIO5 threshold: [v]/3.3*256 -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in">40</Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in">40</Register>
+            <Register name="dio5.fmcdio5_threshold_trig_in">40</Register>
+            <Register name="dio5.fmcdio5_threshold_clk_in">40</Register>
             
             <!-- DIO5 Termination -->
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms">1</Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms">0</Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms">1</Register>
-            <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms">0</Register>
+            <Register name="dio5.fmcdio5_clk_in_50ohms">1</Register>
+            <Register name="dio5.fmcdio5_clk_out_50ohms">0</Register>
+            <Register name="dio5.fmcdio5_trig_in_50ohms">1</Register>
+            <Register name="dio5.fmcdio5_trig_out_50ohms">0</Register>
         </BeBoard>
     </Shelve>
 </HwDescription>

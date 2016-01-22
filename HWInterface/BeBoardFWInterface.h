@@ -68,11 +68,6 @@ public:
     * \param puHalConfigFileName : path of the uHal Config File
     * \param pFileHandler : pointer to file handler for saving Raw Data*/
     BeBoardFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
-    /*!
-    * \brief Constructor of the BeBoardFWInterface class
-    * \param pId : identifier string
-    * \param pUri : URI string
-    * \param pAddressTable: address table string*/
     BeBoardFWInterface( const char* pId, const char* pUri, const char* pAddressTable );
     /*!
     * \brief Destructor of the BeBoardFWInterface class
@@ -91,6 +86,8 @@ public:
     virtual void FlashProm( const std::string& strConfig, const char* pstrFile ) {}
     /*! \brief Jump to an FPGA configuration */
     virtual void JumpToFpgaConfig( const std::string& strConfig ) {}
+
+    virtual void DownloadFpgaConfig( const std::string& strConfig, const std::string& strDest ) {}
     /*! \brief Current FPGA configuration*/
     virtual const FpgaConfig* getConfiguringFpga()
     {
@@ -113,6 +110,13 @@ public:
     * \param pVecReq : Vector to stack the encoded words
     */
     virtual void EncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq ); /*!< Encode a/several word(s) readable for a Cbc*/
+    /*!
+    * \brief Encode a/several word(s) readable for a Cbc
+    * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to write
+    * \param pCbcId : Id of the Cbc to work with
+    * \param pVecReq : Vector to stack the encoded words
+    */
+    virtual void EncodeReg( const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq ); /*!< Encode a/several word(s) readable for a Cbc*/
     /*!
     * \brief Decode a word from a read of a register of the Cbc
     * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to read

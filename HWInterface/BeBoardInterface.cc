@@ -211,6 +211,12 @@ namespace Ph2_HwInterface
 		fBoardFW->JumpToFpgaConfig( strConfig );
 	}
 
+	void BeBoardInterface::DownloadFpgaConfig( BeBoard* pBoard, const std::string& strConfig, const std::string& strDest)
+	{
+		setBoard( pBoard->getBeBoardIdentifier() );
+		fBoardFW->DownloadFpgaConfig( strConfig, strDest );
+	}
+
 	const FpgaConfig* BeBoardInterface::getConfiguringFpga( BeBoard* pBoard )
 	{
 		setBoard( pBoard->getBeBoardIdentifier() );

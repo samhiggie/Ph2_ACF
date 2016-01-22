@@ -29,7 +29,6 @@ CtaFWInterface::CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoard
     BeBoardFWInterface( puHalConfigFileName, pBoardId ),
     fpgaConfig( nullptr ),
     fData( nullptr ),
-
     fFileHandler( pFileHandler )
 {
     if ( fFileHandler == nullptr ) fSaveToFile = false;
@@ -58,193 +57,71 @@ CtaFWInterface::CtaFWInterface( const char* pId, const char* pUri, const char* p
 
 void CtaFWInterface::ConfigureBoard( const BeBoard* pBoard )
 {
-
-    //We may here switch in the future with the StackReg method of the RegManager
-    //when the timeout thing will be implemented in a transparent and pretty way
-
     std::vector< std::pair<std::string, uint32_t> > cVecReg;
-    std::pair<std::string, uint32_t> cPairReg;
 
     std::chrono::milliseconds cPause( 200 );
 
     //Primary Configuration
-    cPairReg.first = PC_CONFIG_OK;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM1_END_READOUT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM2_END_READOUT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM1_USR_LOGIC;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM2_USR_LOGIC;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
+    cVecReg.push_back( {"pc_commands.PC_config_ok", 1} );
+    cVecReg.push_back( {"pc_commands.SRAM1_end_readout", 0} );
+    cVecReg.push_back( {"pc_commands.SRAM2_end_readout", 0} );
+    cVecReg.push_back( {"ctrl_sram.sram1_user_logic", 1} );
+    cVecReg.push_back( {"ctrl_sram.sram2_user_logic", 1} );
+
+    // iterate the BeBoardRegMap to get the user configuration
+    BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
+    for ( auto const& it : cGlibRegMap )
+        cVecReg.push_back( {it.first, it.second} );
+
+    cVecReg.push_back( {"pc_commands.SPURIOUS_FRAME", 0} );
+    cVecReg.push_back( {"pc_commands2.force_BG0_start", 0} );
+    cVecReg.push_back( {"cbc_acquisition.CBC_TRIGGER_ONE_SHOT", 0} );
+    cVecReg.push_back( {"pc_commands.PC_config_ok", 0} );
 
     WriteStackReg( cVecReg );
-
     cVecReg.clear();
-
-    std::this_thread::sleep_for( cPause );
-
-
-    BeBoardRegMap cRegMap = pBoard->getBeBoardRegMap();
-    for ( auto const& it : cRegMap )
-    {
-        cPairReg.first = it.first;
-        cPairReg.second = it.second;
-        cVecReg.push_back( cPairReg );
-    }
-
-    WriteStackReg( cVecReg );
-
-    cVecReg.clear();
-
-    cPairReg.first = SPURIOUS_FRAME;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = FORCE_BG0_START;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = CBC_TRIGGER_1SHOT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    // cPairReg.first = BREAK_TRIGGER;
-    // cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-
-    WriteStackReg( cVecReg );
-
-    cVecReg.clear();
-
-
-    cPairReg.first = PC_CONFIG_OK;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM1_END_READOUT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM2_END_READOUT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM1_USR_LOGIC;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = SRAM2_USR_LOGIC;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-
-    WriteStackReg( cVecReg );
-
-    cVecReg.clear();
-
-    std::this_thread::sleep_for( cPause );
-
-    cPairReg.first = SPURIOUS_FRAME;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = FORCE_BG0_START;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = CBC_TRIGGER_1SHOT;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    // cPairReg.first = BREAK_TRIGGER;
-    // cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-
-    WriteStackReg( cVecReg );
-
-    cVecReg.clear();
-
-    std::this_thread::sleep_for( cPause * 3 );
-
 }
 
-
-void CtaFWInterface::SelectFEId()
-{
-    if ( static_cast<uint32_t>( ReadReg( HYBRID_TYPE ) ) == 8 )
-    {
-        fCbcStubLat  = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_STUB_LATENCY_FE1 : CBC_STUB_LATENCY_FE2 );
-        fCbcI2CCmdAck = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_I2C_CMD_ACK_FE1 : CBC_I2C_CMD_ACK_FE2 );
-        fCbcI2CCmdRq = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_I2C_CMD_RQ_FE1 : CBC_I2C_CMD_RQ_FE2 );
-        fCbcHardReset = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_HARD_RESET_FE1 : CBC_HARD_RESET_FE2 );
-        fCbcFastReset = ( static_cast<uint32_t>( ReadReg( FMC1_PRESENT ) ) ? CBC_FAST_RESET_FE1 : CBC_FAST_RESET_FE2 );
-    }
-    else
-    {
-        fCbcStubLat  = CBC_STUB_LATENCY;
-        fCbcI2CCmdAck =  CBC_I2C_CMD_ACK;
-        fCbcI2CCmdRq = CBC_I2C_CMD_RQ;
-        fCbcHardReset = CBC_HARD_RESET;
-        fCbcFastReset = CBC_FAST_RESET;
-    }
-}
 
 void CtaFWInterface::Start()
 {
     std::vector< std::pair<std::string, uint32_t> > cVecReg;
-    std::pair<std::string, uint32_t> cPairReg;
 
     //Starting the DAQ
-
-    cPairReg.first = BREAK_TRIGGER;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = PC_CONFIG_OK;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = FORCE_BG0_START;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
+    cVecReg.push_back( {"break_trigger", 0} );
+    cVecReg.push_back( {"pc_commands.PC_config_ok", 1} );
+    cVecReg.push_back( {"pc_commands2.force_BG0_start", 1} );
 
     WriteStackReg( cVecReg );
-
     cVecReg.clear();
 
     // Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
-    cNPackets = ReadReg( CBC_PACKET_NB ) + 1 ;
+    cNPackets = ReadReg( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
 
     //Wait for start acknowledge
     uhal::ValWord<uint32_t> cVal;
     std::chrono::milliseconds cWait( 100 );
     do
     {
-        cVal = ReadReg( CMD_START_VALID );
-
+        cVal = ReadReg( "status_flags.CMD_START_VALID" );
         if ( cVal == 0 )
             std::this_thread::sleep_for( cWait );
-
     }
     while ( cVal == 0 );
-
 }
 
 void CtaFWInterface::Stop( uint32_t pNthAcq )
 {
-
     std::vector< std::pair<std::string, uint32_t> > cVecReg;
-    std::pair<std::string, uint32_t> cPairReg;
 
     uhal::ValWord<uint32_t> cVal;
 
     //Select SRAM
     SelectDaqSRAM( pNthAcq );
-
     //Stop the DAQ
-    cPairReg.first = BREAK_TRIGGER;
-    cPairReg.second = 1;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = PC_CONFIG_OK;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
-    cPairReg.first = FORCE_BG0_START;
-    cPairReg.second = 0;
-    cVecReg.push_back( cPairReg );
+    cVecReg.push_back( {"break_trigger", 1} );
+    cVecReg.push_back( {"pc_commands.PC_config_ok", 0} );
+    cVecReg.push_back( {"pc_commands2.force_BG0_start", 0} );
 
     WriteStackReg( cVecReg );
     cVecReg.clear();
@@ -255,10 +132,8 @@ void CtaFWInterface::Stop( uint32_t pNthAcq )
     do
     {
         cVal = ReadReg( fStrFull );
-
         if ( cVal == 1 )
             std::this_thread::sleep_for( cWait );
-
     }
     while ( cVal == 1 );
 
@@ -269,16 +144,13 @@ void CtaFWInterface::Stop( uint32_t pNthAcq )
 
 void CtaFWInterface::Pause()
 {
-
-    WriteReg( BREAK_TRIGGER, 1 );
-
+    WriteReg( "break_trigger", 1 );
 }
 
 
 void CtaFWInterface::Resume()
 {
-
-    WriteReg( BREAK_TRIGGER, 0 );
+    WriteReg( "break_trigger", 0 );
 }
 
 uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
@@ -296,7 +168,6 @@ uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool p
 
     //Wait for the SRAM full condition.
     cVal = ReadReg( fStrFull );
-
     do
     {
         cVal = ReadReg( fStrFull );
@@ -306,7 +177,7 @@ uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool p
     while ( cVal == 0 );
 
     //break trigger
-    if ( pBreakTrigger ) WriteReg( BREAK_TRIGGER, 1 );
+    if ( pBreakTrigger ) WriteReg( "break_trigger", 1 );
 
     //Set read mode to SRAM
     WriteReg( fStrSramUserLogic, 0 );
@@ -321,17 +192,15 @@ uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool p
     do
     {
         cVal = ReadReg( fStrFull );
-
         if ( cVal == 1 )
             std::this_thread::sleep_for( cWait );
-
     }
     while ( cVal == 1 );
 
     //Wait for the non SRAM full condition ends.
 
     WriteReg( fStrReadout, 0 );
-    if ( pBreakTrigger ) WriteReg( BREAK_TRIGGER, 0 );
+    if ( pBreakTrigger ) WriteReg( "break_trigger", 0 );
 
     // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
     if ( fData ) delete fData;
@@ -344,6 +213,8 @@ uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool p
         fFileHandler->set( cData );
     return cNPackets;
 }
+
+
 /** compute the block size according to the number of CBC's on this board
  * this will have to change with a more generic FW */
 uint32_t CtaFWInterface::computeBlockSize( BeBoard* pBoard )
@@ -377,26 +248,23 @@ std::vector<uint32_t> CtaFWInterface::ReadBlockRegValue( const std::string& pReg
     return valBlock.value();
 }
 
+bool CtaFWInterface::WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
+{
+    bool cWriteCorr = RegManager::WriteBlockReg( pRegNode, pValues );
+    return cWriteCorr;
+}
+
 void CtaFWInterface::SelectDaqSRAM( uint32_t pNthAcq )
 {
-    fStrSram  = ( ( pNthAcq % 2 + 1 ) == 1 ? SRAM1 : SRAM2 );
-    fStrSramUserLogic = ( ( pNthAcq % 2 + 1 ) == 1 ? SRAM1_USR_LOGIC : SRAM2_USR_LOGIC );
-    fStrFull = ( ( pNthAcq % 2 + 1 ) == 1 ? SRAM1_FULL : SRAM2_FULL );
-    fStrReadout = ( ( pNthAcq % 2 + 1 ) == 1 ? SRAM1_END_READOUT : SRAM2_END_READOUT );
+    fStrSram  = ( ( pNthAcq % 2 + 1 ) == 1 ? "sram1" : "sram2" );
+    fStrSramUserLogic = ( ( pNthAcq % 2 + 1 ) == 1 ? "ctrl_sram.sram1_user_logic" : "ctrl_sram.sram2_user_logic" );
+    fStrFull = ( ( pNthAcq % 2 + 1 ) == 1 ? "flags.SRAM1_full" : "flags.SRAM2_full" );
+    fStrReadout = ( ( pNthAcq % 2 + 1 ) == 1 ? "pc_commands.SRAM1_end_readout" : "pc_commands.SRAM2_end_readout" );
 }
 
 
 
 //Methods for Cbc's:
-
-void CtaFWInterface::SelectFeSRAM( uint32_t pFe )
-{
-    pFe = 0;
-    fStrSram = ( pFe ? SRAM2 : SRAM1 );
-    fStrOtherSram = ( pFe ? SRAM1 : SRAM2 );
-    fStrSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
-    fStrOtherSramUserLogic = ( pFe ? SRAM2_USR_LOGIC : SRAM1_USR_LOGIC );
-}
 
 
 void CtaFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
@@ -431,131 +299,79 @@ void CtaFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor*
 bool CtaFWInterface::I2cCmdAckWait( uint32_t pAckVal, uint8_t pNcount )
 {
     unsigned int cWait( 100 );
-
     if ( pAckVal )
         cWait = pNcount * 500;
-
-
     usleep( cWait );
 
     uhal::ValWord<uint32_t> cVal;
     uint32_t cLoop = 0;
-
     do
     {
-        cVal = ReadReg( CBC_I2C_CMD_ACK );
-
+        cVal = ReadReg( "cbc_i2c_cmd_ack" );
         if ( cVal != pAckVal )
-        {
-            // std::cout << "Waiting for the I2c command acknowledge to be " << pAckVal << " for " << pNcount << " registers." << std::endl;
             usleep( cWait );
-        }
-
+        else return true;
     }
-    while ( cVal != pAckVal && ++cLoop < MAX_NB_LOOP );
-
-    if ( cLoop >= MAX_NB_LOOP )
-    {
-        std::cout << "Warning: time out in I2C acknowledge loop (" << pAckVal << ")" << std::endl;
-        return false;
-    }
-
-    return true;
+    while ( cVal != pAckVal && ++cLoop < 70 );
+    return false;
 }
 
-void CtaFWInterface::SendBlockCbcI2cRequest( std::vector<uint32_t>& pVecReq, bool pWrite )
+void CtaFWInterface::WriteI2C( std::vector<uint32_t>& pVecReq, bool pWrite )
 {
-    WriteReg( fStrSramUserLogic, 1 );
-
     pVecReq.push_back( 0xFFFFFFFF );
 
-    WriteReg( fStrSramUserLogic, 0 );
+    std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
-    WriteBlockReg( fStrSram, pVecReq );
-    WriteReg( fStrOtherSram, 0xFFFFFFFF );
+    WriteReg( "ctrl_sram.sram1_user_logic", 0 );
+    WriteBlockReg( "sram1", pVecReq );
 
-    WriteReg( fStrSramUserLogic, 1 );
-
-    WriteReg( CBC_HARD_RESET, 0 );
-
-    //r/w request
-    WriteReg( CBC_I2C_CMD_RQ, pWrite ? 3 : 1 );
-    // WriteReg( CBC_I2C_CMD_RQ, 1 );
-
-    pVecReq.pop_back();
+    cVecReg.push_back( {"ctrl_sram.sram1_user_logic", 1} );
+    cVecReg.push_back( {"cbc_i2c_cmd_rq", pWrite ? 3 : 1} );
+    WriteStackReg( cVecReg );
 
     if ( I2cCmdAckWait( ( uint32_t )1, pVecReq.size() ) == 0 )
         throw Exception( "CbcInterface: I2cCmdAckWait 1 failed." );
 
-    WriteReg( CBC_I2C_CMD_RQ, 0 );
+    WriteReg( "cbc_i2c_cmd_rq", 0 );
 
     if ( I2cCmdAckWait( ( uint32_t )0, pVecReq.size() ) == 0 )
         throw Exception( "CbcInterface: I2cCmdAckWait 0 failed." );
-
 }
 
-void CtaFWInterface::ReadI2cBlockValuesInSRAM( std::vector<uint32_t>& pVecReq )
+void CtaFWInterface::ReadI2C( std::vector<uint32_t>& pVecReq )
 {
-
-    WriteReg( fStrSramUserLogic, 0 );
-
-    pVecReq = ReadBlockRegValue( fStrSram, pVecReq.size() );
-    WriteReg( fStrSramUserLogic, 1 );
-    WriteReg( CBC_I2C_CMD_RQ, 0 );
-
-
+    WriteReg( "ctrl_sram.sram1_user_logic", 0 );
+    pVecReq = ReadBlockRegValue( "sram1", pVecReq.size() );
+    std::vector< std::pair<std::string, uint32_t> > cVecReg;
+    cVecReg.push_back( {"ctrl_sram.sram1_user_logic", 1} );
+    cVecReg.push_back( {"cbc_i2c_cmd_rq", 0} );
+    WriteStackReg( cVecReg );
 }
 
-
-void CtaFWInterface::EnableI2c( bool pEnable )
-{
-    uint32_t cValue = I2C_CTRL_ENABLE;
-
-    if ( !pEnable )
-        cValue = I2C_CTRL_DISABLE;
-
-    WriteReg( I2C_SETTINGS, cValue );
-
-    if ( pEnable )
-        usleep( 100000 );
-}
 
 void CtaFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
 {
-    SelectFeSRAM( pFeId );
-    EnableI2c( 1 );
-
     try
     {
-        SendBlockCbcI2cRequest( pVecReq, true );
+        WriteI2C( pVecReq, true );
     }
-
     catch ( Exception& except )
     {
         throw except;
     }
-
-    EnableI2c( 0 );
 }
 
 void CtaFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
 {
-    SelectFeSRAM( pFeId );
-    EnableI2c( 1 );
-
     try
     {
-        SendBlockCbcI2cRequest( pVecReq, false );
+        WriteI2C( pVecReq, false );
     }
-
     catch ( Exception& e )
     {
         throw e;
     }
-
-    ReadI2cBlockValuesInSRAM( pVecReq );
-
-    EnableI2c( 0 );
+    ReadI2C( pVecReq );
 }
 
 void CtaFWInterface::FlashProm( const std::string& strConfig, const char* pstrFile )
@@ -570,6 +386,12 @@ void CtaFWInterface::JumpToFpgaConfig( const std::string& strConfig)
     checkIfUploading();
 
     fpgaConfig->jumpToImage( strConfig);
+}
+
+void CtaFWInterface::DownloadFpgaConfig( const std::string& strConfig, const std::string& strDest)
+{
+    checkIfUploading();
+    fpgaConfig->runDownload( strConfig, strDest.c_str());
 }
 
 std::vector<std::string> CtaFWInterface::getFpgaConfigList()

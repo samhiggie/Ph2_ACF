@@ -211,6 +211,8 @@ namespace Ph2_HwInterface
  		* \param numConfig FPGA configuration number
  		*/
 		void JumpToFpgaConfig( BeBoard* pBoard, const std::string& strConfig);
+
+		void DownloadFpgaConfig( BeBoard* pBoard, const std::string& strConfig, const std::string& strDest);
 		/*! \brief Current FPGA configuration
 		 * \param pBoard pointer to a board description
 		 * \return const pointer to an FPGA uploading process. NULL means that no upload is been processed.

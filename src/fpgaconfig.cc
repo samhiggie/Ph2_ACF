@@ -92,8 +92,11 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "delete", "Delete a firmware image on SD card (works only with CTA boards)", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "delete", "d" ); 
 
-	cmd.defineOption( "file", "FPGA Bitstream (*.mcs format for GLIB or *.bit format for CTA boards)", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+	cmd.defineOption( "file", "FPGA Bitstream (*.mcs format for GLIB or *.bit/*.bin format for CTA boards)", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
+
+	cmd.defineOption( "download", "Download an FPGA configuration from SD card to file (only for CTA boards)", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+	cmd.defineOptionAlternative( "download", "o" );
 
 	cmd.defineOption( "config", "Hw Description File . Default value: settings/HWDescription_2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "config", "c" );
@@ -126,8 +129,8 @@ int main( int argc, char* argv[] )
 		if(lstNames.size()==0 && cFWFile.find(".mcs") == std::string::npos){
 			std::cout << "Error, the specified file is not a .mcs file" << std::endl;
 			exit(1);
-		} else if (lstNames.size()>0 && cFWFile.find(".bit") == std::string::npos){
-			std::cout << "Error, the specified file is not a .bit file" << std::endl;
+		} else if (lstNames.size()>0 && cFWFile.compare(cFWFile.length()-4,4,".bit") && cFWFile.compare(cFWFile.length()-4,4,".bin")){
+			std::cout << "Error, the specified file is neither a .bit nor a .bin file" << std::endl;
 			exit(1);
 		} 
 	} else if (cmd.foundOption("delete") && !lstNames.empty()){
@@ -157,29 +160,30 @@ int main( int argc, char* argv[] )
 	t.stop();
 	t.show( "Time to Initialize/configure the system: " );
 
-	if (!cmd.foundOption("file")){
+	if (!cmd.foundOption("file") && !cmd.foundOption("download")){
 		cSystemController.fBeBoardInterface->JumpToFpgaConfig(pBoard, strImage);
 		exit(0);
 	}
 
-	bool cUploadDone = 0;	
+	bool cDone = 0;	
 
      
-	cSystemController.fBeBoardInterface->FlashProm(pBoard, strImage, cFWFile.c_str());
-      uint32_t progress;
+        if (cmd.foundOption("download"))
+		cSystemController.fBeBoardInterface->DownloadFpgaConfig(pBoard, strImage, cmd.optionValue("download"));
+	else
+		cSystemController.fBeBoardInterface->FlashProm(pBoard, strImage, cFWFile.c_str());
 
-	while (cUploadDone == 0)
-	{
-		
+	uint32_t progress;
+
+	while (cDone == 0)
+	{ 
                progress= cSystemController.fBeBoardInterface->getConfiguringFpga(pBoard)->getProgressValue(); 
-            
-          
          	
                if(progress==100){
-                cUploadDone = 1;
+                cDone = 1;
 		std::cout << "\n 100% Done" << std::endl; 
 	       } else {
-		cout << progress << "%                   \r"<<flush;
+		cout << progress << "%  "<<cSystemController.fBeBoardInterface->getConfiguringFpga(pBoard)->getProgressString()<<"                 \r"<<flush;
 		sleep(1);
 	       }
 	}
