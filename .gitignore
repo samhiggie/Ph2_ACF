@@ -1,20 +1,16 @@
 *.o
 ._*
 *~
-Data/*
-       latex/*
-       html/*
-       html/
-       latex/
-    *.bin
-    *.raw
-    Results/*
-    Results/
-    settings/connections_slc6.xml
+Data
+latex
+html
+html/
+latex/
+*.bin
+*.raw
+Results/
+Results
 # just for G. Auzingers sanity
 Calibrations
 .run_number.txt
 settings/connections_186.xml
-CMSPh2_AntennaDriver/
-CalibrationResuls
-Results
