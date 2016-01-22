@@ -15,3 +15,6 @@ Data/*
 Calibrations
 .run_number.txt
 settings/connections_186.xml
+Antenna/
+CalibrationResuls
+Results
