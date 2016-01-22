@@ -29,6 +29,7 @@
 
 #define CH_DIAGNOSIS_DECISION_TH 80 // decision threshold value for channels diagnosis, expressed in % from 0 to 100
 
+#ifndef __ANTENNA__
 namespace patch
 {
 	template < typename T > std::string to_string( const T& n )
@@ -38,6 +39,7 @@ namespace patch
 		return stm.str() ;
 	}
 }
+#endif
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;

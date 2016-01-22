@@ -9,11 +9,6 @@ export CACTUSINCLUDE=/opt/cactus/include
 export BOOST_LIB=/opt/cactus/lib
 export BOOST_INCLUDE=/opt/cactus/include
 
-# QT if installed
-export QTDIR=/usr/local/Trolltech/Qt-4.8.5
-export QMAKESPEC=
-export QTROOTSYSDIR=/usr/local/qtRoot/root
-
 #ROOT
 source /usr/local/bin/thisroot.sh
 
@@ -21,7 +16,6 @@ source /usr/local/bin/thisroot.sh
 export BASE_DIR=$(pwd)
 
 #ANTENNA
-export ANTENNALIB=../CMSPh2_AntennaDriver/lib
-export ANTENNAINCLUDE=../CMSPh2_AntennaDriver
+export ANTENNALIB=CMSPh2_AntennaDriver/lib
 export PATH=$QTDIR/bin:$BASE_DIR/bin:$PATH
-export LD_LIBRARY_PATH=$BASE_DIR/RootWeb/lib:/opt/cactus/lib:$QTROOTSYSDIR/lib:$QTDIR/lib:$BASE_DIR/lib:$ANTENNALIB:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=$BASE_DIR/$ANTENNALIB:$BASE_DIR/RootWeb/lib:/opt/cactus/lib:$BASE_DIR/lib:${LD_LIBRARY_PATH}

@@ -13,7 +13,7 @@
 				<!-- <Global_CBC_Register name="TriggerLatency"> 0x13 </Global_CBC_Register> -->
 
                 <!-- <CBC_Files path="/cmsuptrackernas/Configurations/Module1/final/"/> -->
-                <CBC_Files path="/settings/"/>
+                <CBC_Files path="settings"/>
 
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
