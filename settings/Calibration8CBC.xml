@@ -2,7 +2,7 @@
 <HwDescription>
  <Shelve Id="0">
         <BeBoard Id="0" boardType="GLIB">
-        	<connection id="board" uri="ipbusudp-2.0://192.168.000.162:50001" address_table="file://settings/address_table_8CBC.xml" />
+        	<connection id="board" uri="ipbusudp-2.0://192.168.000.175:50001" address_table="file://settings/address_table_8CBC.xml" />
 
             <FW_Version NCbcDataSize="8" />
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
@@ -60,7 +60,7 @@
 </HwDescription>
 
 <Settings>
-    <Setting name="TargetVcth">0x78</Setting>
+    <Setting name="TargetVcth">0x80</Setting>
     <Setting name="TargetOffset">0x50</Setting>
     <Setting name="Nevents">10</Setting>
     <Setting name="TestPulsePotentiometer">0x00</Setting>

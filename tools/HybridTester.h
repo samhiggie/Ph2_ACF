@@ -65,13 +65,21 @@ class HybridTester : public Tool
 	*/
 	void Measure();
 	/*!
+	* \brief Measure the single strip efficiency
+	*/
+	void AntennaScan();
+	/*!
 	* \brief private method that checks channels malfunction based on occupancy histograms, produces output report in .txt format
 	*/
 	void TestChannels();
 	/*!
 	* \brief overload method that checks channels malfunction based on occupancy histograms, produces output report in .txt format, does not rely on shared arrays
 	*/
-	void TestChannels( double pTopHistogram[], int pTopHistogramSize, double pBottomHistogram[], int pBottomHistogramSize, double pDecisionThreshold );
+	void TestChannels( double pDecisionThreshold );
+	/*!
+	* \brief Save the results of channels testing performed with antenna scan
+	*/
+	void SaveTestingResults(std::string pHybridId);
 	/*!
 	* \brief Save the results to the file created with SystemController::InitializeResultFile
 	*/
@@ -82,13 +90,15 @@ class HybridTester : public Tool
 	TCanvas* fDataCanvas;   /*!<Canvas to output single-strip efficiency */
 	TH1F* fHistTop;   /*!< Histogram for top pads */
 	TH1F* fHistBottom;   /*!< Histogram for bottom pads */
+	TH1F* fHistTopMerged;   /*!< Histogram for top pads used for segmented antenna testing routine*/
+	TH1F* fHistBottomMerged;   /*!< Histogram for bottom pads used for segmented antenna testing routine*/
+	
 	bool fThresholdScan; /*!< Flag for SCurve Canvas */
 	TCanvas* fSCurveCanvas;   /*!< Canvas for threshold scan */
 
 	std::map<Cbc*, TH1F*> fSCurveMap;  /*!< Histograms for SCurve */
 	std::map<Cbc*, TF1*> fFitMap;   /*!< fits for SCurve*/
-	double fTopHistogramMerged[1017] = {0};
-	double fBottomHistogramMerged[1017] = {0};
+
 	uint32_t fTotalEvents;
 	bool fHoleMode;
 	int fSigmas;
@@ -112,6 +122,17 @@ class HybridTester : public Tool
 		fHistTop->Draw();
 		fDataCanvas->cd( 2 );
 		fHistBottom->Draw();
+		fDataCanvas->Update();
+	}
+
+	/*!
+	* \brief private method to update histograms after antenna scan was completed
+	*/
+	void UpdateHistsMerged() {
+		fDataCanvas->cd( 1 );
+		fHistTopMerged->Draw();
+		fDataCanvas->cd( 2 );
+		fHistBottomMerged->Draw();
 		fDataCanvas->Update();
 	}
 

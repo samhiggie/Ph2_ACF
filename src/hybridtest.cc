@@ -30,7 +30,7 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "file", "Hw Description File . Default value: settings/HybridTest2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+	cmd.defineOption( "file", "Hw Description File . Default value: settings/HybridTest8CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
 
 	cmd.defineOption( "registers", "test registers", ArgvParser::NoOptionAttribute );
@@ -44,6 +44,12 @@ int main( int argc, char* argv[] )
 
 	cmd.defineOption( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "batch", "b" );
+
+	cmd.defineOption( "antenna", "Run the antenna testing routine", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "antenna", "a" );
+
+	cmd.defineOption( "id", "Hybrid's ID . Default value: -1", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+	cmd.defineOptionAlternative( "id", "i" );
 
 
 	// only relevant when in GUI mode
@@ -68,10 +74,12 @@ int main( int argc, char* argv[] )
 
 	bool isGui = (cmd.foundOption("gui")) ? true : false;
 	// now query the parsing results
-	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HybridTest2CBC.xml";
+	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HybridTest8CBC.xml";
+	std::string cHybridId = ( cmd.foundOption( "id" ) ) ? cmd.optionValue( "id" ) : "-1";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 	bool cRegisters = ( cmd.foundOption( "registers" ) ) ? true : false;
 	bool cScan = ( cmd.foundOption( "scan" ) ) ? true : false;
+	bool cAntenna = ( cmd.foundOption( "antenna" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	cDirectory += "HybridTest";
 
@@ -85,7 +93,7 @@ int main( int argc, char* argv[] )
 	if ( !isGui )
 	{
 		cHybridTester.InitializeHw( cHWFile );
-		cHybridTester.InitializeSettings( cHWFile );
+		cHybridTester.InitializeSettings( cHWFile );		
 		cHybridTester.Initialize( cScan );
 		cHybridTester.CreateResultDirectory( cDirectory );
 		cHybridTester.InitResultFile( "HybridTest" );
@@ -93,6 +101,18 @@ int main( int argc, char* argv[] )
 
 		// Here comes our Part:
 		
+		if (cAntenna) 
+		{	
+			//cHybridTester.Initialize( cScan );
+			cHybridTester.AntennaScan();
+			cHybridTester.TestChannels();
+			cHybridTester.SaveTestingResults( cHybridId );
+		}
+		if ( !cAntenna && !cRegisters )
+		{
+			//cHybridTester.Initialize( cScan );		
+			cHybridTester.Measure();
+		}
 		std::cout << "Test Registers " << cRegisters << " , scan threshold " << cScan << std::endl;
 		if ( cRegisters ) cHybridTester.TestRegisters();
 		if ( cScan )
@@ -102,8 +122,7 @@ int main( int argc, char* argv[] )
 			std::cout << "Identified the threshold for 0 noise occupancy - Start external Signal source!" << std::endl;
 			mypause();
 		}
-		cHybridTester.Measure();
-		cHybridTester.TestChannels();
+		
 		cHybridTester.SaveResults();
 
 	}

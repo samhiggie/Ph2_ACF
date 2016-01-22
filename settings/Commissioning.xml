@@ -3,7 +3,7 @@
 
     <Shelve Id="0" >
         <BeBoard Id="0" boardType="GLIB">
-        	<connection id="board" uri="ipbusudp-2.0://192.168.000.162:50001" address_table="file://settings/address_table_2CBC.xml" />
+        	<connection id="board" uri="ipbusudp-2.0://192.168.000.175:50001" address_table="file://settings/address_table_2CBC.xml" />
 
             <FW_Version NCbcDataSize="8"/>
 
@@ -11,7 +11,7 @@
                 <!-- <Global_CBC_Register name="VCth"> 0x92 </Global_CBC_Register> -->
 <!--                 <Global_CBC_Register name="TriggerLatency"> 0x05 </Global_CBC_Register>
  -->     
-                <CBC_Files path="./Results/Calibration_Hole_19-11-15_14:58/"/>
+                <CBC_Files path="./Results/Calibration_Hole_11-12-15_14:50/"/>
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
                 <CBC Id="2" configfile="FE0CBC2.txt"/>
@@ -41,7 +41,7 @@
 
             <!-- Trigger -->
             <!-- set to 1 to use external triggers -->
-            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">0</Register>
+            <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">1</Register>
             <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ">10</Register>
 
             <!-- Clock -->
