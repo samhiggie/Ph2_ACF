@@ -9,12 +9,19 @@ IncludeDirs     =  /opt/cactus/include ../
 
 IncludePaths            = $(IncludeDirs:%=-I%)
 
+.PHONY: clean print
+
+
 %.o: %.cc %.h 
 	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-all: $(Objs) ../HWDescription/Definition.h
-	$(CC) -std=c++11 -shared -L/usr/lib64/ -lusb -o libPh2_Utils.so $(Objs) -pthread
+all: print $(Objs) ../HWDescription/Definition.h
+	$(CC) -std=c++11 -shared -L/usr/lib64/ -o libPh2_Utils.so $(Objs) -pthread
 	mv libPh2_Utils.so ../lib
 
+print:
+	@echo '****************************'
+	@echo 'Building Utils'
+	@echo '****************************'
 clean:
 	rm -f *.o

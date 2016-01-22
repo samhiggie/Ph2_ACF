@@ -112,34 +112,6 @@ void HybridTester::InitialiseSettings()
 	// std::cout << "Read the following Settings: " << std::endl;
 	// std::cout << "Hole Mode: " << fHoleMode << std::endl << "NEvents: " << fTotalEvents << std::endl << "NSigmas: " << fSigmas << std::endl;
 }
-void HybridTester::InitialiseGUI( int pVcth, int pNevents, bool pTestreg, bool pScanthreshold, bool pHolemode )
-{
-	fThresholdScan = pScanthreshold;
-	fTotalEvents = pNevents;
-	fHoleMode = pHolemode;
-	fVcth = pVcth;
-
-	CbcRegWriter cWriter( fCbcInterface, "VCth", fVcth );
-	accept( cWriter ); //TODO pass safe
-
-	gStyle->SetOptStat( 000000 );
-	gStyle->SetTitleOffset( 1.3, "Y" );
-	//  special Visito class to count objects
-	Counter cCbcCounter;
-	accept( cCbcCounter );
-	fNCbc = cCbcCounter.getNCbc();
-
-	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
-	fDataCanvas->Divide( 2 );
-
-	if ( fThresholdScan )
-	{
-		fSCurveCanvas = new TCanvas( "fSCurveCanvas", "Noise Occupancy as function of VCth" );
-		fSCurveCanvas->Divide( fNCbc );
-	}
-	InitializeHists();
-}
-
 
 void HybridTester::Initialize( bool pThresholdScan )
 {
@@ -526,6 +498,7 @@ void HybridTester::Measure()
 
 void HybridTester::AntennaScan()
 {
+#ifdef __ANTENNA__
 	std::cout << "Mesuring Efficiency per Strip ... " << std::endl;
 	std::cout << "Taking data with " << fTotalEvents << " Events!" << std::endl;
 
@@ -606,7 +579,7 @@ void HybridTester::AntennaScan()
 	cAntenna.close();
 
 	TestChannels( fDecisionThreshold );
-
+#endif
 }
 
 void HybridTester::SaveTestingResults(std::string pHybridId)

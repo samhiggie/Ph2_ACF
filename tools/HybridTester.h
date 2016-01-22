@@ -16,8 +16,9 @@
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/CommonVisitors.h"
+#ifdef __ANTENNA__
 #include "Antenna.h"
-
+#endif
 
 #include "TCanvas.h"
 #include "TFile.h"
@@ -27,6 +28,16 @@
 #include "TLine.h"
 
 #define CH_DIAGNOSIS_DECISION_TH 80 // decision threshold value for channels diagnosis, expressed in % from 0 to 100
+
+namespace patch
+{
+	template < typename T > std::string to_string( const T& n )
+	{
+		std::ostringstream stm ;
+		stm << n ;
+		return stm.str() ;
+	}
+}
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
@@ -48,10 +59,6 @@ class HybridTester : public Tool
 	* \param pThresholdScan :  bool flag to initialize the additional canvas for the Threshold scan
 	*/
 	void Initialize( bool pThresholdScan );
-	/*!
-	    * \brief Initialise the Histograms and Canvasses for GUI applications
-	*/
-	void InitialiseGUI( int pVcth, int pNevents, bool pTestreg, bool pScanthreshold, bool pHolemode );
 	/*!
 	* \brief Test CBC registers by writing complimentary bit patterns (0x55, 0xAA)
 	*/

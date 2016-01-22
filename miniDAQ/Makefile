@@ -48,8 +48,6 @@ rootflags:
 	$(eval CCFlags += $(CCFlagsRoot))
 	$(eval ExternalObjects += $(ExtObjectsRoot))
 
-print:
-	@echo 'Root Has Http: ' $(ROOTVERSION)
 
 publisher.o: publisher.cc publisher.h
 	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
@@ -65,7 +63,13 @@ miniDAQ: miniDAQ.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
-.PHONY: clean
+print:
+	@echo '****************************'
+	@echo 'Building Mini DAQ'
+	@echo 'Root Has Http: ' $(ROOTVERSION)
+	@echo '****************************'
+
+.PHONY: print clean
 
 clean:
 	rm -f *.o $(binaries)

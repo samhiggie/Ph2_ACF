@@ -27,7 +27,10 @@ COMP=$(CXX) $(COMPILERFLAGS) $(INCLUDEFLAGS)
 
 LINK=$(CXX) $(LINKERFLAGS)
 
-all: lib
+.PHONY: clean print
+
+
+all: print lib
 
 # ROOT-related stuff
 $(LIBDIR)/rootweb.o: $(SRCDIR)/rootweb.cpp $(INCDIR)/rootweb.hh
@@ -37,6 +40,10 @@ $(LIBDIR)/rootweb.o: $(SRCDIR)/rootweb.cpp $(INCDIR)/rootweb.hh
 lib: $(LIBDIR)/rootweb.o
 	$(COMP) -shared -o $(LIBDIR)/libRootWeb.so $(LIBDIR)/rootweb.o -pthread $(BOOSTLIBFLAGS)
 
+print:
+	@echo '****************************'
+	@echo 'Building RootWeb'
+	@echo '****************************'
 #CLEANUP
 cleanall:
 	@rm -rf $(LIBDIR)/*

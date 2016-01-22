@@ -52,19 +52,6 @@ int main( int argc, char* argv[] )
 	cmd.defineOptionAlternative( "id", "i" );
 
 
-	// only relevant when in GUI mode
-	cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "gui", "g" );
-
-	cmd.defineOption( "vcth", "option on suitable when launching from gui", ArgvParser::OptionRequiresValue );
-	cmd.defineOptionAlternative( "vcth", "v" );
-
-	cmd.defineOption( "nEvents", "option on suitable when launching from gui", ArgvParser::OptionRequiresValue );
-	cmd.defineOptionAlternative( "nEvents", "n" );
-
-	cmd.defineOption( "holemode", "option on suitable when launching from gui", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "holemode", "hm" );
-
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
 	{
@@ -72,7 +59,6 @@ int main( int argc, char* argv[] )
 		exit( 1 );
 	}
 
-	bool isGui = (cmd.foundOption("gui")) ? true : false;
 	// now query the parsing results
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HybridTest8CBC.xml";
 	std::string cHybridId = ( cmd.foundOption( "id" ) ) ? cmd.optionValue( "id" ) : "-1";
@@ -90,68 +76,48 @@ int main( int argc, char* argv[] )
 	HybridTester cHybridTester;
 
 
-	if ( !isGui )
-	{
-		cHybridTester.InitializeHw( cHWFile );
-		cHybridTester.InitializeSettings( cHWFile );		
+	cHybridTester.InitializeHw( cHWFile );
+	cHybridTester.InitializeSettings( cHWFile );		
+	//cHybridTester.Initialize( cScan );
+	cHybridTester.CreateResultDirectory( cDirectory );
+	cHybridTester.InitResultFile( "HybridTest" );
+	cHybridTester.ConfigureHw();
+
+	// Here comes our Part:
+	
+	if (cAntenna) 
+	{	
+#ifdef __ANTENNA__
+		//cHybridTester.Initialize( cScan );
 		cHybridTester.Initialize( cScan );
-		cHybridTester.CreateResultDirectory( cDirectory );
-		cHybridTester.InitResultFile( "HybridTest" );
-		cHybridTester.ConfigureHw();
-
-		// Here comes our Part:
-		
-		if (cAntenna) 
-		{	
-			//cHybridTester.Initialize( cScan );
-			cHybridTester.AntennaScan();
-			cHybridTester.TestChannels();
-			cHybridTester.SaveTestingResults( cHybridId );
-		}
-		if ( !cAntenna && !cRegisters )
-		{
-			//cHybridTester.Initialize( cScan );		
-			cHybridTester.Measure();
-		}
-		std::cout << "Test Registers " << cRegisters << " , scan threshold " << cScan << std::endl;
-		if ( cRegisters ) cHybridTester.TestRegisters();
-		if ( cScan )
-		{
-			cHybridTester.ScanThreshold();
-			// Wait for user to acknowledge and turn on external Source!
-			std::cout << "Identified the threshold for 0 noise occupancy - Start external Signal source!" << std::endl;
-			mypause();
-		}
-		
-		cHybridTester.SaveResults();
-
-	}
-	else
-	{
-		std::cout << "GUI mode triggered!" << std::endl;
-		cHybridTester.InitializeHw( cHWFile );
-		int cVcth = ( cmd.foundOption( "vcth" ) ) ? std::stoi( cmd.optionValue( "vcth" ) ) : 70;
-		int nEvents = ( cmd.foundOption( "nEvents" ) ) ? std::stoi( cmd.optionValue( "nEvents" ) ) : 100;
-		bool cHoleMode = ( cmd.foundOption( "holemode" ) ) ? true : false;
-
-		cHybridTester.InitializeSettings( cHWFile );
-		cHybridTester.InitialiseGUI( cVcth, nEvents, cRegisters, cScan, cHoleMode );
-		cHybridTester.CreateResultDirectory( cDirectory );
-		cHybridTester.InitResultFile( "HybridTest" );
-
-		cHybridTester.Measure();
+		cHybridTester.AntennaScan();
 		cHybridTester.TestChannels();
-		// Here comes our Part:
-		if ( cRegisters ) cHybridTester.TestRegisters();
-		if ( cScan )  cHybridTester.ScanThreshold();
-		cHybridTester.SaveResults();
-
+		cHybridTester.SaveTestingResults( cHybridId );
+#else
+std::cout << "This feature is only available if the CMSPh2_AntennaDriver package is installed. It requires a recent version of libusb -devel and can be downloaded from: 'https://github.com/gauzinge/CMSPh2_AntennaDriver.git'" << std::endl;
+#endif
 	}
-
+	if ( !cAntenna && !cRegisters )
+	{
+		//cHybridTester.Initialize( cScan );		
+		cHybridTester.Initialize( cScan );
+		cHybridTester.Measure();
+	}
+	std::cout << "Test Registers " << cRegisters << " , scan threshold " << cScan << std::endl;
+	if ( cRegisters ) cHybridTester.TestRegisters();
+	if ( cScan )
+	{
+		cHybridTester.Initialize( cScan );
+		cHybridTester.ScanThreshold();
+		// Wait for user to acknowledge and turn on external Source!
+		std::cout << "Identified the threshold for 0 noise occupancy - Start external Signal source!" << std::endl;
+		mypause();
+	}
+	
+	cHybridTester.SaveResults();
 
 	if ( !batchMode ) cApp.Run();
 
 	return 0;
-
 }
 
