@@ -117,12 +117,12 @@ void HybridTester::Initialize( bool pThresholdScan )
 {
 	fThresholdScan = pThresholdScan;
 	gStyle->SetOptStat( 000000 );
-	gStyle->SetTitleOffset( 1.3, "Y" );
+	//gStyle->SetTitleOffset( 1.3, "Y" );
 	//  special Visito class to count objects
 	Counter cCbcCounter;
 	accept( cCbcCounter );
 	fNCbc = cCbcCounter.getNCbc();
-	std::cout <<"DEBUG "<<  fNCbc << std::endl;
+	//std::cout <<"DEBUG "<<  fNCbc << std::endl;
 
 	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
 	fDataCanvas->Divide( 2 );

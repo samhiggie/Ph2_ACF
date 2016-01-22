@@ -15,6 +15,6 @@ Data/*
 Calibrations
 .run_number.txt
 settings/connections_186.xml
-Antenna/
+CMSPh2_AntennaDriver/
 CalibrationResuls
 Results

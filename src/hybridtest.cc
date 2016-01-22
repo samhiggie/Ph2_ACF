@@ -78,7 +78,7 @@ int main( int argc, char* argv[] )
 
 	cHybridTester.InitializeHw( cHWFile );
 	cHybridTester.InitializeSettings( cHWFile );		
-	//cHybridTester.Initialize( cScan );
+	cHybridTester.Initialize( cScan );
 	cHybridTester.CreateResultDirectory( cDirectory );
 	cHybridTester.InitResultFile( "HybridTest" );
 	cHybridTester.ConfigureHw();
@@ -89,7 +89,7 @@ int main( int argc, char* argv[] )
 	{	
 #ifdef __ANTENNA__
 		//cHybridTester.Initialize( cScan );
-		cHybridTester.Initialize( cScan );
+		//cHybridTester.Initialize( cScan );
 		cHybridTester.AntennaScan();
 		cHybridTester.TestChannels();
 		cHybridTester.SaveTestingResults( cHybridId );
@@ -100,14 +100,14 @@ std::cout << "This feature is only available if the CMSPh2_AntennaDriver package
 	if ( !cAntenna && !cRegisters )
 	{
 		//cHybridTester.Initialize( cScan );		
-		cHybridTester.Initialize( cScan );
+		//cHybridTester.Initialize( cScan );
 		cHybridTester.Measure();
 	}
 	std::cout << "Test Registers " << cRegisters << " , scan threshold " << cScan << std::endl;
 	if ( cRegisters ) cHybridTester.TestRegisters();
 	if ( cScan )
 	{
-		cHybridTester.Initialize( cScan );
+		//cHybridTester.Initialize( cScan );
 		cHybridTester.ScanThreshold();
 		// Wait for user to acknowledge and turn on external Source!
 		std::cout << "Identified the threshold for 0 noise occupancy - Start external Signal source!" << std::endl;

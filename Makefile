@@ -1,7 +1,7 @@
 ANTENNADIR=CMSPh2_AntennaDriver
 
 ifneq ("$(wildcard $(ANTENNADIR))","")
-	SUBDIRS = Antenna Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
+	SUBDIRS = CMSPh2_AntennaDriver Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
 	ANTENNAINSTALLED = yes
 else
 	SUBDIRS = Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
