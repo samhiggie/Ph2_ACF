@@ -37,30 +37,27 @@ void SCurve::MakeTestGroups( bool pAllChan )
 void SCurve::setOffset( uint8_t pOffset, int  pGroup )
 {
     // std::cout << "Setting offsets of Test Group " << pGroup << " to 0x" << std::hex << +pOffset << std::dec << std::endl;
-    for ( auto cShelve : fShelveVector )
+  for ( auto cBoard : fBoardVector )
     {
-        for ( auto cBoard : cShelve->fBoardVector )
-        {
-            for ( auto cFe : cBoard->fModuleVector )
-            {
-                uint32_t cFeId = cFe->getFeId();
-
-                for ( auto cCbc : cFe->fCbcVector )
-                {
-                    uint32_t cCbcId = cCbc->getCbcId();
-
-                    RegisterVector cRegVec;   // vector of pairs for the write operation
-
-                    // loop the channels of the current group and toggle bit i in the global map
-                    for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
-                    {
-                        TString cRegName = Form( "Channel%03d", cChannel + 1 );
-                        cRegVec.push_back( {cRegName.Data(), pOffset} );
-                    }
-                    fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
-                }
-            }
-        }
+      for ( auto cFe : cBoard->fModuleVector )
+	{
+	  uint32_t cFeId = cFe->getFeId();
+	  
+	  for ( auto cCbc : cFe->fCbcVector )
+	    {
+	      uint32_t cCbcId = cCbc->getCbcId();
+	      
+	      RegisterVector cRegVec;   // vector of pairs for the write operation
+	      
+	      // loop the channels of the current group and toggle bit i in the global map
+	      for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
+		{
+		  TString cRegName = Form( "Channel%03d", cChannel + 1 );
+		  cRegVec.push_back( {cRegName.Data(), pOffset} );
+		}
+	      fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
+	    }
+	}
     }
 }
 
@@ -110,61 +107,59 @@ void SCurve::measureSCurves( int  pTGrpId )
         uint32_t cNthAcq = 0;
         uint32_t cHitCounter = 0;
 
-        for ( auto cShelve : fShelveVector )
-        {
-            // DEBUG
-            if ( cAllOne ) break;
+	// DEBUG
+	if ( cAllOne ) break;
 
-            for ( BeBoard* pBoard : cShelve->fBoardVector )
-            {
-                Counter cCounter;
-                pBoard->accept( cCounter );
+	for ( BeBoard* pBoard : fBoardVector )
+	  {
+	    Counter cCounter;
+	    pBoard->accept( cCounter );
+	    
+	    fBeBoardInterface->Start( pBoard );
+	    
+	    while ( cN <= fEventsPerPoint )
+	      {
+		// Run( pBoard, cNthAcq );
+		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+		
+		// Loop over Events from this Acquisition
+		for ( auto& ev : events )
+		  {
+		    cHitCounter += fillSCurves( pBoard, ev, cValue, pTGrpId ); //pass test group here
+		    cN++;
+		  }
+		cNthAcq++;
+	      }
+	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    
+	    // std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
+	    
+	    // check if the hitcounter is all ones
+	    if ( cNonZero == false && cHitCounter != 0 )
+	      {
+		cDoubleValue = cValue;
+		cNonZero = true;
+		if ( cValue == 255 ) cValue = 255;
+		else if ( cValue == 0 ) cValue = 0;
+		else cValue -= cStep;
+		cStep /= 10;
+		std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET << std::endl;
+		continue;
+	      }
+	    // the above counter counted the CBC objects connected to pBoard
+	    if ( cHitCounter > 0.95 * fEventsPerPoint  * fNCbc * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
+	    if ( cAllOneCounter >= 10 )
+	      {
+		cAllOne = true;
+		std::cout << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET << std::endl;
+	      }
+	    if ( cAllOne ) break;
+	    cValue += cStep;
+	  }
+    }
+} // end of VCth loop
 
-                fBeBoardInterface->Start( pBoard );
-
-                while ( cN <= fEventsPerPoint )
-                {
-                    // Run( pBoard, cNthAcq );
-                    fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-                    const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-                    // Loop over Events from this Acquisition
-                    for ( auto& ev : events )
-                    {
-                        cHitCounter += fillSCurves( pBoard, ev, cValue, pTGrpId ); //pass test group here
-                        cN++;
-                    }
-                    cNthAcq++;
-                }
-                fBeBoardInterface->Stop( pBoard, cNthAcq );
-
-                // std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
-
-                // check if the hitcounter is all ones
-                if ( cNonZero == false && cHitCounter != 0 )
-                {
-                    cDoubleValue = cValue;
-                    cNonZero = true;
-                    if ( cValue == 255 ) cValue = 255;
-                    else if ( cValue == 0 ) cValue = 0;
-                    else cValue -= cStep;
-                    cStep /= 10;
-                    std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET << std::endl;
-                    continue;
-                }
-                // the above counter counted the CBC objects connected to pBoard
-                if ( cHitCounter > 0.95 * fEventsPerPoint  * fNCbc * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
-                if ( cAllOneCounter >= 10 )
-                {
-                    cAllOne = true;
-                    std::cout << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET << std::endl;
-                }
-                if ( cAllOne ) break;
-                cValue += cStep;
-            }
-        }
-    } // end of VCth loop
-}
 
 void SCurve::measureSCurvesOffset( int  pTGrpId )
 {
@@ -208,59 +203,56 @@ void SCurve::measureSCurvesOffset( int  pTGrpId )
         uint32_t cNthAcq = 0;
         uint32_t cHitCounter = 0;
 
-        for ( auto cShelve : fShelveVector )
-        {
-            // DEBUG
-            if ( cAllOne ) break;
+	// DEBUG
+	if ( cAllOne ) break;
 
-            for ( BeBoard* pBoard : cShelve->fBoardVector )
-            {
-                Counter cCounter;
-                pBoard->accept( cCounter );
+	for ( BeBoard* pBoard : fBoardVector )
+	  {
+	    Counter cCounter;
+	    pBoard->accept( cCounter );
 
-                fBeBoardInterface->Start( pBoard );
-
-                while ( cN <= fEventsPerPoint )
-                {
-                    // Run( pBoard, cNthAcq );
-                    fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-                    const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-                    // Loop over Events from this Acquisition
-                    for ( auto& ev : events )
-                    {
-                        cHitCounter += fillSCurves( pBoard, ev, cValue, pTGrpId ); //pass test group here
-                        cN++;
-                    }
-                    cNthAcq++;
-                }
-                fBeBoardInterface->Stop( pBoard, cNthAcq );
-
-                // std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
-
-                // check if the hitcounter is all ones
-                if ( cNonZero == false && cHitCounter != 0 )
-                {
-                    cDoubleValue = cValue;
-                    cNonZero = true;
-                    if ( cValue == 255 ) cValue = 255;
-                    else if ( cValue == 0 ) cValue = 0;
-                    else cValue -= 1.5 * cStep;
-                    cStep /= 10;
-                    std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET << std::endl;
-                    continue;
-                }
-                // the above counter counted the CBC objects connected to pBoard
-                if ( cHitCounter > 0.95 * fEventsPerPoint  * fNCbc * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
-                if ( cAllOneCounter >= 10 )
-                {
-                    cAllOne = true;
-                    std::cout << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET << std::endl;
-                }
-                if ( cAllOne ) break;
-                cValue += cStep;
-            }
-        }
+	    fBeBoardInterface->Start( pBoard );
+	    
+	    while ( cN <= fEventsPerPoint )
+	      {
+		// Run( pBoard, cNthAcq );
+		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+		
+		// Loop over Events from this Acquisition
+		for ( auto& ev : events )
+		  {
+		    cHitCounter += fillSCurves( pBoard, ev, cValue, pTGrpId ); //pass test group here
+		    cN++;
+		  }
+		cNthAcq++;
+	      }
+	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    
+	    // std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
+	    
+	    // check if the hitcounter is all ones
+	    if ( cNonZero == false && cHitCounter != 0 )
+	      {
+		cDoubleValue = cValue;
+		cNonZero = true;
+		if ( cValue == 255 ) cValue = 255;
+		else if ( cValue == 0 ) cValue = 0;
+		else cValue -= 1.5 * cStep;
+		cStep /= 10;
+		std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET << std::endl;
+		continue;
+	      }
+	    // the above counter counted the CBC objects connected to pBoard
+	    if ( cHitCounter > 0.95 * fEventsPerPoint  * fNCbc * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
+	    if ( cAllOneCounter >= 10 )
+	      {
+		cAllOne = true;
+		std::cout << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET << std::endl;
+	      }
+	    if ( cAllOne ) break;
+	    cValue += cStep;
+	  }
     } // end of VCth loop
     setOffset( cStartValue, pTGrpId );
 }

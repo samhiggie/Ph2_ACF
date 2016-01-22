@@ -18,9 +18,9 @@
 * The project compiles into the 5 following dynamic libraries
 *
 * \subsection lib1 HWDescription
-* Hardware description of the shelves containing the boards, containing the modules, containing the CBC chips.\n
+* Hardware description of the boards, containing the modules, containing the CBC chips.\n
 * The objects are:
-FrontEndDescription, BeBoard, Cbc, Module, Shelve
+FrontEndDescription, BeBoard, Cbc, Module
 
 * \subsection lib2 HWInterface
 * Hardware interface seen by the ACF middleware users. \n
@@ -56,7 +56,7 @@ using namespace Ph2_HwDescription;
 namespace Ph2_HwInterface
 {
 
-	typedef std::map<uint16_t, BeBoardFWInterface*> BeBoardFWMap;    /*!< Map of Board connected */
+	using BeBoardFWMap = std::map<uint16_t, BeBoardFWInterface*>;    /*!< Map of Board connected */
 
 	/*!
 	 * \class BeBoardInterface

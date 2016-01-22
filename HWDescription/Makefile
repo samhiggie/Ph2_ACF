@@ -1,14 +1,14 @@
-Objs                    = FrontEndDescription.o BeBoard.o Cbc.o Module.o Shelve.o
+Objs            = FrontEndDescription.o BeBoard.o Cbc.o Module.o
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O1 -Wall -fPIC
 # -fPIC `root-config --cflags --glibs --evelibs`
 #DevFlags                   = -D__CBCDAQ_DEV__
-DevFlags               =
+DevFlags        =
 
 IncludeDirs     =  /opt/cactus/include ../
 
-IncludePaths            = $(IncludeDirs:%=-I%)
+IncludePaths    = $(IncludeDirs:%=-I%)
 
 %.o: %.cc %.h
 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<

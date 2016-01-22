@@ -273,8 +273,7 @@ void Channel::differentiateHist( uint32_t pEventsperVcth, bool pHole, uint8_t pV
 void Channel::resetHist() {}
 
 
-TestGroup::TestGroup( uint8_t pShelveId, uint8_t pBeId, uint8_t pFeId, uint8_t pCbcId, uint8_t pGroupId ) :
-	fShelveId( pShelveId ),
+TestGroup::TestGroup( uint8_t pBeId, uint8_t pFeId, uint8_t pCbcId, uint8_t pGroupId ) :
 	fBeId( pBeId ),
 	fFeId( pFeId ),
 	fCbcId( pCbcId ),

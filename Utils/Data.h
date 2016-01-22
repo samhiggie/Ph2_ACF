@@ -34,8 +34,8 @@ namespace Ph2_HwInterface
 	  private:
 		uint32_t fNevents;              /*! Number of Events<*/
 		uint32_t fCurrentEvent;         /*! Current EventNumber in use <*/
-		uint32_t fNCbc  ;               /*! Number of CBCs in the setup <*/
-		uint32_t fEventSize  ;          /*! Size of 1 Event <*/
+		uint32_t fNCbc;                 /*! Number of CBCs in the setup <*/
+		uint32_t fEventSize;            /*! Size of 1 Event <*/
 
 		std::vector<Event*> fEventList;
 

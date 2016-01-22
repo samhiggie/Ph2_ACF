@@ -38,7 +38,7 @@ class FileHandler
 	* \param pBinaryFileName: set the fbinaryFileName to pbinaryFileName
 	* \param  pOption: set fOption to pOption
 	*/
-	FileHandler( std::string pBinaryFileName, char pOption );
+	FileHandler( const std::string& pBinaryFileName, char pOption );
 
 	/*!
 	* \brief destructor
@@ -56,7 +56,7 @@ class FileHandler
 	* \brief get the name of the binary file
 	* \param return the name of the file
 	*/
-	std::string getFilename() {
+	std::string getFilename() const {
 		return fBinaryFileName;
 	}
 

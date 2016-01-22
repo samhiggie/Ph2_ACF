@@ -47,39 +47,34 @@ void HybridTester::InitializeHists()
 	fHistBottom->SetFillStyle( 3001 );
 
 	// Now the Histograms for SCurves
-	for ( auto cShelve : fShelveVector )
-	{
-		uint32_t cShelveId = cShelve->getShelveId();
-
-		for ( auto cBoard : cShelve->fBoardVector )
-		{
-			uint32_t cBoardId = cBoard->getBeId();
-
-			for ( auto cFe : cBoard->fModuleVector )
-			{
-				uint32_t cFeId = cFe->getFeId();
-
-				for ( auto cCbc : cFe->fCbcVector )
-				{
-
-					uint32_t cCbcId = cCbc->getCbcId();
-
-					TString cName = Form( "SCurve_Fe%d_Cbc%d", cFeId, cCbcId );
-					TObject* cObject = static_cast<TObject*>( gROOT->FindObject( cName ) );
-					if ( cObject ) delete cObject;
-					TH1F* cTmpScurve = new TH1F( cName, Form( "Noise Occupancy Cbc%d; VCth; Counts", cCbcId ), 255, 0, 255 );
-					cTmpScurve->SetMarkerStyle( 8 );
-					fSCurveMap[cCbc] = cTmpScurve;
-
-					cName = Form( "SCurveFit_Fe%d_Cbc%d", cFeId, cCbcId );
-					cObject = static_cast<TObject*>( gROOT->FindObject( cName ) );
-					if ( cObject ) delete cObject;
-					TF1* cTmpFit = new TF1( cName, MyErf, 0, 255, 2 );
-					fFitMap[cCbc] = cTmpFit;
-				}
-			}
-		}
-	}
+	for ( auto cBoard : fBoardVector )
+	  {
+	    uint32_t cBoardId = cBoard->getBeId();
+	    
+	    for ( auto cFe : cBoard->fModuleVector )
+	      {
+		uint32_t cFeId = cFe->getFeId();
+		
+		for ( auto cCbc : cFe->fCbcVector )
+		  {
+		    
+		    uint32_t cCbcId = cCbc->getCbcId();
+		    
+		    TString cName = Form( "SCurve_Fe%d_Cbc%d", cFeId, cCbcId );
+		    TObject* cObject = static_cast<TObject*>( gROOT->FindObject( cName ) );
+		    if ( cObject ) delete cObject;
+		    TH1F* cTmpScurve = new TH1F( cName, Form( "Noise Occupancy Cbc%d; VCth; Counts", cCbcId ), 255, 0, 255 );
+		    cTmpScurve->SetMarkerStyle( 8 );
+		    fSCurveMap[cCbc] = cTmpScurve;
+		    
+		    cName = Form( "SCurveFit_Fe%d_Cbc%d", cFeId, cCbcId );
+		    cObject = static_cast<TObject*>( gROOT->FindObject( cName ) );
+		    if ( cObject ) delete cObject;
+		    TF1* cTmpFit = new TF1( cName, MyErf, 0, 255, 2 );
+		    fFitMap[cCbc] = cTmpFit;
+		  }
+	      }
+	  }
 }
 
 void HybridTester::InitialiseSettings()
@@ -180,67 +175,64 @@ void HybridTester::ScanThreshold()
 		uint32_t cHitCounter = 0;
 
 		// maybe restrict to pBoard? instead of looping?
-		for ( auto& cShelve : fShelveVector )
-		{
-			if ( cAllOne ) break;
-			for ( BeBoard* pBoard : cShelve->fBoardVector )
-			{
-				fBeBoardInterface->Start( pBoard );
-				while ( cN <=  cEventsperVcth )
-				{
-					// Run( pBoard, cNthAcq );
-					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-					// Loop over Events from this Acquisition
-					for ( auto& cEvent : events )
-					{
-						// loop over Modules & Cbcs and count hits separately
-						cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
-						cN++;
-					}
-					cNthAcq++;
-				}
-				fBeBoardInterface->Stop( pBoard, cNthAcq );
-				// std::cout << +cVcth << " " << cHitCounter << std::endl;
-				// Draw the thing after each point
-				updateSCurveCanvas( pBoard );
-
-				// check if the hitcounter is all ones
-
-				if ( cNonZero == false && cHitCounter != 0 )
-				{
-					cDoubleVcth = cVcth;
-					cNonZero = true;
-					cVcth -= 2 * cStep;
-					cStep /= 10;
-					continue;
-				}
-				if ( cNonZero && cHitCounter != 0 )
-				{
-					// check if all Cbcs have reached full occupancy
-					if ( cHitCounter > 0.95 * cEventsperVcth * fNCbc * NCHANNELS ) cAllOneCounter++;
-					// add a second check if the global SCurve slope is 0 for 10 consecutive Vcth values
-					// if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
-				}
-				if ( cAllOneCounter >= 10 ) cAllOne = true;
-				// if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
-
-				if ( cAllOne )
-				{
-					std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
-					break;
-				}
-				// else if ( cSlopeZero )
-				// {
-				//   std::cout << "Slope of SCurve 0 -- ending the scan at VCth " << +cVcth << std::endl;
-				//  break;
-				// }
-
-				cOldHitCounter = cHitCounter;
-				cVcth += cStep;
-			}
-		}
+		if ( cAllOne ) break;
+		for ( BeBoard* pBoard : fBoardVector )
+		  {
+		    fBeBoardInterface->Start( pBoard );
+		    while ( cN <=  cEventsperVcth )
+		      {
+			// Run( pBoard, cNthAcq );
+			fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+			const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+			
+			// Loop over Events from this Acquisition
+			for ( auto& cEvent : events )
+			  {
+			    // loop over Modules & Cbcs and count hits separately
+			    cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
+			    cN++;
+			  }
+			cNthAcq++;
+		      }
+		    fBeBoardInterface->Stop( pBoard, cNthAcq );
+		    // std::cout << +cVcth << " " << cHitCounter << std::endl;
+		    // Draw the thing after each point
+		    updateSCurveCanvas( pBoard );
+		    
+		    // check if the hitcounter is all ones
+		    
+		    if ( cNonZero == false && cHitCounter != 0 )
+		      {
+			cDoubleVcth = cVcth;
+			cNonZero = true;
+			cVcth -= 2 * cStep;
+			cStep /= 10;
+			continue;
+		      }
+		    if ( cNonZero && cHitCounter != 0 )
+		      {
+			// check if all Cbcs have reached full occupancy
+			if ( cHitCounter > 0.95 * cEventsperVcth * fNCbc * NCHANNELS ) cAllOneCounter++;
+			// add a second check if the global SCurve slope is 0 for 10 consecutive Vcth values
+			// if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
+		      }
+		    if ( cAllOneCounter >= 10 ) cAllOne = true;
+		    // if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
+		    
+		    if ( cAllOne )
+		      {
+			std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
+			break;
+		      }
+		    // else if ( cSlopeZero )
+		    // {
+		    //   std::cout << "Slope of SCurve 0 -- ending the scan at VCth " << +cVcth << std::endl;
+		    //  break;
+		    // }
+		    
+		    cOldHitCounter = cHitCounter;
+		    cVcth += cStep;
+		  }
 	}
 
 	// Fit and save the SCurve & Fit - extract the right threshold
@@ -448,37 +440,34 @@ void HybridTester::Measure()
 	CbcRegReader cReader( fCbcInterface, "VCth" );
 	accept( cReader );
 
-	for ( auto& cShelve : fShelveVector )
-	{
-		for ( BeBoard* pBoard : cShelve->fBoardVector )
-		{
-			uint32_t cN = 1;
-			uint32_t cNthAcq = 0;
-
-			fBeBoardInterface->Start( pBoard );
-
-			while ( cN <=  fTotalEvents )
-			{
-				// Run( pBoard, cNthAcq );
-				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-				// Loop over Events from this Acquisition
-				for ( auto& cEvent : events )
-				{
-					HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
-					pBoard->accept( cFiller );
-
-					if ( cN % 100 == 0 )
-						UpdateHists();
-
-					cN++;
-				}
-				cNthAcq++;
-			}
-			fBeBoardInterface->Stop( pBoard, cNthAcq );
-		}
-	}
+	for ( BeBoard* pBoard : fBoardVector )
+	  {
+	    uint32_t cN = 1;
+	    uint32_t cNthAcq = 0;
+	    
+	    fBeBoardInterface->Start( pBoard );
+	    
+	    while ( cN <=  fTotalEvents )
+	      {
+		// Run( pBoard, cNthAcq );
+		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+		
+		// Loop over Events from this Acquisition
+		for ( auto& cEvent : events )
+		  {
+		    HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
+		    pBoard->accept( cFiller );
+		    
+		    if ( cN % 100 == 0 )
+		      UpdateHists();
+		    
+		    cN++;
+		  }
+		cNthAcq++;
+	      }
+	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	  }
 	fHistTop->Scale( 100 / double_t( fTotalEvents ) );
 	fHistTop->GetYaxis()->SetRangeUser( 0, 100 );
 	fHistBottom->Scale( 100 / double_t( fTotalEvents ) );

@@ -1,9 +1,6 @@
 {
     "HwDescription":{
         "Connections":"file://settings/connections_2CBC.xml",
-        "Shelves":[
-            {
-                "Id":0,
                 "BeBoards":[
                     {
                         "Id":0,
@@ -81,8 +78,6 @@
                         }
                     }
                 ]
-            }
-        ]
     },
     "Settings":{
         "RunNumber":1,

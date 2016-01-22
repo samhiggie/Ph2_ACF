@@ -25,9 +25,9 @@
 
 using namespace Ph2_System;
 
-typedef std::map<Cbc*, std::map<std::string, TObject*> >  CbcHistogramMap;
-typedef std::map<Module*, std::map<std::string, TObject*> > ModuleHistogramMap;
-typedef std::map<Ph2_HwDescription::FrontEndDescription*, TCanvas*> CanvasMap;
+using CbcHistogramMap = std::map<Cbc*, std::map<std::string, TObject*> >;
+using ModuleHistogramMap = std::map<Module*, std::map<std::string, TObject*> >;
+using CanvasMap = std::map<Ph2_HwDescription::FrontEndDescription*, TCanvas*>;
 
 
 /*!

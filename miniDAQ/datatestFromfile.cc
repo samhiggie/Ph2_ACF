@@ -85,9 +85,9 @@ int main( int argc, char* argv[] )
 	cmd.defineOptionAlternative( "cbcType", "c" );
 
         std::map<std::string,pair<int, std::string>>  cbcTypeEvtSizeMap;
-        cbcTypeEvtSizeMap["2"] = std::make_pair( 4, XML_DESCRIPTION_FILE_2CBC );
-        cbcTypeEvtSizeMap["8"] = std::make_pair( 8, XML_DESCRIPTION_FILE_8CBC );
-        cbcTypeEvtSizeMap["16"] = std::make_pair( 16, XML_DESCRIPTION_FILE_16CBC );
+        cbcTypeEvtSizeMap["2"] = { 4, XML_DESCRIPTION_FILE_2CBC };
+        cbcTypeEvtSizeMap["8"] = { 8, XML_DESCRIPTION_FILE_8CBC };
+        cbcTypeEvtSizeMap["16"] = { 16, XML_DESCRIPTION_FILE_16CBC };
 	int result = cmd.parse( argc, argv );
 
 	if ( result != ArgvParser::NoParserError )
@@ -115,7 +115,6 @@ int main( int argc, char* argv[] )
 	bool cDQMPage = ( cmd.foundOption( "dqm" ) ) ? true : false;
 	bool addTree = ( cmd.foundOption( "tree" ) ) ? true : false;
 
-
         // Read the raw data file
 	SystemController cSystemController;
 	cSystemController.addFileHandler( rawFilename, 'r' );
@@ -130,7 +129,8 @@ int main( int argc, char* argv[] )
 
 	std::cout << "HWfile=" << cHWFile << std::endl;
 	cSystemController.parseHWxml( cHWFile );
-	const BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
+	//const BeBoard* pBoard = cSystemController.fBoardVector.at( 0 );
+	const BeBoard* pBoard = cSystemController.getBoard( 0 );
 
         // Now split the data buffer in events
 	Data d;

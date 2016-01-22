@@ -1,20 +1,19 @@
 /*!
 
         \file                    SystemController.h
-        \brief                                   Controller of the System, overall wrapper of the framework
-        \author                                  Nicolas PIERRE
+        \brief                   Controller of the System, overall wrapper of the framework
+        \author                  Nicolas PIERRE
         \version                 1.0
-        \date                                    10/08/14
-        Support :                                mail to : lorenzo.bidegain@cern.ch, nico.pierre@icloud.com
+        \date                    10/08/14
+        Support :                mail to : lorenzo.bidegain@cern.ch, nico.pierre@icloud.com
 
- */
+*/
 
 
 #ifndef __SYSTEMCONTROLLER_H__
 #define __SYSTEMCONTROLLER_H__
 
 #include "../HWInterface/BeBoardFWInterface.h"
-#include "../HWDescription/Shelve.h"
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
@@ -28,7 +27,7 @@
 #include <vector>
 #include <map>
 #include <stdlib.h>
-# include <string.h>
+#include <string.h>
 
 
 using namespace Ph2_HwDescription;
@@ -41,8 +40,8 @@ using namespace Ph2_HwInterface;
 namespace Ph2_System
 {
 
-	typedef std::vector<Shelve*> ShelveVec;     /*!< Vector of Shelve pointers */
-	typedef std::map<std::string, uint32_t> SettingsMap;    /*!< Maps the settings */
+	using BeBoardVec = std::vector<BeBoard*>;               /*!< Vector of Board pointers */
+	using SettingsMap = std::map<std::string, uint32_t>;    /*!< Maps the settings */
 
 	/*!
 	 * \class SystemController
@@ -52,12 +51,11 @@ namespace Ph2_System
 	{
 	  public:
 		BeBoardInterface*       fBeBoardInterface;                     /*!< Interface to the BeBoard */
-		CbcInterface*           fCbcInterface;                     /*!< Interface to the Cbc */
-		ShelveVec fShelveVector;                                           /*!< Vector of Shelve pointers */
-		BeBoardFWMap fBeBoardFWMap;
-		SettingsMap fSettingsMap;                                         /*!< Maps the settings */
-		FileHandler* fFileHandler;
-
+		CbcInterface*           fCbcInterface;                         /*!< Interface to the Cbc */
+		BeBoardVec              fBoardVector;                          /*!< Vector of Board pointers */
+		BeBoardFWMap            fBeBoardFWMap;
+		SettingsMap             fSettingsMap;                          /*!< Maps the settings */
+		FileHandler*            fFileHandler;
 
 	  public:
 		/*!
@@ -72,28 +70,22 @@ namespace Ph2_System
 		* \brief create a FileHandler object with
 		 * \param pFilename : the filename of the binary file
 		*/
-		void addFileHandler( std::string pFilename, char pOption );
+		void addFileHandler( const std::string& pFilename, char pOption );
 
 		/*!
 		* \brief read file in the a FileHandler object
 		 * \param pVec : the data vector 
 		*/
-     	void readFile(std::vector<uint32_t>& pVec );
+     	        void readFile( std::vector<uint32_t>& pVec );
 		/*!
 		 * \brief acceptor method for HwDescriptionVisitor
 		 * \param pVisitor
 		 */
 		void accept( HwDescriptionVisitor& pVisitor ) {
 			pVisitor.visit( *this );
-			for ( Shelve* cShelve : fShelveVector )
-				cShelve->accept( pVisitor );
+			for ( BeBoard* cBoard : fBoardVector )
+				cBoard->accept( pVisitor );
 		}
-
-		// void accept( HwDescriptionVisitor& pVisitor ) const {
-		//  pVisitor.visit( *this );
-		//  for ( auto& cShelve : fShelveVector )
-		//      cShelve->accept( pVisitor );
-		// }
 
 		/*!
 		 * \brief Initialize the Hardware via a config file
@@ -110,7 +102,7 @@ namespace Ph2_System
 		/*!
 		 * \brief Configure the Hardware with XML file indicated values
 		 */
-		void ConfigureHw( std::ostream& os = std::cout , bool bIgnoreI2c = false );
+		void ConfigureHw( std::ostream& os = std::cout, bool bIgnoreI2c = false );
 		/*!
 		 * \brief Run a DAQ
 		 * \param pBeBoard
@@ -129,6 +121,7 @@ namespace Ph2_System
 
 		}
 
+                const BeBoard* getBoard(int index) const {(index < fBoardVector.size()) ? fBoardVector.at(index) : nullptr;}
 		/*!
 		 * \brief Get next event from data buffer
 		 * \param pBoard
@@ -167,19 +160,19 @@ namespace Ph2_System
 		 * \param pFilename : HW Description file
 		 *\param os : ostream to dump output
 		 */
-		void parseSettingsxml( const std::string& pFilename, std::ostream& os );
+		void parseSettingsxml( const std::string& pFilename, std::ostream& os = std::cout);
 		/*!
 		 * \brief Initialize the settins via  XML file
 		 * \param pFilename : settings Description file
 		 *\param os : ostream to dump output
 		 */
-		void parseHWjson( const std::string& pFilename, std::ostream& os );
+		void parseHWjson( const std::string& pFilename, std::ostream& os = std::cout);
 		/*!
 		 * \brief Initialize the settins via  JSON file
 		 * \param pFilename : settings Description file
 		 *\param os : ostream to dump output
 		 */
-		void parseSettingsjson( const std::string& pFilename, std::ostream& os );
+		void parseSettingsjson( const std::string& pFilename, std::ostream& os = std::cout);
 		/*! \brief Expand environment variables in string
 		 * \param s input string
 		 * \return Result with variables expanded */

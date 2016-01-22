@@ -47,7 +47,7 @@ void CbcInterface::setBoard( uint16_t pBoardIdentifier )
     {
         BeBoardFWMap::iterator i = fBoardMap.find( pBoardIdentifier );
         if ( i == fBoardMap.end() )
-            std::cout << "The Board: " << +( pBoardIdentifier >> 8 ) <<  " in Shelve " << +( static_cast<uint8_t>( pBoardIdentifier ) ) << "  doesn't exist" << std::endl;
+            std::cout << "The Board: " << +( pBoardIdentifier >> 8 ) << "  doesn't exist" << std::endl;
         else
         {
             fBoardFW = i->second;

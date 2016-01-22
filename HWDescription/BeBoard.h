@@ -1,11 +1,11 @@
 /*!
 
         \file                BeBoard.h
-        \brief                           BeBoard Description class, configs of the BeBoard
-        \author                          Lorenzo BIDEGAIN
-        \date                            14/07/14
-        \version                         1.0
-        Support :                        mail to : lorenzo.bidegain@gmail.com
+        \brief               BeBoard Description class, configs of the BeBoard
+        \author              Lorenzo BIDEGAIN
+        \date                14/07/14
+        \version             1.0
+        Support :            mail to : lorenzo.bidegain@gmail.com
 
  */
 
@@ -27,7 +27,7 @@
 namespace Ph2_HwDescription
 {
 
-	typedef std::map< std::string, uint32_t > BeBoardRegMap;     /*!< Map containing the registers of a board */
+	using BeBoardRegMap = std::map< std::string, uint32_t >;     /*!< Map containing the registers of a board */
 
 	/*!
 	 * \class BeBoard
@@ -38,7 +38,7 @@ namespace Ph2_HwDescription
 
 	  public:
 
-		// C'tors: the BeBoard only needs to know about it's shelf and which BE it is
+		// C'tors: the BeBoard only needs to know about which BE it is
 		/*!
 		 * \brief Default C'tor
 		 */
@@ -46,18 +46,16 @@ namespace Ph2_HwDescription
 
 		/*!
 		 * \brief Standard C'tor
-		 * \param pShelveId
 		 * \param pBeId
 		 */
-		BeBoard( uint8_t pShelveId, uint8_t pBeId );
+		BeBoard( uint8_t pBeId );
 
 		/*!
 		* \brief C'tor for a standard BeBoard reading a config file
-		* \param pShelveId
 		* \param pBeId
 		* \param filename of the configuration file
 		*/
-		BeBoard( uint8_t pShelveId, uint8_t pBeId, const std::string& filename );
+		BeBoard( uint8_t pBeId, const std::string& filename );
 
 		/*!
 		* \brief Destructor
@@ -145,18 +143,11 @@ namespace Ph2_HwDescription
 			return fBeId;
 		}
 		/*!
-		* \brief Get the Shelve Id of the BeBoard
-		* \return the ShelveId
-		*/
-		uint8_t getShelveId() const {
-			return fShelveId;
-		}
-		/*!
 		* \brief Get the BeBoardIdentifier
 		* \return The BeBoardIdentifier
 		*/
 		uint32_t getBeBoardIdentifier() const {
-			return fBeId << 8 | fShelveId;
+			return fBeId << 8;
 		}
 		/*!
 		* \brief Set the Be Id of the BeBoard
@@ -164,13 +155,6 @@ namespace Ph2_HwDescription
 		*/
 		void setBeId( uint8_t pBeId ) {
 			fBeId = pBeId;
-		};
-		/*!
-		* \brief Set the Shelve Id of the BeBoard
-		* \param pShelveId
-		*/
-		void setShelveId( uint8_t pShelveId ) {
-			fShelveId = pShelveId;
 		};
 		/*!
 		* \brief Set the Number of CBCs that are used to compute the data blob size of the BeBoard (according to FW version)
@@ -191,7 +175,6 @@ namespace Ph2_HwDescription
 
 	  protected:
 		//Connection Members
-		uint8_t fShelveId;
 		uint8_t fBeId;
 		uint16_t fNCbcDataSize;
 

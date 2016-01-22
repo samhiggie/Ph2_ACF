@@ -6,61 +6,52 @@ void PulseShape::Initialize()
     fNCbc = 0;
 
     std::cerr << "void PulseShape::Initialize()"  << std::endl;
-    for ( auto& cShelve : fShelveVector )
-    {
-        uint32_t cShelveId = cShelve->getShelveId();
-        std::cerr << "cShelveId = " << cShelveId << std::endl;
-
-        for ( auto& cBoard : cShelve->fBoardVector )
-        {
-            uint32_t cBoardId = cBoard->getBeId();
-            std::cerr << "cBoardId = " << cBoardId << std::endl;
-            // we could read the Delay_after_TestPulse Register in a variable
-            uint32_t cDelayAfterPulse = fBeBoardInterface->ReadBoardReg( cBoard, "COMMISSIONNING_MODE_DEALAY_AFTER_TEST_PULSE" );
-            fDelayAfterPulse = cDelayAfterPulse;
-            std::cout << "actual Delay: " << +cDelayAfterPulse << std::endl;
-            for ( auto& cFe : cBoard->fModuleVector )
-            {
-                uint32_t cFeId = cFe->getFeId();
-                std::cerr << "cFeId = " << cFeId << std::endl;
-
-                for ( auto& cCbc : cFe->fCbcVector )
-                {
-                    uint32_t cCbcId = cCbc->getCbcId();
-                    std::cerr << "cCbcId = " << cCbcId << std::endl;
-                    fNCbc++;
-                    // Create the Canvas to draw
-                    TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%dcbc%d", cFeId, cCbcId ), Form( "FE%dCBC%d  Online Canvas", cFeId, cCbcId ) );
-                    ctmpCanvas->Divide( 2, 1 );
-                    fCanvasMap[cCbc] = ctmpCanvas;
-                    TH2I* cFrame = new TH2I( "cFrame", "PulseShape; Delay [ns]; Amplitude [VCth]", 350, 4950, 5300, 255, 0, 255 );
-                    cFrame->SetStats( false );
-                    ctmpCanvas->cd( 2 );
-                    cFrame->Draw( );
-                    bookHistogram( cCbc, "frame", cFrame );
-                    std::cerr << "Initializing map fCanvasMap[" << Form( "0x%x", cCbc ) << "] = " << Form( "0x%x", ctmpCanvas ) << std::endl;
-                    // Create Multigraph Object for each CBC
-                    TString cName =  Form( "g_cbc_pulseshape_MultiGraph_Fe%dCbc%d", cFeId, cCbcId );
-                    TObject* cObj = gROOT->FindObject( cName );
-                    if ( cObj ) delete cObj;
-                    TMultiGraph* cMultiGraph = new TMultiGraph();
-                    cMultiGraph->SetName( cName );
-                    bookHistogram( cCbc, "cbc_pulseshape", cMultiGraph );
-                    cName = Form( "f_cbc_pulse_Fe%dCbc%d", cFeId, cCbcId );
-                    cObj = gROOT->FindObject( cName );
-                    if ( cObj ) delete cObj;
-                }
-
-            }
-        }
-    }
-
+    for ( auto& cBoard : fBoardVector )
+      {
+	uint32_t cBoardId = cBoard->getBeId();
+	std::cerr << "cBoardId = " << cBoardId << std::endl;
+	// we could read the Delay_after_TestPulse Register in a variable
+	uint32_t cDelayAfterPulse = fBeBoardInterface->ReadBoardReg( cBoard, "COMMISSIONNING_MODE_DEALAY_AFTER_TEST_PULSE" );
+	fDelayAfterPulse = cDelayAfterPulse;
+	std::cout << "actual Delay: " << +cDelayAfterPulse << std::endl;
+	for ( auto& cFe : cBoard->fModuleVector )
+	  {
+	    uint32_t cFeId = cFe->getFeId();
+	    std::cerr << "cFeId = " << cFeId << std::endl;
+	    
+	    for ( auto& cCbc : cFe->fCbcVector )
+	      {
+		uint32_t cCbcId = cCbc->getCbcId();
+		std::cerr << "cCbcId = " << cCbcId << std::endl;
+		fNCbc++;
+		// Create the Canvas to draw
+		TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%dcbc%d", cFeId, cCbcId ), Form( "FE%dCBC%d  Online Canvas", cFeId, cCbcId ) );
+		ctmpCanvas->Divide( 2, 1 );
+		fCanvasMap[cCbc] = ctmpCanvas;
+		TH2I* cFrame = new TH2I( "cFrame", "PulseShape; Delay [ns]; Amplitude [VCth]", 350, 4950, 5300, 255, 0, 255 );
+		cFrame->SetStats( false );
+		ctmpCanvas->cd( 2 );
+		cFrame->Draw( );
+		bookHistogram( cCbc, "frame", cFrame );
+		std::cerr << "Initializing map fCanvasMap[" << Form( "0x%x", cCbc ) << "] = " << Form( "0x%x", ctmpCanvas ) << std::endl;
+		// Create Multigraph Object for each CBC
+		TString cName =  Form( "g_cbc_pulseshape_MultiGraph_Fe%dCbc%d", cFeId, cCbcId );
+		TObject* cObj = gROOT->FindObject( cName );
+		if ( cObj ) delete cObj;
+		TMultiGraph* cMultiGraph = new TMultiGraph();
+		cMultiGraph->SetName( cName );
+		bookHistogram( cCbc, "cbc_pulseshape", cMultiGraph );
+		cName = Form( "f_cbc_pulse_Fe%dCbc%d", cFeId, cCbcId );
+		cObj = gROOT->FindObject( cName );
+		if ( cObj ) delete cObj;
+	      }
+	    
+	  }
+      }
+    
     parseSettings();
     std::cout << "Histograms and Settings initialised." << std::endl;
 }
-
-
-
 
 void PulseShape::ScanTestPulseDelay( uint8_t pStepSize )
 {
@@ -119,52 +110,49 @@ void PulseShape::ScanVcth( uint32_t pDelay )
         int cNHits = 0;
 
         // Take Data for all Modules
-        for ( auto& cShelve : fShelveVector )
-        {
-            for ( BeBoard* pBoard : cShelve->fBoardVector )
-            {
-                fBeBoardInterface->Start( pBoard );
-                while ( cN <= fNevents )
-                {
-                    cN += fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-                    const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-                    for ( auto& cEvent : events )
-                        cNHits += fillVcthHist( pBoard, cEvent, cVcth );
-                    cNthAcq++;
-                }
-                fBeBoardInterface->Stop( pBoard, cNthAcq );
-                if ( !cNonZero && cNHits != 0 )
-                {
-                    cNonZero = true;
-                    cDoubleVcth = cVcth;
-                    int cBackStep = 2 * cStep;
-                    if ( int( cVcth ) - cBackStep > 255 ) cVcth = 255;
-                    else if ( int( cVcth ) - cBackStep < 0 ) cVcth = 0;
-                    else cVcth -= cBackStep;
-                    cStep /= 10;
-                    continue;
-                }
-                if ( cNHits > 0.95 * fNCbc * fNevents * findChannelsInTestGroup( fTestGroup ).size() )
-                    cAllOneCounter++;
-
-                if ( cAllOneCounter > 6 ) cAllOne = true;
-                if ( cAllOne )
-
-                    break;
-                cVcth += cStep;
-                updateHists( "", false );
-                if ( fHoleMode && cVcth >= 0xFE && cNHits != 0 )
-                {
-                    cSaturate = true;
-                    break;
-                }
-                if ( !fHoleMode && cVcth <= 0x01 && cNHits != 0 )
-                {
-                    cSaturate = true;
-                    break;
-                }
-            }
-        }
+	for ( BeBoard* pBoard : fBoardVector )
+	  {
+	    fBeBoardInterface->Start( pBoard );
+	    while ( cN <= fNevents )
+	      {
+		cN += fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+		for ( auto& cEvent : events )
+		  cNHits += fillVcthHist( pBoard, cEvent, cVcth );
+		cNthAcq++;
+	      }
+	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    if ( !cNonZero && cNHits != 0 )
+	      {
+		cNonZero = true;
+		cDoubleVcth = cVcth;
+		int cBackStep = 2 * cStep;
+		if ( int( cVcth ) - cBackStep > 255 ) cVcth = 255;
+		else if ( int( cVcth ) - cBackStep < 0 ) cVcth = 0;
+		else cVcth -= cBackStep;
+		cStep /= 10;
+		continue;
+	      }
+	    if ( cNHits > 0.95 * fNCbc * fNevents * findChannelsInTestGroup( fTestGroup ).size() )
+	      cAllOneCounter++;
+	    
+	    if ( cAllOneCounter > 6 ) cAllOne = true;
+	    if ( cAllOne )
+	      
+	      break;
+	    cVcth += cStep;
+	    updateHists( "", false );
+	    if ( fHoleMode && cVcth >= 0xFE && cNHits != 0 )
+	      {
+		cSaturate = true;
+		break;
+	      }
+	    if ( !fHoleMode && cVcth <= 0x01 && cNHits != 0 )
+	      {
+		cSaturate = true;
+		break;
+	      }
+	  }
     }
 
     for ( auto& cChannelVector : fChannelMap )
@@ -360,40 +348,34 @@ void PulseShape::setSystemTestPulse( uint8_t pTPAmplitude )
     CbcMultiRegWriter cWriter( fCbcInterface, cRegVec );
     this->accept( cWriter );
 
-    for ( auto& cShelve : fShelveVector )
-    {
-        uint32_t cShelveId = cShelve->getShelveId();
-
-        for ( auto& cBoard : cShelve->fBoardVector )
-        {
-            uint32_t cBoardId = cBoard->getBeId();
-
-            for ( auto& cFe : cBoard->fModuleVector )
-            {
-                uint32_t cFeId = cFe->getFeId();
-
-                for ( auto& cCbc : cFe->fCbcVector )
-                {
-                    std::vector<Channel*> cChannelVector;
-                    uint32_t cCbcId = cCbc->getCbcId();
-                    int cMakerColor = 1;
-                    for ( auto& cChannelId : fChannelVector )
-                    {
-                        Channel* cChannel = new Channel( cBoardId, cFeId, cCbcId, cChannelId );
-                        TString cName =  Form( "g_cbc_pulseshape_Fe%dCbc%d_Channel%d", cFeId, cCbcId, cChannelId );
-                        cChannel->initializePulse( cName );
-                        cChannelVector.push_back( cChannel );
-                        cChannel->fPulse->SetMarkerColor( cMakerColor );
-                        cMakerColor++;
-                        TMultiGraph* cTmpGraph = static_cast<TMultiGraph*>( getHist( cCbc, "cbc_pulseshape" ) );
-                        cTmpGraph->Add( cChannel->fPulse, "lp" );
-                    }
-                    fChannelMap[cCbc] = cChannelVector;
-                }
-            }
-        }
-    }
-
+    for ( auto& cBoard : fBoardVector )
+      {
+	uint32_t cBoardId = cBoard->getBeId();
+	
+	for ( auto& cFe : cBoard->fModuleVector )
+	  {
+	    uint32_t cFeId = cFe->getFeId();
+	    
+	    for ( auto& cCbc : cFe->fCbcVector )
+	      {
+		std::vector<Channel*> cChannelVector;
+		uint32_t cCbcId = cCbc->getCbcId();
+		int cMakerColor = 1;
+		for ( auto& cChannelId : fChannelVector )
+		  {
+		    Channel* cChannel = new Channel( cBoardId, cFeId, cCbcId, cChannelId );
+		    TString cName =  Form( "g_cbc_pulseshape_Fe%dCbc%d_Channel%d", cFeId, cCbcId, cChannelId );
+		    cChannel->initializePulse( cName );
+		    cChannelVector.push_back( cChannel );
+		    cChannel->fPulse->SetMarkerColor( cMakerColor );
+		    cMakerColor++;
+		    TMultiGraph* cTmpGraph = static_cast<TMultiGraph*>( getHist( cCbc, "cbc_pulseshape" ) );
+		    cTmpGraph->Add( cChannel->fPulse, "lp" );
+		  }
+		fChannelMap[cCbc] = cChannelVector;
+	      }
+	  }
+      }
 
 }
 

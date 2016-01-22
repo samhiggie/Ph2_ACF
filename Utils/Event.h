@@ -27,8 +27,8 @@ using namespace Ph2_HwDescription;
 namespace Ph2_HwInterface
 {
 
-        typedef std::map<uint32_t, std::pair<uint32_t, uint32_t>> FeEventMap; /*!< Event Map of Cbc */
-	typedef std::map<uint32_t, FeEventMap> EventMap;          /*!< Event Map of FE */
+        using FeEventMap = std::map<uint32_t, std::pair<uint32_t, uint32_t>>; /*!< Event Map of Cbc */
+	using EventMap = std::map<uint32_t, FeEventMap>;                      /*!< Event Map of FE */
 
 	/*!
 	 * \class Event
