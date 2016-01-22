@@ -15,18 +15,19 @@ subdirs: print $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@
-#all: Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
+	#all: Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
 
 #libs: Utils HWDescription HWInterface System Tracker srcnoroot
 
 print:
+	@echo '   '   
 	@echo '*****************************'
 	@echo 'BUILDING PH2 ACF FRAMEWORK'
 	@echo '*****************************'
 	@echo 'Antenna Driver installed:' $(ANTENNAINSTALLED)
 	@echo $(ANTENNAINSTRUCTIONS)
 	@echo '*****************************'
- 
+
 src: HWDescription HWInterface Utils System tools
 System: HWDescription HWInterface Utils
 
