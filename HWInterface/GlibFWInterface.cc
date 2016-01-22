@@ -209,8 +209,10 @@ namespace Ph2_HwInterface
 
 		// set the vector<uint32_t> as event buffer and let him know how many packets it contains
 		fData->Set( pBoard, cData , cNPackets, true );
-		if ( fSaveToFile )
+		if ( fSaveToFile ){
 			fFileHandler->set( cData );
+			fFileHandler->writeFile();
+		}
 		return cNPackets;
 	}
 
@@ -294,7 +296,7 @@ namespace Ph2_HwInterface
 		cBlockSize = computeBlockSize( pBoard );
 		while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
 		{
-			ReadData( nullptr, numAcq, true );
+			ReadData( pBoard, numAcq, true );
 			for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent( pBoard ); cEvent; cEvent = GetNextEvent( pBoard ) )
 				visitor->visit( *cEvent );
 

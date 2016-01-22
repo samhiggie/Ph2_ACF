@@ -1,10 +1,10 @@
-all: Utils HWDescription HWInterface System tools RootWeb src miniDAQ
+all: Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
 
-libs: Utils HWDescription HWInterface System srcnoroot
+libs: Utils HWDescription HWInterface System Tracker srcnoroot
 
 #gui: Utils HWDescription HWInterface System tools src miniDAQ GUI
 
-simple: Utils HWDescription HWInterface System tools RootWeb src miniDAQ
+simple: Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
 
 HWDescription::
 	$(MAKE) -C $@
@@ -15,6 +15,8 @@ HWInterface::
 System::
 	$(MAKE) -C $@
 tools::
+	$(MAKE) -C $@
+Tracker::
 	$(MAKE) -C $@
 srcnoroot::
 	$(MAKE) -C src noroot
@@ -40,6 +42,7 @@ clean:
 	(cd tools; make clean)
 	(cd RootWeb; make clean)
 	(cd miniDAQ; make clean)
+	(cd Tracker; make clean)
 	#(cd GUI; make clean)
 	#(cd GUI; make clean; cd GUI/Macros; make clean)
 	(cd doc; make clean)

@@ -14,8 +14,6 @@
 #include "BeBoardFWInterface.h"
 #include "FpgaConfig.h"
 
-#define DEV_FLAG         0
-
 namespace Ph2_HwInterface
 {
 
