@@ -33,7 +33,7 @@ int main( int argc, char* argv[] )
 	// options
 	cmd.setHelpOption( "h", "help", "Print this help page" );
 
-	cmd.defineOption( "file", "Hw Description File . Default value: settings/Calibration2CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+	cmd.defineOption( "file", "Hw Description File . Default value: settings/Calibration8CBC.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "file", "f" );
 
 	cmd.defineOption( "output", "Output Directory . Default value: Results", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
@@ -60,7 +60,7 @@ int main( int argc, char* argv[] )
 	}
 
 	// now query the parsing results
-	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Calibration2CBC.xml";
+	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Calibration8CBC.xml";
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	cDirectory += "Calibration";
 	bool cVplus = ( cmd.foundOption( "skip" ) ) ? false : true;

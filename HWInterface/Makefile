@@ -5,6 +5,9 @@ CCFlags         = -g -O1 -w -Wall -pedantic -fPIC  -Wcpp
 #DevFlags                   = -D__CBCDAQ_DEV__
 DevFlags	=
 
+.PHONY: clean print
+
+
 IncludeDirs     =  /opt/cactus/include ../ .
 
 IncludePaths            = $(IncludeDirs:%=-I%)
@@ -12,9 +15,13 @@ IncludePaths            = $(IncludeDirs:%=-I%)
 %.o: %.cc %.h
 	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-all: $(Objs) ../HWDescription/Definition.h
+all: print $(Objs) ../HWDescription/Definition.h
 	$(CC) -std=c++11 -shared -o libPh2_Interface.so $(Objs) -pthread
 	mv libPh2_Interface.so ../lib
 
+print:
+	@echo '****************************'
+	@echo 'Building HWInterfaces '
+	@echo '****************************'
 clean:
 	rm -f *.o

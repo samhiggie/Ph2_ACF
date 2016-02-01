@@ -2,9 +2,10 @@ Objs                    = FrontEndDescription.o BeBoard.o Cbc.o Module.o Shelve.
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O1 -Wall -fPIC
-# -fPIC `root-config --cflags --glibs --evelibs`
-#DevFlags                   = -D__CBCDAQ_DEV__
 DevFlags               =
+
+.PHONY: clean print
+
 
 IncludeDirs     =  /opt/cactus/include ../
 
@@ -14,9 +15,13 @@ IncludePaths            = $(IncludeDirs:%=-I%)
 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
 
-all: $(Objs)
+all: print $(Objs)
 	$(CC) -shared -o libPh2_Description.so $(Objs)
 	mv libPh2_Description.so ../lib
 
+print:
+	@echo '****************************'
+	@echo 'Building HWDescription objects'
+	@echo '****************************'
 clean:
 	rm -f *.o

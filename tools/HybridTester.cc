@@ -1,4 +1,5 @@
 #include "HybridTester.h"
+#include <ctime>
 
 // fill the Histograms, count the hits and increment Vcth
 
@@ -34,7 +35,7 @@ void HybridTester::InitializeHists()
 	fHistTop = ( TH1F* )( gROOT->FindObject( cFrontName ) );
 	if ( fHistTop ) delete fHistTop;
 
-	fHistTop = new TH1F( cFrontName, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) + 1, -0.5, ( fNCbc / 2 * 254 ) + .5 );
+	fHistTop = new TH1F( cFrontName, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 253 ) + 1, -0.5, ( fNCbc / 2 * 253 ) + .5 );
 	fHistTop->SetFillColor( 4 );
 	fHistTop->SetFillStyle( 3001 );
 
@@ -42,9 +43,25 @@ void HybridTester::InitializeHists()
 	fHistBottom = ( TH1F* )( gROOT->FindObject( cBackName ) );
 	if ( fHistBottom ) delete fHistBottom;
 
-	fHistBottom = new TH1F( cBackName, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) + 1 , -0.5, ( fNCbc / 2 * 254 ) + .5 );
+	fHistBottom = new TH1F( cBackName, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 253 ) + 1 , -0.5, ( fNCbc / 2 * 253 ) + .5 );
 	fHistBottom->SetFillColor( 4 );
 	fHistBottom->SetFillStyle( 3001 );
+	
+	TString cFrontNameMerged( "fHistTopMerged" );
+	fHistTopMerged = ( TH1F* )( gROOT->FindObject( cFrontNameMerged ) );
+	if ( fHistTopMerged ) delete fHistTopMerged;
+
+	fHistTopMerged = new TH1F( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 253 ) + 1, -0.5, ( fNCbc / 2 * 253 ) + .5 );
+	fHistTopMerged->SetFillColor( 4 );
+	fHistTopMerged->SetFillStyle( 3001 );
+
+	TString cBackNameMerged( "fHistBottomMerged" );
+	fHistBottomMerged = ( TH1F* )( gROOT->FindObject( cBackNameMerged ) );
+	if ( fHistBottomMerged ) delete fHistBottomMerged;
+
+	fHistBottomMerged = new TH1F( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 253 ) + 1 , -0.5, ( fNCbc / 2 * 253 ) + .5 );
+	fHistBottomMerged->SetFillColor( 4 );
+	fHistBottomMerged->SetFillStyle( 3001 );
 
 	// Now the Histograms for SCurves
 	for ( auto cShelve : fShelveVector )
@@ -95,44 +112,17 @@ void HybridTester::InitialiseSettings()
 	// std::cout << "Read the following Settings: " << std::endl;
 	// std::cout << "Hole Mode: " << fHoleMode << std::endl << "NEvents: " << fTotalEvents << std::endl << "NSigmas: " << fSigmas << std::endl;
 }
-void HybridTester::InitialiseGUI( int pVcth, int pNevents, bool pTestreg, bool pScanthreshold, bool pHolemode )
-{
-	fThresholdScan = pScanthreshold;
-	fTotalEvents = pNevents;
-	fHoleMode = pHolemode;
-	fVcth = pVcth;
-
-	CbcRegWriter cWriter( fCbcInterface, "VCth", fVcth );
-	accept( cWriter ); //TODO pass safe
-
-	gStyle->SetOptStat( 000000 );
-	gStyle->SetTitleOffset( 1.3, "Y" );
-	//  special Visito class to count objects
-	Counter cCbcCounter;
-	accept( cCbcCounter );
-	fNCbc = cCbcCounter.getNCbc();
-
-	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
-	fDataCanvas->Divide( 2 );
-
-	if ( fThresholdScan )
-	{
-		fSCurveCanvas = new TCanvas( "fSCurveCanvas", "Noise Occupancy as function of VCth" );
-		fSCurveCanvas->Divide( fNCbc );
-	}
-	InitializeHists();
-}
-
 
 void HybridTester::Initialize( bool pThresholdScan )
 {
 	fThresholdScan = pThresholdScan;
 	gStyle->SetOptStat( 000000 );
-	gStyle->SetTitleOffset( 1.3, "Y" );
+	//gStyle->SetTitleOffset( 1.3, "Y" );
 	//  special Visito class to count objects
 	Counter cCbcCounter;
 	accept( cCbcCounter );
 	fNCbc = cCbcCounter.getNCbc();
+	//std::cout <<"DEBUG "<<  fNCbc << std::endl;
 
 	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
 	fDataCanvas->Divide( 2 );
@@ -414,29 +404,40 @@ void HybridTester::TestRegisters()
 		void visit( Cbc& pCbc ) {
 			uint8_t cFirstBitPattern = 0xAA;
 			uint8_t cSecondBitPattern = 0x55;
-
+			
 			CbcRegMap cMap = pCbc.getRegMap();
 			for ( const auto& cReg : cMap ) {
+				
 				if ( !fInterface->WriteCbcReg( &pCbc, cReg.first, cFirstBitPattern, true ) ) fBadRegisters[pCbc.getCbcId()] .insert( cReg.first );
 				if ( !fInterface->WriteCbcReg( &pCbc, cReg.first, cSecondBitPattern, true ) ) fBadRegisters[pCbc.getCbcId()] .insert( cReg.first );
 			}
 		}
 
-		void dumpResult() {
+		void dumpResult( std::string fDirectoryName ) {
+			ofstream report( fDirectoryName + "/registers_test.txt" ); // Creates a file in the current directory
+			report << "Testing Cbc Registers one-by-one with complimentary bit-patterns (0xAA, 0x55)" << std::endl;
 			for ( const auto& cCbc : fBadRegisters ) {
-				std::cout << "Bad Registers on Cbc " << cCbc.first << " : " << std::endl;
-				for ( const auto& cReg : cCbc.second ) std::cout << cReg << std::endl;
+				report << "Malfunctioning Registers on Cbc " << cCbc.first << " : " << std::endl;
+				for ( const auto& cReg : cCbc.second ) report << cReg << std::endl;
+
 			}
+			report.close();
+			std::cout << "Channels diagnosis report written to: " + fDirectoryName + "/registers_test.txt" << std::endl;
 		}
 	};
 
 	// This should probably be done in the top level application but there I do not have access to the settings map
-
-	std::cout << "Testing Cbc Registers one-by-one with complimentary bit-patterns (0xAA, 0x55) ..." << std::endl;
+	time_t start_time = time(0);
+	char* start = ctime(&start_time);
+	std::cout << "start: "<< start << std::endl;
+	std::cout << std::endl << "Running registers testing tool ... " << std::endl;
 	RegTester cRegTester( fCbcInterface );
 	accept( cRegTester );
-	cRegTester.dumpResult();
+	cRegTester.dumpResult( fDirectoryName );
 	std::cout << "Done testing registers, re-configuring to calibrated state!" << std::endl;
+	start_time = time(0);
+	char* stop = ctime(&start_time);
+	std::cout << "stop: " << stop << std::endl;
 	ConfigureHw();
 }
 
@@ -448,6 +449,9 @@ void HybridTester::Measure()
 	CbcRegReader cReader( fCbcInterface, "VCth" );
 	accept( cReader );
 
+	fHistTop->GetYaxis()->SetRangeUser( 0, fTotalEvents );
+	fHistBottom->GetYaxis()->SetRangeUser( 0, fTotalEvents );
+	
 	for ( auto& cShelve : fShelveVector )
 	{
 		for ( BeBoard* pBoard : cShelve->fBoardVector )
@@ -472,18 +476,145 @@ void HybridTester::Measure()
 					if ( cN % 100 == 0 )
 						UpdateHists();
 
-					cN++;
+						cN++;
 				}
 				cNthAcq++;
 			}
 			fBeBoardInterface->Stop( pBoard, cNthAcq );
+					
 		}
+
 	}
+	
 	fHistTop->Scale( 100 / double_t( fTotalEvents ) );
 	fHistTop->GetYaxis()->SetRangeUser( 0, 100 );
 	fHistBottom->Scale( 100 / double_t( fTotalEvents ) );
-	fHistBottom->GetYaxis()->SetRangeUser( 0, 100 );
+	fHistBottom->GetYaxis()->SetRangeUser( 0, 100 );	
 	UpdateHists();
+
+	std::cout << "Mean occupancy at the Top side: " << fHistTop->Integral()/(double)(fNCbc*127) << std::endl;
+	std::cout << "Mean occupancy at the Bottom side: " << fHistBottom->Integral()/(double)(fNCbc*127) << std::endl;
+}
+
+void HybridTester::AntennaScan()
+{
+#ifdef __ANTENNA__
+	std::cout << "Mesuring Efficiency per Strip ... " << std::endl;
+	std::cout << "Taking data with " << fTotalEvents << " Events!" << std::endl;
+
+	CbcRegReader cReader( fCbcInterface, "VCth" );
+	accept( cReader );
+
+	Antenna cAntenna;
+	cAntenna.initializeAntenna();
+	for (int channel = 0; channel < fNCbc; channel++) cAntenna.ConfigureSpiSlave( channel );
+
+	fHistTop->GetYaxis()->SetRangeUser( 0, fTotalEvents );
+	fHistBottom->GetYaxis()->SetRangeUser( 0, fTotalEvents );
+
+	for ( uint8_t analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++ )
+	{
+		std::cout << "Chip Select ID " << +analog_switch_cs << std::endl;
+		cAntenna.ConfigureSpiSlave( analog_switch_cs );
+
+		for ( uint8_t channel_position = 1; channel_position < 10; channel_position++ )
+		{
+			cAntenna.TurnOnAnalogSwitchChannel( channel_position );
+			
+			if (channel_position == 9) break;
+
+			for ( auto& cShelve : fShelveVector )
+			{
+				for ( BeBoard* pBoard : cShelve->fBoardVector )
+				{
+					uint32_t cN = 1;
+					uint32_t cNthAcq = 0;
+
+					fBeBoardInterface->Start( pBoard );
+
+					while ( cN <=  fTotalEvents )
+					{
+						// Run( pBoard, cNthAcq );
+						fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+						const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+
+						// Loop over Events from this Acquisition
+						for ( auto& cEvent : events )
+						{
+							HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
+							pBoard->accept( cFiller );
+
+							if ( cN % 100 == 0 ) UpdateHists();
+
+							cN++;
+						}
+						cNthAcq++;
+					}
+					fBeBoardInterface->Stop( pBoard, cNthAcq );
+					
+					/*Here the reconstruction of histograms happens*/
+					for ( uint16_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
+						{						
+							if ( fHistTopMerged->GetBinContent( channel_id ) < fHistTop->GetBinContent( channel_id ) ) fHistTopMerged->SetBinContent( channel_id, fHistTop->GetBinContent( channel_id ) );
+							if ( fHistBottomMerged->GetBinContent( channel_id ) < fHistBottom->GetBinContent( channel_id ) ) fHistBottomMerged->SetBinContent( channel_id, fHistBottom->GetBinContent( channel_id ) );
+						}
+					
+					/*Here clearing histograms after each event*/
+					fHistBottom->Reset();
+					fHistTop->Reset();
+				}
+
+			}
+
+		}
+	}
+
+	fHistTopMerged->Scale( 100 / double_t( fTotalEvents ) );
+	fHistTopMerged->GetYaxis()->SetRangeUser( 0, 100 );
+	fHistBottomMerged->Scale( 100 / double_t( fTotalEvents ) );
+	fHistBottomMerged->GetYaxis()->SetRangeUser( 0, 100 );
+	
+	UpdateHistsMerged();
+	
+	cAntenna.close();
+
+	TestChannels( fDecisionThreshold );
+#endif
+}
+
+void HybridTester::SaveTestingResults(std::string pHybridId)
+{
+	
+	ifstream infile;
+	std::string line_buffer;
+	std::string content_buffer;
+	std::string date_string = currentDateTime();
+	std::string filename = "Results/HybridTestingDatabase/Hybrid_ID" + pHybridId + "_on" + date_string + ".txt";
+	ofstream myfile;
+	myfile.open( filename.c_str() );
+	myfile << "Hybrid ID: " << pHybridId << std::endl;
+	myfile << "Created on: " << date_string << std::endl << std::endl;
+	myfile << " Hybrid Testing Report" << std::endl;
+	myfile << "-----------------------" << std::endl << std::endl;
+	myfile << " Write/Read Registers Test" << std::endl;
+	myfile << "---------------------------" << std::endl;
+
+	infile.open( fDirectoryName + "/registers_test.txt" );
+	while ( getline( infile, line_buffer ) ) content_buffer += line_buffer + "\r\n"; // To get all the lines.
+	if ( content_buffer == "" ) myfile << "Test not performed!" << std::endl;
+
+	infile.close();
+	myfile << content_buffer << std::endl;
+	content_buffer = "";
+	myfile << " Channels Functioning Test" << std::endl;
+	myfile << "---------------------------" << std::endl;
+	infile.open( fDirectoryName + "/channels_test2.txt" );
+	while ( getline( infile, line_buffer ) ) content_buffer += line_buffer + "\r\n"; // To get all the lines.
+	if ( content_buffer == "" ) myfile << "Test not performed!" << std::endl;
+	infile.close();
+	myfile << content_buffer << std::endl;
+	myfile.close();
+	std::cout << std::endl << "Summary testing report written to: " << std::endl << filename << std::endl;
 }
 
 void HybridTester::SaveResults()
@@ -496,7 +627,7 @@ void HybridTester::SaveResults()
 	fResultFile->Close();
 
 
-	std::cout << "Resultfile written correctly!" << std::endl;
+	std::cout << std::endl << "Resultfile written correctly!" << std::endl;
 
 	std::string cPdfName = fDirectoryName + "/HybridTestResults.pdf";
 	fDataCanvas->SaveAs( cPdfName.c_str() );
@@ -504,5 +635,69 @@ void HybridTester::SaveResults()
 	{
 		cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";
 		fSCurveCanvas->SaveAs( cPdfName.c_str() );
-	}
+	}	
+
 }
+
+
+void HybridTester::TestChannels()
+{
+	std::cout << std::endl << "Running channels testing tool ... " << std::endl;
+	std::cout << "Decision threshold: " << CH_DIAGNOSIS_DECISION_TH << "%" << std::endl;
+	double cChannelDiagnosisThreshold = CH_DIAGNOSIS_DECISION_TH;
+	std::vector<int> cBadChannelsTop;
+	std::vector<int> cBadChannelsBottom;
+	int cHistogramBinId;
+	int cTopHistSize = fNCbc * 127 + 1;
+	int cBottomHistSize = cTopHistSize;
+
+	for ( cHistogramBinId = 1; cHistogramBinId < cTopHistSize; cHistogramBinId++ )
+	{
+		if ( fHistTopMerged->GetBinContent( cHistogramBinId ) * 100 / fTotalEvents < cChannelDiagnosisThreshold ) cBadChannelsTop.push_back( cHistogramBinId - 1 );
+	}
+
+	for ( cHistogramBinId = 1; cHistogramBinId < cBottomHistSize; cHistogramBinId++ )
+	{
+		if ( fHistTopMerged->GetBinContent( cHistogramBinId ) * 100 / fTotalEvents < cChannelDiagnosisThreshold ) cBadChannelsBottom.push_back( cHistogramBinId - 1 );
+	}
+
+	ofstream report( fDirectoryName + "/channels_test.txt" ); // Create a file in the current directory
+	report << "Testing run with decision threshold: " + patch::to_string( cChannelDiagnosisThreshold ) + "%" << std::endl;
+	report << "Channels numbering convention from 0 to " + patch::to_string( cTopHistSize - 2 ) + " for both sides " << std::endl;
+	report << "Number of malfunctioning channels:  " + patch::to_string( cBadChannelsTop.size() + cBadChannelsBottom.size() ) << std::endl;
+	report << "Malfunctioning channels from TOP side:  " + int_vector_to_string( cBadChannelsTop ) << std::endl;
+	report << "Malfunctioning channels from BOTTOM side:  " + int_vector_to_string( cBadChannelsBottom ) << std::endl;
+	report.close();
+	std::cout << "Channels testing report written to: " << std::endl << fDirectoryName + "/channels_test.txt" << std::endl;
+}
+
+void HybridTester::TestChannels( double pDecisionThreshold )
+{
+	std::cout << std::endl << "Running channels testing tool 2... " << std::endl;
+	std::cout << "Decision threshold: " << pDecisionThreshold << "%" << std::endl;
+	std::vector<int> cBadChannelsTop;
+	std::vector<int> cBadChannelsBottom;
+	int cTopHistSize = fNCbc * 127 + 1;
+	int cBottomHistSize = cTopHistSize;
+	int cHistogramBinId;
+
+	for ( cHistogramBinId = 1; cHistogramBinId < cTopHistSize; cHistogramBinId++ )
+	{
+		if ( fHistTopMerged->GetBinContent( cHistogramBinId ) * 100 / fTotalEvents < pDecisionThreshold ) cBadChannelsTop.push_back( cHistogramBinId - 1 );
+	}
+
+	for ( cHistogramBinId = 1; cHistogramBinId < cBottomHistSize; cHistogramBinId++ )
+	{
+		if ( fHistBottomMerged->GetBinContent( cHistogramBinId ) * 100 / fTotalEvents < pDecisionThreshold ) cBadChannelsBottom.push_back( cHistogramBinId - 1 );
+	}
+
+	ofstream report( fDirectoryName + "/channels_test2.txt" ); // Create a file in the current directory
+	report << "Testing run with decision threshold: " + patch::to_string( pDecisionThreshold ) + "%" << std::endl;
+	report << "Channels numbering convention from 0 to " + patch::to_string( cTopHistSize - 2 ) + " for both sides " << std::endl;
+	report << "Number of malfunctioning channels:  " + patch::to_string( cBadChannelsTop.size() + cBadChannelsBottom.size() ) << std::endl;
+	report << "Malfunctioning channels from TOP side:  " + int_vector_to_string( cBadChannelsTop ) << std::endl;
+	report << "Malfunctioning channels from BOTTOM side:  " + int_vector_to_string( cBadChannelsBottom ) << std::endl;
+	report.close();
+	std::cout << "Channels testing report written to: " << std::endl << fDirectoryName + "/channels_test2.txt" << std::endl;
+}
+

@@ -1,38 +1,35 @@
-all: Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
+ANTENNADIR=CMSPh2_AntennaDriver
 
-libs: Utils HWDescription HWInterface System Tracker srcnoroot
+ifneq ("$(wildcard $(ANTENNADIR))","")
+	SUBDIRS = CMSPh2_AntennaDriver Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
+	ANTENNAINSTALLED = yes
+else
+	SUBDIRS = Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
+	ANTENNAINSTALLED = no
+	ANTENNAINSTRUCTIONS = To use the USB Antenna, please download the Driver from 'https://github.com/gauzinge/CMSPh2_AntennaDriver.git' and make sure that libusb-devel is installed!
+endif
 
-#gui: Utils HWDescription HWInterface System tools src miniDAQ GUI
+.PHONY: print subdirs $(SUBDIRS) clean
 
-simple: Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
+subdirs: print $(SUBDIRS)
 
-HWDescription::
+$(SUBDIRS):
 	$(MAKE) -C $@
-Utils::
-	$(MAKE) -C $@
-HWInterface::
-	$(MAKE) -C $@
-System::
-	$(MAKE) -C $@
-tools::
-	$(MAKE) -C $@
-Tracker::
-	$(MAKE) -C $@
-srcnoroot::
-	$(MAKE) -C src noroot
-src::
-	$(MAKE) -C $@
-	#GUI::
-	#$(MAKE) -C GUI/Macros
-	#$(MAKE) -C $@
-	#cp $@/Ph2_ACF ./bin
-RootWeb::
-	$(MAKE) -C $@
-miniDAQ::
-	$(MAKE) -C $@
-doc::
-	$(MAKE) -C $@
+	#all: Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
 
+#libs: Utils HWDescription HWInterface System Tracker srcnoroot
+
+print:
+	@echo '   '   
+	@echo '*****************************'
+	@echo 'BUILDING PH2 ACF FRAMEWORK'
+	@echo '*****************************'
+	@echo 'Antenna Driver installed:' $(ANTENNAINSTALLED)
+	@echo $(ANTENNAINSTRUCTIONS)
+	@echo '*****************************'
+
+src: HWDescription HWInterface Utils System tools
+System: HWDescription HWInterface Utils
 
 clean:
 	(cd System; make clean)
@@ -43,8 +40,6 @@ clean:
 	(cd RootWeb; make clean)
 	(cd miniDAQ; make clean)
 	(cd Tracker; make clean)
-	#(cd GUI; make clean)
-	#(cd GUI; make clean; cd GUI/Macros; make clean)
 	(cd doc; make clean)
 	(rm -f lib/* bin/*)
 

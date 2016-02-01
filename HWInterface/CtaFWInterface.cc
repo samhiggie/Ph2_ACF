@@ -388,6 +388,12 @@ void CtaFWInterface::JumpToFpgaConfig( const std::string& strConfig)
     fpgaConfig->jumpToImage( strConfig);
 }
 
+void CtaFWInterface::DownloadFpgaConfig( const std::string& strConfig, const std::string& strDest)
+{
+    checkIfUploading();
+    fpgaConfig->runDownload( strConfig, strDest.c_str());
+}
+
 std::vector<std::string> CtaFWInterface::getFpgaConfigList()
 {
     checkIfUploading();

@@ -457,6 +457,7 @@ void Calibration::toggleOffset( uint8_t pGroup, uint8_t pBit, bool pBegin )
 								toggleRegBit( cOffset, pBit ); // toggle the bit back that was previously flipped
 								cOffsetHist->SetBinContent( cChannel, cOffset );
 								cRegVec.push_back( {cRegName.Data(), cOffset} );
+							//	std::cout << cRegName.Data() << " " << std::bitset<8>(cOffset) << std::endl;
 							}
 
 							// since I extracted the info from the occupancy profile for this bit (this iteration), i need to clear the corresponding bins

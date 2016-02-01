@@ -8,13 +8,12 @@
             <FW_Version NCbcDataSize="8"/>
 
             <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-                <Global_CBC_Register name="VCth"> 0x70 </Global_CBC_Register>
-              
+                <Global_CBC_Register name="VCth"> 0xB5 </Global_CBC_Register>
                 <Global_CBC_Register name="MiscTestPulseCtrl&AnalogMux"> 0x21 </Global_CBC_Register>
 				<!-- <Global_CBC_Register name="TriggerLatency"> 0x13 </Global_CBC_Register> -->
 
                 <!-- <CBC_Files path="/cmsuptrackernas/Configurations/Module1/final/"/> -->
-                <CBC_Files path="/settings/"/>
+                <CBC_Files path="settings"/>
 
                 <CBC Id="0" configfile="FE0CBC0.txt"/>
                 <CBC Id="1" configfile="FE0CBC1.txt"/>
@@ -74,9 +73,9 @@
 </HwDescription>
 
 <Settings>
-    <Setting name="HoleMode"> 0 </Setting>
+    <Setting name="HoleMode"> 1 </Setting>
     <Setting name="Threshold_NSigmas"> 4 </Setting>
-    <Setting name="Nevents"> 10 </Setting>
+    <Setting name="Nevents"> 100 </Setting>
     <Setting name="TestPulseAmplitude"> 0x00 </Setting>
     <Setting name="FitSCurves"> 0 </Setting>
 </Settings>

@@ -1,45 +1,50 @@
+ANTENNADIR=../CMSPh2_AntennaDriver
+AntennaFlag = -D__ANTENNA__
+
+ifneq ("$(wildcard $(ANTENNADIR))","")
+	IncludeDirs     =  /opt/cactus/include ../ $(ANTENNADIR)
+	LibraryDirs = /opt/cactus/lib ../lib $(ANTENNADIR)/lib
+	ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
+                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Antenna $(AntennaFlag) 
+        ANTENNAINSTALLED = yes
+else
+	IncludeDirs     =  /opt/cactus/include ../ 
+	LibraryDirs = /opt/cactus/lib ../lib 
+	ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
+                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker
+        ANTENNAINSTALLED = no
+endif
+
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O0 -w -Wall -pedantic -std=c++11 -fPIC 
-#CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC 
 CCFlagsRoot	= `root-config --cflags --evelibs --glibs`
 ROOTVERSION := $(shell root-config --has-http)
 HttpFlag = -D__HTTP__
 
-#DevFlags                    = -D__CBCDAQ_DEV__
-DevFlags                   =
+DevFlags        =
 
-IncludeDirs     =  /opt/cactus/include ../
+#IncludeDirs     =  /opt/cactus/include ../ ../../CMSPh2_AntennaDriver
 
 IncludePaths            = $(IncludeDirs:%=-I%)
 
-LibraryDirs = /opt/cactus/lib ../lib
+#LibraryDirs = /opt/cactus/lib ../lib ../../CMSPh2_AntennaDriver/lib
 RootLibraryDirs = /usr/local/lib/root
 
 LibraryPaths = $(LibraryDirs:%=-L%) 
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 
-ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
-                                 -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker
-
-# ifeq "5.34" "$(word 1, $(sort 5.34 $(RootVersion)))"
 ifneq (,$(findstring yes,$(ROOTVERSION)))
 	ExtObjectsRoot= $(RootLibraryPaths) -lPh2_Tools -lRHTTP $(HttpFlag)
 else
 	ExtObjectsRoot= $(RootLibraryPaths) -lPh2_Tools
 endif
-# ExtObjectsRoot= -lPh2_Tools -lRHTTP $(HttpFlag)
-
-# -lboost_thread -lboost_filesystem -lboost_regex -lboost_system -lboost_thread
-
-# %.o: %.cc %.h
-# 	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
 binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure
 binariesNoRoot=systemtest datatest fpgaconfig configure
 
-
+.PHONY: clean $(binaries)
 all: rootflags clean $(binaries) 
 
 rootflags:
@@ -49,7 +54,10 @@ rootflags:
 noroot: clean $(binariesNoRoot)
 
 print:
+	@echo '****************************'
+	@echo 'Building executables in src/'
 	@echo 'Root Has Http:' $(ROOTVERSION)
+	@echo '****************************'
 
 systemtest: systemtest.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
@@ -68,7 +76,7 @@ configure: configure.cc
 	cp $@ ../bin
 
 hybridtest: hybridtest.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX) -std=c++11 $(CCFlags) -L/usr/lib64/ -lusb -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 cmtest: cmtest.cc
@@ -86,9 +94,6 @@ fpgaconfig: fpgaconfig.cc
 pulseshape: pulseshape.cc
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
-
-
-.PHONY: clean
 
 clean:
 	rm -f $(binaries) *.o
