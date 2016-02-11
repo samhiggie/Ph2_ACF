@@ -165,14 +165,14 @@ void TrackerEvent::fillTrackerHeader( Event* pEvt, uint64_t uFE, uint32_t nbCBC,
 
 void TrackerEvent::fillTrackerPayload(Event* pEvt, uint32_t nbFE, uint32_t nbCBC, uint32_t uCBC, uint32_t nbBitsHeader, bool bZeroSuppr, bool bCondition, uint32_t nbCondition, ParamSet* pPSet){
 	// Fill the tracker payload 	
-	uint32_t uIdxCbc=0, uOct, idxPayload, bitPayload= nbBitsHeader, uFront, uChip;
+	uint32_t uIdxCbc=0, uOct, idxPayload, bitPayload= DAQ_HEADER_SIZE*8+nbBitsHeader, uFront, uChip;
 	uint32_t nbCbcFe=nbCBC/nbFE;//nb of CBCs per FE
 	vector< uint8_t > cbcData;
 	for (uFront=0; uFront<nbFE; uFront++){
 		//cout<<"FE="<<uFront<<" @"<<idxPayload<<endl;
 		if (bZeroSuppr){
 			bitPayload+=(calcBitsForFE(pEvt, uFront, data_, bitPayload, nbCbcFe)+7)/8;
-			idxPayload=DAQ_HEADER_SIZE+(bitPayload+7)/8;
+			idxPayload=(bitPayload+7)/8;
 		} else {
 			idxPayload=DAQ_HEADER_SIZE+nbBitsHeader/8+uFront*(nbCbcFe*NB_STRIPS_CBC2/8 + 2);
 			data_[littleEndian8(idxPayload++)]=(uCBC&0xFF00)>>8;
@@ -264,7 +264,7 @@ uint32_t TrackerEvent::calcBitsForFE(Event* pEvt, uint32_t uFront, char* dest, u
 		if (nbCluster>=nbMax) break;
 		for (uBit=0; uBit<NB_STRIPS_CBC2-2; uBit++){
 			if (bCluster){
-				if (!pEvt->DataBit(uFront, uChip, uBit) || uBit==NB_STRIPS_CBC2-3){//end of cluster
+				if (!pEvt->DataBit(uFront, uChip, NB_STRIPS_CBC2-3-uBit) || uBit==NB_STRIPS_CBC2-3){//end of cluster
 					bCluster=false;
 					if (dest){//<chip ID 4b><position 8b><size 3b>
 						setValueBits(dest, bitDest+nbBits   , 4, uChip);//Chip ID
@@ -273,7 +273,7 @@ uint32_t TrackerEvent::calcBitsForFE(Event* pEvt, uint32_t uFront, char* dest, u
 					}
 					nbBits+=15;
 					if (nbCluster>=nbMax) break;
-				} else if (pEvt->DataBit(uFront, uChip, uBit)){// cluster continuation
+				} else if (pEvt->DataBit(uFront, uChip, NB_STRIPS_CBC2-3-uBit)){// cluster continuation
 					uClusterSize++;
 					if (uClusterSize>8){
 						if (dest){
@@ -289,7 +289,7 @@ uint32_t TrackerEvent::calcBitsForFE(Event* pEvt, uint32_t uFront, char* dest, u
 					}
 				}
 			} else {//Beginning of  cluster
-				if (pEvt->DataBit(uFront, uChip, uBit)){
+				if (pEvt->DataBit(uFront, uChip, NB_STRIPS_CBC2-3-uBit)){
 					uPos=uBit;
 					nbCluster++;
 					uClusterSize=1;

@@ -44,7 +44,7 @@ private :
 	 * \param pEvt PH2_ACF event
 	 * \param uFront Mask of enabled Front Ends
 	 * \param dest destination buffer. Set to NULL to only compute size.
-	 * \param bitDest index to put data for this fiber into destination buffer
+	 * \param bitDest bit index to put data into destination buffer
 	 * \param nbCBC Number of CBCs in this FE
 	 */
 	uint32_t calcBitsForFE(Ph2_HwInterface::Event* pEvt, uint32_t uFront, char* dest, uint32_t bitDest, uint32_t nbCBC);
