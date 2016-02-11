@@ -64,39 +64,34 @@ void HybridTester::InitializeHists()
 	fHistBottomMerged->SetFillStyle( 3001 );
 
 	// Now the Histograms for SCurves
-	for ( auto cShelve : fShelveVector )
-	{
-		uint32_t cShelveId = cShelve->getShelveId();
-
-		for ( auto cBoard : cShelve->fBoardVector )
-		{
-			uint32_t cBoardId = cBoard->getBeId();
-
-			for ( auto cFe : cBoard->fModuleVector )
-			{
-				uint32_t cFeId = cFe->getFeId();
-
-				for ( auto cCbc : cFe->fCbcVector )
-				{
-
-					uint32_t cCbcId = cCbc->getCbcId();
-
-					TString cName = Form( "SCurve_Fe%d_Cbc%d", cFeId, cCbcId );
-					TObject* cObject = static_cast<TObject*>( gROOT->FindObject( cName ) );
-					if ( cObject ) delete cObject;
-					TH1F* cTmpScurve = new TH1F( cName, Form( "Noise Occupancy Cbc%d; VCth; Counts", cCbcId ), 255, 0, 255 );
-					cTmpScurve->SetMarkerStyle( 8 );
-					fSCurveMap[cCbc] = cTmpScurve;
-
-					cName = Form( "SCurveFit_Fe%d_Cbc%d", cFeId, cCbcId );
-					cObject = static_cast<TObject*>( gROOT->FindObject( cName ) );
-					if ( cObject ) delete cObject;
-					TF1* cTmpFit = new TF1( cName, MyErf, 0, 255, 2 );
-					fFitMap[cCbc] = cTmpFit;
-				}
-			}
-		}
-	}
+	for ( auto cBoard : fBoardVector )
+	  {
+	    uint32_t cBoardId = cBoard->getBeId();
+	    
+	    for ( auto cFe : cBoard->fModuleVector )
+	      {
+		uint32_t cFeId = cFe->getFeId();
+		
+		for ( auto cCbc : cFe->fCbcVector )
+		  {
+		    
+		    uint32_t cCbcId = cCbc->getCbcId();
+		    
+		    TString cName = Form( "SCurve_Fe%d_Cbc%d", cFeId, cCbcId );
+		    TObject* cObject = static_cast<TObject*>( gROOT->FindObject( cName ) );
+		    if ( cObject ) delete cObject;
+		    TH1F* cTmpScurve = new TH1F( cName, Form( "Noise Occupancy Cbc%d; VCth; Counts", cCbcId ), 255, 0, 255 );
+		    cTmpScurve->SetMarkerStyle( 8 );
+		    fSCurveMap[cCbc] = cTmpScurve;
+		    
+		    cName = Form( "SCurveFit_Fe%d_Cbc%d", cFeId, cCbcId );
+		    cObject = static_cast<TObject*>( gROOT->FindObject( cName ) );
+		    if ( cObject ) delete cObject;
+		    TF1* cTmpFit = new TF1( cName, MyErf, 0, 255, 2 );
+		    fFitMap[cCbc] = cTmpFit;
+		  }
+	      }
+	  }
 }
 
 void HybridTester::InitialiseSettings()
@@ -122,7 +117,6 @@ void HybridTester::Initialize( bool pThresholdScan )
 	Counter cCbcCounter;
 	accept( cCbcCounter );
 	fNCbc = cCbcCounter.getNCbc();
-	//std::cout <<"DEBUG "<<  fNCbc << std::endl;
 
 	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
 	fDataCanvas->Divide( 2 );
@@ -170,67 +164,64 @@ void HybridTester::ScanThreshold()
 		uint32_t cHitCounter = 0;
 
 		// maybe restrict to pBoard? instead of looping?
-		for ( auto& cShelve : fShelveVector )
-		{
-			if ( cAllOne ) break;
-			for ( BeBoard* pBoard : cShelve->fBoardVector )
-			{
-				fBeBoardInterface->Start( pBoard );
-				while ( cN <=  cEventsperVcth )
-				{
-					// Run( pBoard, cNthAcq );
-					fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-					const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-					// Loop over Events from this Acquisition
-					for ( auto& cEvent : events )
-					{
-						// loop over Modules & Cbcs and count hits separately
-						cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
-						cN++;
-					}
-					cNthAcq++;
-				}
-				fBeBoardInterface->Stop( pBoard, cNthAcq );
-				// std::cout << +cVcth << " " << cHitCounter << std::endl;
-				// Draw the thing after each point
-				updateSCurveCanvas( pBoard );
-
-				// check if the hitcounter is all ones
-
-				if ( cNonZero == false && cHitCounter != 0 )
-				{
-					cDoubleVcth = cVcth;
-					cNonZero = true;
-					cVcth -= 2 * cStep;
-					cStep /= 10;
-					continue;
-				}
-				if ( cNonZero && cHitCounter != 0 )
-				{
-					// check if all Cbcs have reached full occupancy
-					if ( cHitCounter > 0.95 * cEventsperVcth * fNCbc * NCHANNELS ) cAllOneCounter++;
-					// add a second check if the global SCurve slope is 0 for 10 consecutive Vcth values
-					// if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
-				}
-				if ( cAllOneCounter >= 10 ) cAllOne = true;
-				// if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
-
-				if ( cAllOne )
-				{
-					std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
-					break;
-				}
-				// else if ( cSlopeZero )
-				// {
-				//   std::cout << "Slope of SCurve 0 -- ending the scan at VCth " << +cVcth << std::endl;
-				//  break;
-				// }
-
-				cOldHitCounter = cHitCounter;
-				cVcth += cStep;
-			}
-		}
+		if ( cAllOne ) break;
+		for ( BeBoard* pBoard : fBoardVector )
+		  {
+		    fBeBoardInterface->Start( pBoard );
+		    while ( cN <=  cEventsperVcth )
+		      {
+			// Run( pBoard, cNthAcq );
+			fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+			const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+			
+			// Loop over Events from this Acquisition
+			for ( auto& cEvent : events )
+			  {
+			    // loop over Modules & Cbcs and count hits separately
+			    cHitCounter += fillSCurves( pBoard,  cEvent, cVcth );
+			    cN++;
+			  }
+			cNthAcq++;
+		      }
+		    fBeBoardInterface->Stop( pBoard, cNthAcq );
+		    // std::cout << +cVcth << " " << cHitCounter << std::endl;
+		    // Draw the thing after each point
+		    updateSCurveCanvas( pBoard );
+		    
+		    // check if the hitcounter is all ones
+		    
+		    if ( cNonZero == false && cHitCounter != 0 )
+		      {
+			cDoubleVcth = cVcth;
+			cNonZero = true;
+			cVcth -= 2 * cStep;
+			cStep /= 10;
+			continue;
+		      }
+		    if ( cNonZero && cHitCounter != 0 )
+		      {
+			// check if all Cbcs have reached full occupancy
+			if ( cHitCounter > 0.95 * cEventsperVcth * fNCbc * NCHANNELS ) cAllOneCounter++;
+			// add a second check if the global SCurve slope is 0 for 10 consecutive Vcth values
+			// if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
+		      }
+		    if ( cAllOneCounter >= 10 ) cAllOne = true;
+		    // if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
+		    
+		    if ( cAllOne )
+		      {
+			std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
+			break;
+		      }
+		    // else if ( cSlopeZero )
+		    // {
+		    //   std::cout << "Slope of SCurve 0 -- ending the scan at VCth " << +cVcth << std::endl;
+		    //  break;
+		    // }
+		    
+		    cOldHitCounter = cHitCounter;
+		    cVcth += cStep;
+		  }
 	}
 
 	// Fit and save the SCurve & Fit - extract the right threshold
@@ -404,10 +395,9 @@ void HybridTester::TestRegisters()
 		void visit( Cbc& pCbc ) {
 			uint8_t cFirstBitPattern = 0xAA;
 			uint8_t cSecondBitPattern = 0x55;
-			
+
 			CbcRegMap cMap = pCbc.getRegMap();
 			for ( const auto& cReg : cMap ) {
-				
 				if ( !fInterface->WriteCbcReg( &pCbc, cReg.first, cFirstBitPattern, true ) ) fBadRegisters[pCbc.getCbcId()] .insert( cReg.first );
 				if ( !fInterface->WriteCbcReg( &pCbc, cReg.first, cSecondBitPattern, true ) ) fBadRegisters[pCbc.getCbcId()] .insert( cReg.first );
 			}
@@ -448,48 +438,41 @@ void HybridTester::Measure()
 
 	CbcRegReader cReader( fCbcInterface, "VCth" );
 	accept( cReader );
-
 	fHistTop->GetYaxis()->SetRangeUser( 0, fTotalEvents );
 	fHistBottom->GetYaxis()->SetRangeUser( 0, fTotalEvents );
 	
-	for ( auto& cShelve : fShelveVector )
-	{
-		for ( BeBoard* pBoard : cShelve->fBoardVector )
-		{
-			uint32_t cN = 1;
-			uint32_t cNthAcq = 0;
-
-			fBeBoardInterface->Start( pBoard );
-
-			while ( cN <=  fTotalEvents )
-			{
-				// Run( pBoard, cNthAcq );
-				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-				// Loop over Events from this Acquisition
-				for ( auto& cEvent : events )
-				{
-					HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
-					pBoard->accept( cFiller );
-
-					if ( cN % 100 == 0 )
-						UpdateHists();
-
-						cN++;
-				}
-				cNthAcq++;
-			}
-			fBeBoardInterface->Stop( pBoard, cNthAcq );
-					
-		}
-
-	}
-	
+	for ( BeBoard* pBoard : fBoardVector )
+	  {
+	    uint32_t cN = 1;
+	    uint32_t cNthAcq = 0;
+	    
+	    fBeBoardInterface->Start( pBoard );
+	    
+	    while ( cN <=  fTotalEvents )
+	      {
+		// Run( pBoard, cNthAcq );
+		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+		
+		// Loop over Events from this Acquisition
+		for ( auto& cEvent : events )
+		  {
+		    HistogramFiller cFiller( fHistBottom, fHistTop, cEvent );
+		    pBoard->accept( cFiller );
+		    
+		    if ( cN % 100 == 0 )
+		      UpdateHists();
+		    
+		    cN++;
+		  }
+		cNthAcq++;
+	      }
+	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	  }
 	fHistTop->Scale( 100 / double_t( fTotalEvents ) );
 	fHistTop->GetYaxis()->SetRangeUser( 0, 100 );
 	fHistBottom->Scale( 100 / double_t( fTotalEvents ) );
-	fHistBottom->GetYaxis()->SetRangeUser( 0, 100 );	
+	fHistBottom->GetYaxis()->SetRangeUser( 0, 100 );
 	UpdateHists();
 
 	std::cout << "Mean occupancy at the Top side: " << fHistTop->Integral()/(double)(fNCbc*127) << std::endl;
@@ -635,69 +618,5 @@ void HybridTester::SaveResults()
 	{
 		cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";
 		fSCurveCanvas->SaveAs( cPdfName.c_str() );
-	}	
-
+	}
 }
-
-
-void HybridTester::TestChannels()
-{
-	std::cout << std::endl << "Running channels testing tool ... " << std::endl;
-	std::cout << "Decision threshold: " << CH_DIAGNOSIS_DECISION_TH << "%" << std::endl;
-	double cChannelDiagnosisThreshold = CH_DIAGNOSIS_DECISION_TH;
-	std::vector<int> cBadChannelsTop;
-	std::vector<int> cBadChannelsBottom;
-	int cHistogramBinId;
-	int cTopHistSize = fNCbc * 127 + 1;
-	int cBottomHistSize = cTopHistSize;
-
-	for ( cHistogramBinId = 1; cHistogramBinId < cTopHistSize; cHistogramBinId++ )
-	{
-		if ( fHistTopMerged->GetBinContent( cHistogramBinId ) * 100 / fTotalEvents < cChannelDiagnosisThreshold ) cBadChannelsTop.push_back( cHistogramBinId - 1 );
-	}
-
-	for ( cHistogramBinId = 1; cHistogramBinId < cBottomHistSize; cHistogramBinId++ )
-	{
-		if ( fHistTopMerged->GetBinContent( cHistogramBinId ) * 100 / fTotalEvents < cChannelDiagnosisThreshold ) cBadChannelsBottom.push_back( cHistogramBinId - 1 );
-	}
-
-	ofstream report( fDirectoryName + "/channels_test.txt" ); // Create a file in the current directory
-	report << "Testing run with decision threshold: " + patch::to_string( cChannelDiagnosisThreshold ) + "%" << std::endl;
-	report << "Channels numbering convention from 0 to " + patch::to_string( cTopHistSize - 2 ) + " for both sides " << std::endl;
-	report << "Number of malfunctioning channels:  " + patch::to_string( cBadChannelsTop.size() + cBadChannelsBottom.size() ) << std::endl;
-	report << "Malfunctioning channels from TOP side:  " + int_vector_to_string( cBadChannelsTop ) << std::endl;
-	report << "Malfunctioning channels from BOTTOM side:  " + int_vector_to_string( cBadChannelsBottom ) << std::endl;
-	report.close();
-	std::cout << "Channels testing report written to: " << std::endl << fDirectoryName + "/channels_test.txt" << std::endl;
-}
-
-void HybridTester::TestChannels( double pDecisionThreshold )
-{
-	std::cout << std::endl << "Running channels testing tool 2... " << std::endl;
-	std::cout << "Decision threshold: " << pDecisionThreshold << "%" << std::endl;
-	std::vector<int> cBadChannelsTop;
-	std::vector<int> cBadChannelsBottom;
-	int cTopHistSize = fNCbc * 127 + 1;
-	int cBottomHistSize = cTopHistSize;
-	int cHistogramBinId;
-
-	for ( cHistogramBinId = 1; cHistogramBinId < cTopHistSize; cHistogramBinId++ )
-	{
-		if ( fHistTopMerged->GetBinContent( cHistogramBinId ) * 100 / fTotalEvents < pDecisionThreshold ) cBadChannelsTop.push_back( cHistogramBinId - 1 );
-	}
-
-	for ( cHistogramBinId = 1; cHistogramBinId < cBottomHistSize; cHistogramBinId++ )
-	{
-		if ( fHistBottomMerged->GetBinContent( cHistogramBinId ) * 100 / fTotalEvents < pDecisionThreshold ) cBadChannelsBottom.push_back( cHistogramBinId - 1 );
-	}
-
-	ofstream report( fDirectoryName + "/channels_test2.txt" ); // Create a file in the current directory
-	report << "Testing run with decision threshold: " + patch::to_string( pDecisionThreshold ) + "%" << std::endl;
-	report << "Channels numbering convention from 0 to " + patch::to_string( cTopHistSize - 2 ) + " for both sides " << std::endl;
-	report << "Number of malfunctioning channels:  " + patch::to_string( cBadChannelsTop.size() + cBadChannelsBottom.size() ) << std::endl;
-	report << "Malfunctioning channels from TOP side:  " + int_vector_to_string( cBadChannelsTop ) << std::endl;
-	report << "Malfunctioning channels from BOTTOM side:  " + int_vector_to_string( cBadChannelsBottom ) << std::endl;
-	report.close();
-	std::cout << "Channels testing report written to: " << std::endl << fDirectoryName + "/channels_test2.txt" << std::endl;
-}
-

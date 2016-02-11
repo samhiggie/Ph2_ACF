@@ -18,79 +18,74 @@ void PedeNoise::Initialise()
     uint32_t cCbcIdMax = 0;
     uint32_t cFeCount = 0;
 
-    for ( auto cShelve : fShelveVector )
-    {
-        uint32_t cShelveId = cShelve->getShelveId();
+    for ( auto cBoard : fBoardVector )
+      {
+	uint32_t cBoardId = cBoard->getBeId();
+	
+	for ( auto cFe : cBoard->fModuleVector )
+	  {
+	    uint32_t cFeId = cFe->getFeId();
+	    cFeCount++;
+	    
+	    for ( auto cCbc : cFe->fCbcVector )
+	      {
+		uint32_t cCbcId = cCbc->getCbcId();
+		cCbcCount++;
+		if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
+		
+		// populate the channel vector
+		std::vector<Channel> cChanVec;
+		
+		for ( uint8_t cChan = 0; cChan < 254; cChan++ )
+		  cChanVec.push_back( Channel( cBoardId, cFeId, cCbcId, cChan ) );
+		
+		fCbcChannelMap[cCbc] = cChanVec;
+		
+		// the fits are initialized when I fit!
+		
+		TString cHistname;
+		TH1F* cHist;
+		
+		// for noise maps etc.
+		
+		cHistname = Form( "Fe%dCBC%d_Offsets", cFe->getFeId(), cCbc->getCbcId() );
+		cHist = new TH1F( cHistname, cHistname, 254, -0.5, 253.5 );
+		bookHistogram( cCbc, "Cbc_Offsets", cHist );
+		
+		cHistname = Form( "Fe%dCBC%d_Noise", cFe->getFeId(), cCbc->getCbcId() );
+		cHist = new TH1F( cHistname, cHistname, 200, 0, 20 );
+		bookHistogram( cCbc, "Cbc_Noise", cHist );
+		
+		cHistname = Form( "Fe%dCBC%d_StripNoise", cFe->getFeId(), cCbc->getCbcId() );
+		cHist = new TH1F( cHistname, cHistname, 254, -0.5, 253.5 );
+		bookHistogram( cCbc, "Cbc_Stripnoise", cHist );
+		
+		cHistname = Form( "Fe%dCBC%d_Pedestal", cFe->getFeId(), cCbc->getCbcId() );
+		cHist = new TH1F( cHistname, cHistname, 510, -0.5, 254.5 );
+		bookHistogram( cCbc, "Cbc_Pedestal", cHist );
 
-        for ( auto cBoard : cShelve->fBoardVector )
-        {
-            uint32_t cBoardId = cBoard->getBeId();
-
-            for ( auto cFe : cBoard->fModuleVector )
-            {
-                uint32_t cFeId = cFe->getFeId();
-                cFeCount++;
-
-                for ( auto cCbc : cFe->fCbcVector )
-                {
-                    uint32_t cCbcId = cCbc->getCbcId();
-                    cCbcCount++;
-                    if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
-
-                    // populate the channel vector
-                    std::vector<Channel> cChanVec;
-
-                    for ( uint8_t cChan = 0; cChan < 254; cChan++ )
-                        cChanVec.push_back( Channel( cBoardId, cFeId, cCbcId, cChan ) );
-
-                    fCbcChannelMap[cCbc] = cChanVec;
-
-                    // the fits are initialized when I fit!
-
-                    TString cHistname;
-                    TH1F* cHist;
-
-                    // for noise maps etc.
-
-                    cHistname = Form( "Fe%dCBC%d_Offsets", cFe->getFeId(), cCbc->getCbcId() );
-                    cHist = new TH1F( cHistname, cHistname, 254, -0.5, 253.5 );
-                    bookHistogram( cCbc, "Cbc_Offsets", cHist );
-
-                    cHistname = Form( "Fe%dCBC%d_Noise", cFe->getFeId(), cCbc->getCbcId() );
-                    cHist = new TH1F( cHistname, cHistname, 200, 0, 20 );
-                    bookHistogram( cCbc, "Cbc_Noise", cHist );
-
-                    cHistname = Form( "Fe%dCBC%d_StripNoise", cFe->getFeId(), cCbc->getCbcId() );
-                    cHist = new TH1F( cHistname, cHistname, 254, -0.5, 253.5 );
-                    bookHistogram( cCbc, "Cbc_Stripnoise", cHist );
-
-                    cHistname = Form( "Fe%dCBC%d_Pedestal", cFe->getFeId(), cCbc->getCbcId() );
-                    cHist = new TH1F( cHistname, cHistname, 510, -0.5, 254.5 );
-                    bookHistogram( cCbc, "Cbc_Pedestal", cHist );
-
-                    cHistname = Form( "Fe%dCBC%d_Noise_even", cFe->getFeId(), cCbc->getCbcId() );
-                    cHist = new TH1F( cHistname, cHistname, 128, -0.5, 127.5 );
-                    bookHistogram( cCbc, "Cbc_Noise_even", cHist );
-
-                    cHistname = Form( "Fe%dCBC%d_Noise_odd", cFe->getFeId(), cCbc->getCbcId() );
-                    cHist = new TH1F( cHistname, cHistname, 128, -0.5, 127.5 );
-                    cHist->SetLineColor( 2 );
-                    bookHistogram( cCbc, "Cbc_noise_odd", cHist );
-
-                }
-
-                TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
-                TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 200, 0, 20 );
-                bookHistogram( cFe, "Module_noisehist", cNoise );
-
-                cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
-                TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, ( NCHANNELS * cCbcCount ) + 1, -.5, cCbcCount * NCHANNELS + .5 );
-                bookHistogram( cFe, "Module_Stripnoise", cStripnoise );
-            }
-            fNCbc = cCbcCount;
-            fNFe = cFeCount;
-        }
-    }
+		cHistname = Form( "Fe%dCBC%d_Noise_even", cFe->getFeId(), cCbc->getCbcId() );
+		cHist = new TH1F( cHistname, cHistname, 128, -0.5, 127.5 );
+		bookHistogram( cCbc, "Cbc_Noise_even", cHist );
+		
+		cHistname = Form( "Fe%dCBC%d_Noise_odd", cFe->getFeId(), cCbc->getCbcId() );
+		cHist = new TH1F( cHistname, cHistname, 128, -0.5, 127.5 );
+		cHist->SetLineColor( 2 );
+		bookHistogram( cCbc, "Cbc_noise_odd", cHist );
+		
+	      }
+	    
+	    TString cNoisehistname =  Form( "Fe%d_Noise", cFeId );
+	    TH1F* cNoise = new TH1F( cNoisehistname, cNoisehistname, 200, 0, 20 );
+	    bookHistogram( cFe, "Module_noisehist", cNoise );
+	    
+	    cNoisehistname = Form( "Fe%d_StripNoise", cFeId );
+	    TProfile* cStripnoise = new TProfile( cNoisehistname, cNoisehistname, ( NCHANNELS * cCbcCount ) + 1, -.5, cCbcCount * NCHANNELS + .5 );
+	    bookHistogram( cFe, "Module_Stripnoise", cStripnoise );
+	  }
+	fNCbc = cCbcCount;
+	fNFe = cFeCount;
+      }
     uint32_t cPads = ( cCbcIdMax > cCbcCount ) ? cCbcIdMax : cCbcCount;
 
 
@@ -98,7 +93,7 @@ void PedeNoise::Initialise()
     fNoiseCanvas->DivideSquare( 2 * cPads );
     fPedestalCanvas->DivideSquare( 2 * cPads );
     fFeSummaryCanvas->DivideSquare( fNFe );
-
+    
     // now read the settings from the map
     auto cSetting = fSettingsMap.find( "HoleMode" );
     fHoleMode = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 1;
@@ -108,7 +103,7 @@ void PedeNoise::Initialise()
     fFitted = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
     cSetting = fSettingsMap.find( "TestPulseAmplitude" );
     fTestPulseAmplitude = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 0;
-
+    
     // Decide if test pulse or not
     if ( ( fTestPulseAmplitude == 0x00 ) || ( fTestPulseAmplitude == 0xFF ) ) fTestPulse = 0;
     else fTestPulse = 1;
@@ -157,71 +152,66 @@ void PedeNoise::measureNoise()
     // now plot the histogram with the noise
 
     // instead of looping over the Histograms and finding everything according to the CBC from the map, just loop the CBCs
-    for ( auto cShelve : fShelveVector )
-    {
-        uint32_t cShelveId = cShelve->getShelveId();
-
-        for ( auto cBoard : cShelve->fBoardVector )
-        {
-            uint32_t cBoardId = cBoard->getBeId();
-
-            for ( auto cFe : cBoard->fModuleVector )
-            {
-                uint32_t cFeId = cFe->getFeId();
-
-                // here get the per FE histograms
-                TH1F* cTmpHist = static_cast<TH1F*>( getHist( cFe, "Module_noisehist" ) );
-                TProfile* cTmpProfile = static_cast<TProfile*>( getHist( cFe, "Module_Stripnoise" ) );
-
-                for ( auto cCbc : cFe->fCbcVector )
-                {
-                    uint32_t cCbcId = static_cast<int>( cCbc->getCbcId() );
-
-                    // here get the per-CBC histograms
-
-                    TH1F* cNoiseHist = static_cast<TH1F*>( getHist( cCbc, "Cbc_Noise" ) );
-                    TH1F* cPedeHist  = static_cast<TH1F*>( getHist( cCbc, "Cbc_Pedestal" ) );
-                    TH1F* cStripHist = static_cast<TH1F*>( getHist( cCbc, "Cbc_Stripnoise" ) );
-                    TH1F* cEvenHist  = static_cast<TH1F*>( getHist( cCbc, "Cbc_Noise_even" ) );
-                    TH1F* cOddHist   = static_cast<TH1F*>( getHist( cCbc, "Cbc_noise_odd" ) );
-
-                    std::cout << BOLDRED << "Average noise on FE " << +cCbc->getFeId() << " CBC " << +cCbc->getCbcId() << " : " << cNoiseHist->GetMean() << " ; RMS : " << cNoiseHist->GetRMS() << " ; Pedestal : " << cPedeHist->GetMean() << " VCth units." << RESET << std::endl;
-
-                    fNoiseCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
-                    // cStripHist->DrawCopy();
-                    cEvenHist->DrawCopy();
-                    cOddHist->DrawCopy( "same" );
-
-                    fPedestalCanvas->cd( cCbc->getCbcId() + 1 );
-                    cNoiseHist->DrawCopy();
-
-                    fPedestalCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
-                    cPedeHist->DrawCopy();
-                    fNoiseCanvas->Update();
-                    fPedestalCanvas->Update();
+    for ( auto cBoard : fBoardVector )
+      {
+	uint32_t cBoardId = cBoard->getBeId();
+	
+	for ( auto cFe : cBoard->fModuleVector )
+	  {
+	    uint32_t cFeId = cFe->getFeId();
+	    
+	    // here get the per FE histograms
+	    TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( cFe, "Module_noisehist" ) );
+	    TProfile* cTmpProfile = dynamic_cast<TProfile*>( getHist( cFe, "Module_Stripnoise" ) );
+	    
+	    for ( auto cCbc : cFe->fCbcVector )
+	      {
+		uint32_t cCbcId = static_cast<int>( cCbc->getCbcId() );
+		
+		// here get the per-CBC histograms
+		
+		TH1F* cNoiseHist = dynamic_cast<TH1F*>( getHist( cCbc, "Cbc_Noise" ) );
+		TH1F* cPedeHist  = dynamic_cast<TH1F*>( getHist( cCbc, "Cbc_Pedestal" ) );
+		TH1F* cStripHist = dynamic_cast<TH1F*>( getHist( cCbc, "Cbc_Stripnoise" ) );
+		TH1F* cEvenHist  = dynamic_cast<TH1F*>( getHist( cCbc, "Cbc_Noise_even" ) );
+		TH1F* cOddHist   = dynamic_cast<TH1F*>( getHist( cCbc, "Cbc_noise_odd" ) );
+		
+		std::cout << BOLDRED << "Average noise on FE " << +cCbc->getFeId() << " CBC " << +cCbc->getCbcId() << " : " << cNoiseHist->GetMean() << " ; RMS : " << cNoiseHist->GetRMS() << " ; Pedestal : " << cPedeHist->GetMean() << " VCth units." << RESET << std::endl;
+		
+		fNoiseCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
+		// cStripHist->DrawCopy();
+		cEvenHist->DrawCopy();
+		cOddHist->DrawCopy( "same" );
+		
+		fPedestalCanvas->cd( cCbc->getCbcId() + 1 );
+		cNoiseHist->DrawCopy();
+		
+		fPedestalCanvas->cd( fNCbc + cCbc->getCbcId() + 1 );
+		cPedeHist->DrawCopy();
+		fNoiseCanvas->Update();
+		fPedestalCanvas->Update();
 #ifdef __HTTP__
-                    fHttpServer->ProcessRequests();
+		fHttpServer->ProcessRequests();
 #endif
-                    // here add the CBC histos to the module histos
-                    cTmpHist->Add( cNoiseHist );
-                    for ( int cBin = 0; cBin < NCHANNELS; cBin++ )
-                    {
-                        // std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
-                        if ( cStripHist->GetBinContent( cBin ) > 0 && cStripHist->GetBinContent( cBin ) < 255 ) cTmpProfile->Fill( cCbcId * 254 + cBin, cStripHist->GetBinContent( cBin ) );
-                        // else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
-                    }
-                }
-                fFeSummaryCanvas->cd( cFeId + 1 );
-                cTmpHist->DrawCopy();
-                fFeSummaryCanvas->cd( fNFe + cFeId + 1 );
-                cTmpProfile->DrawCopy();
-                fFeSummaryCanvas->Update();
+		// here add the CBC histos to the module histos
+		cTmpHist->Add( cNoiseHist );
+		for ( int cBin = 0; cBin < NCHANNELS; cBin++ )
+		  {
+		    // std::cout << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) << std::endl;
+		    if ( cStripHist->GetBinContent( cBin ) > 0 && cStripHist->GetBinContent( cBin ) < 255 ) cTmpProfile->Fill( cCbcId * 254 + cBin, cStripHist->GetBinContent( cBin ) );
+		    // else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
+		  }
+	      }
+	    fFeSummaryCanvas->cd( cFeId + 1 );
+	    cTmpHist->DrawCopy();
+	    fFeSummaryCanvas->cd( fNFe + cFeId + 1 );
+	    cTmpProfile->DrawCopy();
+	    fFeSummaryCanvas->Update();
 #ifdef __HTTP__
-                fHttpServer->ProcessRequests();
+	    fHttpServer->ProcessRequests();
 #endif
-            }
-        }
-    }
+	  }
+      }
 }
 
 
@@ -232,63 +222,58 @@ void PedeNoise::enableTestGroupforNoise( int  pTGrpId )
 {
     uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
 
-    for ( auto cShelve : fShelveVector )
-    {
-        uint32_t cShelveId = cShelve->getShelveId();
-
-        for ( auto cBoard : cShelve->fBoardVector )
-        {
-            uint32_t cBoardId = cBoard->getBeId();
-
-            for ( auto cFe : cBoard->fModuleVector )
-            {
-                uint32_t cFeId = cFe->getFeId();
-
-                for ( auto cCbc : cFe->fCbcVector )
-                {
-                    uint32_t cCbcId = cCbc->getCbcId();
-
-                    TH1F* cOffsets = static_cast<TH1F*>( getHist( cCbc, "Cbc_Offsets" ) );
-
-                    RegisterVector cRegVec;
-                    // iterate the groups (first is ID, second is vec<uint8_t>)
-                    for ( auto& cGrp : fTestGroupChannelMap )
-                    {
-                        // if grpid = -1, do nothing (all channels)
-                        if ( cGrp.first == -1 ) continue;
-                        // if the group is not my current grout
-                        if ( cGrp.first != pTGrpId )
-                        {
-                            // iterate the channels and push back 0 or FF
-                            for ( auto& cChan : cGrp.second )
-                            {
-                                TString cRegName = Form( "Channel%03d", cChan + 1 );
-                                cRegVec.push_back( { cRegName.Data(), cOffset } );
-                                // std::cout << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << +cOffset << std::endl;
-                            }
-                        }
-                        // if it is the current group, get the original offset values
-                        else if ( cGrp.first == pTGrpId )
-                        {
-                            // iterate over the channels in the test group and find the corresponding offset in the original offset map
-                            for ( auto& cChan : cGrp.second )
-                            {
-
-                                uint8_t cEnableOffset = cOffsets->GetBinContent( cChan );
-                                TString cRegName = Form( "Channel%03d", cChan + 1 );
-                                cRegVec.push_back( { cRegName.Data(), cEnableOffset } );
-                                // std::cout << GREEN << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << std::hex << "0x" << +cEnableOffset << std::dec << RESET << std::endl;
-                            }
-                        }
-                    }
-
-                    // now I should have 0 or FF as offset for all channels except the one in my test group
-                    // this now needs to be written to the CBCs
-                    fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
-                }
-            }
-        }
-    }
+    for ( auto cBoard : fBoardVector )
+      {
+	uint32_t cBoardId = cBoard->getBeId();
+	
+	for ( auto cFe : cBoard->fModuleVector )
+	  {
+	    uint32_t cFeId = cFe->getFeId();
+	    
+	    for ( auto cCbc : cFe->fCbcVector )
+	      {
+		uint32_t cCbcId = cCbc->getCbcId();
+		
+		TH1F* cOffsets = dynamic_cast<TH1F*>( getHist( cCbc, "Cbc_Offsets" ) );
+		
+		RegisterVector cRegVec;
+		// iterate the groups (first is ID, second is vec<uint8_t>)
+		for ( auto& cGrp : fTestGroupChannelMap )
+		  {
+		    // if grpid = -1, do nothing (all channels)
+		    if ( cGrp.first == -1 ) continue;
+		    // if the group is not my current grout
+		    if ( cGrp.first != pTGrpId )
+		      {
+			// iterate the channels and push back 0 or FF
+			for ( auto& cChan : cGrp.second )
+			  {
+			    TString cRegName = Form( "Channel%03d", cChan + 1 );
+			    cRegVec.push_back( { cRegName.Data(), cOffset } );
+			    // std::cout << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << +cOffset << std::endl;
+			  }
+		      }
+		    // if it is the current group, get the original offset values
+		    else if ( cGrp.first == pTGrpId )
+		      {
+			// iterate over the channels in the test group and find the corresponding offset in the original offset map
+			for ( auto& cChan : cGrp.second )
+			  {
+			    
+			    uint8_t cEnableOffset = cOffsets->GetBinContent( cChan );
+			    TString cRegName = Form( "Channel%03d", cChan + 1 );
+			    cRegVec.push_back( { cRegName.Data(), cEnableOffset } );
+			    // std::cout << GREEN << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << std::hex << "0x" << +cEnableOffset << std::dec << RESET << std::endl;
+			  }
+		      }
+		  }
+		
+		// now I should have 0 or FF as offset for all channels except the one in my test group
+		// this now needs to be written to the CBCs
+		fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
+	      }
+	  }
+      }
     std::cout << "Disabling all TGroups except " << pTGrpId << " ! " << std::endl;
 }
 
@@ -300,11 +285,11 @@ void PedeNoise::processSCurvesNoise( TString pParameter, uint8_t pValue, bool pD
     for ( auto& cCbc : fCbcChannelMap )
     {
 
-        TH1F* cNoiseHist = static_cast<TH1F*>( getHist( cCbc.first, "Cbc_Noise" ) );
-        TH1F* cPedeHist  = static_cast<TH1F*>( getHist( cCbc.first, "Cbc_Pedestal" ) );
-        TH1F* cStripHist = static_cast<TH1F*>( getHist( cCbc.first, "Cbc_Stripnoise" ) );
-        TH1F* cEvenHist  = static_cast<TH1F*>( getHist( cCbc.first, "Cbc_Noise_even" ) );
-        TH1F* cOddHist   = static_cast<TH1F*>( getHist( cCbc.first, "Cbc_noise_odd" ) );
+        TH1F* cNoiseHist = dynamic_cast<TH1F*>( getHist( cCbc.first, "Cbc_Noise" ) );
+        TH1F* cPedeHist  = dynamic_cast<TH1F*>( getHist( cCbc.first, "Cbc_Pedestal" ) );
+        TH1F* cStripHist = dynamic_cast<TH1F*>( getHist( cCbc.first, "Cbc_Stripnoise" ) );
+        TH1F* cEvenHist  = dynamic_cast<TH1F*>( getHist( cCbc.first, "Cbc_Noise_even" ) );
+        TH1F* cOddHist   = dynamic_cast<TH1F*>( getHist( cCbc.first, "Cbc_noise_odd" ) );
 
         // Loop the Channels
         bool cFirst = true;
@@ -370,39 +355,34 @@ void PedeNoise::saveInitialOffsets()
 {
     std::cout << "Initializing map with original Offsets for later ... " << std::endl;
     // save the initial offsets for Noise measurement in a map
-    for ( auto cShelve : fShelveVector )
-    {
-        uint32_t cShelveId = cShelve->getShelveId();
-
-        for ( auto cBoard : cShelve->fBoardVector )
-        {
-            uint32_t cBoardId = cBoard->getBeId();
-
-            for ( auto cFe : cBoard->fModuleVector )
-            {
-                uint32_t cFeId = cFe->getFeId();
-
-                for ( auto cCbc : cFe->fCbcVector )
-                {
-                    uint32_t cCbcId = cCbc->getCbcId();
-
-                    // map to instert in fOffsetMap
-                    // <cChan, Offset>
-                    // std::map<uint8_t, uint8_t> cCbcOffsetMap;
-                    TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Cbc_Offsets" ) );
-                    for ( uint8_t cChan = 0; cChan < NCHANNELS; cChan++ )
-                    {
-                        TString cRegName = Form( "Channel%03d", cChan + 1 );
-                        uint8_t cOffset = cCbc->getReg( cRegName.Data() );
-                        cOffsetHist->SetBinContent( cChan, cOffset );
-                        // cCbcOffsetMap[cChan] = cOffset;
-                        // std::cout << "DEBUG Original Offset for CBC " << cCbcId << " channel " << +cChan << " " << +cOffset << std::endl;
-                    }
-                    // fOffsetMap[cCbc] = cCbcOffsetMap;
-                }
-            }
-        }
-    }
+    for ( auto cBoard : fBoardVector )
+      {
+	uint32_t cBoardId = cBoard->getBeId();
+	
+	for ( auto cFe : cBoard->fModuleVector )
+	  {
+	    uint32_t cFeId = cFe->getFeId();
+	    
+	    for ( auto cCbc : cFe->fCbcVector )
+	      {
+		uint32_t cCbcId = cCbc->getCbcId();
+		
+		// map to instert in fOffsetMap
+		// <cChan, Offset>
+		// std::map<uint8_t, uint8_t> cCbcOffsetMap;
+		TH1F* cOffsetHist = dynamic_cast<TH1F*>( getHist( cCbc, "Cbc_Offsets" ) );
+		for ( uint8_t cChan = 0; cChan < NCHANNELS; cChan++ )
+		  {
+		    TString cRegName = Form( "Channel%03d", cChan + 1 );
+		    uint8_t cOffset = cCbc->getReg( cRegName.Data() );
+		    cOffsetHist->SetBinContent( cChan, cOffset );
+		    // cCbcOffsetMap[cChan] = cOffset;
+		    // std::cout << "DEBUG Original Offset for CBC " << cCbcId << " channel " << +cChan << " " << +cOffset << std::endl;
+		  }
+		// fOffsetMap[cCbc] = cCbcOffsetMap;
+	      }
+	  }
+      }
 }
 
 void PedeNoise::SaveResults()

@@ -39,7 +39,7 @@ namespace Ph2_HwDescription
 
 		// C'tors take FrontEndDescription or hierachy of connection
 		Module( const FrontEndDescription& pFeDesc, uint8_t pModuleId );
-		Module( uint8_t pShelveId, uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pModuleId );
+		Module( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pModuleId );
 
 		// Default C'tor
 		Module();

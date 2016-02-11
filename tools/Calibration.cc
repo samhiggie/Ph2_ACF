@@ -33,56 +33,51 @@ void Calibration::Initialise( bool pAllChan )
 	uint32_t cCbcIdMax = 0;
 	uint32_t cFeCount = 0;
 
-	for ( auto cShelve : fShelveVector )
-	{
-		uint32_t cShelveId = cShelve->getShelveId();
+	for ( auto cBoard : fBoardVector )
+	  {
+	    uint32_t cBoardId = cBoard->getBeId();
+	    
+	    for ( auto cFe : cBoard->fModuleVector )
+	      {
+		uint32_t cFeId = cFe->getFeId();
+		cFeCount++;
 
-		for ( auto cBoard : cShelve->fBoardVector )
-		{
-			uint32_t cBoardId = cBoard->getBeId();
+		for ( auto cCbc : cFe->fCbcVector )
+		  {
+		    uint32_t cCbcId = cCbc->getCbcId();
+		    cCbcCount++;
+		    if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
+		    
+		    fVplusMap[cCbc] = 0;
 
-			for ( auto cFe : cBoard->fModuleVector )
-			{
-				uint32_t cFeId = cFe->getFeId();
-				cFeCount++;
+		    TString cName = Form( "h_VplusValues_Fe%dCbc%d", cFeId, cCbcId );
+		    TObject* cObj = gROOT->FindObject( cName );
+		    if ( cObj ) delete cObj;
+		    TProfile* cHist = new TProfile( cName, Form( "Vplus Values for Test Groups FE%d CBC%d ; Test Group; Vplus", cFeId, cCbcId ), 8, -.5, 7.5 );
+		    cHist->SetMarkerStyle( 20 );
+		    // cHist->SetLineWidth( 2 );
+		    bookHistogram( cCbc, "Vplus", cHist );
 
-				for ( auto cCbc : cFe->fCbcVector )
-				{
-					uint32_t cCbcId = cCbc->getCbcId();
-					cCbcCount++;
-					if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
+		    cName = Form( "h_Offsets_Fe%dCbc%d", cFeId, cCbcId );
+		    cObj = gROOT->FindObject( cName );
+		    if ( cObj ) delete cObj;
+		    TH1F* cOffsetHist = new TH1F( cName, Form( "Offsets FE%d CBC%d ; Channel; Offset", cFeId, cCbcId ), 254, -.5, 253.5 );
+		    uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
+		    for ( int iBin = 0; iBin < NCHANNELS; iBin++ )
+		      cOffsetHist->SetBinContent( iBin, cOffset );
+		    bookHistogram( cCbc, "Offsets", cOffsetHist );
 
-					fVplusMap[cCbc] = 0;
-
-					TString cName = Form( "h_VplusValues_Fe%dCbc%d", cFeId, cCbcId );
-					TObject* cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					TProfile* cHist = new TProfile( cName, Form( "Vplus Values for Test Groups FE%d CBC%d ; Test Group; Vplus", cFeId, cCbcId ), 8, -.5, 7.5 );
-					cHist->SetMarkerStyle( 20 );
-					// cHist->SetLineWidth( 2 );
-					bookHistogram( cCbc, "Vplus", cHist );
-
-					cName = Form( "h_Offsets_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					TH1F* cOffsetHist = new TH1F( cName, Form( "Offsets FE%d CBC%d ; Channel; Offset", cFeId, cCbcId ), 254, -.5, 253.5 );
-					uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
-					for ( int iBin = 0; iBin < NCHANNELS; iBin++ )
-						cOffsetHist->SetBinContent( iBin, cOffset );
-					bookHistogram( cCbc, "Offsets", cOffsetHist );
-
-					cName = Form( "h_Occupancy_Fe%dCbc%d", cFeId, cCbcId );
-					cObj = gROOT->FindObject( cName );
-					if ( cObj ) delete cObj;
-					TH1F* cOccHist = new TH1F( cName, Form( "Occupancy FE%d CBC%d ; Channel; Occupancy", cFeId, cCbcId ), 254, -.5, 254.5 );
-					bookHistogram( cCbc, "Occupancy", cOccHist );
-				}
-			}
-			fNCbc = cCbcCount;
-			fNFe = cFeCount;
-		}
-	}
-
+		    cName = Form( "h_Occupancy_Fe%dCbc%d", cFeId, cCbcId );
+		    cObj = gROOT->FindObject( cName );
+		    if ( cObj ) delete cObj;
+		    TH1F* cOccHist = new TH1F( cName, Form( "Occupancy FE%d CBC%d ; Channel; Occupancy", cFeId, cCbcId ), 254, -.5, 254.5 );
+		    bookHistogram( cCbc, "Occupancy", cOccHist );
+		  }
+	      }
+	    fNCbc = cCbcCount;
+	    fNFe = cFeCount;
+	  }
+	
 	uint32_t cPads = ( cCbcIdMax > cCbcCount ) ? cCbcIdMax : cCbcCount;
 
 	fVplusCanvas->DivideSquare( cPads );
@@ -288,37 +283,34 @@ void Calibration::bitwiseOffset( int pTGroup )
 
 void Calibration::measureOccupancy( uint32_t pNEvents, int pTGroup )
 {
-	for ( auto cShelve : fShelveVector )
+  for ( BeBoard* pBoard : fBoardVector )
+    {
+
+      uint32_t cN = 0;
+      uint32_t cNthAcq = 0;
+
+      fBeBoardInterface->Start( pBoard );
+
+      while ( cN < pNEvents )
 	{
-		for ( BeBoard* pBoard : cShelve->fBoardVector )
+	  fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+	  std::vector<Event*> events = fBeBoardInterface->GetEvents( pBoard );
+
+	  // if this is for channelwise offset tuning, iterate the events and fill the occupancy histogram
+	  
+	  for ( auto& cEvent : events )
+	    {
+	      for ( auto cFe : pBoard->fModuleVector )
 		{
-
-			uint32_t cN = 0;
-			uint32_t cNthAcq = 0;
-
-			fBeBoardInterface->Start( pBoard );
-
-			while ( cN < pNEvents )
-			{
-				fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-				std::vector<Event*> events = fBeBoardInterface->GetEvents( pBoard );
-
-				// if this is for channelwise offset tuning, iterate the events and fill the occupancy histogram
-
-				for ( auto& cEvent : events )
-				{
-					for ( auto cFe : pBoard->fModuleVector )
-					{
-						for ( auto cCbc : cFe->fCbcVector )
-							fillOccupancyHist( cCbc, pTGroup, cEvent );
-					}
-					cN++;
-				}
-				cNthAcq++;
-			}
-			fBeBoardInterface->Stop( pBoard, cNthAcq );
+		  for ( auto cCbc : cFe->fCbcVector )
+		    fillOccupancyHist( cCbc, pTGroup, cEvent );
 		}
+	      cN++;
+	    }
+	  cNthAcq++;
 	}
+      fBeBoardInterface->Stop( pBoard, cNthAcq );
+    }
 }
 
 
@@ -355,120 +347,110 @@ void Calibration::clearOccupancyHists( Cbc* pCbc )
 
 void Calibration::clearVPlusMap()
 {
-	for ( auto cShelve : fShelveVector )
+  for ( auto cBoard : fBoardVector )
+    {
+      for ( auto cFe : cBoard->fModuleVector )
 	{
-		for ( auto cBoard : cShelve->fBoardVector )
-		{
-			for ( auto cFe : cBoard->fModuleVector )
-			{
-				for ( auto cCbc : cFe->fCbcVector )
-					fVplusMap[cCbc] = 0;
-			}
-		}
+	  for ( auto cCbc : cFe->fCbcVector )
+	    fVplusMap[cCbc] = 0;
 	}
+    }
 }
 
 void Calibration::setOffset( uint8_t pOffset, int  pGroup, bool pVPlus )
 {
 	// std::cout << "Setting offsets of Test Group " << pGroup << " to 0x" << std::hex << +pOffset << std::dec << std::endl;
-	for ( auto cShelve : fShelveVector )
+  for ( auto cBoard : fBoardVector )
+    {
+      for ( auto cFe : cBoard->fModuleVector )
 	{
-		for ( auto cBoard : cShelve->fBoardVector )
+	  uint32_t cFeId = cFe->getFeId();
+	  
+	  for ( auto cCbc : cFe->fCbcVector )
+	    {
+	      uint32_t cCbcId = cCbc->getCbcId();
+	      
+	      // first, find the offset Histogram for this CBC
+	      TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
+	      
+	      RegisterVector cRegVec;   // vector of pairs for the write operation
+	      
+	      // loop the channels of the current group and toggle bit i in the global map
+	      for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
 		{
-			for ( auto cFe : cBoard->fModuleVector )
-			{
-				uint32_t cFeId = cFe->getFeId();
-
-				for ( auto cCbc : cFe->fCbcVector )
-				{
-					uint32_t cCbcId = cCbc->getCbcId();
-
-					// first, find the offset Histogram for this CBC
-					TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
-
-					RegisterVector cRegVec;   // vector of pairs for the write operation
-
-					// loop the channels of the current group and toggle bit i in the global map
-					for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
-					{
-						TString cRegName = Form( "Channel%03d", cChannel + 1 );
-						cRegVec.push_back( {cRegName.Data(), pOffset} );
-						if ( pVPlus ) cOffsetHist->SetBinContent( cChannel, pOffset );
-					}
-					fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
-				}
-			}
+		  TString cRegName = Form( "Channel%03d", cChannel + 1 );
+		  cRegVec.push_back( {cRegName.Data(), pOffset} );
+		  if ( pVPlus ) cOffsetHist->SetBinContent( cChannel, pOffset );
 		}
+	      fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
+	    }
 	}
+    }
 }
 
 void Calibration::toggleOffset( uint8_t pGroup, uint8_t pBit, bool pBegin )
 {
-	for ( auto cShelve : fShelveVector )
+  for ( auto cBoard : fBoardVector )
+    {
+      for ( auto cFe : cBoard->fModuleVector )
 	{
-		for ( auto cBoard : cShelve->fBoardVector )
+	  uint32_t cFeId = cFe->getFeId();
+	  
+	  for ( auto cCbc : cFe->fCbcVector )
+	    {
+	      uint32_t cCbcId = cCbc->getCbcId();
+	      
+	      // first, find the offset Histogram for this CBC
+	      TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
+	      // find the TProfile for occupancy measurment of current channel
+	      TH1F* cOccHist = static_cast<TH1F*>( getHist( cCbc, "Occupancy" ) );
+	      // cOccHist->Scale( 1 / double( fEventsPerPoint ) );
+	      RegisterVector cRegVec;   // vector of pairs for the write operation
+
+	      // loop the channels of the current group and toggle bit i in the global map
+	      for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
 		{
-			for ( auto cFe : cBoard->fModuleVector )
+		  TString cRegName = Form( "Channel%03d", cChannel + 1 );
+		  if ( pBegin )
+		    {
+		      // get the offset
+		      uint8_t cOffset = cOffsetHist->GetBinContent( cChannel );
+
+		      // toggle Bit i
+		      toggleRegBit( cOffset, pBit );
+
+		      // modify the histogram
+		      cOffsetHist->SetBinContent( cChannel, cOffset );
+
+		      // push in a vector for CBC write transaction
+		      cRegVec.push_back( {cRegName.Data(), cOffset} );
+		    }
+		  else  //here it is interesting since now I will check if the occupancy is smaller or larger 50% and decide wether to toggle or not to toggle
+		    {
+		      // if the occupancy is larger than 50%, flip the bit back, if it is smaller, don't do anything
+		      // get the offset
+		      uint8_t cOffset = cOffsetHist->GetBinContent( cChannel );
+		      
+		      // get the occupancy
+		      int iBin = cOccHist->GetXaxis()->FindBin( cChannel );
+		      float cOccupancy = cOccHist->GetBinContent( iBin );
+		      
+		      // only if the occupancy is too high I need to flip the bit back and write, if not, I can leave it
+		      if ( cOccupancy > 0.57 * fEventsPerPoint )
 			{
-				uint32_t cFeId = cFe->getFeId();
-
-				for ( auto cCbc : cFe->fCbcVector )
-				{
-					uint32_t cCbcId = cCbc->getCbcId();
-
-					// first, find the offset Histogram for this CBC
-					TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
-					// find the TProfile for occupancy measurment of current channel
-					TH1F* cOccHist = static_cast<TH1F*>( getHist( cCbc, "Occupancy" ) );
-					// cOccHist->Scale( 1 / double( fEventsPerPoint ) );
-					RegisterVector cRegVec;   // vector of pairs for the write operation
-
-					// loop the channels of the current group and toggle bit i in the global map
-					for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
-					{
-						TString cRegName = Form( "Channel%03d", cChannel + 1 );
-						if ( pBegin )
-						{
-							// get the offset
-							uint8_t cOffset = cOffsetHist->GetBinContent( cChannel );
-
-							// toggle Bit i
-							toggleRegBit( cOffset, pBit );
-
-							// modify the histogram
-							cOffsetHist->SetBinContent( cChannel, cOffset );
-
-							// push in a vector for CBC write transaction
-							cRegVec.push_back( {cRegName.Data(), cOffset} );
-						}
-						else  //here it is interesting since now I will check if the occupancy is smaller or larger 50% and decide wether to toggle or not to toggle
-						{
-							// if the occupancy is larger than 50%, flip the bit back, if it is smaller, don't do anything
-							// get the offset
-							uint8_t cOffset = cOffsetHist->GetBinContent( cChannel );
-
-							// get the occupancy
-							int iBin = cOccHist->GetXaxis()->FindBin( cChannel );
-							float cOccupancy = cOccHist->GetBinContent( iBin );
-
-							// only if the occupancy is too high I need to flip the bit back and write, if not, I can leave it
-							if ( cOccupancy > 0.57 * fEventsPerPoint )
-							{
-								toggleRegBit( cOffset, pBit ); // toggle the bit back that was previously flipped
-								cOffsetHist->SetBinContent( cChannel, cOffset );
-								cRegVec.push_back( {cRegName.Data(), cOffset} );
-							//	std::cout << cRegName.Data() << " " << std::bitset<8>(cOffset) << std::endl;
-							}
-
-							// since I extracted the info from the occupancy profile for this bit (this iteration), i need to clear the corresponding bins
-							cOccHist->SetBinContent( iBin, 0 );
-						}
-					}
-					fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
-				}
+			  toggleRegBit( cOffset, pBit ); // toggle the bit back that was previously flipped
+			  cOffsetHist->SetBinContent( cChannel, cOffset );
+			  cRegVec.push_back( {cRegName.Data(), cOffset} );
 			}
+
+		      // since I extracted the info from the occupancy profile for this bit (this iteration), i need to clear the corresponding bins
+		      cOccHist->SetBinContent( iBin, 0 );
+		    }
 		}
+	      fCbcInterface->WriteCbcMultReg( cCbc, cRegVec );
+	    }
 	}
+    }
 }
 
 void Calibration::updateHists( std::string pHistname )
@@ -512,32 +494,29 @@ void Calibration::updateHists( std::string pHistname )
 
 void Calibration::setRegValues()
 {
-	for ( auto cShelve : fShelveVector )
+  for ( auto cBoard : fBoardVector )
+    {
+      for ( auto cFe : cBoard->fModuleVector )
 	{
-		for ( auto cBoard : cShelve->fBoardVector )
+	  uint32_t cFeId = cFe->getFeId();
+	  
+	  for ( auto cCbc : cFe->fCbcVector )
+	    {
+	      uint32_t cCbcId = cCbc->getCbcId();
+	      
+	      // first, find the offset Histogram for this CBC
+	      TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
+
+	      for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
 		{
-			for ( auto cFe : cBoard->fModuleVector )
-			{
-				uint32_t cFeId = cFe->getFeId();
-
-				for ( auto cCbc : cFe->fCbcVector )
-				{
-					uint32_t cCbcId = cCbc->getCbcId();
-
-					// first, find the offset Histogram for this CBC
-					TH1F* cOffsetHist = static_cast<TH1F*>( getHist( cCbc, "Offsets" ) );
-
-					for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
-					{
-						uint8_t cOffset = cOffsetHist->GetBinContent( iChan );
-						cCbc->setReg( Form( "Channel%03d", iChan + 1 ), cOffset );
-						std::cout << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET << std::endl;
-					}
-
-				}
-			}
+		  uint8_t cOffset = cOffsetHist->GetBinContent( iChan );
+		  cCbc->setReg( Form( "Channel%03d", iChan + 1 ), cOffset );
+		  std::cout << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET << std::endl;
 		}
+	      
+	    }
 	}
+    }
 }
 
 void Calibration::writeGraphs()

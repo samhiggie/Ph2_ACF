@@ -26,7 +26,6 @@ namespace GUI
 
 namespace Ph2_HwDescription
 {
-	class Shelve;
 	class BeBoard;
 	class Module;
 	class Cbc;
@@ -53,11 +52,6 @@ class HwDescriptionVisitor
 		 */
 	virtual void visit( const GUI::SystemControllerWorker& pSystemControllerWorker ) {}
 
-	/*!
-	 * \brief Visitor for Shelve Class
-	 * \param pShelve
-	 */
-	virtual void visit( Ph2_HwDescription::Shelve& pShelve ) {}
 	/*!
 	 * \brief Visitor for BeBoard Class
 	 * \param pBeBoard

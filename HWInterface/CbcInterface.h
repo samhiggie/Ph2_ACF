@@ -25,7 +25,7 @@ using namespace Ph2_HwDescription;
 namespace Ph2_HwInterface
 {
 
-	typedef std::map<uint16_t, BeBoardFWInterface*> BeBoardFWMap;    /*!< Map of Board connected */
+	using BeBoardFWMap = std::map<uint16_t, BeBoardFWInterface*>;    /*!< Map of Board connected */
 
 	/*!
 	 * \class CbcInterface

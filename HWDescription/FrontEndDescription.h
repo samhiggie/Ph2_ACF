@@ -34,8 +34,7 @@ namespace Ph2_HwDescription
 		// METHODS
 
 		// 3 C'tors with different parameter sets
-		FrontEndDescription( uint8_t pShelveId, uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, bool pStatus = true );
-		FrontEndDescription( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId );
+		FrontEndDescription( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, bool pStatus = true );
 		FrontEndDescription( );
 
 		//Copy C'tors
@@ -45,14 +44,6 @@ namespace Ph2_HwDescription
 		virtual ~FrontEndDescription( );
 
 		// Getter methods
-
-		/*!
-		* \brief Get the Shelve ID
-		* \return The Shelve ID
-		*/
-		uint8_t getShelveId() const {
-			return fShelveId;
-		}
 
 		/*!
 		* \brief Get the Be ID
@@ -83,7 +74,7 @@ namespace Ph2_HwDescription
 		* \return The BeBoardIdentifier
 		*/
 		uint16_t getBeBoardIdentifier() const {
-			return fBeId << 8 | fShelveId;
+			return fBeId << 8;
 		}
 
 		/*!
@@ -96,13 +87,6 @@ namespace Ph2_HwDescription
 
 		// Setter methods
 
-		/*!
-		* \brief Set the Shelve ID
-		* \param pShelveId
-		*/
-		void setShelveId( uint8_t pShelveId ) {
-			fShelveId = pShelveId;
-		}
 		/*!
 		* \brief Set the Be ID
 		* \param pBeId
@@ -135,8 +119,6 @@ namespace Ph2_HwDescription
 	  protected:
 		// MEMBERS
 
-		// Crate (uTCA) that the FE is connected to
-		uint8_t fShelveId;
 		// BIO Board Id that the FE is connected to
 		uint8_t fBeId;
 		// Id of the FMC Slot on the BIO Board, all FEs need to know so the right FW registers can be written

@@ -34,8 +34,8 @@
 namespace Ph2_HwDescription
 {
 
-	typedef std::map < std::string, CbcRegItem > CbcRegMap;
-	typedef std::pair <std::string, CbcRegItem> CbcRegPair;
+	using CbcRegMap = std::map < std::string, CbcRegItem >;
+	using CbcRegPair = std::pair <std::string, CbcRegItem>;
 
 	/*!
 	 * \class Cbc
@@ -46,11 +46,11 @@ namespace Ph2_HwDescription
 
 	  public:
 
+	        // C'tors which take BeId, FMCId, FeID, CbcId
+	        Cbc( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pCbcId, const std::string& filename );
+
 		// C'tors with object FE Description
 		Cbc( const FrontEndDescription& pFeDesc, uint8_t pCbcId, const std::string& filename );
-
-		// C'tors which take ShelveID, BeId, FeID, CbcId
-		Cbc( uint8_t pShelveId, uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pCbcId, const std::string& filename );
 
 		// Default C'tor
 		Cbc();

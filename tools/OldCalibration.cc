@@ -18,58 +18,53 @@ void OldCalibration::Initialise()
 	uint32_t cCbcIdMax = 0;
 	uint32_t cFeCount = 0;
 
-	for ( auto cShelve : fShelveVector )
-	{
-		uint32_t cShelveId = cShelve->getShelveId();
-
-		for ( auto cBoard : cShelve->fBoardVector )
-		{
-			uint32_t cBoardId = cBoard->getBeId();
-
-			for ( auto cFe : cBoard->fModuleVector )
-			{
-				uint32_t cFeId = cFe->getFeId();
-				cFeCount++;
-
-				for ( auto cCbc : cFe->fCbcVector )
-				{
-					uint32_t cCbcId = cCbc->getCbcId();
-					cCbcCount++;
-					if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
-
-					// populate the channel vector
-					std::vector<Channel> cChanVec;
-
-					for ( uint8_t cChan = 0; cChan < 254; cChan++ )
-						cChanVec.push_back( Channel( cBoardId, cFeId, cCbcId, cChan ) );
-
-					fCbcChannelMap[cCbc] = cChanVec;
-
-					// now the TGraphErrors
-					TString cGraphname = Form( "VplusVcthGraph_Fe%d_Cbc%d", cFeId, cCbcId );
-					TGraphErrors* ctmpGraph = dynamic_cast<TGraphErrors*>( gROOT->FindObject( cGraphname ) );
-					if ( ctmpGraph ) delete ctmpGraph;
-					ctmpGraph = new TGraphErrors();
-					ctmpGraph->SetName( cGraphname );
-					ctmpGraph->GetXaxis()->SetTitle( "SCurve Midpoint [VCth]" );
-					ctmpGraph->GetXaxis()->SetRangeUser( 0, 255 );
-					ctmpGraph->GetYaxis()->SetTitle( "Vplus" );
-					ctmpGraph->GetYaxis()->SetRangeUser( 0, 255 );
-					fGraphMap[cCbc] = ctmpGraph;
-
-					// the fits are initialized when I fit!
-				}
-			}
-			fNCbc = cCbcCount;
-			fNFe = cFeCount;
-		}
-	}
+	for ( auto cBoard : fBoardVector )
+	  {
+	    uint32_t cBoardId = cBoard->getBeId();
+	    
+	    for ( auto cFe : cBoard->fModuleVector )
+	      {
+		uint32_t cFeId = cFe->getFeId();
+		cFeCount++;
+		
+		for ( auto cCbc : cFe->fCbcVector )
+		  {
+		    uint32_t cCbcId = cCbc->getCbcId();
+		    cCbcCount++;
+		    if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
+		    
+		    // populate the channel vector
+		    std::vector<Channel> cChanVec;
+		    
+		    for ( uint8_t cChan = 0; cChan < 254; cChan++ )
+		      cChanVec.push_back( Channel( cBoardId, cFeId, cCbcId, cChan ) );
+		    
+		    fCbcChannelMap[cCbc] = cChanVec;
+		    
+		    // now the TGraphErrors
+		    TString cGraphname = Form( "VplusVcthGraph_Fe%d_Cbc%d", cFeId, cCbcId );
+		    TGraphErrors* ctmpGraph = dynamic_cast<TGraphErrors*>( gROOT->FindObject( cGraphname ) );
+		    if ( ctmpGraph ) delete ctmpGraph;
+		    ctmpGraph = new TGraphErrors();
+		    ctmpGraph->SetName( cGraphname );
+		    ctmpGraph->GetXaxis()->SetTitle( "SCurve Midpoint [VCth]" );
+		    ctmpGraph->GetXaxis()->SetRangeUser( 0, 255 );
+		    ctmpGraph->GetYaxis()->SetTitle( "Vplus" );
+		    ctmpGraph->GetYaxis()->SetRangeUser( 0, 255 );
+		    fGraphMap[cCbc] = ctmpGraph;
+		    
+		    // the fits are initialized when I fit!
+		  }
+	      }
+	    fNCbc = cCbcCount;
+	    fNFe = cFeCount;
+	  }
 	uint32_t cPads = ( cCbcIdMax > cCbcCount ) ? cCbcIdMax : cCbcCount;
-
+	
 	fVplusCanvas->DivideSquare( cPads );
 	fVcthVplusCanvas->DivideSquare( cPads );
 	fOffsetCanvas->DivideSquare( cPads );
-
+	
 	// now read the settings from the map
 	auto cSetting = fSettingsMap.find( "HoleMode" );
 	fHoleMode = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 1;

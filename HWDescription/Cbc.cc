@@ -1,11 +1,11 @@
 /*!
 
-        Filename :                              Cbc.cc
-        Content :                               Cbc Description class, config of the Cbcs
+        Filename :                      Cbc.cc
+        Content :                       Cbc Description class, config of the Cbcs
         Programmer :                    Lorenzo BIDEGAIN
-        Version :               1.0
+        Version :                       1.0
         Date of Creation :              25/06/14
-        Support :                               mail to : lorenzo.bidegain@gmail.com
+        Support :                       mail to : lorenzo.bidegain@gmail.com
 
  */
 
@@ -30,9 +30,9 @@ namespace Ph2_HwDescription
 		loadfRegMap( filename );
 	}
 
-	// C'tors which take ShelveID, BeId, FMCId, FeID, CbcId
+	// C'tors which take BeId, FMCId, FeID, CbcId
 
-	Cbc::Cbc( uint8_t pShelveId, uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pCbcId, const std::string& filename ) : FrontEndDescription( pShelveId, pBeId, pFMCId, pFeId ), fCbcId( pCbcId )
+	Cbc::Cbc( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pCbcId, const std::string& filename ) : FrontEndDescription( pBeId, pFMCId, pFeId ), fCbcId( pCbcId )
 
 	{
 		loadfRegMap( filename );
@@ -168,8 +168,7 @@ namespace Ph2_HwDescription
 
 	bool CbcComparer::operator()( const Cbc& cbc1, const Cbc& cbc2 ) const
 	{
-		if ( cbc1.getShelveId() != cbc2.getShelveId() ) return cbc1.getShelveId() < cbc2.getShelveId();
-		else if ( cbc1.getBeId() != cbc2.getBeId() ) return cbc1.getBeId() < cbc2.getBeId();
+		if ( cbc1.getBeId() != cbc2.getBeId() ) return cbc1.getBeId() < cbc2.getBeId();
 		else if ( cbc1.getFMCId() != cbc2.getFMCId() ) return cbc1.getFMCId() < cbc2.getFMCId();
 		else if ( cbc1.getFeId() != cbc2.getFeId() ) return cbc1.getFeId() < cbc2.getFeId();
 		else return cbc1.getCbcId() < cbc2.getCbcId();

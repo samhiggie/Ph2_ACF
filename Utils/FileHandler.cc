@@ -1,7 +1,7 @@
 #include "FileHandler.h"
 
 //Constructor
-FileHandler::FileHandler( std::string pBinaryFileName, char pOption ):
+FileHandler::FileHandler( const std::string& pBinaryFileName, char pOption ):
 	fBinaryFileName( pBinaryFileName ),
 	fOption( pOption ),
 	fFileIsOpened( false ) ,

@@ -4,68 +4,63 @@ void Commissioning::Initialize()
 {
     // gStyle->SetOptStat( 000000 );
     // gStyle->SetTitleOffset( 1.3, "Y" );
-    for ( auto& cShelve : fShelveVector )
+  for ( auto& cBoard : fBoardVector )
     {
-        uint32_t cShelveId = cShelve->getShelveId();
-
-        for ( auto& cBoard : cShelve->fBoardVector )
-        {
-            uint32_t cBoardId = cBoard->getBeId();
-
-            for ( auto& cFe : cBoard->fModuleVector )
-            {
-                uint32_t cFeId = cFe->getFeId();
-
-                TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%d", cFeId ), Form( "FE%d  Online Canvas", cFeId ) );
-                // ctmpCanvas->Divide( 2, 2 );
-                fCanvasMap[cFe] = ctmpCanvas;
-
-                fNCbc = cFe->getNCbc();
-
-                // 1D Hist forlatency scan
-                TString cName =  Form( "h_module_latency_Fe%d", cFeId );
-                TObject* cObj = gROOT->FindObject( cName );
-                if ( cObj ) delete cObj;
-                TH1F* cLatHist = new TH1F( cName, Form( "Latency FE%d; Latency; # of Hits", cFeId ), 256, -.5, 255.5 );
-                cLatHist->SetFillColor( 4 );
-                cLatHist->SetFillStyle( 3001 );
-                bookHistogram( cFe, "module_latency", cLatHist );
-
-                cName =  Form( "h_module_stub_latency_Fe%d", cFeId );
-                cObj = gROOT->FindObject( cName );
-                if ( cObj ) delete cObj;
-                TH1F* cStubHist = new TH1F( cName, Form( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), 256, -0.5, 255.5 );
-                cStubHist->SetMarkerStyle( 2 );
-                bookHistogram( cFe, "module_stub_latency", cStubHist );
-
-                cName =  Form( "h_module_threshold_ext_Fe%d", cFeId );
-                cObj = gROOT->FindObject( cName );
-                if ( cObj ) delete cObj;
-                TH1F* cThresHist_ext = new TH1F( cName, Form( "Threshold FE%d w external trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
-                cThresHist_ext->SetMarkerStyle( 2 );
-                bookHistogram( cFe, "module_threshold_ext", cThresHist_ext );
-
-                cName =  Form( "h_module_threshold_int_Fe%d", cFeId );
-                cObj = gROOT->FindObject( cName );
-                if ( cObj ) delete cObj;
-                TH1F* cThresHist_int = new TH1F( cName, Form( "Threshold FE%d w internal trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
-                cThresHist_int->SetMarkerStyle( 2 );
-                cThresHist_int->SetMarkerColor( 2 );
-                bookHistogram( cFe, "module_threshold_int", cThresHist_int );
-
-                cName =  Form( "f_module_threshold_Fit_Fe%d", cFeId );
-                cObj = gROOT->FindObject( cName );
-                if ( cObj ) delete cObj;
-                TF1* cThresFit = new TF1( cName, MyErf, 0, 255, 2 );
-                bookHistogram( cFe, "module_fit", cThresFit );
-
-                cName =  Form( "h_module_lat_threshold_Fe%d", cFeId );
-                cObj = gROOT->FindObject( cName );
-                if ( cObj ) delete cObj;
-                TH2F* cThresLatHist = new TH2F( cName, Form( " Threshold/Latency FE%d; Latency; Threshold; # of Hits", cFeId ), 9, -4.5, 4.5, 256, -0.5, 255.5 );
-                bookHistogram( cFe, "module_lat_threshold", cThresLatHist );
-            }
-        }
+      uint32_t cBoardId = cBoard->getBeId();
+      
+      for ( auto& cFe : cBoard->fModuleVector )
+	{
+	  uint32_t cFeId = cFe->getFeId();
+	  
+	  TCanvas* ctmpCanvas = new TCanvas( Form( "c_online_canvas_fe%d", cFeId ), Form( "FE%d  Online Canvas", cFeId ) );
+	  // ctmpCanvas->Divide( 2, 2 );
+	  fCanvasMap[cFe] = ctmpCanvas;
+	  
+	  fNCbc = cFe->getNCbc();
+	  
+	  // 1D Hist forlatency scan
+	  TString cName =  Form( "h_module_latency_Fe%d", cFeId );
+	  TObject* cObj = gROOT->FindObject( cName );
+	  if ( cObj ) delete cObj;
+	  TH1F* cLatHist = new TH1F( cName, Form( "Latency FE%d; Latency; # of Hits", cFeId ), 256, -.5, 255.5 );
+	  cLatHist->SetFillColor( 4 );
+	  cLatHist->SetFillStyle( 3001 );
+	  bookHistogram( cFe, "module_latency", cLatHist );
+	  
+	  cName =  Form( "h_module_stub_latency_Fe%d", cFeId );
+	  cObj = gROOT->FindObject( cName );
+	  if ( cObj ) delete cObj;
+	  TH1F* cStubHist = new TH1F( cName, Form( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), 256, -0.5, 255.5 );
+	  cStubHist->SetMarkerStyle( 2 );
+	  bookHistogram( cFe, "module_stub_latency", cStubHist );
+	  
+	  cName =  Form( "h_module_threshold_ext_Fe%d", cFeId );
+	  cObj = gROOT->FindObject( cName );
+	  if ( cObj ) delete cObj;
+	  TH1F* cThresHist_ext = new TH1F( cName, Form( "Threshold FE%d w external trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
+	  cThresHist_ext->SetMarkerStyle( 2 );
+	  bookHistogram( cFe, "module_threshold_ext", cThresHist_ext );
+	  
+	  cName =  Form( "h_module_threshold_int_Fe%d", cFeId );
+	  cObj = gROOT->FindObject( cName );
+	  if ( cObj ) delete cObj;
+	  TH1F* cThresHist_int = new TH1F( cName, Form( "Threshold FE%d w internal trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
+	  cThresHist_int->SetMarkerStyle( 2 );
+	  cThresHist_int->SetMarkerColor( 2 );
+	  bookHistogram( cFe, "module_threshold_int", cThresHist_int );
+	  
+	  cName =  Form( "f_module_threshold_Fit_Fe%d", cFeId );
+	  cObj = gROOT->FindObject( cName );
+	  if ( cObj ) delete cObj;
+	  TF1* cThresFit = new TF1( cName, MyErf, 0, 255, 2 );
+	  bookHistogram( cFe, "module_fit", cThresFit );
+	  
+	  cName =  Form( "h_module_lat_threshold_Fe%d", cFeId );
+	  cObj = gROOT->FindObject( cName );
+	  if ( cObj ) delete cObj;
+	  TH2F* cThresLatHist = new TH2F( cName, Form( " Threshold/Latency FE%d; Latency; Threshold; # of Hits", cFeId ), 9, -4.5, 4.5, 256, -0.5, 255.5 );
+	  bookHistogram( cFe, "module_lat_threshold", cThresLatHist );
+	}
     }
 
     parseSettings();
@@ -105,39 +100,36 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
         int cNHits = 0;
 
         // Take Data for all Modules
-        for ( auto& cShelve : fShelveVector )
-        {
-            for ( BeBoard* pBoard : cShelve->fBoardVector )
-            {
-                fBeBoardInterface->Start( pBoard );
-
-                while ( cN <= fNevents )
-                {
-                    fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-                    const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-                    // Loop over Events from this Acquisition
-                    for ( auto& cEvent : events )
-                    {
-                        for ( auto cFe : pBoard->fModuleVector )
-                            cNHits += countHits( cFe, cEvent, "module_latency", cLat );
-                        cN++;
-                    }
-                    cNthAcq++;
-                }
-                fBeBoardInterface->Stop( pBoard, cNthAcq );
-                std::cout << "Latency " << +cLat << " Hits " << cNHits  << " Events " << cN << std::endl;
-
-            }
-        }
-
+	for ( BeBoard* pBoard : fBoardVector )
+	  {
+	    fBeBoardInterface->Start( pBoard );
+	    
+	    while ( cN <= fNevents )
+	      {
+		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+		
+		// Loop over Events from this Acquisition
+		for ( auto& cEvent : events )
+		  {
+		    for ( auto cFe : pBoard->fModuleVector )
+		      cNHits += countHits( cFe, cEvent, "module_latency", cLat );
+		    cN++;
+		  }
+		cNthAcq++;
+	      }
+	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    std::cout << "Latency " << +cLat << " Hits " << cNHits  << " Events " << cN << std::endl;
+	    
+	  }
+	
         // done counting hits for all FE's, now update the Histograms
         updateHists( "module_latency", false );
     }
-
+    
     // analyze the Histograms
     std::map<Module*, uint8_t> cLatencyMap;
-
+    
     std::cout << "Identified the Latency with the maximum number of Hits at: " << std::endl;
 
     for ( auto cFe : fModuleHistMap )
@@ -187,43 +179,40 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency( uint8_t pStartLatency
         int cNStubs = 0;
 
         // Take Data for all Modules
-        for ( auto& cShelve : fShelveVector )
-        {
-            for ( BeBoard* pBoard : cShelve->fBoardVector )
-            {
-                fBeBoardInterface->Start( pBoard );
-
-                while ( cN <= fNevents )
-                {
-                    fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-                    const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-                    // if(cN <3 ) std::cout << *cEvent << std::endl;
-
-                    // Loop over Events from this Acquisition
-                    for ( auto& cEvent : events )
-                    {
-                        for ( auto cFe : pBoard->fModuleVector )
-                            cNStubs += countStubs( cFe, cEvent, "module_stub_latency", cLat );
-                        cN++;
-                    }
-                    cNthAcq++;
-                }
-                fBeBoardInterface->Stop( pBoard, cNthAcq );
-                std::cout << "Stub Latency " << +cLat << " Stubs " << cNStubs  << " Events " << cN << std::endl;
-
-            }
-        }
-
+	for ( BeBoard* pBoard : fBoardVector )
+	  {
+	    fBeBoardInterface->Start( pBoard );
+	    
+	    while ( cN <= fNevents )
+	      {
+		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+		
+		// if(cN <3 ) std::cout << *cEvent << std::endl;
+		
+		// Loop over Events from this Acquisition
+		for ( auto& cEvent : events )
+		  {
+		    for ( auto cFe : pBoard->fModuleVector )
+		      cNStubs += countStubs( cFe, cEvent, "module_stub_latency", cLat );
+		    cN++;
+		  }
+		cNthAcq++;
+	      }
+	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    std::cout << "Stub Latency " << +cLat << " Stubs " << cNStubs  << " Events " << cN << std::endl;
+	    
+	  }
+	
         // done counting hits for all FE's, now update the Histograms
         updateHists( "module_stub_latency", false );
     }
-
+    
     // analyze the Histograms
     std::map<Module*, uint8_t> cStubLatencyMap;
-
+    
     std::cout << "Identified the Latency with the maximum number of Stubs at: " << std::endl;
-
+    
     for ( auto cFe : fModuleHistMap )
     {
         TH1F* cTmpHist = dynamic_cast<TH1F*>( getHist( cFe.first, "module_stub_latency" ) );
@@ -461,71 +450,69 @@ void Commissioning::measureScurve( std::string pHistName, uint32_t pNEvents )
         uint32_t cHitCounter = 0;
 
         // maybe restrict to pBoard? instead of looping?
-        for ( auto& cShelve : fShelveVector )
-        {
-            // if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
-            for ( BeBoard* pBoard : cShelve->fBoardVector )
-            {
-
-                fBeBoardInterface->Start( pBoard );
-
-                while ( cN <=  pNEvents )
-                {
-                    fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
-
-                    const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
-
-                    // Loop over Events from this Acquisition
-                    for ( auto& cEvent : events )
-                    {
-
-                        for ( auto cFe : pBoard->fModuleVector )
-                            cHitCounter += countHits( cFe, cEvent, pHistName, static_cast<uint8_t>( cVcth ) );
-
-                        cN++;
-
-                    }
-                    cNthAcq++;
-                }
-                fBeBoardInterface->Stop( pBoard, cNthAcq );
-
-                std::cout << "Threshold " << +cVcth << " Hits " << cHitCounter << " Events " << cN << std::endl;
-                // now update the Histograms
-                updateHists( pHistName, false );
-
-                // check if the hitcounter is all ones
-
-                if ( cNonZero == false && cHitCounter > pNEvents / 10 )
-                {
-                    cDoubleVcth = cVcth;
-                    cNonZero = true;
-                    cVcth -= 2 * cStep;
-                    cStep /= 10;
-                    continue;
-                }
-                if ( cNonZero && cHitCounter > NCHANNELS * fNCbc * pNEvents * 0.95 )
-                {
-                    // check if all Cbcs have reached full occupancy
-                    // if ( cHitCounter > 0.95 * pNEvents * fNCbc * NCHANNELS ) cAllOneCounter++;
-                    // if the number of hits does not change any more,  increase stepsize by a factor of 10
-                    if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
-                }
-                // if ( cSlopeZeroCounter >= 10 ) cAllOne = true;
-                if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
-
-                // if ( cAllOne )
-                // {
-                //  std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
-                //  break;
-                // }
-                if ( cSlopeZero )
-                    cStep *= 10;
-
-                cOldHitCounter = cHitCounter;
-                cVcth += cStep;
-            }
-        }
+	// if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
+	for ( BeBoard* pBoard : fBoardVector )
+	  {
+	    
+	    fBeBoardInterface->Start( pBoard );
+	    
+	    while ( cN <=  pNEvents )
+	      {
+		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		
+		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
+		
+		// Loop over Events from this Acquisition
+		for ( auto& cEvent : events )
+		  {
+		    
+		    for ( auto cFe : pBoard->fModuleVector )
+		      cHitCounter += countHits( cFe, cEvent, pHistName, static_cast<uint8_t>( cVcth ) );
+		    
+		    cN++;
+		    
+		  }
+		cNthAcq++;
+	      }
+	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    
+	    std::cout << "Threshold " << +cVcth << " Hits " << cHitCounter << " Events " << cN << std::endl;
+	    // now update the Histograms
+	    updateHists( pHistName, false );
+	    
+	    // check if the hitcounter is all ones
+	    
+	    if ( cNonZero == false && cHitCounter > pNEvents / 10 )
+	      {
+		cDoubleVcth = cVcth;
+		cNonZero = true;
+		cVcth -= 2 * cStep;
+		cStep /= 10;
+		continue;
+	      }
+	    if ( cNonZero && cHitCounter > NCHANNELS * fNCbc * pNEvents * 0.95 )
+	      {
+		// check if all Cbcs have reached full occupancy
+		// if ( cHitCounter > 0.95 * pNEvents * fNCbc * NCHANNELS ) cAllOneCounter++;
+		// if the number of hits does not change any more,  increase stepsize by a factor of 10
+		if ( fabs( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
+	      }
+	    // if ( cSlopeZeroCounter >= 10 ) cAllOne = true;
+	    if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
+	    
+	    // if ( cAllOne )
+	    // {
+	    //  std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
+	    //  break;
+	    // }
+	    if ( cSlopeZero )
+	      cStep *= 10;
+	    
+	    cOldHitCounter = cHitCounter;
+	    cVcth += cStep;
+	  }
     }
+
     // finished scanning the comparator threshold range
     // need to see what range to fit and what threshold to extract automatically!!
     updateHists( pHistName, true );

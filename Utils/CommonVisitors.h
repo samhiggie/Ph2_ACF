@@ -3,7 +3,6 @@
 
 
 #include "../HWInterface/BeBoardFWInterface.h"
-#include "../HWDescription/Shelve.h"
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
@@ -81,22 +80,17 @@ class Counter : public HwDescriptionVisitor
 	uint32_t fNCbc;
 	uint32_t fNFe;
 	uint32_t fNBe;
-	uint32_t fNShelve;
 	uint32_t fCbcMask;
   public:
-	Counter() : fNCbc( 0 ), fNFe( 0 ), fNBe( 0 ), fNShelve( 0 ), fCbcMask(0) {}
+	Counter() : fNCbc( 0 ), fNFe( 0 ), fNBe( 0 ) {}
 	void visit( Ph2_HwDescription::Cbc& pCbc ) {
 		fNCbc++;
-		fCbcMask |= (1 << pCbc.getCbcId());
 	}
 	void visit( Ph2_HwDescription::Module& pModule ) {
 		fNFe++;
 	}
 	void visit( Ph2_HwDescription::BeBoard& pBoard ) {
 		fNBe++;
-	}
-	void visit( Ph2_HwDescription::Shelve& pShelve ) {
-		fNShelve++;
 	}
 	uint32_t getNCbc() const {
 		return fNCbc;
@@ -106,12 +100,6 @@ class Counter : public HwDescriptionVisitor
 	}
 	uint32_t getNBe() const {
 		return fNBe;
-	}
-	uint32_t getNShelves() const {
-		return fNShelve;
-	}
-	uint32_t getCbcMask() const { 		
-		return fCbcMask;
 	}
 };
 

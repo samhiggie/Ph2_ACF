@@ -134,7 +134,7 @@ int main( int argc, char* argv[] )
     cSystemController.InitializeHw( cHWFile );
     cSystemController.ConfigureHw( std::cout );
 
-    BeBoard* pBoard = cSystemController.fShelveVector.at( 0 )->fBoardVector.at( 0 );
+    BeBoard* pBoard = cSystemController.fBoardVector.at( 0 );
     if ( cmd.foundOption( "parallel" ) )
     {
         uint32_t nbPacket = pBoard->getReg( "pc_commands.CBC_DATA_PACKET_NUMBER" ), nbAcq = pEventsperVcth / ( nbPacket + 1 ) + ( pEventsperVcth % ( nbPacket + 1 ) != 0 ? 1 : 0 );

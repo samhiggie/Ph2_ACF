@@ -16,8 +16,7 @@
 namespace Ph2_HwDescription
 {
 
-	FrontEndDescription::FrontEndDescription( uint8_t pShelveId, uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, bool pStatus ) :
-		fShelveId( pShelveId ),
+	FrontEndDescription::FrontEndDescription( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, bool pStatus ) :
 		fBeId( pBeId ),
 		fFMCId( pFMCId ),
 		fFeId( pFeId ),
@@ -25,17 +24,7 @@ namespace Ph2_HwDescription
 	{
 	}
 
-	FrontEndDescription::FrontEndDescription( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId ) :
-		fShelveId( 0 ),
-		fBeId( pBeId ),
-		fFMCId( pFMCId ),
-		fFeId( pFeId ),
-		fStatus( true )
-	{
-	}
-
 	FrontEndDescription::FrontEndDescription( ) :
-		fShelveId( 0 ),
 		fBeId( 0 ),
 		fFMCId( 0 ),
 		fFeId( 0 ),
@@ -44,7 +33,6 @@ namespace Ph2_HwDescription
 	}
 
 	FrontEndDescription::FrontEndDescription( const FrontEndDescription& pFeDesc ) :
-		fShelveId( pFeDesc.fShelveId ),
 		fBeId( pFeDesc.fBeId ),
 		fFMCId( pFeDesc.fFMCId ),
 		fFeId( pFeDesc.fFeId ),

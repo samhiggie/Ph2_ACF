@@ -21,17 +21,14 @@ namespace Ph2_HwDescription
 	// Constructors
 
 	BeBoard::BeBoard() :
-		fShelveId( 0 ),
 		fBeId( 0 ) {}
 
-	BeBoard::BeBoard( uint8_t pShelveId, uint8_t pBeId ) :
-		fShelveId( pShelveId ),
+	BeBoard::BeBoard( uint8_t pBeId ) :
 		fBeId( pBeId )
 	{
 	}
 
-	BeBoard::BeBoard( uint8_t pShelveId, uint8_t pBeId, const std::string& filename ) :
-		fShelveId( pShelveId ),
+	BeBoard::BeBoard( uint8_t pBeId, const std::string& filename ) :
 		fBeId( pBeId )
 	{
 		loadConfigFile( filename );
