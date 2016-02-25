@@ -132,6 +132,11 @@ uint32_t ICGlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, boo
     return fNpackets;
 }
 
+void ICGlibFWInterface::ReadNEvents(BeBoard* pBoard, uint32_t pNEvents )
+{
+
+}
+
 std::vector<uint32_t> ICGlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
 {
     uhal::ValVector<uint32_t> valBlock = ReadBlockReg( pRegNode, pBlocksize );
