@@ -80,7 +80,7 @@ public:
     /*!
     * \brief Get the board infos
     */
-    virtual void getBoardInfo();
+    virtual void getBoardInfo() = 0;
 
     /*! \brief Upload a configuration in a board FPGA */
     virtual void FlashProm( const std::string& strConfig, const char* pstrFile ) {}
@@ -109,21 +109,21 @@ public:
     * \param pCbcId : Id of the Cbc to work with
     * \param pVecReq : Vector to stack the encoded words
     */
-    virtual void EncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq ); /*!< Encode a/several word(s) readable for a Cbc*/
+    virtual void EncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ) = 0; /*!< Encode a/several word(s) readable for a Cbc*/
     /*!
     * \brief Encode a/several word(s) readable for a Cbc
     * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to write
     * \param pCbcId : Id of the Cbc to work with
     * \param pVecReq : Vector to stack the encoded words
     */
-    virtual void EncodeReg( const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq ); /*!< Encode a/several word(s) readable for a Cbc*/
+    virtual void EncodeReg( const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ) = 0; /*!< Encode a/several word(s) readable for a Cbc*/
     /*!
     * \brief Decode a word from a read of a register of the Cbc
     * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to read
     * \param pCbcId : Id of the Cbc to work with
     * \param pWord : variable to put the decoded word
     */
-    virtual void DecodeReg( CbcRegItem& pRegItem, uint8_t pCbcId, uint32_t pWord ); /*!< Decode a word from a read of a register of the Cbc*/
+    virtual void DecodeReg( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool pRead, bool pFailed ) = 0; /*!< Decode a word from a read of a register of the Cbc*/
 
 
     //virtual pure methods which are defined in the proper BoardFWInterface class
@@ -133,7 +133,7 @@ public:
     * \param pFeId : FrontEnd to work with
     * \param pVecReq : Block of words to write
     */
-    virtual void WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq ) = 0;
+    virtual void WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
     /*!
     * \brief Read register blocks of a Cbc
     * \param pFeId : FrontEnd to work with
