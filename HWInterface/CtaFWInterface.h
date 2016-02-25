@@ -108,9 +108,15 @@ public:
      * \brief Read data from DAQ
      * \param pNthAcq : actual number of acquisitions
      * \param pBreakTrigger : if true, enable the break trigger
-     * \return cNPackets: the number of packets read
+     * \return fNpackets: the number of packets read
      */
     uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger ) override;
+    /*!
+     * \brief Read data for pNEvents
+     * \param pBoard : the pointer to the BeBoard
+     * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
+     */
+    void ReadNEvents(BeBoard* pBoard, uint32_t pNEvents);
     /*!
      * \brief Get next event from data buffer
      * \return Next event

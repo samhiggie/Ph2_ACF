@@ -184,9 +184,15 @@ public:
      * \param pBoard
      * \param pNthAcq : actual number of acquisitions
      * \param pBreakTrigger : if true, enable the break trigger
-     * \return cNPackets: the number of packets read
+     * \return fNpackets: the number of packets read
      */
     virtual uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger ) = 0;
+    /*!
+     * \brief Read data for pNEvents
+     * \param pBoard : the pointer to the BeBoard
+     * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
+     */
+    virtual void ReadNEvents(BeBoard* pBoard, uint32_t pNEvents) = 0;
     /*!
      * \brief Get next event from data buffer
      * \return Next event
@@ -200,7 +206,7 @@ public:
 protected:
 
     bool runningAcquisition;
-    uint32_t cBlockSize, cNPackets, numAcq, nbMaxAcq;
+    uint32_t fBlockSize, fNPackets, numAcq, nbMaxAcq;
     boost::thread thrAcq;
 
 };

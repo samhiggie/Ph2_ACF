@@ -129,7 +129,7 @@ void ICGlibFWInterface::Resume()
 uint32_t ICGlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
 {
     //implement something sane form Kirika's repo: daq.cc
-    return cNPackets;
+    return fNpackets;
 }
 
 std::vector<uint32_t> ICGlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -171,8 +171,8 @@ void ICGlibFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfa
 void ICGlibFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
 {
     Start( );
-//      cBlockSize = computeBlockSize( pBoard );
-    cBlockSize = 0;
+//      fBlockSize = computeBlockSize( pBoard );
+    fBlockSize = 0;
     while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
     {
         ReadData( nullptr, numAcq, true );

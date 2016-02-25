@@ -127,7 +127,7 @@ void GlibFWInterface::Start()
     cVecReg.clear();
 
     // Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
-    cNPackets = ReadReg( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
+    fNpackets = ReadReg( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
 
     //Wait for start acknowledge
     uhal::ValWord<uint32_t> cVal;
@@ -192,7 +192,7 @@ uint32_t GlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool 
     uhal::ValWord<uint32_t> cVal;
 
     if ( pBoard )
-        cBlockSize = computeBlockSize( pBoard );
+        fBlockSize = computeBlockSize( pBoard );
     //FIFO goes to write_data state
     //Select SRAM
     SelectDaqSRAM( pNthAcq );
@@ -214,7 +214,7 @@ uint32_t GlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool 
     WriteReg( fStrSramUserLogic, 0 );
 
     //Read SRAM
-    std::vector<uint32_t> cData =  ReadBlockRegValue( fStrSram, cBlockSize );
+    std::vector<uint32_t> cData =  ReadBlockRegValue( fStrSram, fBlockSize );
 
     WriteReg( fStrSramUserLogic, 1 );
     WriteReg( fStrReadout, 1 );
@@ -239,14 +239,89 @@ uint32_t GlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool 
     fData = new Data();
 
     // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-    fData->Set( pBoard, cData , cNPackets, true );
+    fData->Set( pBoard, cData , fNpackets, true );
     if ( fSaveToFile )
     {
         fFileHandler->set( cData );
         fFileHandler->writeFile();
     }
-    return cNPackets;
+    return fNpackets;
 }
+
+void GlibFWInterface::ReadNEvents(BeBoard* pBoard, uint32_t pNEvents )
+{
+    std::vector< std::pair<std::string, uint32_t> > cVecReg;
+
+    fNpackets = pNEvents;
+    //Starting the DAQ
+    cVecReg.push_back( {"pc_commands.CBC_DATA_PACKET_NUMBE", pNEvents - 1} );
+    cVecReg.push_back( {"break_trigger", 0} );
+    cVecReg.push_back( {"pc_commands.PC_config_ok", 1} );
+    cVecReg.push_back( {"pc_commands2.force_BG0_start", 1} );
+
+    WriteStackReg( cVecReg );
+    cVecReg.clear();
+
+
+    //Wait for start acknowledge
+    uhal::ValWord<uint32_t> cVal;
+    std::chrono::milliseconds cWait( 100 );
+    do
+    {
+        cVal = ReadReg( "status_flags.CMD_START_VALID" );
+        if ( cVal == 0 )
+            std::this_thread::sleep_for( cWait );
+    }
+    while ( cVal == 0 );
+
+    uhal::ValWord<uint32_t> cVal;
+
+    if ( pBoard )
+        fBlockSize = computeBlockSize( pBoard );
+
+    //Select SRAM
+    SelectDaqSRAM( pNthAcq );
+
+    //Wait for the SRAM full condition.
+    cVal = ReadReg( fStrFull );
+    do
+    {
+        cVal = ReadReg( fStrFull );
+        if ( cVal == 0 )
+            std::this_thread::sleep_for( cWait );
+    }
+    while ( cVal == 0 );
+
+    //break trigger
+    cVecReg.push_back({ "break_trigger", 1 } );
+    cVecReg.push_back( {"pc_commands.PC_config_ok", 0} );
+    cVecReg.push_back( {"pc_commands2.force_BG0_start", 0} );
+
+    WriteStackReg( cVecReg );
+    cVecReg.clear();
+
+    //Set read mode to SRAM
+    WriteReg( fStrSramUserLogic, 0 );
+
+    //Read SRAM
+    std::vector<uint32_t> cData =  ReadBlockRegValue( fStrSram, fBlockSize );
+
+    WriteReg( fStrSramUserLogic, 1 );
+
+    // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
+    if ( fData ) delete fData;
+
+    fData = new Data();
+
+    // set the vector<uint32_t> as event buffer and let him know how many packets it contains
+    fData->Set( pBoard, cData , fNpackets, true );
+    if ( fSaveToFile )
+    {
+        fFileHandler->set( cData );
+        fFileHandler->writeFile();
+    }
+}
+
 
 /** compute the block size according to the number of CBC's on this board
  * this will have to change with a more generic FW */
@@ -272,8 +347,8 @@ uint32_t GlibFWInterface::computeBlockSize( BeBoard* pBoard )
 
     CbcCounter cCounter;
     pBoard->accept( cCounter );
-    if ( pBoard->getNCbcDataSize() != 0 ) return cNPackets * ( pBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 );
-    else return cNPackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
+    if ( pBoard->getNCbcDataSize() != 0 ) return fNpackets * ( pBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 );
+    else return fNpackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
 }
 
 std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -327,7 +402,7 @@ void GlibFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterface
 void GlibFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
 {
     Start( );
-    cBlockSize = computeBlockSize( pBoard );
+    fBlockSize = computeBlockSize( pBoard );
     while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
     {
         ReadData( pBoard, numAcq, true );
