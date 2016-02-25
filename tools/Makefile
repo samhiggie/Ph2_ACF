@@ -11,11 +11,11 @@ else
 endif
 
 ifneq ("$(wildcard $(ANTENNADIR))","")
-        ANTENNAINSTALLED = yes
+	ANTENNAINSTALLED = yes
 	IncludeDirs     =  /opt/cactus/include ../ $(ANTENNADIR) 
 	ExternalObjects = -L../lib -L../CMSPh2_AntennaDriver/lib -lusb -lPh2_Antenna $(AntennaFlag)
 else
-        ANTENNAINSTALLED = no
+	ANTENNAINSTALLED = no
 	IncludeDirs     =  /opt/cactus/include ../ 
 	ExternalObjects = 
 endif
@@ -23,7 +23,7 @@ endif
 Objs            = Tool.o SCurve.o Calibration.o OldCalibration.o Channel.o HybridTester.o CMTester.o  Commissioning.o PulseShape.o PedeNoise.o
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` -Wcpp
+CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` 
 
 
 #DevFlags                   = -D__CBCDAQ_DEV__
@@ -37,10 +37,10 @@ IncludePaths            = $(IncludeDirs:%=-I%)
 .PHONY: print clean
 
 %.o: %.cc %.h
-	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(ExternalObjects) $(ExtObjectsRoot) -c -o $@ $<
+	$(CXX) -std=c++0x  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(ExternalObjects) $(ExtObjectsRoot) -c -o $@ $<
 
 all: print $(Objs) ../HWDescription/Definition.h
-	$(CC) -std=c++11 -shared -o libPh2_Tools.so $(Objs) -pthread
+	$(CC) -std=c++0x -shared -o libPh2_Tools.so $(Objs) -pthread
 	mv libPh2_Tools.so ../lib
 
 print:

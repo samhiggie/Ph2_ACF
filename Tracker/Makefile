@@ -1,7 +1,7 @@
 Objs            = TrackerEvent.o ParamSet.o
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -fPIC -Wcpp
+CCFlags         = -g -O1 -w -Wall -pedantic -fPIC 
 #DevFlags                   = -D__CBCDAQ_DEV__
 DevFlags                =
 
@@ -15,10 +15,10 @@ ExternalObjects = $(LibraryPaths) -lPh2_Interface -lPh2_Description -lPh2_Utils
 
 .PHONY: print clean
 %.o: %.cc %.h
-	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
+	$(CXX) -std=c++0x  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
 all: print $(Objs)
-	$(CC) -std=c++11 -shared -o libPh2_Tracker.so $(Objs)
+	$(CC) -std=c++0x -shared -o libPh2_Tracker.so $(Objs)
 	mv libPh2_Tracker.so ../lib
 
 print:
