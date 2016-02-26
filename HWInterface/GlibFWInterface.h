@@ -45,14 +45,13 @@ private:
     std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
     FpgaConfig* fpgaConfig;
     FileHandler* fFileHandler ;
-
+    uint32_t fNthAcq;
 
 private:
     /*!
      * \brief SRAM selection for DAQ
-     * \param pNthAcq : actual number of acquisitions
      */
-    void SelectDaqSRAM( uint32_t pNthAcq );
+    void SelectDaqSRAM();
 
 public:
     /*!
@@ -111,9 +110,8 @@ public:
     void Start() override;
     /*!
      * \brief Stop a DAQ
-     * \param pNthAcq : actual number of acquisitions
      */
-    void Stop( uint32_t pNthAcq ) override;
+    void Stop() override;
     /*!
      * \brief Pause a DAQ
      */
@@ -124,11 +122,10 @@ public:
     void Resume() override;
     /*!
      * \brief Read data from DAQ
-     * \param pNthAcq : actual number of acquisitions
      * \param pBreakTrigger : if true, enable the break trigger
      * \return fNpackets: the number of packets read
      */
-    uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger ) override;
+    uint32_t ReadData( BeBoard* pBoard, bool pBreakTrigger ) override;
     /*!
      * \brief Read data for pNEvents
      * \param pBoard : the pointer to the BeBoard

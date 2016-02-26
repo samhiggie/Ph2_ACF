@@ -142,10 +142,10 @@ void BeBoardInterface::Start( BeBoard* pBoard )
 }
 
 
-void BeBoardInterface::Stop( BeBoard* pBoard, uint32_t pNthAcq )
+void BeBoardInterface::Stop( BeBoard* pBoard )
 {
     setBoard( pBoard->getBeBoardIdentifier() );
-    fBoardFW->Stop( pNthAcq );
+    fBoardFW->Stop();
 }
 
 
@@ -163,10 +163,10 @@ void BeBoardInterface::Resume( BeBoard* pBoard )
 }
 
 
-uint32_t BeBoardInterface::ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger )
+uint32_t BeBoardInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger )
 {
     setBoard( pBoard->getBeBoardIdentifier() );
-    fBoardFW->ReadData( pBoard, pNthAcq, pBreakTrigger );
+    fBoardFW->ReadData( pBoard, pBreakTrigger );
 }
 
 uint32_t BeBoardInterface::ReadNEvents( BeBoard* pBoard, uint32_t pNEvents )

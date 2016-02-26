@@ -107,7 +107,7 @@ void ICGlibFWInterface::Start()
     //implement something sane form Kirika's repo: daq.cc
 }
 
-void ICGlibFWInterface::Stop( uint32_t pNthAcq )
+void ICGlibFWInterface::Stop()
 {
     //implement something sane form Kirika's repo: daq.cc
 }
@@ -126,7 +126,7 @@ void ICGlibFWInterface::Resume()
     //  WriteReg( BREAK_TRIGGER, 0 );
 }
 
-uint32_t ICGlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
+uint32_t ICGlibFWInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger )
 {
     //implement something sane form Kirika's repo: daq.cc
     return fNpackets;

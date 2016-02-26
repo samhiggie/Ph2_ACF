@@ -160,9 +160,8 @@ public:
     /*!
      * \brief Stop a DAQ
      * \param pBoard
-     * \param pNthAcq : actual number of acquisitions
      */
-    void Stop( BeBoard* pBoard, uint32_t pNthAcq );
+    void Stop( BeBoard* pBoard );
     /*!
      * \brief Pause a DAQ
      * \param pBoard
@@ -176,11 +175,10 @@ public:
     /*!
      * \brief Read data from DAQ
      * \param pBoard
-     * \param pNthAcq : actual number of acquisitions
      * \param pBreakTrigger : if true, enable the break trigger
      * \return fNpackets: the number of packets read
      */
-    uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger );
+    uint32_t ReadData( BeBoard* pBoard, bool pBreakTrigger );
     /*!
      * \brief Read data for pNEvents
      * \param pBoard : the pointer to the BeBoard

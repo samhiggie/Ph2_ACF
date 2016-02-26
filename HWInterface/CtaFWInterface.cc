@@ -21,7 +21,8 @@ namespace Ph2_HwInterface
 CtaFWInterface::CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
     BeBoardFWInterface( puHalConfigFileName, pBoardId ),
     fpgaConfig( nullptr ),
-    fData( nullptr )
+    fData( nullptr ),
+    fNthAcq(0)
 {}
 
 
@@ -29,7 +30,8 @@ CtaFWInterface::CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoard
     BeBoardFWInterface( puHalConfigFileName, pBoardId ),
     fpgaConfig( nullptr ),
     fData( nullptr ),
-    fFileHandler( pFileHandler )
+    fFileHandler( pFileHandler ),
+    fNthAcq(0)
 {
     if ( fFileHandler == nullptr ) fSaveToFile = false;
     else fSaveToFile = true;
@@ -38,7 +40,8 @@ CtaFWInterface::CtaFWInterface( const char* puHalConfigFileName, uint32_t pBoard
 CtaFWInterface::CtaFWInterface( const char* pId, const char* pUri, const char* pAddressTable ) :
     BeBoardFWInterface(pId, pUri, pAddressTable),
     fpgaConfig( nullptr ),
-    fData( nullptr )
+    fData( nullptr ),
+    fNthAcq(0)
 {}
 
 
@@ -46,8 +49,8 @@ CtaFWInterface::CtaFWInterface( const char* pId, const char* pUri, const char* p
     BeBoardFWInterface(pId, pUri, pAddressTable),
     fpgaConfig( nullptr ),
     fData( nullptr ),
-
-    fFileHandler( pFileHandler )
+    fFileHandler( pFileHandler ),
+    fNthAcq(0)
 {
     if ( fFileHandler == nullptr ) fSaveToFile = false;
     else fSaveToFile = true;
@@ -110,14 +113,14 @@ void CtaFWInterface::Start()
     while ( cVal == 0 );
 }
 
-void CtaFWInterface::Stop( uint32_t pNthAcq )
+void CtaFWInterface::Stop()
 {
     std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
     uhal::ValWord<uint32_t> cVal;
 
     //Select SRAM
-    SelectDaqSRAM( pNthAcq );
+    SelectDaqSRAM();
     //Stop the DAQ
     cVecReg.push_back( {"break_trigger", 1} );
     cVecReg.push_back( {"pc_commands.PC_config_ok", 0} );
@@ -153,7 +156,7 @@ void CtaFWInterface::Resume()
     WriteReg( "break_trigger", 0 );
 }
 
-uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
+uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger )
 {
     //Readout settings
     std::chrono::milliseconds cWait( 1 );
@@ -164,7 +167,7 @@ uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool p
         fBlockSize = computeBlockSize( pBoard );
     //FIFO goes to write_data state
     //Select SRAM
-    SelectDaqSRAM( pNthAcq );
+    SelectDaqSRAM();
 
     //Wait for the SRAM full condition.
     cVal = ReadReg( fStrFull );
@@ -187,6 +190,9 @@ uint32_t CtaFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool p
 
     WriteReg( fStrSramUserLogic, 1 );
     WriteReg( fStrReadout, 1 );
+
+    //increment the counter
+    fNthAcq++;
 
     //Wait for the non SRAM full condition starts,
     do
@@ -246,7 +252,7 @@ void CtaFWInterface::ReadNEvents(BeBoard* pBoard, uint32_t pNEvents )
         fBlockSize = computeBlockSize( pBoard );
 
     //Select SRAM
-    SelectDaqSRAM( pNthAcq );
+    SelectDaqSRAM();
 
     //Wait for the SRAM full condition.
     cVal = ReadReg( fStrFull );
@@ -273,6 +279,9 @@ void CtaFWInterface::ReadNEvents(BeBoard* pBoard, uint32_t pNEvents )
     std::vector<uint32_t> cData =  ReadBlockRegValue( fStrSram, fBlockSize );
 
     WriteReg( fStrSramUserLogic, 1 );
+
+    //increment the counter
+    fNthAcq++;
 
     // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
     if ( fData ) delete fData;
@@ -327,12 +336,12 @@ bool CtaFWInterface::WriteBlockReg( const std::string& pRegNode, const std::vect
     return cWriteCorr;
 }
 
-void CtaFWInterface::SelectDaqSRAM( uint32_t pNthAcq )
+void CtaFWInterface::SelectDaqSRAM()
 {
-    fStrSram  = ( ( pNthAcq % 2 + 1 ) == 1 ? "sram1" : "sram2" );
-    fStrSramUserLogic = ( ( pNthAcq % 2 + 1 ) == 1 ? "ctrl_sram.sram1_user_logic" : "ctrl_sram.sram2_user_logic" );
-    fStrFull = ( ( pNthAcq % 2 + 1 ) == 1 ? "flags.SRAM1_full" : "flags.SRAM2_full" );
-    fStrReadout = ( ( pNthAcq % 2 + 1 ) == 1 ? "pc_commands.SRAM1_end_readout" : "pc_commands.SRAM2_end_readout" );
+    fStrSram  = ( ( fNthAcq % 2 + 1 ) == 1 ? "sram1" : "sram2" );
+    fStrSramUserLogic = ( ( fNthAcq % 2 + 1 ) == 1 ? "ctrl_sram.sram1_user_logic" : "ctrl_sram.sram2_user_logic" );
+    fStrFull = ( ( fNthAcq % 2 + 1 ) == 1 ? "flags.SRAM1_full" : "flags.SRAM2_full" );
+    fStrReadout = ( ( fNthAcq % 2 + 1 ) == 1 ? "pc_commands.SRAM1_end_readout" : "pc_commands.SRAM2_end_readout" );
 }
 
 
