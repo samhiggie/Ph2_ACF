@@ -445,6 +445,12 @@ void GlibFWInterface::EncodeReg( const CbcRegItem& pRegItem, uint8_t pFeId, uint
     pVecReq.push_back( pFeId  << 21 | pCbcId << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
 }
 
+void GlibFWInterface::BCEncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite )
+{
+    // here I need to loop over all CBCs somehow...
+    //pVecReq.push_back( ( pCbcId >> 3 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+}
+
 void GlibFWInterface::DecodeReg( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed )
 {
     // temporary for 16CBC readout FW  (Beamtest NOV 15)
@@ -510,8 +516,10 @@ void GlibFWInterface::ReadI2C( std::vector<uint32_t>& pVecReq )
 }
 
 
-void GlibFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback)
+bool GlibFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback)
 {
+    bool cSuccess = false;
+    std::vector<uint32_t> cWriteVec = pVecReg;
     try
     {
         WriteI2C( pVecReq, true );
@@ -521,7 +529,7 @@ void GlibFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pV
         throw except;
     }
     // now read back
-    // not sure if I should clear the last 8 bits of the vector
+    // not sure if I should clear the last 8 bits of the vector, let's assume it is safe to not do that
     if (pReadback)
     {
         try
@@ -532,9 +540,48 @@ void GlibFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pV
         {
             throw e;
         }
-        ReadI2C( pVecReq );
+        try
+        {
+            ReadI2C( pVecReq );
+        }
+        catch (Exception& e )
+        {
+            throw e;
+        }
+        // now pVecReq contains the read data, I could add the comparison in here by making a copy of the original data in the beginning
+        // now I need to make sure that the written and the read-back vector are the same
+        auto cMismatchWord = std::mismatch( cWriteVec.begin(), cWriteVec.end(), cVecReq.begin() );
+        if ( cMismatchWord.first == cWriteVec.end() ) cSuccess = true;
+        else
+        {
+            std::vector<uint32_t> cWriteAgain;
+            while ( cMismatchWord.first != cWriteVec.end() )
+            {
+                //here decode the items for printout if necessary
+                CbcRegItem cWriteItem;
+                uint8_t cCbcId;
+                DecodeReg(cWriteItem, cCbcId, *cMismatchWord.first );
+                CbcRegItem cReadItem;
+                DecodeReg(cVecReq, cCbcId, *cMismatchWord.second);
+
+                cWriteAgain.push_back(*cMismatchWord.first);
+                //move the iterator oneward
+                cMismatchWord = std::mismatch(++cMsimatchWord.first, cVecWrite.end(), ++cMismatchWord.second );
+                cSuccess = false;
+            }
+            // this is recursive - da chit!
+            std::cout << "There were readback errors, trying again!" << std::endl;
+            this->WriteCbcBlockReg(pFeId, cWriteAgain, true);
+        }
     }
-    // now pVecReq contains the read data, I could add the comparison in here by making a copy of the original data in the beginning
+    else cSuccess = true;
+    return cSuccess;
+}
+
+
+bool GlibFWInterface::BCWriteCbcBlockReg(uint8_t pFeId, std::vector(uint32_t > & pVecReq, bool pReadback))
+{
+    //use the method above for that!
 }
 
 void GlibFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
@@ -547,7 +594,36 @@ void GlibFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVe
     {
         throw e;
     }
-    ReadI2C( pVecReq );
+    try
+    {
+        ReadI2C( pVecReq );
+    }
+    catch (Exception& e )
+    {
+        throw e;
+    }
+}
+
+void GlibFWInterface::CbcFastReset()
+{
+    fBoardFW->WriteReg( "cbc_fast_reset", 1 );
+
+    usleep( 2000 );
+
+    fBoardFW->WriteReg( "cbc_fast_reset", 0 );
+}
+
+void GlibFWInterface::CbcFastReset()
+{
+    fBoardFW->WriteReg( "cbc_hard_reset", 1 );
+
+    usleep( 2000 );
+
+    fBoardFW->WriteReg( "cbc_hard_reset", 0 );
+
+    usleep( 20
+}
+00 );
 }
 
 void GlibFWInterface::FlashProm( const std::string& strConfig, const char* pstrFile )

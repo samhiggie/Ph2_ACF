@@ -431,7 +431,7 @@ void CtaFWInterface::ReadI2C( std::vector<uint32_t>& pVecReq )
 }
 
 
-void CtaFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
+bool CtaFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
 {
     try
     {

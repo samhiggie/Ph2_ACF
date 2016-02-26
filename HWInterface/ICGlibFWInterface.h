@@ -184,21 +184,13 @@ public:
     * \param pVecReq : Vector to stack the encoded words
     */
     void EncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ); /*!< Encode a/several word(s) readable for a Cbc*/
+    void BCEncodeReg( const CbcRegItem& pRegItem, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite );
+    void DecodeReg( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed );
 
-    //I2C command sending and getting the reply for r/w the Cbc registers
-    /*! \brief add I2C command to the command list
-     * \param pCbc
-     * \param pRegItem
-     * \param r true for read
-     * \param w true for write
-     */
-    void SetCbcI2cCommand( const CbcRegItem &pRegItem, bool r, bool w );
-    void SetCbcI2cCommand( const Cbc* pCbc, const CbcRegItem &pRegItem, bool r, bool w );
-    bool SendCbcI2cCommandsAndReadReplies( unsigned pFeId, std::vector<CbcI2cReply> &pReplies );
-    bool SendCbcI2cWriteCommandsAndReadReplies( unsigned pFeId, std::vector<CbcI2cReply> &pReplies );
-    bool SendCbcI2cWriteReadCommandsAndReadReplies( unsigned pFeId, std::vector<CbcI2cReply> &pReplies );
-    bool SendCbcI2cReadCommandsAndReadReplies( unsigned pFeId, std::vector<CbcI2cReply> &pReplies );
 
+    bool WriteCbcBlockReg(uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback);
+    bool BCWriteCbcBlockReg(uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback);
+    void ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReg );
 ///////////////////////////////////////////////////////
 //      FPGA CONFIG                                 //
 /////////////////////////////////////////////////////

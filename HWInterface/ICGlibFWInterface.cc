@@ -203,6 +203,12 @@ void ICGlibFWInterface::EncodeReg( const CbcRegItem& pRegItem, uint8_t pCbcId, s
     uint8_t cRW =  ( ( pRead ? 1 : 0 ) << 1 ) + ( pWrite ? 1 : 0 );
     pVecReq.push_back( ( CBCFMC_ID << 28 ) | ( pCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
 }
+void ICGlibFWInterface::BCEncodeReg( const CbcRegItem& pRegItem, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite )
+{
+    //use fBroadcastCBCId for broadcast commands
+    uint8_t cRW =  ( ( pRead ? 1 : 0 ) << 1 ) + ( pWrite ? 1 : 0 );
+    pVecReq.push_back( ( CBCFMC_ID << 28 ) | ( fBroadcastCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+}
 
 void ICGlibFWInterface::DecodeReg( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed )
 {
@@ -280,18 +286,27 @@ bool ICGlibFWInterface::WriteI2C( unsigned pFeId, std::vector<uint32_t>& pVecSen
 
 
 
-void WriteCbcBlockReg(uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback)
+bool ICGlibFWInterface::WriteCbcBlockReg(uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback)
 {
     std::vector<uint32_t> cReplies;
-    WriteI2C(pFeId, pVecReg, cReplies, pReadback, false );
+    bool cSuccess = !WriteI2C(pFeId, pVecReg, cReplies, pReadback, false );
     pVecReg.clear();
     pVecReg = cReplies;
     // the actual write & readback command is in the vector
     // the ref to pVecReg now contains the reply which is of different format but i should be able to decode it using the decode reg mehtod
-    // I have to try to determine the broadcast variable in from the data by looking at the values in the vector
+    return cSuccess;
 }
 
-void ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReg )
+bool ICGlibFWInterface::BCWriteCbcBlockReg(uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback)
+{
+    std::vector<uint32_t> cReplies;
+    bool cSuccess = !WriteI2C(pFeId, pVecReg, cReplies, pReadback, true );
+    pVecReg.clear();
+    pVecReg = cReplies;
+    return cSuccess;
+}
+
+void ICGlibFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReg )
 {
     std::vector<uint32_t> cReplies;
     //it sounds weird, but ReadI2C is called inside writeI2c, therefore here I have to write and disable the readback. The actual read command is in the words of the vector, no broadcast, maybe I can get rid of it
