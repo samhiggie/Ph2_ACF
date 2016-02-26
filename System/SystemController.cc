@@ -45,10 +45,8 @@ void SystemController::InitializeHw( const std::string& pFilename, std::ostream&
 {
     if ( pFilename.find( ".xml" ) != std::string::npos )
         parseHWxml( pFilename, os );
-    else if ( pFilename.find( ".json" ) != std::string::npos )
-        parseHWjson( pFilename, os );
-    else
-        std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
+    lse
+    std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
     if ( fFileHandler != NULL ) std::cout << BOLDBLUE << "Saving binary raw data to: " << fFileHandler->getFilename() << RESET << std::endl;
 }
 
@@ -56,8 +54,6 @@ void SystemController::InitializeSettings( const std::string& pFilename, std::os
 {
     if ( pFilename.find( ".xml" ) != std::string::npos )
         parseSettingsxml( pFilename, os );
-    else if ( pFilename.find( ".json" ) != std::string::npos )
-        parseSettingsjson( pFilename, os );
     else
         std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
 }
@@ -112,11 +108,11 @@ void SystemController::ConfigureHw( std::ostream& os , bool bIgnoreI2c )
     accept( cConfigurator );
 }
 
-void SystemController::Run( BeBoard* pBeBoard, uint32_t pNthAcq )
+void SystemController::Run( BeBoard* pBeBoard )
 {
     fBeBoardInterface->Start( pBeBoard );
-    fBeBoardInterface->ReadData( pBeBoard, pNthAcq, true );
-    fBeBoardInterface->Stop( pBeBoard, pNthAcq );
+    fBeBoardInterface->ReadData( pBeBoard, true );
+    fBeBoardInterface->Stop( pBeBoard );
 }
 
 void SystemController::parseHWxml( const std::string& pFilename, std::ostream& os )
@@ -270,147 +266,6 @@ void SystemController::parseHWxml( const std::string& pFilename, std::ostream& o
     os << "\n";
 }
 
-void SystemController::parseHWjson( const std::string& pFilename, std::ostream& os )
-{
-#if 0
-    uint32_t cBeId, cModuleId, cCbcId;
-    uint32_t cNBeBoard = 0;
-    int i, j;
-
-    // serialize  file into char array
-    std::ifstream cIn( pFilename );
-    std::string cContents( ( std::istreambuf_iterator<char>( cIn ) ), std::istreambuf_iterator<char>() );
-    const char* cJsonSource = cContents.c_str() ;
-
-    picojson::value  cJsonValue;
-
-    std::string cErr = picojson::parse( cJsonValue, cJsonSource, cJsonSource + strlen( cJsonSource ) );
-    if ( !cErr.empty() ) os << "JSON parsing errors: " << cErr << std::endl;
-
-    os << "\n\n\n";
-    for ( i = 0; i < 80; i++ )
-        os << "*";
-    os << "\n";
-    for ( j = 0; j < 40; j++ )
-        os << " ";
-    os << BOLDRED << "HW SUMMARY: " << RESET << std::endl;
-    for ( i = 0; i < 80; i++ )
-        os << "*";
-    os << "\n";
-    os << "\n";
-
-    // get the array of shelves
-    picojson::array cBeBoards = cJsonValue.get( "HwDescription" ).get( "BeBoard" ).get<picojson::array>();
-    // iterate the BeBoards
-    for ( const auto& cBoard : cBeBoards )
-    {
-        cBeId = static_cast<uint32_t>( cBoard.get( "Id" ).get<double>() );
-        BeBoard* cBeBoard = new BeBoard( cBeId );
-        os << BOLDCYAN << "|" << "----" << "BeBoard" << "  " << "Id" << " :" << cBeId << RESET << std:: endl;
-
-        // Iterate the BeBoardRegister Nodes
-        for ( const auto& cRegister :  cBoard.get( "RegisterName" ).get<picojson::object>( ) )
-        {
-            // os << BOLDCYAN << "|" << "  " << "|" << "_____" << cRegister.first  << " :" << static_cast<uint32_t>( cRegister.second.get<double>() ) << RESET << std:: endl;
-            cBeBoard->setReg( cRegister.first , static_cast<uint32_t>( cRegister.second.get<double>() ) );
-        }
-
-        //fShelveVector[cNShelve]->addBoard( cBeBoard );
-
-        // now need to find out what the boardType is to load the apropriate FWInterface
-        BeBoardFWInterface* cBeBoardFWInterface;
-
-        if ( cBoard.get( "boardType" ).get<std::string>() == "Glib" )
-        {
-            cBeBoardFWInterface = new GlibFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
-            fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] = cBeBoardFWInterface;
-        }
-        else if ( cBoard.get( "boardType" ).get<std::string>() == "Cta" )
-            fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface( cJsonValue.get( "HwDescription" ).get( "Connections" ).get<std::string>().c_str(), cBeId, fFileHandler );
-
-        // now grab the modules
-        picojson::array cModules = cBoard.get( "Modules" ).get<picojson::array>();
-        for ( const auto& cModuleNode : cModules )
-        {
-            cModuleId = static_cast<uint32_t>( cModuleNode.get( "ModuleId" ).get<double>() );
-            uint32_t cFMCId = static_cast<uint32_t>( cModuleNode.get( "FMCId" ).get<double>() );
-            uint32_t cFeId = static_cast<uint32_t>( cModuleNode.get( "FeId" ).get<double>() );
-            bool cStatus = cModuleNode.get( "Status" ).evaluate_as_boolean();
-
-            if ( cStatus )
-            {
-                Module* cModule = new Module( cBeId, cFMCId, cFeId, cModuleId );
-                fShelveVector[cNShelve]->getBoard( cBeId )->addModule( cModule );
-                os << BOLDCYAN << "|" << "	" << "|" << "----" << "Module" << "  " << "FeId" << " :" << cFeId <<  RESET << std:: endl;
-
-                // get the CBC file path prefix only if it exists!
-
-                std::string cFilePrefix;
-                // conditional parsing
-                if ( !cModuleNode.get( "CbcFilePath" ).is<picojson::null>() ) cFilePrefix = cModuleNode.get( "CbcFilePath" ).get<std::string>();
-                if ( !cFilePrefix.empty() ) os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC Files Path : " << cFilePrefix << RESET << std::endl;
-
-                // get the CBC array
-                picojson::array cCbcs = cModuleNode.get( "CBCs" ).get<picojson::array>();
-
-                // Iterate the CBC node
-                for ( const auto& cCbcNode : cCbcs )
-                {
-                    cCbcId = static_cast<uint32_t>( cCbcNode.get( "Id" ).get<double>() );
-                    std::string cFileName;
-                    if ( !cFilePrefix.empty() )
-                        cFileName = cFilePrefix + cCbcNode.get( "configfile" ).get<std::string>();
-                    else cFileName = cCbcNode.get( "configfile" ).get<std::string>();
-                    Cbc* cCbc = new Cbc( cBeId, cFMCId , cFeId, cCbcId, cFileName );
-                    os << BOLDCYAN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC" << "  " << "Id" << " :" << cCbcId << ", File: " << cFileName << RESET << std:: endl;
-
-                    // check if there is a CBC Register node
-                    if ( !cCbcNode.get( "Register" ).is<picojson::null>() )
-                    {
-                        // iterate the registers
-                        for ( const auto& cRegister :  cCbcNode.get( "Register" ).get<picojson::object>( ) )
-                            cCbc->setReg( cRegister.first , convertAnyInt( cRegister.second.get<std::string>().c_str() ) );
-                    }
-
-                    // now do the same with global registers
-                    if ( !cModuleNode.get( "Global_CBC_Registers" ).is<picojson::null>() )
-                    {
-                        // iterate the registers
-                        for ( const auto& cRegister :  cModuleNode.get( "Global_CBC_Registers" ).get<picojson::object>( ) )
-                        {
-                            std::string regname = cRegister.first;
-                            uint32_t regvalue = convertAnyInt( cRegister.second.get<std::string>().c_str() );
-                            cCbc->setReg( regname , uint8_t( regvalue ) );
-                            os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "Global_CBC_Register"  << " : " << regname << " =  0x" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << regvalue << std::dec << RESET << std:: endl;
-                        }
-                    }
-
-                    //fShelveVector[cNShelve]->getBoard( cBeId )->getModule( cModuleId )->addCbc( cCbc );
-                    fBoardVec[cNBeBoard]->getModule( cModuleId )->addCbc( cCbc );
-                }
-            }
-        }
-    }
-    cNBeBoard++;
-
-
-    fBeBoardInterface = new BeBoardInterface( fBeBoardFWMap );
-    fCbcInterface = new CbcInterface( fBeBoardFWMap );
-
-    os << "\n";
-    os << "\n";
-    for ( i = 0; i < 80; i++ )
-        os << "*";
-    os << "\n";
-    for ( j = 0; j < 40; j++ )
-        os << " ";
-    os << BOLDRED << "END OF HW SUMMARY: " << RESET << std::endl;
-    for ( i = 0; i < 80; i++ )
-        os << "*";
-    os << "\n";
-    os << "\n";
-#endif
-}
 
 void SystemController::parseSettingsxml( const std::string& pFilename, std::ostream& os )
 {
@@ -433,24 +288,6 @@ void SystemController::parseSettingsxml( const std::string& pFilename, std::ostr
     }
 }
 
-void SystemController::parseSettingsjson( const std::string& pFilename, std::ostream& os )
-{
-    // serialize  file into char array
-    std::ifstream cIn( pFilename );
-    std::string cContents( ( std::istreambuf_iterator<char>( cIn ) ), std::istreambuf_iterator<char>() );
-    const char* cJsonSource = cContents.c_str() ;
-
-    picojson::value  cJsonValue;
-
-    std::string cErr = picojson::parse( cJsonValue, cJsonSource, cJsonSource + strlen( cJsonSource ) );
-    if ( !cErr.empty() ) os << "JSON parsing errors: " << cErr << std::endl;
-
-    for ( const auto& cSetting :  cJsonValue.get( "Settings" ).get<picojson::object>( ) )
-    {
-        fSettingsMap[cSetting.first] = static_cast<int>( cSetting.second.get<double>() );
-        os << RED << "Setting" << RESET << " --" << BOLDCYAN << cSetting.first << RESET << ":" << BOLDYELLOW << static_cast<int>( cSetting.second.get<double>() ) << RESET << std:: endl;
-    }
-}
 
 std::string SystemController::expandEnvironmentVariables( std::string s )
 {
