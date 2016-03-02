@@ -216,6 +216,7 @@ namespace Ph2_HwInterface {
         * \param pVecReq : Vector to stack the encoded words
         */
         void BCEncodeReg ( const CbcRegItem& pRegItem,
+                           uint8_t pNCbc,
                            std::vector<uint32_t>& pVecReq,
                            bool pRead = false,
                            bool pWrite = false ); /*!< Encode a/several word(s) readable for a Cbc*/

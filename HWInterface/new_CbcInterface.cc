@@ -404,7 +404,7 @@ void CbcInterface::WriteBroadcast ( const Module* pModule, const std::string& pR
 
     // encode the reg specific to the FW, pVerifLoop decides if it should be read back, true means to write it
     // the 1st boolean could be true if I acually wanted to read back from each CBC but this somehow does not make sense!
-    fBoardFW->BCEncodeReg ( cRegItem, cVec, false, true );
+    fBoardFW->BCEncodeReg ( cRegItem, pModule->fCbcVector.size(), cVec, false, true );
 
     bool cSuccess = fBoardFW->BCWriteCbcBlockReg ( pCbc->getFeId(), cVec, false );
 
@@ -434,7 +434,7 @@ void CbcInterface::WriteBroadcastMultReg (const Module* pModule, const std::vect
         cRegItem = pModule->fCbcVector.at (0)->getRegItem ( cReg.first );
         cRegItem.fValue = cReg.second;
 
-        fBoardFW->BCEncodeReg ( cRegItem, cVec, false, true );
+        fBoardFW->BCEncodeReg ( cRegItem, pModule->fCbcVector.size(), cVec, false, true );
 #ifdef COUNT_FLAG
         fRegisterCount++;
 #endif

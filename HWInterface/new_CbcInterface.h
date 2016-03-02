@@ -117,7 +117,7 @@ namespace Ph2_HwInterface {
          * \brief Read all register in all Cbcs and then UpdateCbc
          * \param pModule : Module containing vector of Cbcs
          */
-        void ReadAllCbc ( const Module* pModule );
+        //void ReadAllCbc ( const Module* pModule );
         /*!
          * \brief Hard reset of the Cbc
          * \param pCbc

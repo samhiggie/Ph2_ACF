@@ -220,7 +220,9 @@ namespace Ph2_HwInterface {
         uint8_t cRW =  ( ( pRead ? 1 : 0 ) << 1 ) + ( pWrite ? 1 : 0 );
         pVecReq.push_back ( ( CBCFMC_ID << 28 ) | ( pCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
+
     void ICGlibFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
+                                          uint8_t pNCbc,
                                           std::vector<uint32_t>& pVecReq,
                                           bool pRead,
                                           bool pWrite )
@@ -411,7 +413,7 @@ namespace Ph2_HwInterface {
 
     bool ICGlibFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
-        if ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FF) ) return true;
+        if ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) ) return true;
         else return false;
     }
 

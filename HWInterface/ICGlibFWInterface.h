@@ -169,7 +169,7 @@ namespace Ph2_HwInterface {
         bool ReadI2C ( uint8_t pFeId, uint32_t pNReplies, std::vector<uint32_t>& pReplies);
 
         //binary predicate for comparing sent I2C commands with replies using std::mismatch
-        bool cmd_reply_comp(const uint32_t& cWord1, const uint32_t& cWord2);
+        bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
 
 
 
@@ -186,7 +186,7 @@ namespace Ph2_HwInterface {
         * \param pVecReq : Vector to stack the encoded words
         */
         void EncodeReg ( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ); /*!< Encode a/several word(s) readable for a Cbc*/
-        void BCEncodeReg ( const CbcRegItem& pRegItem, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite );
+        void BCEncodeReg ( const CbcRegItem& pRegItem, uint8_t pNCbc, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite );
         void DecodeReg ( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed );
 
 

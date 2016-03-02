@@ -485,13 +485,14 @@ namespace Ph2_HwInterface {
     }
 
     void GlibFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
-                                        uint8_t pCbcId,
+                                        uint8_t pNCbc,
                                         std::vector<uint32_t>& pVecReq,
                                         bool pRead,
                                         bool pWrite )
     {
         // here I need to loop over all CBCs somehow...
-        //pVecReq.push_back( ( pCbcId >> 3 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+        for (uint8_t cCbcId = 0; cCbcId < pNCbc; cCbcId++)
+            pVecReq.push_back ( ( cCbcId >> 3 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
     }
 
     void GlibFWInterface::DecodeReg ( CbcRegItem& pRegItem,
@@ -644,9 +645,22 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool GlibFWInterface::BCWriteCbcBlockReg (uint8_t pFeId, std::vector (uint32_t > & pVecReq, bool pReadback) )
+    bool GlibFWInterface::BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback) )
     {
         //use the method above for that!
+        bool cSuccess = false;
+        std::vector<uint32_t> cWriteVec = pVecReg;
+
+        try
+        {
+            WriteI2C ( pVecReq, true );
+        }
+        catch ( Exception& except )
+        {
+            throw except;
+        }
+
+        return cSuccess;
     }
 
     void GlibFWInterface::ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
