@@ -29,16 +29,15 @@ using namespace Ph2_HwDescription;
  * \namespace Ph2_HwInterface
  * \brief Namespace regrouping all the interfaces to the hardware
  */
-namespace Ph2_HwInterface
-{
-class CtaFpgaConfig;
+namespace Ph2_HwInterface {
+    class CtaFpgaConfig;
 
-/*!
- * \class CtaFWInterface
- * \brief init/config of the CTA and its Cbc's
- */
-class CtaFWInterface : public BeBoardFWInterface
-{
+    /*!
+     * \class CtaFWInterface
+     * \brief init/config of the CTA and its Cbc's
+     */
+    class CtaFWInterface : public BeBoardFWInterface
+    {
 
       private:
         Data* fData; /*!< Data read storage*/
@@ -63,10 +62,10 @@ class CtaFWInterface : public BeBoardFWInterface
          * \param pBoardId
          */
         CtaFWInterface ( const char* puHalConfigFileName,
-                          uint32_t pBoardId );
+                         uint32_t pBoardId );
         CtaFWInterface ( const char* puHalConfigFileName,
-                          uint32_t pBoardId,
-                          FileHandler* pFileHandler );
+                         uint32_t pBoardId,
+                         FileHandler* pFileHandler );
         /*!
         * \brief Constructor of the CtaFWInterface class
         * \param pId : ID string
@@ -74,12 +73,12 @@ class CtaFWInterface : public BeBoardFWInterface
         * \param pAddressTable: address tabel string
         */
         CtaFWInterface ( const char* pId,
-                          const char* pUri,
-                          const char* pAddressTable );
+                         const char* pUri,
+                         const char* pAddressTable );
         CtaFWInterface ( const char* pId,
-                          const char* pUri,
-                          const char* pAddressTable,
-                          FileHandler* pFileHandler );
+                         const char* pUri,
+                         const char* pAddressTable,
+                         FileHandler* pFileHandler );
 
         /*!
          * \brief Destructor of the CtaFWInterface class
@@ -269,29 +268,29 @@ class CtaFWInterface : public BeBoardFWInterface
         void CbcHardReset();
 
         void CbcFastReset();
-    /*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration
-     * \param strConfig FPGA configuration name
-     * \param pstrFile path to MCS file
-     */
-    void FlashProm( const std::string& strConfig, const char* pstrFile );
-    /*! \brief Jump to an FPGA configuration */
-    void JumpToFpgaConfig( const std::string& strConfig);
 
-    void DownloadFpgaConfig( const std::string& strConfig, const std::string& strDest );
-    /*! \brief Is the FPGA being configured ?
-     * \return FPGA configuring process or NULL if configuration occurs */
-    const FpgaConfig* getConfiguringFpga()
-    {
-        return (const FpgaConfig*)fpgaConfig;
-    }
-    /*! \brief Get the list of available FPGA configuration (or firmware images)*/
-    std::vector<std::string> getFpgaConfigList( );
-    /*! \brief Delete one Fpga configuration (or firmware image)*/
-    void DeleteFpgaConfig( const std::string& strId);
+        void checkIfUploading();
+        /*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration
+         * \param strConfig FPGA configuration name
+         * \param pstrFile path to MCS file
+         */
+        void FlashProm ( const std::string& strConfig, const char* pstrFile );
+        /*! \brief Jump to an FPGA configuration */
+        void JumpToFpgaConfig ( const std::string& strConfig);
 
-    void threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor );
+        void DownloadFpgaConfig ( const std::string& strConfig, const std::string& strDest );
+        /*! \brief Is the FPGA being configured ?
+         * \return FPGA configuring process or NULL if configuration occurs */
+        const FpgaConfig* getConfiguringFpga()
+        {
+            return (const FpgaConfig*) fpgaConfig;
+        }
+        /*! \brief Get the list of available FPGA configuration (or firmware images)*/
+        std::vector<std::string> getFpgaConfigList( );
+        /*! \brief Delete one Fpga configuration (or firmware image)*/
+        void DeleteFpgaConfig ( const std::string& strId);
 
-};
+    };
 }
 
 #endif
