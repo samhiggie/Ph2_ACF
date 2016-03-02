@@ -19,22 +19,31 @@ namespace Ph2_HwInterface {
 
     GlibFWInterface::GlibFWInterface ( const char* puHalConfigFileName,
                                        uint32_t pBoardId ) :
-        GlibFWInterface ( puHalConfigFileName, pBoardId ),
-        fpgaConfig ( nullptr ),
-        fData ( nullptr ),
-        fNthAcq (0)
-    {}
+        GlibFWInterface ( puHalConfigFileName, pBoardId )
+        //fpgaConfig ( nullptr ),
+        //fData ( nullptr ),
+        //fNthAcq (0)
+    {
+        fpgaConfig = nullptr;
+        fData = nullptr;
+        fNthAcq = 0;
+    }
 
 
     GlibFWInterface::GlibFWInterface ( const char* puHalConfigFileName,
                                        uint32_t pBoardId,
                                        FileHandler* pFileHandler ) :
-        GlibFWInterface ( puHalConfigFileName, pBoardId ),
-        fpgaConfig ( nullptr ),
-        fData ( nullptr ),
-        fFileHandler ( pFileHandler ),
-        fNthAcq (0)
+        GlibFWInterface ( puHalConfigFileName, pBoardId )
+        //fpgaConfig ( nullptr ),
+        //fData ( nullptr ),
+        //fFileHandler ( pFileHandler ),
+        //fNthAcq (0)
     {
+        fpgaConfig = nullptr;
+        fData = nullptr;
+        fFileHandler = pFileHandler;
+        fNthAcq = 0;
+
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
     }
@@ -42,23 +51,32 @@ namespace Ph2_HwInterface {
     GlibFWInterface::GlibFWInterface ( const char* pId,
                                        const char* pUri,
                                        const char* pAddressTable ) :
-        GlibFWInterface ( pId, pUri, pAddressTable ),
-        fpgaConfig ( nullptr ),
-        fData ( nullptr ),
-        fNthAcq (0)
-    {}
+        GlibFWInterface ( pId, pUri, pAddressTable )
+        //fpgaConfig ( nullptr ),
+        //fData ( nullptr ),
+        //fNthAcq (0)
+    {
+        fpgaConfig = nullptr;
+        fData = nullptr;
+        fNthAcq = 0;
+    }
 
 
     GlibFWInterface::GlibFWInterface ( const char* pId,
                                        const char* pUri,
                                        const char* pAddressTable,
                                        FileHandler* pFileHandler ) :
-        GlibFWInterface ( pId, pUri, pAddressTable ),
-        fpgaConfig ( nullptr ),
-        fData ( nullptr ),
-        fFileHandler ( pFileHandler ),
-        fNthAcq (0)
+        GlibFWInterface ( pId, pUri, pAddressTable )
+        //fpgaConfig ( nullptr ),
+        //fData ( nullptr ),
+        //fFileHandler ( pFileHandler ),
+        //fNthAcq (0)
     {
+        fpgaConfig = nullptr;
+        fData = nullptr;
+        fFileHandler = pFileHandler;
+        fNthAcq = 0;
+
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
     }
@@ -301,8 +319,6 @@ namespace Ph2_HwInterface {
         }
         while ( cVal == 0 );
 
-        uhal::ValWord<uint32_t> cVal;
-
         if ( pBoard )
             fBlockSize = computeBlockSize ( pBoard );
 
@@ -442,7 +458,7 @@ namespace Ph2_HwInterface {
 
         while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
         {
-            ReadData ( pBoard, numAcq, true );
+            ReadData ( pBoard, true );
 
             for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
                 visitor->visit ( *cEvent );
@@ -452,7 +468,7 @@ namespace Ph2_HwInterface {
 
         }
 
-        Stop ( numAcq );
+        Stop ( );
         runningAcquisition = false;
     };
 
@@ -572,7 +588,7 @@ namespace Ph2_HwInterface {
     bool GlibFWInterface::WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback)
     {
         bool cSuccess = false;
-        std::vector<uint32_t> cWriteVec = pVecReg;
+        std::vector<uint32_t> cWriteVec = pVecReq;
 
         try
         {
@@ -607,7 +623,7 @@ namespace Ph2_HwInterface {
 
             // now pVecReq contains the read data, I could add the comparison in here by making a copy of the original data in the beginning
             // now I need to make sure that the written and the read-back vector are the same
-            auto cMismatchWord = std::mismatch ( cWriteVec.begin(), cWriteVec.end(), cVecReq.begin() );
+            auto cMismatchWord = std::mismatch ( cWriteVec.begin(), cWriteVec.end(), pVecReq.begin() );
 
             if ( cMismatchWord.first == cWriteVec.end() ) cSuccess = true;
             else
@@ -617,15 +633,15 @@ namespace Ph2_HwInterface {
                 while ( cMismatchWord.first != cWriteVec.end() )
                 {
                     //here decode the items for printout if necessary
-                    CbcRegItem cWriteItem;
-                    uint8_t cCbcId;
-                    DecodeReg (cWriteItem, cCbcId, *cMismatchWord.first );
-                    CbcRegItem cReadItem;
-                    DecodeReg (cVecReq, cCbcId, *cMismatchWord.second);
+                    //CbcRegItem cWriteItem;
+                    //uint8_t cCbcId;
+                    //DecodeReg (cWriteItem, cCbcId, *cMismatchWord.first );
+                    //CbcRegItem cReadItem;
+                    //DecodeReg (cVecReq, cCbcId, *cMismatchWord.second);
 
                     cWriteAgain.push_back (*cMismatchWord.first);
                     //move the iterator oneward
-                    cMismatchWord = std::mismatch (++cMsimatchWord.first, cVecWrite.end(), ++cMismatchWord.second );
+                    cMismatchWord = std::mismatch (++cMismatchWord.first, cWriteVec.end(), ++cMismatchWord.second );
                     cSuccess = false;
                 }
 
@@ -645,11 +661,11 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool GlibFWInterface::BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback) )
+    bool GlibFWInterface::BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback)
     {
         //use the method above for that!
         bool cSuccess = false;
-        std::vector<uint32_t> cWriteVec = pVecReg;
+        std::vector<uint32_t> cWriteVec = pVecReq;
 
         try
         {
@@ -686,46 +702,44 @@ namespace Ph2_HwInterface {
 
     void GlibFWInterface::CbcFastReset()
     {
-        fBoardFW->WriteReg ( "cbc_fast_reset", 1 );
+        WriteReg ( "cbc_fast_reset", 1 );
 
         usleep ( 2000 );
 
-        fBoardFW->WriteReg ( "cbc_fast_reset", 0 );
+        WriteReg ( "cbc_fast_reset", 0 );
     }
 
-    void GlibFWInterface::CbcFastReset()
+    void GlibFWInterface::CbcHardReset()
     {
-        fBoardFW->WriteReg ( "cbc_hard_reset", 1 );
+        WriteReg ( "cbc_hard_reset", 1 );
 
         usleep ( 2000 );
 
-        fBoardFW->WriteReg ( "cbc_hard_reset", 0 );
+        WriteReg ( "cbc_hard_reset", 0 );
 
-        usleep ( 20
+        usleep ( 20 );
     }
-    00 );
-}
 
-void GlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
-{
-    if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
-        throw Exception ( "This board is already uploading an FPGA configuration" );
+    void GlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
+    {
+        if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
+            throw Exception ( "This board is already uploading an FPGA configuration" );
 
-    if ( !fpgaConfig )
-        fpgaConfig = new GlibFpgaConfig ( this );
+        if ( !fpgaConfig )
+            fpgaConfig = new GlibFpgaConfig ( this );
 
-    fpgaConfig->runUpload ( strConfig, pstrFile );
-}
+        fpgaConfig->runUpload ( strConfig, pstrFile );
+    }
 
-void GlibFWInterface::JumpToFpgaConfig ( const std::string& strConfig )
-{
-    if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
-        throw Exception ( "This board is uploading an FPGA configuration" );
+    void GlibFWInterface::JumpToFpgaConfig ( const std::string& strConfig )
+    {
+        if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
+            throw Exception ( "This board is uploading an FPGA configuration" );
 
-    if ( !fpgaConfig )
-        fpgaConfig = new GlibFpgaConfig ( this );
+        if ( !fpgaConfig )
+            fpgaConfig = new GlibFpgaConfig ( this );
 
-    fpgaConfig->jumpToImage ( strConfig );
-}
+        fpgaConfig->jumpToImage ( strConfig );
+    }
 
 }

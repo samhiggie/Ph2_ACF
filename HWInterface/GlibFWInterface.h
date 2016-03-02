@@ -44,7 +44,7 @@ namespace Ph2_HwInterface {
         std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
         FpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
-        uint32_t fNthAcq;
+        uint32_t fNthAcq, fNpackets;
 
       private:
         /*!
@@ -241,8 +241,8 @@ namespace Ph2_HwInterface {
         void DecodeReg ( CbcRegItem& pRegItem,
                          uint8_t& pCbcId,
                          uint32_t pWord,
-                         bool& pRead = false,
-                         bool& pFailed = false ); /*!< Decode a word from a read of a register of the Cbc*/
+                         bool& pRead,
+                         bool& pFailed ); /*!< Decode a word from a read of a register of the Cbc*/
         //r/w the Cbc registers
         /*!
          * \brief Read register blocks of a Cbc
