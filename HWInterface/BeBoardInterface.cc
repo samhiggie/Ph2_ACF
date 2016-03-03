@@ -169,7 +169,7 @@ uint32_t BeBoardInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger )
     fBoardFW->ReadData( pBoard, pBreakTrigger );
 }
 
-uint32_t BeBoardInterface::ReadNEvents( BeBoard* pBoard, uint32_t pNEvents )
+void BeBoardInterface::ReadNEvents( BeBoard* pBoard, uint32_t pNEvents )
 {
     setBoard( pBoard->getBeBoardIdentifier() );
     fBoardFW->ReadNEvents( pBoard, pNEvents );

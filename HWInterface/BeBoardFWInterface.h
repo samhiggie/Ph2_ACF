@@ -119,12 +119,19 @@ namespace Ph2_HwInterface {
         */
         virtual void EncodeReg ( const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ) = 0; /*!< Encode a/several word(s) readable for a Cbc*/
         /*!
+        * \brief Encode a/several word(s) for Broadcast write to CBCs
+        * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to write
+        * \param pNCbc : number of CBCs to write to
+        * \param pVecReq : Vector to stack the encoded words
+        */
+        virtual void BCEncodeReg ( const CbcRegItem& pRegItem, uint8_t pNCbc, std::vector<uint32_t>& pVecReq, bool pRead = false, bool pWrite = false ) = 0; /*!< Encode a/several word(s) readable for a Cbc*/
+        /*!
         * \brief Decode a word from a read of a register of the Cbc
         * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to read
         * \param pCbcId : Id of the Cbc to work with
         * \param pWord : variable to put the decoded word
         */
-        virtual void DecodeReg ( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool pRead, bool pFailed ) = 0; /*!< Decode a word from a read of a register of the Cbc*/
+        virtual void DecodeReg ( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed ) = 0; /*!< Decode a word from a read of a register of the Cbc*/
 
 
         //virtual pure methods which are defined in the proper BoardFWInterface class
@@ -153,6 +160,14 @@ namespace Ph2_HwInterface {
         * \param pBoard
         */
         virtual void ConfigureBoard ( const BeBoard* pBoard ) = 0;
+        /*!
+         * \brief Send a CBC fast reset
+         */
+        virtual void CbcHardReset() = 0;
+        /*!
+         * \brief Send a CBC fast reset
+         */
+        virtual void CbcFastReset() = 0;
         /*!
          * \brief Start an acquisition in a separate thread
          * \param pBoard Board running the acquisition

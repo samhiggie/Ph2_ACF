@@ -209,7 +209,7 @@ namespace Ph2_HwInterface {
         void EncodeReg ( const CbcRegItem& pRegItem,
                          uint8_t pCbcId, std::vector<uint32_t>& pVecReq,
                          bool pRead = false,
-                         bool pWrite = false ); /*!< Encode a/several word(s) readable for a Cbc*/
+                         bool pWrite = false ) override; /*!< Encode a/several word(s) readable for a Cbc*/
         /*!
         * \brief Encode a/several word(s) readable for a Broadcast command
         * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to write
@@ -219,7 +219,7 @@ namespace Ph2_HwInterface {
                            uint8_t pNCbc,
                            std::vector<uint32_t>& pVecReq,
                            bool pRead = false,
-                           bool pWrite = false ); /*!< Encode a/several word(s) readable for a Cbc*/
+                           bool pWrite = false ) override; /*!< Encode a/several word(s) readable for a Cbc*/
         /*!
         * \brief Encode a/several word(s) readable for a Cbc
         * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to write
@@ -231,7 +231,7 @@ namespace Ph2_HwInterface {
                          uint8_t pCbcId,
                          std::vector<uint32_t>& pVecReq,
                          bool pRead = false,
-                         bool pWrite = false ); /*!< Encode a/several word(s) readable for a Cbc*/
+                         bool pWrite = false ) override; /*!< Encode a/several word(s) readable for a Cbc*/
         /*!
         * \brief Decode a word from a read of a register of the Cbc
         * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to read
@@ -242,20 +242,20 @@ namespace Ph2_HwInterface {
                          uint8_t& pCbcId,
                          uint32_t pWord,
                          bool& pRead,
-                         bool& pFailed ); /*!< Decode a word from a read of a register of the Cbc*/
+                         bool& pFailed ) override; /*!< Decode a word from a read of a register of the Cbc*/
         //r/w the Cbc registers
         /*!
          * \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback );
+        bool WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) override;
         /*!
          * \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool BCWriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback );
+        bool BCWriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) override;
         /*! \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
