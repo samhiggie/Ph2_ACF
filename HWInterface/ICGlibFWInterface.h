@@ -169,7 +169,7 @@ namespace Ph2_HwInterface {
         bool ReadI2C ( uint8_t pFeId, uint32_t pNReplies, std::vector<uint32_t>& pReplies);
 
         //binary predicate for comparing sent I2C commands with replies using std::mismatch
-        bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
+        static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
 
 
 

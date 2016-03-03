@@ -68,7 +68,7 @@ namespace Ph2_HwInterface {
         else fSaveToFile = true;
     }
 
-    void GlibFWInterface::getBoardInfo()
+    void ICGlibFWInterface::getBoardInfo()
     {
         std::cout << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) << std::endl;
         std::cout << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) << std::endl;
@@ -191,7 +191,7 @@ namespace Ph2_HwInterface {
 
         while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
         {
-            ReadData ( nullptr, numAcq, true );
+            ReadData ( nullptr, true );
 
             for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
                 visitor->visit ( *cEvent );
@@ -201,7 +201,7 @@ namespace Ph2_HwInterface {
 
         }
 
-        Stop ( numAcq );
+        Stop ( );
         runningAcquisition = false;
     };
 
@@ -327,7 +327,7 @@ namespace Ph2_HwInterface {
         // one option is to decode register by register...
         // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
         // could use a mask 0x0F01FFFF
-        auto cMismatchWord = std::mismatch ( pVecReg.begin(), cVecReg.end(), cReplies.begin(), cmd_reply_comp );
+        auto cMismatchWord = std::mismatch ( pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICGlibFWInterface::cmd_reply_comp );
 
         if ( cMismatchWord.first == pVecReg.end() )
         {
@@ -343,14 +343,14 @@ namespace Ph2_HwInterface {
             {
                 //here decode the items for printout if necessary
                 CbcRegItem cWriteItem;
-                uint8_t cCbcId;
-                DecodeReg (cWriteItem, cCbcId, *cMismatchWord.first );
                 CbcRegItem cReadItem;
-                DecodeReg (cVecReq, cCbcId, *cMismatchWord.second);
+                uint8_t cCbcId;
+                //DecodeReg (cWriteItem, cCbcId, *cMismatchWord.first );
+                //DecodeReg (cReadItem, cCbcId, *cMismatchWord.second);
 
                 cWriteAgain.push_back (*cMismatchWord.first);
                 //move the iterator oneward
-                cMismatchWord = std::mismatch (++cMsimatchWord.first, cVecWrite.end(), ++cMismatchWord.second, cmd_reply_comp );
+                cMismatchWord = std::mismatch (++cMismatchWord.first, pVecReg.end(), ++cMismatchWord.second, ICGlibFWInterface::cmd_reply_comp );
                 cSuccess = false;
             }
 
@@ -384,7 +384,7 @@ namespace Ph2_HwInterface {
     {
         std::vector<uint32_t> cReplies;
         //it sounds weird, but ReadI2C is called inside writeI2c, therefore here I have to write and disable the readback. The actual read command is in the words of the vector, no broadcast, maybe I can get rid of it
-        WriteI2C (pFeID, pVecReg, cReplies, false, false);
+        WriteI2C (pFeId, pVecReg, cReplies, false, false);
         pVecReg.clear();
         pVecReg = cReplies;
     }
@@ -413,8 +413,7 @@ namespace Ph2_HwInterface {
 
     bool ICGlibFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
-        if ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) ) return true;
-        else return false;
+        return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
     }
 
 }
