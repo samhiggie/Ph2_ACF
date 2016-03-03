@@ -189,10 +189,10 @@ int main( int argc, char* argv[] )
 		data.Set( pBoard, fFile.readFile(), pEventsperVcth, false);
 		pEvents = &data.GetEvents( pBoard);
 	    } else {
-            	uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+            	uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, false );
 
 		if ( cN + cPacketSize > pEventsperVcth ) 
-			cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
+			cSystemController.fBeBoardInterface->Stop( pBoard );
 
 		pEvents = &cSystemController.GetEvents( pBoard );
 	    }

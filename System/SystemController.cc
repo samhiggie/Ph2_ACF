@@ -160,7 +160,6 @@ namespace Ph2_System {
         {
             cBeId = cBeBoardNode.attribute ( "Id" ).as_int();
             BeBoard* cBeBoard = new BeBoard ( cBeId );
-            fBoardVector.push_back ( cBeBoard );
 
             os << BOLDCYAN << "|" << "----" << cBeBoardNode.name() << "  " << cBeBoardNode.first_attribute().name() << " :" << cBeBoardNode.attribute ( "Id" ).value() << RESET << std:: endl;
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
@@ -176,6 +175,7 @@ namespace Ph2_System {
             if ( cNCbcDataSize != 0 ) os << BOLDCYAN << "|" << "	" << "|" << "----" << cBeBoardFWVersionNode.name() << " NCbcDataSize: " << cNCbcDataSize  <<  RESET << std:: endl;
 
             cBeBoard->setNCbcDataSize ( cNCbcDataSize );
+            fBoardVector.push_back ( cBeBoard );
 
             // Iterate over the BeBoardRegister Nodes
             for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode/* != cBeBoardNode.child( "Module" )*/; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
@@ -184,12 +184,8 @@ namespace Ph2_System {
                 cBeBoard->setReg ( static_cast<std::string> ( cBeBoardRegNode.attribute ( "name" ).value() ), std::stoi ( cBeBoardRegNode.first_child().value() ) );
             }
 
-
-
             if ( !std::string ( cBeBoardNode.attribute ( "boardType" ).value() ).compare ( std::string ( "GLIB" ) ) )
-                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cBeBoardConnectionNode.attribute ( "id" ).value(),
-                        cBeBoardConnectionNode.attribute ( "uri" ).value(),
-                        cBeBoardConnectionNode.attribute ("address_table").value(), fFileHandler );
+                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cBeBoardConnectionNode.attribute ( "id" ).value(), cBeBoardConnectionNode.attribute ( "uri" ).value(), cBeBoardConnectionNode.attribute ("address_table").value(), fFileHandler );
 
             else if ( !std::string ( cBeBoardNode.attribute ( "boardType" ).value() ).compare ( std::string ( "CTA" ) ) )
                 fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cBeBoardConnectionNode.attribute ( "id" ).value(),

@@ -157,10 +157,10 @@ int main( int argc, char* argv[] )
         cSystemController.fBeBoardInterface->Start( pBoard );
         while ( cN <= pEventsperVcth )
         {
-            uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+            uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData( pBoard, false );
 
             if ( cN + cPacketSize >= pEventsperVcth )
-                cSystemController.fBeBoardInterface->Stop( pBoard, cNthAcq );
+                cSystemController.fBeBoardInterface->Stop( pBoard );
 
             const std::vector<Event*>& events = cSystemController.GetEvents( pBoard );
 

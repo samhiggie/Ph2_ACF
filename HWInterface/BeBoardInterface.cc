@@ -106,7 +106,7 @@ void BeBoardInterface::getBoardInfo( const BeBoard* pBoard )
 
 void BeBoardInterface::ConfigureBoard( const BeBoard* pBoard )
 {
-    setBoard( pBoard->getBeId() );
+    setBoard( pBoard->getBeBoardIdentifier() );
     fBoardFW->ConfigureBoard( pBoard );
 }
 

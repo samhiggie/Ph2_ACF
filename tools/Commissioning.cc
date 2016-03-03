@@ -106,7 +106,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 	    
 	    while ( cN <= fNevents )
 	      {
-		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		fBeBoardInterface->ReadData( pBoard, false );
 		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 		
 		// Loop over Events from this Acquisition
@@ -118,7 +118,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency( uint8_t pStartLatency, ui
 		  }
 		cNthAcq++;
 	      }
-	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    fBeBoardInterface->Stop( pBoard );
 	    std::cout << "Latency " << +cLat << " Hits " << cNHits  << " Events " << cN << std::endl;
 	    
 	  }
@@ -185,7 +185,7 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency( uint8_t pStartLatency
 	    
 	    while ( cN <= fNevents )
 	      {
-		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		fBeBoardInterface->ReadData( pBoard, false );
 		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 		
 		// if(cN <3 ) std::cout << *cEvent << std::endl;
@@ -199,7 +199,7 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency( uint8_t pStartLatency
 		  }
 		cNthAcq++;
 	      }
-	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    fBeBoardInterface->Stop( pBoard );
 	    std::cout << "Stub Latency " << +cLat << " Stubs " << cNStubs  << " Events " << cN << std::endl;
 	    
 	  }
@@ -458,7 +458,7 @@ void Commissioning::measureScurve( std::string pHistName, uint32_t pNEvents )
 	    
 	    while ( cN <=  pNEvents )
 	      {
-		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		fBeBoardInterface->ReadData( pBoard, false );
 		
 		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 		
@@ -474,7 +474,7 @@ void Commissioning::measureScurve( std::string pHistName, uint32_t pNEvents )
 		  }
 		cNthAcq++;
 	      }
-	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    fBeBoardInterface->Stop( pBoard );
 	    
 	    std::cout << "Threshold " << +cVcth << " Hits " << cHitCounter << " Events " << cN << std::endl;
 	    // now update the Histograms

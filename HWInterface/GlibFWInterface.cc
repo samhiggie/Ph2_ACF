@@ -19,31 +19,23 @@ namespace Ph2_HwInterface {
 
     GlibFWInterface::GlibFWInterface ( const char* puHalConfigFileName,
                                        uint32_t pBoardId ) :
-        GlibFWInterface ( puHalConfigFileName, pBoardId )
-        //fpgaConfig ( nullptr ),
-        //fData ( nullptr ),
-        //fNthAcq (0)
+        BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
+        fpgaConfig ( nullptr ),
+        fData ( nullptr ),
+        fNthAcq (0)
     {
-        fpgaConfig = nullptr;
-        fData = nullptr;
-        fNthAcq = 0;
     }
 
 
     GlibFWInterface::GlibFWInterface ( const char* puHalConfigFileName,
                                        uint32_t pBoardId,
                                        FileHandler* pFileHandler ) :
-        GlibFWInterface ( puHalConfigFileName, pBoardId )
-        //fpgaConfig ( nullptr ),
-        //fData ( nullptr ),
-        //fFileHandler ( pFileHandler ),
-        //fNthAcq (0)
+        BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
+        fpgaConfig ( nullptr ),
+        fData ( nullptr ),
+        fFileHandler ( pFileHandler ),
+        fNthAcq (0)
     {
-        fpgaConfig = nullptr;
-        fData = nullptr;
-        fFileHandler = pFileHandler;
-        fNthAcq = 0;
-
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
     }
@@ -51,14 +43,11 @@ namespace Ph2_HwInterface {
     GlibFWInterface::GlibFWInterface ( const char* pId,
                                        const char* pUri,
                                        const char* pAddressTable ) :
-        GlibFWInterface ( pId, pUri, pAddressTable )
-        //fpgaConfig ( nullptr ),
-        //fData ( nullptr ),
-        //fNthAcq (0)
+        BeBoardFWInterface ( pId, pUri, pAddressTable ),
+        fpgaConfig ( nullptr ),
+        fData ( nullptr ),
+        fNthAcq (0)
     {
-        fpgaConfig = nullptr;
-        fData = nullptr;
-        fNthAcq = 0;
     }
 
 
@@ -66,17 +55,12 @@ namespace Ph2_HwInterface {
                                        const char* pUri,
                                        const char* pAddressTable,
                                        FileHandler* pFileHandler ) :
-        GlibFWInterface ( pId, pUri, pAddressTable )
-        //fpgaConfig ( nullptr ),
-        //fData ( nullptr ),
-        //fFileHandler ( pFileHandler ),
-        //fNthAcq (0)
+        BeBoardFWInterface ( pId, pUri, pAddressTable ),
+        fpgaConfig ( nullptr ),
+        fData ( nullptr ),
+        fFileHandler ( pFileHandler ),
+        fNthAcq (0)
     {
-        fpgaConfig = nullptr;
-        fData = nullptr;
-        fFileHandler = pFileHandler;
-        fNthAcq = 0;
-
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
     }

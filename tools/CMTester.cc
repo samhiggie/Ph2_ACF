@@ -176,7 +176,7 @@ void CMTester::ScanNoiseChannels()
 	    
 	    while ( cN <=  cTotalEvents )
 	      {
-		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		fBeBoardInterface->ReadData( pBoard, false );
 		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 		
 		// Loop over Events from this Acquisition
@@ -208,7 +208,7 @@ void CMTester::ScanNoiseChannels()
 		  }
 		cNthAcq++;
 	      } // End of Analyze Events of last Acquistion loop
-	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    fBeBoardInterface->Stop( pBoard );
 	  }
 
 	// done taking data, now iterate over p_noisestrips and find out the bad strips, push them into the fNoiseStripMap, then clear the histogram
@@ -257,7 +257,7 @@ void CMTester::TakeData()
 	    while ( cN <=  fNevents )
 	      {
 		// Run( pBoard, cNthAcq );
-		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		fBeBoardInterface->ReadData( pBoard, false );
 		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 		
 		// Loop over Events from this Acquisition
@@ -276,7 +276,7 @@ void CMTester::TakeData()
 		  }
 		cNthAcq++;
 	      } // End of Analyze Events of last Acquistion loop
-	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    fBeBoardInterface->Stop( pBoard );
 	  }
 
 	updateHists();

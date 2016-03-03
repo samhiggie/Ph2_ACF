@@ -115,13 +115,13 @@ void PulseShape::ScanVcth( uint32_t pDelay )
 	    fBeBoardInterface->Start( pBoard );
 	    while ( cN <= fNevents )
 	      {
-		cN += fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		cN += fBeBoardInterface->ReadData( pBoard, false );
 		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 		for ( auto& cEvent : events )
 		  cNHits += fillVcthHist( pBoard, cEvent, cVcth );
 		cNthAcq++;
 	      }
-	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    fBeBoardInterface->Stop( pBoard );
 	    if ( !cNonZero && cNHits != 0 )
 	      {
 		cNonZero = true;

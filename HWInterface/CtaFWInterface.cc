@@ -19,7 +19,7 @@ namespace Ph2_HwInterface {
 
     CtaFWInterface::CtaFWInterface ( const char* puHalConfigFileName,
                                      uint32_t pBoardId ) :
-        CtaFWInterface ( puHalConfigFileName, pBoardId )
+        BeBoardFWInterface ( puHalConfigFileName, pBoardId )
         //fpgaConfig ( nullptr ),
         //fData ( nullptr ),
         //fNthAcq (0)
@@ -33,17 +33,12 @@ namespace Ph2_HwInterface {
     CtaFWInterface::CtaFWInterface ( const char* puHalConfigFileName,
                                      uint32_t pBoardId,
                                      FileHandler* pFileHandler ) :
-        CtaFWInterface ( puHalConfigFileName, pBoardId )
-        //fpgaConfig ( nullptr ),
-        //fData ( nullptr ),
-        //fFileHandler ( pFileHandler ),
-        //fNthAcq (0)
+        BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
+        fpgaConfig ( nullptr ),
+        fData ( nullptr ),
+        fFileHandler ( pFileHandler ),
+        fNthAcq (0)
     {
-        fpgaConfig = nullptr;
-        fData = nullptr;
-        fFileHandler = pFileHandler;
-        fNthAcq = 0;
-
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
     }
@@ -51,14 +46,11 @@ namespace Ph2_HwInterface {
     CtaFWInterface::CtaFWInterface ( const char* pId,
                                      const char* pUri,
                                      const char* pAddressTable ) :
-        CtaFWInterface ( pId, pUri, pAddressTable )
-        //fpgaConfig ( nullptr ),
-        //fData ( nullptr ),
-        //fNthAcq (0)
+        BeBoardFWInterface ( pId, pUri, pAddressTable ),
+        fpgaConfig ( nullptr ),
+        fData ( nullptr ),
+        fNthAcq (0)
     {
-        fpgaConfig = nullptr;
-        fData = nullptr;
-        fNthAcq = 0;
     }
 
 
@@ -66,17 +58,12 @@ namespace Ph2_HwInterface {
                                      const char* pUri,
                                      const char* pAddressTable,
                                      FileHandler* pFileHandler ) :
-        CtaFWInterface ( pId, pUri, pAddressTable )
-        //fpgaConfig ( nullptr ),
-        //fData ( nullptr ),
-        //fFileHandler ( pFileHandler ),
-        //fNthAcq (0)
+        BeBoardFWInterface ( pId, pUri, pAddressTable ),
+        fpgaConfig ( nullptr ),
+        fData ( nullptr ),
+        fFileHandler ( pFileHandler ),
+        fNthAcq (0)
     {
-        fpgaConfig = nullptr;
-        fData = nullptr;
-        fFileHandler = pFileHandler;
-        fNthAcq = 0;
-
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
     }

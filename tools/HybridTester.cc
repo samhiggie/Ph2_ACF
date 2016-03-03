@@ -171,7 +171,7 @@ void HybridTester::ScanThreshold()
 		    while ( cN <=  cEventsperVcth )
 		      {
 			// Run( pBoard, cNthAcq );
-			fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+			fBeBoardInterface->ReadData( pBoard, false );
 			const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 			
 			// Loop over Events from this Acquisition
@@ -183,7 +183,7 @@ void HybridTester::ScanThreshold()
 			  }
 			cNthAcq++;
 		      }
-		    fBeBoardInterface->Stop( pBoard, cNthAcq );
+		    fBeBoardInterface->Stop( pBoard );
 		    // std::cout << +cVcth << " " << cHitCounter << std::endl;
 		    // Draw the thing after each point
 		    updateSCurveCanvas( pBoard );
@@ -451,7 +451,7 @@ void HybridTester::Measure()
 	    while ( cN <=  fTotalEvents )
 	      {
 		// Run( pBoard, cNthAcq );
-		fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+		fBeBoardInterface->ReadData( pBoard, false );
 		const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 		
 		// Loop over Events from this Acquisition
@@ -467,7 +467,7 @@ void HybridTester::Measure()
 		  }
 		cNthAcq++;
 	      }
-	    fBeBoardInterface->Stop( pBoard, cNthAcq );
+	    fBeBoardInterface->Stop( pBoard );
 	  }
 	fHistTop->Scale( 100 / double_t( fTotalEvents ) );
 	fHistTop->GetYaxis()->SetRangeUser( 0, 100 );
@@ -518,7 +518,7 @@ void HybridTester::AntennaScan()
 					while ( cN <=  fTotalEvents )
 					{
 						// Run( pBoard, cNthAcq );
-						fBeBoardInterface->ReadData( pBoard, cNthAcq, false );
+						fBeBoardInterface->ReadData( pBoard, false );
 						const std::vector<Event*>& events = fBeBoardInterface->GetEvents( pBoard );
 
 						// Loop over Events from this Acquisition
@@ -533,7 +533,7 @@ void HybridTester::AntennaScan()
 						}
 						cNthAcq++;
 					}
-					fBeBoardInterface->Stop( pBoard, cNthAcq );
+					fBeBoardInterface->Stop( pBoard );
 					
 					/*Here the reconstruction of histograms happens*/
 					for ( uint16_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
