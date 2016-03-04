@@ -118,6 +118,10 @@ Cbc_default_electron# CMS Ph2 ACF (Acquisition & Control Framework)
     - simplified Definitions.h
     - added an Encode Reg method that can be passed the FE ID instead of decoding it from the CBC id
     - merged DQM code from Nov15 beamtest
+- 03.03.2016: some updates & additions (v1-32)
+    - added support for CMS Tk Ph2 Data format (.daq) files generation
+    - added the option for CMS Tk Ph2 Antenna driver as plugin
+    - removed the Shelf objects from the code for simplicity
 
 ### Setup
 
@@ -196,7 +200,7 @@ then
         $> sudo yum clean all
         $> sudo yum groupinstall uhal
 
-3. Install CERN ROOT: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation"
+3. Install CERN ROOT: [Instructions](https://root.cern.ch/building-root) - make sure to use "fixed location installation"
 
 Note: You may also need to set the environment variables (or source setup.sh):
 
