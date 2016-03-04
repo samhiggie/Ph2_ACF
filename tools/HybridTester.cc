@@ -501,162 +501,163 @@ void HybridTester::Measure()
 
         cNthAcq++;
 
-
-        fHistTop->Scale ( 100 / double_t ( fTotalEvents ) );
-        fHistTop->GetYaxis()->SetRangeUser ( 0, 100 );
-        fHistBottom->Scale ( 100 / double_t ( fTotalEvents ) );
-        fHistBottom->GetYaxis()->SetRangeUser ( 0, 100 );
-        UpdateHists();
-
-        std::cout << "Mean occupancy at the Top side: " << fHistTop->Integral() / (double) (fNCbc * 127) << std::endl;
-        std::cout << "Mean occupancy at the Bottom side: " << fHistBottom->Integral() / (double) (fNCbc * 127) << std::endl;
     }
 
-    void HybridTester::AntennaScan()
-    {
+    fHistTop->Scale ( 100 / double_t ( fTotalEvents ) );
+    fHistTop->GetYaxis()->SetRangeUser ( 0, 100 );
+    fHistBottom->Scale ( 100 / double_t ( fTotalEvents ) );
+    fHistBottom->GetYaxis()->SetRangeUser ( 0, 100 );
+    UpdateHists();
+
+    std::cout << "Mean occupancy at the Top side: " << fHistTop->Integral() / (double) (fNCbc * 127) << std::endl;
+    std::cout << "Mean occupancy at the Bottom side: " << fHistBottom->Integral() / (double) (fNCbc * 127) << std::endl;
+}
+
+void HybridTester::AntennaScan()
+{
 #ifdef __ANTENNA__
-        std::cout << "Mesuring Efficiency per Strip ... " << std::endl;
-        std::cout << "Taking data with " << fTotalEvents << " Events!" << std::endl;
+    std::cout << "Mesuring Efficiency per Strip ... " << std::endl;
+    std::cout << "Taking data with " << fTotalEvents << " Events!" << std::endl;
 
-        CbcRegReader cReader ( fCbcInterface, "VCth" );
-        accept ( cReader );
+    CbcRegReader cReader ( fCbcInterface, "VCth" );
+    accept ( cReader );
 
-        Antenna cAntenna;
-        cAntenna.initializeAntenna();
+    Antenna cAntenna;
+    cAntenna.initializeAntenna();
 
-        for (int channel = 0; channel < fNCbc; channel++) cAntenna.ConfigureSpiSlave ( channel );
+    for (int channel = 0; channel < fNCbc; channel++) cAntenna.ConfigureSpiSlave ( channel );
 
-        fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
-        fHistBottom->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
+    fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
+    fHistBottom->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
 
-        for ( uint8_t analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++ )
+    for ( uint8_t analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++ )
+    {
+        std::cout << "Chip Select ID " << +analog_switch_cs << std::endl;
+        cAntenna.ConfigureSpiSlave ( analog_switch_cs );
+
+        for ( uint8_t channel_position = 1; channel_position < 10; channel_position++ )
         {
-            std::cout << "Chip Select ID " << +analog_switch_cs << std::endl;
-            cAntenna.ConfigureSpiSlave ( analog_switch_cs );
+            cAntenna.TurnOnAnalogSwitchChannel ( channel_position );
 
-            for ( uint8_t channel_position = 1; channel_position < 10; channel_position++ )
+            if (channel_position == 9) break;
+
+            for ( auto& cShelve : fShelveVector )
             {
-                cAntenna.TurnOnAnalogSwitchChannel ( channel_position );
-
-                if (channel_position == 9) break;
-
-                for ( auto& cShelve : fShelveVector )
+                for ( BeBoard* pBoard : cShelve->fBoardVector )
                 {
-                    for ( BeBoard* pBoard : cShelve->fBoardVector )
+                    uint32_t cN = 1;
+                    uint32_t cNthAcq = 0;
+
+                    fBeBoardInterface->Start ( pBoard );
+
+                    //while ( cN <=  fTotalEvents )
+                    //{
+                    //// Run( pBoard, cNthAcq );
+                    fBeBoardInterface->ReadNEvents ( pBoard, fTotalEvents );
+                    const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+
+                    // Loop over Events from this Acquisition
+                    for ( auto& cEvent : events )
                     {
-                        uint32_t cN = 1;
-                        uint32_t cNthAcq = 0;
+                        HistogramFiller cFiller ( fHistBottom, fHistTop, cEvent );
+                        pBoard->accept ( cFiller );
 
-                        fBeBoardInterface->Start ( pBoard );
+                        if ( cN % 100 == 0 ) UpdateHists();
 
-                        //while ( cN <=  fTotalEvents )
-                        //{
-                        //// Run( pBoard, cNthAcq );
-                        fBeBoardInterface->ReadNEvents ( pBoard, fTotalEvents );
-                        const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
-
-                        // Loop over Events from this Acquisition
-                        for ( auto& cEvent : events )
-                        {
-                            HistogramFiller cFiller ( fHistBottom, fHistTop, cEvent );
-                            pBoard->accept ( cFiller );
-
-                            if ( cN % 100 == 0 ) UpdateHists();
-
-                            cN++;
-                        }
-
-                        cNthAcq++;
-
-                        /*Here the reconstruction of histograms happens*/
-                        for ( uint16_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
-                        {
-                            if ( fHistTopMerged->GetBinContent ( channel_id ) < fHistTop->GetBinContent ( channel_id ) ) fHistTopMerged->SetBinContent ( channel_id, fHistTop->GetBinContent ( channel_id ) );
-
-                            if ( fHistBottomMerged->GetBinContent ( channel_id ) < fHistBottom->GetBinContent ( channel_id ) ) fHistBottomMerged->SetBinContent ( channel_id, fHistBottom->GetBinContent ( channel_id ) );
-                        }
-
-                        /*Here clearing histograms after each event*/
-                        fHistBottom->Reset();
-                        fHistTop->Reset();
+                        cN++;
                     }
 
+                    cNthAcq++;
+
+                    /*Here the reconstruction of histograms happens*/
+                    for ( uint16_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
+                    {
+                        if ( fHistTopMerged->GetBinContent ( channel_id ) < fHistTop->GetBinContent ( channel_id ) ) fHistTopMerged->SetBinContent ( channel_id, fHistTop->GetBinContent ( channel_id ) );
+
+                        if ( fHistBottomMerged->GetBinContent ( channel_id ) < fHistBottom->GetBinContent ( channel_id ) ) fHistBottomMerged->SetBinContent ( channel_id, fHistBottom->GetBinContent ( channel_id ) );
+                    }
+
+                    /*Here clearing histograms after each event*/
+                    fHistBottom->Reset();
+                    fHistTop->Reset();
                 }
 
             }
+
         }
+    }
 
-        fHistTopMerged->Scale ( 100 / double_t ( fTotalEvents ) );
-        fHistTopMerged->GetYaxis()->SetRangeUser ( 0, 100 );
-        fHistBottomMerged->Scale ( 100 / double_t ( fTotalEvents ) );
-        fHistBottomMerged->GetYaxis()->SetRangeUser ( 0, 100 );
+    fHistTopMerged->Scale ( 100 / double_t ( fTotalEvents ) );
+    fHistTopMerged->GetYaxis()->SetRangeUser ( 0, 100 );
+    fHistBottomMerged->Scale ( 100 / double_t ( fTotalEvents ) );
+    fHistBottomMerged->GetYaxis()->SetRangeUser ( 0, 100 );
 
-        UpdateHistsMerged();
+    UpdateHistsMerged();
 
-        cAntenna.close();
+    cAntenna.close();
 
-        TestChannels ( fDecisionThreshold );
+    TestChannels ( fDecisionThreshold );
 #endif
-    }
+}
 
-    void HybridTester::SaveTestingResults (std::string pHybridId)
+void HybridTester::SaveTestingResults (std::string pHybridId)
+{
+
+    ifstream infile;
+    std::string line_buffer;
+    std::string content_buffer;
+    std::string date_string = currentDateTime();
+    std::string filename = "Results/HybridTestingDatabase/Hybrid_ID" + pHybridId + "_on" + date_string + ".txt";
+    ofstream myfile;
+    myfile.open ( filename.c_str() );
+    myfile << "Hybrid ID: " << pHybridId << std::endl;
+    myfile << "Created on: " << date_string << std::endl << std::endl;
+    myfile << " Hybrid Testing Report" << std::endl;
+    myfile << "-----------------------" << std::endl << std::endl;
+    myfile << " Write/Read Registers Test" << std::endl;
+    myfile << "---------------------------" << std::endl;
+
+    infile.open ( fDirectoryName + "/registers_test.txt" );
+
+    while ( getline ( infile, line_buffer ) ) content_buffer += line_buffer + "\r\n"; // To get all the lines.
+
+    if ( content_buffer == "" ) myfile << "Test not performed!" << std::endl;
+
+    infile.close();
+    myfile << content_buffer << std::endl;
+    content_buffer = "";
+    myfile << " Channels Functioning Test" << std::endl;
+    myfile << "---------------------------" << std::endl;
+    infile.open ( fDirectoryName + "/channels_test2.txt" );
+
+    while ( getline ( infile, line_buffer ) ) content_buffer += line_buffer + "\r\n"; // To get all the lines.
+
+    if ( content_buffer == "" ) myfile << "Test not performed!" << std::endl;
+
+    infile.close();
+    myfile << content_buffer << std::endl;
+    myfile.close();
+    std::cout << std::endl << "Summary testing report written to: " << std::endl << filename << std::endl;
+}
+
+void HybridTester::SaveResults()
+{
+    fHistTop->Write ( fHistTop->GetName(), TObject::kOverwrite );
+    fHistBottom->Write ( fHistBottom->GetName(), TObject::kOverwrite );
+    fDataCanvas->Write ( fDataCanvas->GetName(), TObject::kOverwrite );
+
+    fResultFile->Write();
+    fResultFile->Close();
+
+
+    std::cout << std::endl << "Resultfile written correctly!" << std::endl;
+
+    std::string cPdfName = fDirectoryName + "/HybridTestResults.pdf";
+    fDataCanvas->SaveAs ( cPdfName.c_str() );
+
+    if ( fThresholdScan )
     {
-
-        ifstream infile;
-        std::string line_buffer;
-        std::string content_buffer;
-        std::string date_string = currentDateTime();
-        std::string filename = "Results/HybridTestingDatabase/Hybrid_ID" + pHybridId + "_on" + date_string + ".txt";
-        ofstream myfile;
-        myfile.open ( filename.c_str() );
-        myfile << "Hybrid ID: " << pHybridId << std::endl;
-        myfile << "Created on: " << date_string << std::endl << std::endl;
-        myfile << " Hybrid Testing Report" << std::endl;
-        myfile << "-----------------------" << std::endl << std::endl;
-        myfile << " Write/Read Registers Test" << std::endl;
-        myfile << "---------------------------" << std::endl;
-
-        infile.open ( fDirectoryName + "/registers_test.txt" );
-
-        while ( getline ( infile, line_buffer ) ) content_buffer += line_buffer + "\r\n"; // To get all the lines.
-
-        if ( content_buffer == "" ) myfile << "Test not performed!" << std::endl;
-
-        infile.close();
-        myfile << content_buffer << std::endl;
-        content_buffer = "";
-        myfile << " Channels Functioning Test" << std::endl;
-        myfile << "---------------------------" << std::endl;
-        infile.open ( fDirectoryName + "/channels_test2.txt" );
-
-        while ( getline ( infile, line_buffer ) ) content_buffer += line_buffer + "\r\n"; // To get all the lines.
-
-        if ( content_buffer == "" ) myfile << "Test not performed!" << std::endl;
-
-        infile.close();
-        myfile << content_buffer << std::endl;
-        myfile.close();
-        std::cout << std::endl << "Summary testing report written to: " << std::endl << filename << std::endl;
+        cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";
+        fSCurveCanvas->SaveAs ( cPdfName.c_str() );
     }
-
-    void HybridTester::SaveResults()
-    {
-        fHistTop->Write ( fHistTop->GetName(), TObject::kOverwrite );
-        fHistBottom->Write ( fHistBottom->GetName(), TObject::kOverwrite );
-        fDataCanvas->Write ( fDataCanvas->GetName(), TObject::kOverwrite );
-
-        fResultFile->Write();
-        fResultFile->Close();
-
-
-        std::cout << std::endl << "Resultfile written correctly!" << std::endl;
-
-        std::string cPdfName = fDirectoryName + "/HybridTestResults.pdf";
-        fDataCanvas->SaveAs ( cPdfName.c_str() );
-
-        if ( fThresholdScan )
-        {
-            cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";
-            fSCurveCanvas->SaveAs ( cPdfName.c_str() );
-        }
-    }
+}

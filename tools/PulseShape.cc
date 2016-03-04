@@ -12,7 +12,7 @@ void PulseShape::Initialize()
         uint32_t cBoardId = cBoard->getBeId();
         std::cerr << "cBoardId = " << cBoardId << std::endl;
         // we could read the Delay_after_TestPulse Register in a variable
-        uint32_t cDelayAfterPulse = fBeBoardInterface->ReadBoardReg ( cBoard, "COMMISSIONNING_MODE_DEALAY_AFTER_TEST_PULSE" );
+        uint32_t cDelayAfterPulse = fBeBoardInterface->ReadBoardReg ( cBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE" );
         fDelayAfterPulse = cDelayAfterPulse;
         std::cout << "actual Delay: " << +cDelayAfterPulse << std::endl;
 
@@ -286,7 +286,7 @@ void PulseShape::setDelayAndTesGroup ( uint32_t pDelay )
     std::cout << "cFineDelay: " << +cFineDelay << std::endl;
     std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
     std::cout << "Current Time: " << +pDelay << std::endl;
-    BeBoardRegWriter cBeBoardWriter ( fBeBoardInterface, "COMMISSIONNING_MODE_DEALAY_AFTER_TEST_PULSE", cCoarseDelay );
+    BeBoardRegWriter cBeBoardWriter ( fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cCoarseDelay );
     this->accept ( cBeBoardWriter );
     CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", to_reg ( cFineDelay, fTestGroup ) );
     this->accept ( cWriter );
