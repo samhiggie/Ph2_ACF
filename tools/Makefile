@@ -1,23 +1,25 @@
 ANTENNADIR=../CMSPh2_AntennaDriver
 AntennaFlag = -D__ANTENNA__
-HttpFlag = -D__HTTP__
 
 ROOTVERSION := $(shell root-config --has-http)
 
+RootLibraryDirs = /usr/local/lib/root
+LibraryDirs = ../lib 
+ExternalObjects = 
+IncludeDirs = /opt/cactus/include ../
 ifneq (,$(findstring yes,$(ROOTVERSION)))
-	ExtObjectsRoot= $(RootLibraryPaths) -lRHTTP $(HttpFlag)
+	ExtObjectsRoot= -lRHTTP -D__HTTP__
 else
-	ExtObjectsRoot= $(RootLibraryPaths)
+	ExtObjectsRoot= 
 endif
 
 ifneq ("$(wildcard $(ANTENNADIR))","")
 	ANTENNAINSTALLED = yes
-	IncludeDirs     =  /opt/cactus/include ../ $(ANTENNADIR) 
-	ExternalObjects = -L../lib -L../CMSPh2_AntennaDriver/lib -lusb -lPh2_Antenna $(AntennaFlag)
+	IncludeDirs     +=  $(ANTENNADIR) 
+	LibraryDirs += ../CMSPh2_AntennaDriver/lib
+	ExternalObjects += -lusb -lPh2_Antenna $(AntennaFlag)
 else
 	ANTENNAINSTALLED = no
-	IncludeDirs     =  /opt/cactus/include ../ 
-	ExternalObjects = 
 endif
 
 Objs            = Tool.o SCurve.o Calibration.o OldCalibration.o Channel.o HybridTester.o CMTester.o  Commissioning.o PulseShape.o PedeNoise.o
@@ -29,15 +31,15 @@ CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelib
 #DevFlags                   = -D__CBCDAQ_DEV__
 DevFlags		=
 
-RootLibraryDirs = /usr/local/lib/root
-RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
-IncludePaths            = $(IncludeDirs:%=-I%)
+LibraryPaths = $(LibraryDirs:%=-L%) 
+IncludePaths = $(IncludeDirs:%=-I%)
+RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 .PHONY: print clean
 
 %.o: %.cc %.h
-	$(CXX) -std=c++0x  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(ExternalObjects) $(ExtObjectsRoot) -c -o $@ $<
+	$(CXX) -std=c++0x  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(LibraryPaths) $(ExternalObjects) $(RootLibraryPaths) $(ExtObjectsRoot) -c -o $@ $<
 
 all: print $(Objs) ../HWDescription/Definition.h
 	$(CC) -std=c++0x -shared -o libPh2_Tools.so $(Objs) -pthread
