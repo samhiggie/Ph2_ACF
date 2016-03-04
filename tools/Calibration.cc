@@ -310,11 +310,12 @@ void Calibration::measureOccupancy ( uint32_t pNEvents, int pTGroup )
         uint32_t cN = 0;
         uint32_t cNthAcq = 0;
 
-        fBeBoardInterface->Start ( pBoard );
+        //fBeBoardInterface->Start ( pBoard );
 
-        while ( cN < pNEvents )
-        {
-            fBeBoardInterface->ReadData ( pBoard, false );
+        //while ( cN < pNEvents )
+        //{
+            //fBeBoardInterface->ReadData ( pBoard, false );
+            fBeBoardInterface->ReadNEvents(pBoard, pNEvents);
             std::vector<Event*> events = fBeBoardInterface->GetEvents ( pBoard );
 
             // if this is for channelwise offset tuning, iterate the events and fill the occupancy histogram
@@ -331,9 +332,9 @@ void Calibration::measureOccupancy ( uint32_t pNEvents, int pTGroup )
             }
 
             cNthAcq++;
-        }
+        //}
 
-        fBeBoardInterface->Stop ( pBoard );
+        //fBeBoardInterface->Stop ( pBoard );
     }
 }
 

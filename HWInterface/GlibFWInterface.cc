@@ -281,7 +281,7 @@ namespace Ph2_HwInterface {
 
         fNpackets = pNEvents;
         //Starting the DAQ
-        cVecReg.push_back ( {"pc_commands.CBC_DATA_PACKET_NUMBE", pNEvents - 1} );
+        cVecReg.push_back ( {"pc_commands.CBC_DATA_PACKET_NUMBER", pNEvents - 1} );
         cVecReg.push_back ( {"break_trigger", 0} );
         cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
         cVecReg.push_back ( {"pc_commands2.force_BG0_start", 1} );
