@@ -550,12 +550,15 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
 
         if ( I2cCmdAckWait ( ( uint32_t ) 1, pVecReq.size() ) == 0 )
-            throw Exception ( "CbcInterface: I2cCmdAckWait 1 failed." );
+            throw Exception ( "CbcInterface: Command Request Timed out." );
 
         WriteReg ( "cbc_i2c_cmd_rq", 0 );
 
         if ( I2cCmdAckWait ( ( uint32_t ) 0, pVecReq.size() ) == 0 )
-            throw Exception ( "CbcInterface: I2cCmdAckWait 0 failed." );
+            throw Exception ( "CbcInterface: I2C realease timed out." );
+
+        //now remove the 0xFFFFFFFF word again so I can re-use the vector
+        pVecReq.pop_back();
     }
 
     void GlibFWInterface::ReadI2C ( std::vector<uint32_t>& pVecReq )
@@ -596,16 +599,10 @@ namespace Ph2_HwInterface {
                 throw e;
             }
 
-            try
-            {
-                ReadI2C ( pVecReq );
-            }
-            catch (Exception& e )
-            {
-                throw e;
-            }
+            ReadI2C ( pVecReq );
 
-            // now pVecReq contains the read data, I could add the comparison in here by making a copy of the original data in the beginning
+            //for(unsigned i = 0; i < pVecReq.size(); i++)
+                //if(cWriteVec.at(i)!= pVecReq.at(i)) std::cout << std::bitset<32> (cWriteVec.at(i)) << std::endl << std::bitset<32> (pVecReq.at(i)) << std::endl << std::endl;
             // now I need to make sure that the written and the read-back vector are the same
             auto cMismatchWord = std::mismatch ( cWriteVec.begin(), cWriteVec.end(), pVecReq.begin() );
 
@@ -622,7 +619,6 @@ namespace Ph2_HwInterface {
                     //DecodeReg (cWriteItem, cCbcId, *cMismatchWord.first );
                     //CbcRegItem cReadItem;
                     //DecodeReg (cVecReq, cCbcId, *cMismatchWord.second);
-
                     cWriteAgain.push_back (*cMismatchWord.first);
                     //move the iterator oneward
                     cMismatchWord = std::mismatch (++cMismatchWord.first, cWriteVec.end(), ++cMismatchWord.second );
@@ -630,9 +626,9 @@ namespace Ph2_HwInterface {
                 }
 
                 // this is recursive - da chit!
-                if (cWriteAgain.size() < 100)
+                if (cWriteAgain.size() <= 500)
                 {
-                    std::cout << "There were readback errors, retrying!" << std::endl;
+                    std::cout << "There were " << cWriteAgain.size() << " readback errors, retrying!" << std::endl;
                     this->WriteCbcBlockReg (pFeId, cWriteAgain, true);
 
                 }
@@ -674,34 +670,29 @@ namespace Ph2_HwInterface {
             throw e;
         }
 
-        try
-        {
-            ReadI2C ( pVecReq );
-        }
-        catch (Exception& e )
-        {
-            throw e;
-        }
+        ReadI2C ( pVecReq );
     }
 
     void GlibFWInterface::CbcFastReset()
     {
         WriteReg ( "cbc_fast_reset", 1 );
 
-        usleep ( 2000 );
+        usleep ( 200000 );
 
         WriteReg ( "cbc_fast_reset", 0 );
+
+        usleep ( 200000 );
     }
 
     void GlibFWInterface::CbcHardReset()
     {
         WriteReg ( "cbc_hard_reset", 1 );
 
-        usleep ( 2000 );
+        usleep ( 200000 );
 
         WriteReg ( "cbc_hard_reset", 0 );
 
-        usleep ( 20 );
+        usleep ( 200000 );
     }
 
     void GlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )

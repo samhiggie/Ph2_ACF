@@ -121,25 +121,18 @@ void SCurve::measureSCurves ( int  pTGrpId )
             Counter cCounter;
             pBoard->accept ( cCounter );
 
-            fBeBoardInterface->Start ( pBoard );
+            fBeBoardInterface->ReadNEvents ( pBoard, fEventsPerPoint );
 
-            while ( cN <= fEventsPerPoint )
+            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+
+            // Loop over Events from this Acquisition
+            for ( auto& ev : events )
             {
-                // Run( pBoard, cNthAcq );
-                fBeBoardInterface->ReadData ( pBoard, false );
-                const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
-
-                // Loop over Events from this Acquisition
-                for ( auto& ev : events )
-                {
-                    cHitCounter += fillSCurves ( pBoard, ev, cValue, pTGrpId ); //pass test group here
-                    cN++;
-                }
-
-                cNthAcq++;
+                cHitCounter += fillSCurves ( pBoard, ev, cValue, pTGrpId ); //pass test group here
+                cN++;
             }
 
-            fBeBoardInterface->Stop ( pBoard );
+            cNthAcq++;
 
             // std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
 
@@ -226,25 +219,17 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
             Counter cCounter;
             pBoard->accept ( cCounter );
 
-            fBeBoardInterface->Start ( pBoard );
+            fBeBoardInterface->ReadNEvents ( pBoard, fEventsPerPoint );
+            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
 
-            while ( cN <= fEventsPerPoint )
+            // Loop over Events from this Acquisition
+            for ( auto& ev : events )
             {
-                // Run( pBoard, cNthAcq );
-                fBeBoardInterface->ReadData ( pBoard, false );
-                const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
-
-                // Loop over Events from this Acquisition
-                for ( auto& ev : events )
-                {
-                    cHitCounter += fillSCurves ( pBoard, ev, cValue, pTGrpId ); //pass test group here
-                    cN++;
-                }
-
-                cNthAcq++;
+                cHitCounter += fillSCurves ( pBoard, ev, cValue, pTGrpId ); //pass test group here
+                cN++;
             }
 
-            fBeBoardInterface->Stop ( pBoard );
+            cNthAcq++;
 
             // std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
 
