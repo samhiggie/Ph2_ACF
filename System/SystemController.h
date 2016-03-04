@@ -169,6 +169,10 @@ private:
      *\param os : ostream to dump output
      */
     void parseSettingsxml( const std::string& pFilename, std::ostream& os = std::cout);
+
+    BeBoard* parseBeBoard (pugi::xml_node pNode, std::ostream& os = std::cout);
+    void parseRegister(pugi::xml_node pNode, BeBoard* pBoard, std::ostream& os = std::cout);
+    void parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os = std::cout);
     /*! \brief Expand environment variables in string
      * \param s input string
      * \return Result with variables expanded */

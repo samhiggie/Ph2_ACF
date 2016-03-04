@@ -158,30 +158,19 @@ namespace Ph2_System {
         // Iterate over the BeBoard Nodes
         for ( pugi::xml_node cBeBoardNode = doc.child ( "HwDescription" ).child ( "BeBoard" ); cBeBoardNode; cBeBoardNode = cBeBoardNode.next_sibling() )
         {
-            cBeId = cBeBoardNode.attribute ( "Id" ).as_int();
-            BeBoard* cBeBoard = new BeBoard ( cBeId );
+            BeBoard* cBeBoard = this->parseBeBoard (cBeBoardNode, os);
 
-            os << BOLDCYAN << "|" << "----" << cBeBoardNode.name() << "  " << cBeBoardNode.first_attribute().name() << " :" << cBeBoardNode.attribute ( "Id" ).value() << RESET << std:: endl;
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
             std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cBeBoardConnectionNode.attribute ("id").value() << BOLDBLUE << " URI: "
                       << BOLDYELLOW << cBeBoardConnectionNode.attribute ("uri").value()
                       << BOLDBLUE << " Address Table: "
                       << BOLDYELLOW << cBeBoardConnectionNode.attribute ("address_table").value() << RESET << std::endl;
 
-            pugi::xml_node cBeBoardFWVersionNode = cBeBoardNode.child ( "FW_Version" );
-            uint16_t cNCbcDataSize = 0;
-            cNCbcDataSize = static_cast<uint16_t> ( cBeBoardFWVersionNode.attribute ( "NCbcDataSize" ).as_int() );
-
-            if ( cNCbcDataSize != 0 ) os << BOLDCYAN << "|" << "	" << "|" << "----" << cBeBoardFWVersionNode.name() << " NCbcDataSize: " << cNCbcDataSize  <<  RESET << std:: endl;
-
-            cBeBoard->setNCbcDataSize ( cNCbcDataSize );
-            fBoardVector.push_back ( cBeBoard );
-
             // Iterate over the BeBoardRegister Nodes
             for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode/* != cBeBoardNode.child( "Module" )*/; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
             {
+                this->parseRegister (cBeBoardRegNode, cBeBoard, os);
                 // os << BOLDCYAN << "|" << "  " << "|" << "_____" << cBeBoardRegNode.name() << "  " << cBeBoardRegNode.first_attribute().name() << " :" << cBeBoardRegNode.attribute( "name" ).value() << RESET << std:: endl;
-                cBeBoard->setReg ( static_cast<std::string> ( cBeBoardRegNode.attribute ( "name" ).value() ), std::stoi ( cBeBoardRegNode.first_child().value() ) );
             }
 
             if ( !std::string ( cBeBoardNode.attribute ( "boardType" ).value() ).compare ( std::string ( "GLIB" ) ) )
@@ -211,51 +200,9 @@ namespace Ph2_System {
                         cModuleId = cModuleNode.attribute ( "ModuleId" ).as_int();
 
                         Module* cModule = new Module ( cBeId, cModuleNode.attribute ( "FMCId" ).as_int(), cModuleNode.attribute ( "FeId" ).as_int(), cModuleId );
-                        //fBoardVector[cNBeBoard]->addModule( cModule );
                         cBeBoard->addModule ( cModule );
 
-                        pugi::xml_node cCbcPathPrefixNode = cModuleNode.child ( "CBC_Files" );
-                        std::string cFilePrefix = static_cast<std::string> ( cCbcPathPrefixNode.attribute ( "path" ).value() );
-
-                        if ( !cFilePrefix.empty() ) os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC Files Path : " << cFilePrefix << RESET << std::endl;
-
-                        // Iterate the CBC node
-                        for ( pugi::xml_node cCbcNode = cModuleNode.child ( "CBC" ); cCbcNode; cCbcNode = cCbcNode.next_sibling() )
-                        {
-                            os << BOLDCYAN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcNode.name() << "  "
-                               << cCbcNode.first_attribute().name() << " :" << cCbcNode.attribute ( "Id" ).value()
-                               << ", File: " << cCbcNode.attribute ( "configfile" ).value() << RESET << std:: endl;
-
-
-                            std::string cFileName;
-
-                            if ( !cFilePrefix.empty() )
-                                cFileName = cFilePrefix + cCbcNode.attribute ( "configfile" ).value();
-                            else cFileName = cCbcNode.attribute ( "configfile" ).value();
-
-                            Cbc* cCbc = new Cbc ( cBeId, cModuleNode.attribute ( "FMCId" ).as_int(), cModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
-
-                            for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
-                                cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), atoi ( cCbcRegisterNode.first_child().value() ) );
-
-                            for ( pugi::xml_node cCbcGlobalNode = cModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != cModuleNode.child ( "CBC" ) && cCbcGlobalNode != cModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
-                            {
-
-                                if ( cCbcGlobalNode != nullptr )
-                                {
-                                    std::string regname = std::string ( cCbcGlobalNode.attribute ( "name" ).value() );
-                                    uint32_t regvalue = convertAnyInt ( cCbcGlobalNode.first_child().value() ) ;
-                                    cCbc->setReg ( regname, uint8_t ( regvalue ) ) ;
-
-                                    os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcGlobalNode.name()
-                                       << "  " << cCbcGlobalNode.first_attribute().name() << " :"
-                                       << regname << " =  0x" << std::hex << std::setw ( 2 ) << std::setfill ( '0' ) << regvalue << std::dec << RESET << std:: endl;
-                                }
-                            }
-
-                            //fBoardVector[cNBeBoard]->getModule( cModuleId )->addCbc( cCbc );
-                            cBeBoard->getModule ( cModuleId )->addCbc ( cCbc );
-                        }
+                        this->parseCbc (cModuleNode, cModule, os);
                     }
                 }
             }
@@ -286,6 +233,77 @@ namespace Ph2_System {
         os << "\n";
     }
 
+    BeBoard* SystemController::parseBeBoard (pugi::xml_node pNode, std::ostream& os)
+    {
+        uint32_t cBeId = pNode.attribute ( "Id" ).as_int();
+        BeBoard* cBeBoard = new BeBoard ( cBeId );
+
+        os << BOLDCYAN << "|" << "----" << pNode.name() << "  " << pNode.first_attribute().name() << " :" << pNode.attribute ( "Id" ).value() << RESET << std:: endl;
+
+        pugi::xml_node cBeBoardFWVersionNode = pNode.child ( "FW_Version" );
+        uint16_t cNCbcDataSize = 0;
+        cNCbcDataSize = static_cast<uint16_t> ( cBeBoardFWVersionNode.attribute ( "NCbcDataSize" ).as_int() );
+
+        if ( cNCbcDataSize != 0 ) os << BOLDCYAN << "|" << "	" << "|" << "----" << cBeBoardFWVersionNode.name() << " NCbcDataSize: " << cNCbcDataSize  <<  RESET << std:: endl;
+
+        cBeBoard->setNCbcDataSize ( cNCbcDataSize );
+        fBoardVector.push_back ( cBeBoard );
+        return cBeBoard;
+    }
+
+    void SystemController::parseRegister (pugi::xml_node pNode, BeBoard* pBoard, std::ostream& os)
+    {
+        if (std::string (pNode.name() ) == "Register")
+        {
+            // os << BOLDCYAN << "|" << "  " << "|" << "_____" << cBeBoardRegNode.name() << "  " << cBeBoardRegNode.first_attribute().name() << " :" << cBeBoardRegNode.attribute( "name" ).value() << RESET << std:: endl;
+            pBoard->setReg ( static_cast<std::string> ( pNode.attribute ( "name" ).value() ), std::stoi ( pNode.first_child().value() ) );
+        }
+    }
+
+    void SystemController::parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os )
+    {
+        pugi::xml_node cCbcPathPrefixNode = pModuleNode.child ( "CBC_Files" );
+        std::string cFilePrefix = static_cast<std::string> ( cCbcPathPrefixNode.attribute ( "path" ).value() );
+
+        if ( !cFilePrefix.empty() ) os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC Files Path : " << cFilePrefix << RESET << std::endl;
+
+        // Iterate the CBC node
+        for ( pugi::xml_node cCbcNode = pModuleNode.child ( "CBC" ); cCbcNode; cCbcNode = cCbcNode.next_sibling() )
+        {
+            os << BOLDCYAN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcNode.name() << "  "
+               << cCbcNode.first_attribute().name() << " :" << cCbcNode.attribute ( "Id" ).value()
+               << ", File: " << cCbcNode.attribute ( "configfile" ).value() << RESET << std:: endl;
+
+
+            std::string cFileName;
+
+            if ( !cFilePrefix.empty() )
+                cFileName = cFilePrefix + cCbcNode.attribute ( "configfile" ).value();
+            else cFileName = cCbcNode.attribute ( "configfile" ).value();
+
+            Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
+
+            for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
+                cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), atoi ( cCbcRegisterNode.first_child().value() ) );
+
+            for ( pugi::xml_node cCbcGlobalNode = pModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != pModuleNode.child ( "CBC" ) && cCbcGlobalNode != pModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
+            {
+
+                if ( cCbcGlobalNode != nullptr )
+                {
+                    std::string regname = std::string ( cCbcGlobalNode.attribute ( "name" ).value() );
+                    uint32_t regvalue = convertAnyInt ( cCbcGlobalNode.first_child().value() ) ;
+                    cCbc->setReg ( regname, uint8_t ( regvalue ) ) ;
+
+                    os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcGlobalNode.name()
+                       << "  " << cCbcGlobalNode.first_attribute().name() << " :"
+                       << regname << " =  0x" << std::hex << std::setw ( 2 ) << std::setfill ( '0' ) << regvalue << std::dec << RESET << std:: endl;
+                }
+            }
+
+            pModule->addCbc (cCbc);
+        }
+    }
 
     void SystemController::parseSettingsxml ( const std::string& pFilename, std::ostream& os )
     {
