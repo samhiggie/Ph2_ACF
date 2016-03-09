@@ -37,55 +37,58 @@ using CanvasMap = std::map<Ph2_HwDescription::FrontEndDescription*, TCanvas*>;
 class Tool : public SystemController
 {
   public:
-	std::string fDirectoryName;             /*< the Directoryname for the Root file with results */
-	TFile* fResultFile;                /*< the Name for the Root file with results */
+    std::string fDirectoryName;             /*< the Directoryname for the Root file with results */
+    TFile* fResultFile;                /*< the Name for the Root file with results */
 #ifdef __HTTP__
-	THttpServer* fHttpServer;
+    THttpServer* fHttpServer;
 #endif
-	Tool() {}
+    Tool() {}
 
-	~Tool() {
-		fResultFile->Close();
-	}
+    ~Tool()
+    {
+        fResultFile->Close();
+    }
 
 
 
   public:
-	CanvasMap fCanvasMap;
-	CbcHistogramMap fCbcHistMap;
-	ModuleHistogramMap fModuleHistMap;
+    CanvasMap fCanvasMap;
+    CbcHistogramMap fCbcHistMap;
+    ModuleHistogramMap fModuleHistMap;
 
 
-	/*!
-	 * \brief Create a result directory at the specified path + ChargeMode + Timestamp
-	 * \param pDirectoryname : the name of the directory to create
-	 * \param pDate : apend the current date and time to the directoryname
-	 */
+    /*!
+     * \brief Create a result directory at the specified path + ChargeMode + Timestamp
+     * \param pDirectoryname : the name of the directory to create
+     * \param pDate : apend the current date and time to the directoryname
+     */
   public:
+    Tool (const Tool& pTool);
 
-	void bookHistogram( Cbc* pCbc, std::string pName, TObject* pObject );
+    void bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject );
 
-	void bookHistogram( Module* pModule, std::string pName, TObject* pObject );
+    void bookHistogram ( Module* pModule, std::string pName, TObject* pObject );
 
-	TObject* getHist( Cbc* pCbc, std::string pName );
+    TObject* getHist ( Cbc* pCbc, std::string pName );
 
-	TObject* getHist( Module* pModule, std::string pName );
+    TObject* getHist ( Module* pModule, std::string pName );
 
-	void SaveResults();
+    void SaveResults();
 
-	void CreateResultDirectory( const std::string& pDirname, bool pDate = true );
+    void CreateResultDirectory ( const std::string& pDirname, bool pDate = true );
 
-	/*!
-	 * \brief Initialize the result Root file
-	 * \param pFilename : Root filename
-	 */
-	void InitResultFile( const std::string& pFilename );
+    /*!
+     * \brief Initialize the result Root file
+     * \param pFilename : Root filename
+     */
+    void InitResultFile ( const std::string& pFilename );
 
-	void StartHttpServer( const int pPort = 8082, const int pRefreshTime = 100, bool pReadonly = true );
-	void ProcessRequests() {
+    void StartHttpServer ( const int pPort = 8082, const int pRefreshTime = 100, bool pReadonly = true );
+    void ProcessRequests()
+    {
 #ifdef __HTTP__
-		fHttpServer->ProcessRequests();
+        fHttpServer->ProcessRequests();
 #endif
-	}
+    }
 };
 #endif
