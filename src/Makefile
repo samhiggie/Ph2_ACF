@@ -3,8 +3,8 @@ AntennaFlag = -D__ANTENNA__
 
 ifneq ("$(wildcard $(ANTENNADIR))","")
 	IncludeDirs     =  /opt/cactus/include ../ $(ANTENNADIR)
-	LibraryDirs = /opt/cactus/lib ../lib $(ANTENNADIR)/lib
-	ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal \
+	LibraryDirs = /opt/cactus/lib ../lib $(ANTENNADIR)/lib /usr/lib64/ 
+	ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lusb -lcactus_uhal_grammars -lcactus_uhal_uhal \
                                  -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Antenna $(AntennaFlag) 
         ANTENNAINSTALLED = yes
 else
@@ -76,7 +76,7 @@ configure: configure.cc
 	cp $@ ../bin
 
 hybridtest: hybridtest.cc
-	$(CXX) -std=c++11 $(CCFlags) -L/usr/lib64/ -lusb -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 cmtest: cmtest.cc
