@@ -20,7 +20,7 @@ namespace Ph2_HwInterface {
     BeBoardFWInterface::BeBoardFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId ) :
         RegManager ( puHalConfigFileName, pBoardId ),
         fNTotalAcq ( 0 ),
-        runningAcquisition ( false ),
+        //runningAcquisition ( false ),
         numAcq ( 0 ),
         fSaveToFile ( false ),
         fFileHandler ( nullptr )
@@ -31,7 +31,7 @@ namespace Ph2_HwInterface {
     BeBoardFWInterface::BeBoardFWInterface ( const char* pId, const char* pUri, const char* pAddressTable ) :
         RegManager ( pId, pUri, pAddressTable ),
         fNTotalAcq ( 0 ),
-        runningAcquisition ( false ),
+        //runningAcquisition ( false ),
         numAcq ( 0 ),
         fSaveToFile ( false ),
         fFileHandler ( nullptr )
@@ -89,30 +89,30 @@ namespace Ph2_HwInterface {
     //}
 
 
-    void BeBoardFWInterface::StopThread()
-    {
-        if ( runningAcquisition )
-        {
-            runningAcquisition = false;
+    //void BeBoardFWInterface::StopThread()
+    //{
+        //if ( runningAcquisition )
+        //{
+            //runningAcquisition = false;
 
-            try
-            {
-                thrAcq.join();
-            }
-            catch ( std::exception& e )
-            {
-                std::cerr << "Death to Stop in BeBoardFWInterface::StopThread()" << e.what() << std::endl;
-            }
-            catch ( ... )
-            {
-                std::cerr << "Death to Stop in BeBoardFWInterface::StopThread(). failed to perform thrAcq.join()" << std::endl;
-            }
-        }
+            //try
+            //{
+                //thrAcq.join();
+            //}
+            //catch ( std::exception& e )
+            //{
+                //std::cerr << "Death to Stop in BeBoardFWInterface::StopThread()" << e.what() << std::endl;
+            //}
+            //catch ( ... )
+            //{
+                //std::cerr << "Death to Stop in BeBoardFWInterface::StopThread(). failed to perform thrAcq.join()" << std::endl;
+            //}
+        //}
 
-    }
+    //}
 
-    int BeBoardFWInterface::getNumAcqThread()
-    {
-        return ( int ) numAcq;
-    }
+    //int BeBoardFWInterface::getNumAcqThread()
+    //{
+        //return ( int ) numAcq;
+    //}
 }

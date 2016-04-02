@@ -424,37 +424,37 @@ namespace Ph2_HwInterface {
 
     //Methods for Cbc's:
 
-    void GlibFWInterface::StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
-    {
-        if ( runningAcquisition ) return;
+   //void GlibFWInterface::StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
+    //{
+        //if ( runningAcquisition ) return;
 
-        runningAcquisition = true;
-        numAcq = 0;
-        nbMaxAcq = uNbAcq;
+        //runningAcquisition = true;
+        //numAcq = 0;
+        //nbMaxAcq = uNbAcq;
 
-        thrAcq = boost::thread ( &Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
-    }
+        //thrAcq = boost::thread ( &Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
+    //}
 
-    void GlibFWInterface::threadAcquisitionLoop ( BeBoard* pBoard, HwInterfaceVisitor* visitor )
-    {
-        Start( );
-        fBlockSize = computeBlockSize ( pBoard );
+    //void GlibFWInterface::threadAcquisitionLoop ( BeBoard* pBoard, HwInterfaceVisitor* visitor )
+    //{
+        //Start( );
+        //fBlockSize = computeBlockSize ( pBoard );
 
-        while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
-        {
-            ReadData ( pBoard, true );
+        //while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
+        //{
+            //ReadData ( pBoard, true );
 
-            for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
-                visitor->visit ( *cEvent );
+            //for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
+                //visitor->visit ( *cEvent );
 
-            if ( runningAcquisition )
-                numAcq++;
+            //if ( runningAcquisition )
+                //numAcq++;
 
-        }
+        //}
 
-        Stop ( );
-        runningAcquisition = false;
-    };
+        //Stop ( );
+        //runningAcquisition = false;
+    //};
 
     ///////////////////////////////////////////////////////
     //      CBC Methods                                 //

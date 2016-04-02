@@ -174,17 +174,17 @@ namespace Ph2_HwInterface {
          * \param uNbAcq Number of acquisition iterations (each iteration will get CBC_DATA_PACKET_NUMBER + 1 events)
          * \param visitor override the visit() method of this object to process each event
          */
-        virtual void StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) = 0;
+        //virtual void StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor ) = 0;
         /*! \brief Stop a running parallel acquisition
          */
-        virtual void StopThread();
-        /*! \brief Get the parallel acquisition iteration number */
-        int getNumAcqThread();
-        /*! \brief Is a parallel acquisition running ? */
-        bool isRunningThread() const
-        {
-            return runningAcquisition;
-        }
+        //virtual void StopThread();
+        //[>! \brief Get the parallel acquisition iteration number <]
+        //int getNumAcqThread();
+        //[>! \brief Is a parallel acquisition running ? <]
+        //bool isRunningThread() const
+        //{
+            //return runningAcquisition;
+        //}
         /*!
          * \brief Start a DAQ
          */
@@ -226,9 +226,9 @@ namespace Ph2_HwInterface {
 
       protected:
 
-        bool runningAcquisition;
+        //bool runningAcquisition;
         uint32_t fBlockSize, fNPackets, numAcq, nbMaxAcq;
-        boost::thread thrAcq;
+        //boost::thread thrAcq;
 
     };
 }

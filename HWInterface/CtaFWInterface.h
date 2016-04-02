@@ -159,8 +159,8 @@ namespace Ph2_HwInterface {
             return fData->GetEvents ( pBoard );
         }
 
-        void StartThread (BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) override;
-        void threadAcquisitionLoop (BeBoard* pBoard, HwInterfaceVisitor* visitor);
+        //void StartThread (BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) override;
+        //void threadAcquisitionLoop (BeBoard* pBoard, HwInterfaceVisitor* visitor);
 
       private:
 
