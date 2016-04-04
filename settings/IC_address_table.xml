@@ -47,6 +47,7 @@
             </node>
         </node>
     </node>
+    <!--this is the part where our FW starts-->
     <node id="user_ctrl" address="0x40000040" permission="w">
         <node id="test_word" address="0x1" permission="w">
             <node id="stat_reg_ack_cntr_reset" mask="0x00000001" />

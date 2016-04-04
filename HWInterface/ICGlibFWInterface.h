@@ -42,12 +42,14 @@ namespace Ph2_HwInterface {
         Data* fData; /*!< Data read storage*/
 
         struct timeval fStartVeto;
-        std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
-        std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
+        //std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
+        //std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
         FpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fBroadcastCbcId;
         uint32_t fReplyBufferSize;
+        uint32_t fNEventsperAcquistion;
+        uint32_t fDataSizeperEvent32;
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
         //  const uint32_t SINGLE_I2C_WAIT = 700; //usec for 100 kHz I2C
@@ -160,8 +162,6 @@ namespace Ph2_HwInterface {
             return fData->GetEvents ( pBoard );
         }
 
-        void StartThread (BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) override;
-        void threadAcquisitionLoop (BeBoard* pBoard, HwInterfaceVisitor* visitor);
       private:
 
         //I2C command sending implementation
@@ -193,6 +193,16 @@ namespace Ph2_HwInterface {
         bool WriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback);
         bool BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback);
         void ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReg );
+
+        void CbcHardReset();
+
+        void CbcFastReset();
+
+        void CbcI2CRefresh();
+
+        void CbcTestPulse();
+
+        void CbcTrigger();
         ///////////////////////////////////////////////////////
         //      FPGA CONFIG                                 //
         /////////////////////////////////////////////////////

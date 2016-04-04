@@ -93,11 +93,41 @@ namespace Ph2_HwInterface {
 
     void ICGlibFWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
-        //We may here switch in the future with the StackReg method of the RegManager
-        //when the timeout thing will be implemented in a transparent and pretty way
-
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
+        //here i want to first configure the FW according to the HW structure attached - since this method is aware of pBoard, I can loop the HW structure and thus count CBCs, set i2c addresses and FMC config
 
+        char[64] tmpChar;
+        //read a couple of useful data
+        uint32_t fDataSizeperEvent32 = ReadReg ("user_stat.fw_cnfg.data_size32.evt_total");
+        bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_en");
+        bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_en");
+        uint32_t cNCbcperFMC = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
+        pBoard->setNCbcDataSize(cNCbcperFMC);
+
+        //get the # of CBCs on the first FE and use that as default, write the CBC i2c addresses etc
+        for (Module* cFe : pBoard.fModuleVector)
+        {
+            // need to find the correct FMC Id for each module
+            uint8_t cFmcId = cFe->getFMCId();
+
+            for ( Cbc* cCbc : cFe->fCbcVector)
+            {
+                uint8_t cCbcId = cCbc->getCbcId();
+                sprintf (tmpChar, "cbc_daq_ctrl.cbc_i2c_addr_fmc%d.cbc%d", cFmcId, cCbcId);
+                std::string cRegString(tmpChar);
+
+                uint32_t cAddress = 0x41 + cCbcId;
+                uint32_t cVal = (1 << 28) | (cCbcId << 24) | cAddress & 0x7F;
+                cVecReg.push_back ({cRegString, cVal });
+            }
+        }
+
+        uint32_t cVal = (cNCbc == 2) ? 1 : 0;
+        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", cVal });
+        cVal = (cNCbc == 2) ? 0 : 1;
+        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", cVal });
+
+        //last, loop over the variable registers from the HWDescription.xml file
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
 
         for ( auto const& it : cGlibRegMap )
@@ -107,42 +137,114 @@ namespace Ph2_HwInterface {
 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
+
+        //before I'm done I need to reset all the state machines which loads the configuration
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.counter_reset", 1 });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_reset", 1 });
+        //everything is included in daq reset but this needs to be done explicitly
+        cVecReg.push_back ({"commissioning_cycle_ctrl.reset", 1 });
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
     }
 
 
     void ICGlibFWInterface::Start()
     {
-        //implement something sane form Kirika's repo: daq.cc
+        std::vector< std::pair<std::string, uint32_t> > cVecReg;
+
+        //first reset all the counters and state machines
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_reset", 1 });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.counter_reset", 1 });
+
+        //this needs to be reset explicitly according to Kirika
+        cVecReg.push_back ({"commissioning_cycle_ctrl.reset", 1 });
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
+
+        //now issue start
+        cVecReg.push_back ({"commissioning_cycle_ctrl.start", 1 });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_start", 1 });
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
     }
 
     void ICGlibFWInterface::Stop()
     {
-        //implement something sane form Kirika's repo: daq.cc
+        WriteReg ( "cbc_daq_ctrl.daq_ctrl.daq_stop", 1 );
     }
 
 
     void ICGlibFWInterface::Pause()
     {
-        //implement something sane form Kirika's repo: daq.cc
-        //  WriteReg( BREAK_TRIGGER, 1 );
+        //this should just brake triggers
+        WriteReg ( "cbc_daq_ctrl.daq_ctrl.trigger_stop", 1 );
     }
 
 
     void ICGlibFWInterface::Resume()
     {
-        //implement something sane form Kirika's repo: daq.cc
-        //  WriteReg( BREAK_TRIGGER, 0 );
+        WriteReg ( "cbc_daq_ctrl.daq_ctrl.trigger_start", 1 );
     }
 
     uint32_t ICGlibFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger )
     {
-        //implement something sane form Kirika's repo: daq.cc
-        return fNpackets;
+        std::chrono::milliseconds cWait ( 1 );
+        //first, read how many Events per Acquisition
+        fNEventsperAcquistion = ReadReg ("cbc_daq_ctrl.nevents_per_pcdaq");
+        //the size of the packet to read then is fNEventsperAcquistion * fDataSizeperEvent32
+
+        //first, poll if the packet is ready
+        uint32_t cVal = 0;
+
+        while (cVal == 0)
+        {
+            cVal = ReadReg ("cbc_daq_ctrl.event_data_buf_status.data_ready" ) & 0x1;
+            std::this_thread::sleep_for ( cWait );
+        }
+
+        //ok, packet complete, now let's read
+        std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
+        return fNEventsperAcquistion;
     }
 
     void ICGlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents )
     {
+        std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
+        // probably no need to reset everything since I am calling this a lot during commissioning
+        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_reset", 1 });
+        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.counter_reset", 1 });
+        //cVecReg.push_back ({"commissioning_cycle_ctrl.reset", 1 });
+        //WriteStackReg ( cVecReg );
+        //cVecReg.clear();
+
+        //now issue start
+        cVecReg.push_back ({"commissioning_cycle_ctrl.start", 1 });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_start", 1 });
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
+
+        //here I optimize for speed during calibration, so I explicitly set the nevents_per_pcdaq to the event number I desire
+        fNEventsperAcquistion = pNEvents;
+        WriteReg ("cbc_daq_ctrl.nevents_per_pcdaq", pNEvents);
+
+        //now poll for data to be ready
+        std::chrono::milliseconds cWait ( 1 );
+
+        //first, poll if the packet is ready
+        uint32_t cVal = 0;
+
+        while (cVal == 0)
+        {
+            cVal = ReadReg ("cbc_daq_ctrl.event_data_buf_status.data_ready" ) & 0x1;
+            std::this_thread::sleep_for ( cWait );
+        }
+
+        //now stop triggers & DAQ
+        WriteReg ( "cbc_daq_ctrl.daq_ctrl.daq_stop", 1 );
+        
+        //ok, packet complete, now let's read
+        std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
     }
 
     std::vector<uint32_t> ICGlibFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -152,12 +254,12 @@ namespace Ph2_HwInterface {
 
         // To avoid the IPBUS bug
         // need to convert uHal::ValVector to vector<uint32_t> so we can replace the 256th word
-        if ( pBlocksize > 255 )
-        {
-            std::string fSram_256 = pRegNode + "_256";
-            uhal::ValWord<uint32_t> cWord = ReadReg ( fSram_256 );
-            vBlock[255] = cWord.value();
-        }
+        //if ( pBlocksize > 255 )
+        //{
+        //std::string fSram_256 = pRegNode + "_256";
+        //uhal::ValWord<uint32_t> cWord = ReadReg ( fSram_256 );
+        //vBlock[255] = cWord.value();
+        //}
 
         return vBlock;
     }
@@ -166,44 +268,44 @@ namespace Ph2_HwInterface {
     {
         bool cWriteCorr = RegManager::WriteBlockReg ( pRegNode, pValues );
 
-        if ( pValues.size() > 255 )
-            WriteReg ( pRegNode + "_256", pValues[255] );
+        //if ( pValues.size() > 255 )
+        //WriteReg ( pRegNode + "_256", pValues[255] );
 
         return cWriteCorr;
     }
 
-    void ICGlibFWInterface::StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
-    {
-        if ( runningAcquisition ) return;
+    //void ICGlibFWInterface::StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
+    //{
+    //if ( runningAcquisition ) return;
 
-        runningAcquisition = true;
-        numAcq = 0;
-        nbMaxAcq = uNbAcq;
+    //runningAcquisition = true;
+    //numAcq = 0;
+    //nbMaxAcq = uNbAcq;
 
-        thrAcq = boost::thread ( &Ph2_HwInterface::ICGlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
-    }
+    //thrAcq = boost::thread ( &Ph2_HwInterface::ICGlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
+    //}
 
-    void ICGlibFWInterface::threadAcquisitionLoop ( BeBoard* pBoard, HwInterfaceVisitor* visitor )
-    {
-        Start( );
-        //      fBlockSize = computeBlockSize( pBoard );
-        fBlockSize = 0;
+    //void ICGlibFWInterface::threadAcquisitionLoop ( BeBoard* pBoard, HwInterfaceVisitor* visitor )
+    //{
+    //Start( );
+    ////      fBlockSize = computeBlockSize( pBoard );
+    //fBlockSize = 0;
 
-        while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
-        {
-            ReadData ( nullptr, true );
+    //while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
+    //{
+    //ReadData ( nullptr, true );
 
-            for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
-                visitor->visit ( *cEvent );
+    //for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
+    //visitor->visit ( *cEvent );
 
-            if ( runningAcquisition )
-                numAcq++;
+    //if ( runningAcquisition )
+    //numAcq++;
 
-        }
+    //}
 
-        Stop ( );
-        runningAcquisition = false;
-    };
+    //Stop ( );
+    //runningAcquisition = false;
+    //};
 
     ///////////////////////////////////////////////////////
     //      CBC Methods                                 //
@@ -387,6 +489,43 @@ namespace Ph2_HwInterface {
         WriteI2C (pFeId, pVecReg, cReplies, false, false);
         pVecReg.clear();
         pVecReg = cReplies;
+    }
+
+    void ICGlibFWInterface::CbcFastReset()
+    {
+        WriteReg ( "cbc_ctrl.fast_reset", 1 );
+
+        //usleep ( 200000 );
+
+        //WriteReg ( "cbc_fast_reset", 0 );
+
+        //usleep ( 200000 );
+    }
+
+    void ICGlibFWInterface::CbcHardReset()
+    {
+        WriteReg ( "cbc_ctrl.hard_reset", 1 );
+
+        //usleep ( 200000 );
+
+        //WriteReg ( "cbc_hard_reset", 0 );
+
+        //usleep ( 200000 );
+    }
+
+    void ICGlibFWInterface::CbcI2CRefresh()
+    {
+         WriteReg("cbc_Ctrl.i2c_refresh", 1);
+    }
+
+    void ICGlibFWInterface::CbcTestPulse()
+    {
+        WriteReg("cbc_ctrl.test_pulse", 1);
+    }
+
+    void ICGlibFWInterface::CbcTrigger()
+    {
+         WriteReg("cbc_ctrl.l1a_trigger", 1);
     }
 
     void ICGlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
