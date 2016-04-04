@@ -25,25 +25,25 @@
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.i2c_refresh_enable"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.l1a_trigger_enable"> 1 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.count"> </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.i2c_refresh_count"> </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 10 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 300 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.i2c_refresh_count"> 0 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> 4 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 10 </Register>
 
     <!--DAQ-->
     <Register name="cbc_daq_ctrl.nevents_per_pcdaq"> 10 </Register>
     <Register name="cbc_daq_ctrl.nevents_for_event_data_buf_full_warning"> 8 </Register>
 
     <!--LATENCIES-->
-    <Register name="cbc_daq_ctrl.latencies.trigger_latency"> </Register>
-    <Register name="cbc_daq_ctrl.latencies.stub_latency"> </Register>
+    <Register name="cbc_daq_ctrl.latencies.trigger_latency"> 2 </Register>
+    <Register name="cbc_daq_ctrl.latencies.stub_latency"> 9 </Register>
 
     <!-- DIO5 Config -->
     <Register name="fmcdio5ch_50ohm_en.xtrig"> 1 </Register>
-    <Register name="fmcdio5ch_50ohm_en.vtrig"> </Register>
+    <Register name="fmcdio5ch_50ohm_en.vtrig"> 0 </Register>
     <Register name="fmcdio5ch_50ohm_en.xclk"> 1 </Register>
-    <Register name="fmcdio5ch_50ohm_en.tsigo"> </Register>
+    <Register name="fmcdio5ch_50ohm_en.tsigo"> 0 </Register>
 
   </BeBoard>
 </HwDescription>
