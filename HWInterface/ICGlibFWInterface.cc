@@ -274,39 +274,6 @@ namespace Ph2_HwInterface {
         return cWriteCorr;
     }
 
-    //void ICGlibFWInterface::StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
-    //{
-    //if ( runningAcquisition ) return;
-
-    //runningAcquisition = true;
-    //numAcq = 0;
-    //nbMaxAcq = uNbAcq;
-
-    //thrAcq = boost::thread ( &Ph2_HwInterface::ICGlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
-    //}
-
-    //void ICGlibFWInterface::threadAcquisitionLoop ( BeBoard* pBoard, HwInterfaceVisitor* visitor )
-    //{
-    //Start( );
-    ////      fBlockSize = computeBlockSize( pBoard );
-    //fBlockSize = 0;
-
-    //while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
-    //{
-    //ReadData ( nullptr, true );
-
-    //for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
-    //visitor->visit ( *cEvent );
-
-    //if ( runningAcquisition )
-    //numAcq++;
-
-    //}
-
-    //Stop ( );
-    //runningAcquisition = false;
-    //};
-
     ///////////////////////////////////////////////////////
     //      CBC Methods                                 //
     /////////////////////////////////////////////////////

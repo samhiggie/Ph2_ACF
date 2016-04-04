@@ -16,7 +16,7 @@
     <Register name="cbc_daq_ctrl.ext_sig_enable.clk"> 0 </Register>
     <Register name="cbc_daq_ctrl.trigger_cnfg.ext_veto_en"> 0 </Register>
     <Register name="cbc_daq_ctrl.trigger_cnfg.int_veto_en"> 0 </Register>
-    <Register name="cbc_daq_ctrl.trigger_cnfg.stubtrig_en"> </Register>
+    <Register name="cbc_daq_ctrl.trigger_cnfg.stubtrig_en"> 0 </Register>
     <Register name="cbc_daq_ctrl.trigger_cnfg.stubtrig_logic_and"> 1 </Register>
 
     <!--COMMISSIONING MODE-->
