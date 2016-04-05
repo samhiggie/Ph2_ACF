@@ -96,16 +96,17 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         //here i want to first configure the FW according to the HW structure attached - since this method is aware of pBoard, I can loop the HW structure and thus count CBCs, set i2c addresses and FMC config
 
-        char[64] tmpChar;
+        char tmpChar[64];
         //read a couple of useful data
         uint32_t fDataSizeperEvent32 = ReadReg ("user_stat.fw_cnfg.data_size32.evt_total");
         bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_cbc_en");
         bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_cbc_en");
         uint32_t cNCbcperFMC = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
-        pBoard->setNCbcDataSize(cNCbcperFMC);
+        //this does not work because BeBoard* is const
+        //pBoard->setNCbcDataSize(uint16_t(cNCbcperFMC));
 
         //get the # of CBCs on the first FE and use that as default, write the CBC i2c addresses etc
-        for (Module* cFe : pBoard.fModuleVector)
+        for (Module* cFe : pBoard->fModuleVector)
         {
             // need to find the correct FMC Id for each module
             uint8_t cFmcId = cFe->getFMCId();
@@ -122,9 +123,9 @@ namespace Ph2_HwInterface {
             }
         }
 
-        uint32_t cVal = (cNCbc == 2) ? 1 : 0;
+        uint32_t cVal = (cNCbcperFMC == 2) ? 1 : 0;
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", cVal });
-        cVal = (cNCbc == 2) ? 0 : 1;
+        cVal = (cNCbcperFMC == 2) ? 0 : 1;
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", cVal });
 
         //last, loop over the variable registers from the HWDescription.xml file
