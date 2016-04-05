@@ -70,8 +70,8 @@ namespace Ph2_HwInterface {
 
     void ICGlibFWInterface::getBoardInfo()
     {
-        std::cout << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) << std::endl;
-        std::cout << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) << std::endl;
+        //std::cout << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) << std::endl;
+        //std::cout << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) << std::endl;
         std::cout << "FW version : " << ReadReg ( "user_stat.version.ver_major" ) << "." << ReadReg ( "user_stat.version.ver_minor" ) << "." << ReadReg ( "user_stat.version.ver_build" ) << std::endl;
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "sys_regs.board_id" );
@@ -99,8 +99,8 @@ namespace Ph2_HwInterface {
         char[64] tmpChar;
         //read a couple of useful data
         uint32_t fDataSizeperEvent32 = ReadReg ("user_stat.fw_cnfg.data_size32.evt_total");
-        bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_en");
-        bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_en");
+        bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_cbc_en");
+        bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_cbc_en");
         uint32_t cNCbcperFMC = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
         pBoard->setNCbcDataSize(cNCbcperFMC);
 
@@ -117,7 +117,7 @@ namespace Ph2_HwInterface {
                 std::string cRegString(tmpChar);
 
                 uint32_t cAddress = 0x41 + cCbcId;
-                uint32_t cVal = (1 << 28) | (cCbcId << 24) | cAddress & 0x7F;
+                uint32_t cVal = (1 << 28) | (cCbcId << 24) | (cAddress & 0x7F);
                 cVecReg.push_back ({cRegString, cVal });
             }
         }
@@ -139,10 +139,12 @@ namespace Ph2_HwInterface {
         cVecReg.clear();
 
         //before I'm done I need to reset all the state machines which loads the configuration
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.counter_reset", 1 });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_reset", 1 });
-        //everything is included in daq reset but this needs to be done explicitly
-        cVecReg.push_back ({"commissioning_cycle_ctrl.reset", 1 });
+        //all the daq_ctrl registers have to be used with hex values and not with the sub-masks but they are auto clearing after 1 has been written
+        //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset, 
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        //according to Kirika, this is not necessary to set explicitly any more
+        //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x1 });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
     }
@@ -153,37 +155,37 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         //first reset all the counters and state machines
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_reset", 1 });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.counter_reset", 1 });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
 
-        //this needs to be reset explicitly according to Kirika
-        cVecReg.push_back ({"commissioning_cycle_ctrl.reset", 1 });
+        //according to Kirika, this is not necessary to set explicitly any more
+        //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x1 });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
         //now issue start
-        cVecReg.push_back ({"commissioning_cycle_ctrl.start", 1 });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_start", 1 });
+        //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x2 });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
     }
 
     void ICGlibFWInterface::Stop()
     {
-        WriteReg ( "cbc_daq_ctrl.daq_ctrl.daq_stop", 1 );
+        WriteReg ( "cbc_daq_ctrl.daq_ctrl", STOP );
     }
 
 
     void ICGlibFWInterface::Pause()
     {
         //this should just brake triggers
-        WriteReg ( "cbc_daq_ctrl.daq_ctrl.trigger_stop", 1 );
+        WriteReg ( "cbc_daq_ctrl.daq_ctrl", 0x4000 );
     }
 
 
     void ICGlibFWInterface::Resume()
     {
-        WriteReg ( "cbc_daq_ctrl.daq_ctrl.trigger_start", 1 );
+        WriteReg ( "cbc_daq_ctrl.daq_ctrl", 0x2000 );
     }
 
     uint32_t ICGlibFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger )
@@ -212,22 +214,19 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         // probably no need to reset everything since I am calling this a lot during commissioning
-        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_reset", 1 });
-        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.counter_reset", 1 });
-        //cVecReg.push_back ({"commissioning_cycle_ctrl.reset", 1 });
+        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
         //WriteStackReg ( cVecReg );
         //cVecReg.clear();
 
-        //now issue start
-        cVecReg.push_back ({"commissioning_cycle_ctrl.start", 1 });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl.daq_start", 1 });
-        WriteStackReg ( cVecReg );
-        cVecReg.clear();
-
         //here I optimize for speed during calibration, so I explicitly set the nevents_per_pcdaq to the event number I desire
         fNEventsperAcquistion = pNEvents;
-        WriteReg ("cbc_daq_ctrl.nevents_per_pcdaq", pNEvents);
+        //now issue start
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START} );
+        cVecReg.push_back({"cbc_daq_ctrl.nevents_per_pcdaq", pNEvents});
 
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
         //now poll for data to be ready
         std::chrono::milliseconds cWait ( 1 );
 
@@ -241,7 +240,7 @@ namespace Ph2_HwInterface {
         }
 
         //now stop triggers & DAQ
-        WriteReg ( "cbc_daq_ctrl.daq_ctrl.daq_stop", 1 );
+        WriteReg ( "cbc_daq_ctrl.daq_ctrl", STOP );
         
         //ok, packet complete, now let's read
         std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
@@ -460,39 +459,27 @@ namespace Ph2_HwInterface {
 
     void ICGlibFWInterface::CbcFastReset()
     {
-        WriteReg ( "cbc_ctrl.fast_reset", 1 );
-
-        //usleep ( 200000 );
-
-        //WriteReg ( "cbc_fast_reset", 0 );
-
-        //usleep ( 200000 );
+        WriteReg ( "cbc_ctrl", FAST_RESET );
     }
 
     void ICGlibFWInterface::CbcHardReset()
     {
-        WriteReg ( "cbc_ctrl.hard_reset", 1 );
-
-        //usleep ( 200000 );
-
-        //WriteReg ( "cbc_hard_reset", 0 );
-
-        //usleep ( 200000 );
+        WriteReg ( "cbc_ctrl", HARD_RESET );
     }
 
     void ICGlibFWInterface::CbcI2CRefresh()
     {
-         WriteReg("cbc_Ctrl.i2c_refresh", 1);
+         WriteReg("cbc_ctrl", I2C_REFRESH);
     }
 
     void ICGlibFWInterface::CbcTestPulse()
     {
-        WriteReg("cbc_ctrl.test_pulse", 1);
+        WriteReg("cbc_ctrl", TEST_PULSE);
     }
 
     void ICGlibFWInterface::CbcTrigger()
     {
-         WriteReg("cbc_ctrl.l1a_trigger", 1);
+         WriteReg("cbc_ctrl", L1A);
     }
 
     void ICGlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )

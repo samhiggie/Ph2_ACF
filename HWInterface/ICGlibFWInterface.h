@@ -23,6 +23,16 @@
 #include "../Utils/Visitor.h"
 //#include "CbcI2cReply.h"
 
+#define RESET 0x1
+#define START 0x2
+#define STOP  0x4
+#define CTR_RESET 0x800
+#define HARD_RESET 0x1
+#define FAST_RESET 0x2
+#define I2C_REFRESH 0x4
+#define TEST_PULSE 0x8
+#define L1A        0x010
+
 using namespace Ph2_HwDescription;
 
 /*!
@@ -42,8 +52,6 @@ namespace Ph2_HwInterface {
         Data* fData; /*!< Data read storage*/
 
         struct timeval fStartVeto;
-        //std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
-        //std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
         FpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fBroadcastCbcId;
@@ -55,17 +63,6 @@ namespace Ph2_HwInterface {
         //  const uint32_t SINGLE_I2C_WAIT = 700; //usec for 100 kHz I2C
         const unsigned CBCFMC_ID = 2;
 
-        //public:
-        //static uint32_t EncodeCbcI2cCommand( uint8_t pCbcId, const CbcRegItem& pRegItem, bool r = true, bool w = true ); [>!< Encode I2C commands for GLIB interface<]
-
-      private:
-
-        /*!
-         *  \brief I2C command pools
-         */
-        //std::map< unsigned, std::vector<uint32_t> > fI2cWriteReadCommandList;
-        //std::map< unsigned, std::vector<uint32_t> > fI2cWriteCommandList;
-        //std::map< unsigned, std::vector<uint32_t> > fI2cReadCommandList;
 
       public:
         /*!
