@@ -125,10 +125,9 @@ namespace Ph2_HwInterface {
             }
         }
 
-        uint32_t cVal = (cNCbcperFMC == 2) ? 1 : 0;
-        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", cVal });
-        cVal = (cNCbcperFMC == 2) ? 0 : 1;
-        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", cVal });
+        bool cVal = (fBroadcastCbcId == 2) ? 1 : 0;
+        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", static_cast<uint32_t>(cVal) });
+        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", static_cast<uint32_t>(!cVal) });
 
         //last, loop over the variable registers from the HWDescription.xml file
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
