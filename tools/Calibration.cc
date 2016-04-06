@@ -158,7 +158,7 @@ void Calibration::FindVplus()
         // looping over the test groups, enable it
         std::cout << GREEN << "Enabling Test Group...." << cTGroup.first << RESET << std::endl;
         setOffset ( fTargetOffset, cTGroup.first, true ); // takes the group ID
-        updateHists ( "Offsets" );
+        //updateHists ( "Offsets" );
 
         bitwiseVplus ( cTGroup.first );
 
@@ -171,8 +171,9 @@ void Calibration::FindVplus()
         {
             TProfile* cTmpProfile = static_cast<TProfile*> ( getHist ( cCbc.first, "Vplus" ) );
             cTmpProfile->Fill ( cTGroup.first, cCbc.second ); // fill Vplus value for each test group
-            updateHists ( "Vplus" );
         }
+
+        updateHists ( "Vplus" );
     }
 
     // done extracting reasonable Vplus values for all test groups, now find the mean
@@ -185,6 +186,7 @@ void Calibration::FindVplus()
         fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", cCbc.second );
         std::cout << BOLDGREEN <<  "Mean Vplus value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET << std::endl;
     }
+
 }
 
 void Calibration::bitwiseVplus ( int pTGroup )
@@ -202,7 +204,7 @@ void Calibration::bitwiseVplus ( int pTGroup )
         // now each CBC has the MSB Vplus Bit written
         // now take data
         measureOccupancy ( fEventsPerPoint, pTGroup );
-        updateHists ( "Occupancy" );
+        //updateHists ( "Occupancy" );
 
         // done taking data, now find the occupancy per CBC
         for ( auto& cCbc : fVplusMap )
@@ -266,9 +268,9 @@ void Calibration::FindOffsets()
             std::cout << "Verifying Occupancy with final offsets by taking " << fEventsPerPoint* cMultiple << " Triggers!" << std::endl;
             measureOccupancy ( fEventsPerPoint  * cMultiple, cTGroup.first );
             // now find the occupancy for each channel and update the TProfile
-            updateHists ( "Occupancy" );
         }
 
+        updateHists ( "Occupancy" );
         uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
         setOffset ( cOffset, cTGroup.first );
         std::cout << RED << "Disabling Test Group...." << cTGroup.first << RESET << std::endl << std::endl;
@@ -287,18 +289,19 @@ void Calibration::bitwiseOffset ( int pTGroup )
         // now, for all the channels in the group and for each cbc, toggle the MSB of the offset from the map
         toggleOffset ( pTGroup, iBit, true );
 
-        updateHists ( "Offsets" );
 
         // now the offset for the current group is changed
         // now take data
         measureOccupancy ( fEventsPerPoint, pTGroup );
 
-        updateHists ( "Occupancy" );
 
         // now call toggleOffset again with pBegin = false; this method checks the occupancy and flips a bit back if necessary
         toggleOffset ( pTGroup, iBit, false );
-        updateHists ( "Offsets" );
+        //updateHists ( "Offsets" );
     }
+
+    updateHists ( "Occupancy" );
+    updateHists ( "Offsets" );
 }
 
 
@@ -314,24 +317,24 @@ void Calibration::measureOccupancy ( uint32_t pNEvents, int pTGroup )
 
         //while ( cN < pNEvents )
         //{
-            //fBeBoardInterface->ReadData ( pBoard, false );
-            fBeBoardInterface->ReadNEvents(pBoard, pNEvents);
-            std::vector<Event*> events = fBeBoardInterface->GetEvents ( pBoard );
+        //fBeBoardInterface->ReadData ( pBoard, false );
+        fBeBoardInterface->ReadNEvents (pBoard, pNEvents);
+        std::vector<Event*> events = fBeBoardInterface->GetEvents ( pBoard );
 
-            // if this is for channelwise offset tuning, iterate the events and fill the occupancy histogram
+        // if this is for channelwise offset tuning, iterate the events and fill the occupancy histogram
 
-            for ( auto& cEvent : events )
+        for ( auto& cEvent : events )
+        {
+            for ( auto cFe : pBoard->fModuleVector )
             {
-                for ( auto cFe : pBoard->fModuleVector )
-                {
-                    for ( auto cCbc : cFe->fCbcVector )
-                        fillOccupancyHist ( cCbc, pTGroup, cEvent );
-                }
-
-                cN++;
+                for ( auto cCbc : cFe->fCbcVector )
+                    fillOccupancyHist ( cCbc, pTGroup, cEvent );
             }
 
-            cNthAcq++;
+            cN++;
+        }
+
+        cNthAcq++;
         //}
 
         //fBeBoardInterface->Stop ( pBoard );

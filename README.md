@@ -2,7 +2,7 @@ Cbc_default_electron# CMS Ph2 ACF (Acquisition & Control Framework)
 
 ##### Contains:
 
-    - A middleware API layer, implemented in C++, which wraps the firmware calls and handshakes into abstracted functions
+- A middleware API layer, implemented in C++, which wraps the firmware calls and handshakes into abstracted functions
 
 - A C++ object-based library describing the system components (CBCs,
         Hybrids, Boards) and their properties(values, status)
@@ -15,7 +15,7 @@ Cbc_default_electron# CMS Ph2 ACF (Acquisition & Control Framework)
 
 ##### Different versions
 
-    On this Repo, you can find different version of the software :
+On this Repo, you can find different version of the software :
     - a hopefully working and stable version on the master branch
     - An in-progress version in the Dev branch
 
@@ -118,53 +118,22 @@ Cbc_default_electron# CMS Ph2 ACF (Acquisition & Control Framework)
     - simplified Definitions.h
     - added an Encode Reg method that can be passed the FE ID instead of decoding it from the CBC id
     - merged DQM code from Nov15 beamtest
+- 03.03.2016: some updates & additions (v1-32)
+    - added support for CMS Tk Ph2 Data format (.daq) files generation
+    - added the option for CMS Tk Ph2 Antenna driver as plugin
+    - removed the Shelf objects from the code for simplicity
 
 ### Setup
 
 Firmware for the GLIB can be found in /firmware. Since the "old" FMC flavour is deprecated, only new FMCs (both connectors on the same side) are supported.
 You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnell.com/xilinx/hw-usb-ii-g/platform-cable-configuration-prog/dp/1649384)
 
-#### Setup on the Strasbourg [VM v1.1.0] (http://sbgcmstrackerupgrade.in2p3.fr/) 
-
-1. Remove the current gcc and old boost libraries:
-
-          $> sudo yum remove devtoolset-1.1-gcc-debuginfo
-          $> sudo yum remove boost
-
-2. Install the latest gcc compiler:
-
-          $> sudo yum install devtoolset-2
-          $> sudo ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
-          $> hash -r
-
-This should give you gcc 4.8.1:
-
-          $> gcc --version
-
-3. Finally, update uHAL to version 2.3:
-
-          $> sudo yum groupremove uhal
-          $>wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
-
-(You may need the --no-check-certificate)
-
-          $> sudo cp cactus.slc5.x86_64.repo /etc/yum.repos.d/cactus.repo
-          $> sudo yum clean all
-          $> sudo yum groupinstall uhal
-
-4. Re-compile ROOT using the new gcc 4.8: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation"
-
-Note: You may also need to set the environment variables (or source setup.sh):
-
-          $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
-          $> export PATH=/opt/cactus/bin:$PATH
-
-#### Setup on SLC5/6
+#### Setup on SLC6
 
 1. Install the latest gcc compiler:
 
         $> sudo yum install devtoolset-2
-        $> sudo ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
+        $> scl enable devtoolset-2 bash  (add to .bashrc)      
         $> hash -r
 
 This should give you gcc 4.8.1:
@@ -173,21 +142,9 @@ This should give you gcc 4.8.1:
 
 2. Install uHAL  version 2.3:
 
-For SLC5:
-
-        $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc5.x86_64.repo 
-
-or for SLC6:
-
         $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc6.x86_64.repo 
 
 (You may need the --no-check-certificate)
-
-for SLC5:
-
-        $> sudo cp cactus.slc5.x86_64.repo /etc/yum.repos.d/cactus.repo
-
-for SLC6:
 
         $> sudo cp cactus.slc6.x86_64.repo /etc/yum.repos.d/cactus.repo
 
@@ -196,7 +153,14 @@ then
         $> sudo yum clean all
         $> sudo yum groupinstall uhal
 
-3. Install CERN ROOT: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation"
+3. Install CERN ROOT version 5.34.32: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation" when building yourself. If root is installed on a CERN computer of virtual machine you can use:
+
+        $> sudo yum install root-net-http
+        $> sudo yum install root-graf3d-gl root-physics libusb-devel
+
+4. If you are working on a remote machine, you need these packages for the Canvases to show
+
+        $> sudo yum install xorg-x11-xauth.x86_64
 
 Note: You may also need to set the environment variables (or source setup.sh):
 
@@ -206,26 +170,26 @@ Note: You may also need to set the environment variables (or source setup.sh):
 ### The Ph2_ACF Software : 
 
 Follow these instructions to install and compile the libraries:
-(provided you installed the latest version of gcc, µHal, boost as mentioned above)
+(provided you installed the latest version of gcc, µHal, boost as mentioned above).
 
-1. Clone the GitHub repo.
+1. Clone the GitHub repo and run setup.sh
   
-
+        $> git clone https://gitlab.cern.ch/cmstkph2/Ph2_ACF.git
         $> source setup.sh
 
-3. Do a make in the root of the repo (make sure you have all µHal, root, boost... libraries on your computer).
+2. Do a make in the root of the repo (make sure you have all µHal, root libraries on your computer).
 
 3. Launch 
 
         $> systemtest --help
 
-command if you want to test the parsing of the HWDescription.xml file
+command if you want to test the parsing of the HWDescription.xml file.
 
 4. Launch
 
         $> datatest --help
 
-command if you want to test if you can correctly read data.
+command if you want to test if you can correctly read data
 
 6. Launch
 
@@ -272,7 +236,6 @@ to save binary data from the GLIB to file
           $> miniDQM --help
 
 to run the DQM code from the June '15 beamtest
-
 
 ##### What can you do with the software ?
 

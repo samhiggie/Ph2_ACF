@@ -15,7 +15,7 @@
 #include <vector>
 #include "../HWInterface/GlibFWInterface.h"
 #include "../HWInterface/CtaFWInterface.h"
-#include "../HWInterface/ICGlibFWInterface.h"
+//#include "../HWInterface/ICGlibFWInterface.h"
 
 using namespace Ph2_HwDescription;
 
