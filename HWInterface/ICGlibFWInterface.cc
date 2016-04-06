@@ -16,6 +16,8 @@
 #include "GlibFpgaConfig.h"
 //#include "CbcInterface.h"
 
+//TODO: fBroadcastCbcId should be read from FW
+
 namespace Ph2_HwInterface {
 
     ICGlibFWInterface::ICGlibFWInterface ( const char* puHalConfigFileName,
@@ -23,7 +25,7 @@ namespace Ph2_HwInterface {
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
         fData ( nullptr ),
-        fBroadcastCbcId (8),
+        fBroadcastCbcId (0),
         fReplyBufferSize (1024)
     {}
 
@@ -34,7 +36,7 @@ namespace Ph2_HwInterface {
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
         fData ( nullptr ),
-        fBroadcastCbcId (8),
+        fBroadcastCbcId (0),
         fReplyBufferSize (1024),
         fFileHandler ( pFileHandler )
     {
@@ -48,7 +50,7 @@ namespace Ph2_HwInterface {
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
-        fBroadcastCbcId (8),
+        fBroadcastCbcId (0),
         fReplyBufferSize (1024)
     {}
 
@@ -60,7 +62,7 @@ namespace Ph2_HwInterface {
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
-        fBroadcastCbcId (8),
+        fBroadcastCbcId (0),
         fReplyBufferSize (1024),
         fFileHandler ( pFileHandler )
     {
@@ -101,7 +103,7 @@ namespace Ph2_HwInterface {
         uint32_t fDataSizeperEvent32 = ReadReg ("user_stat.fw_cnfg.data_size32.evt_total");
         bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_cbc_en");
         bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_cbc_en");
-        uint32_t cNCbcperFMC = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
+        fBroadcastCbcId = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
         //this does not work because BeBoard* is const
         //pBoard->setNCbcDataSize(uint16_t(cNCbcperFMC));
 
@@ -144,6 +146,7 @@ namespace Ph2_HwInterface {
         //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset, 
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET });
         //according to Kirika, this is not necessary to set explicitly any more
         //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x1 });
         WriteStackReg ( cVecReg );
@@ -207,6 +210,20 @@ namespace Ph2_HwInterface {
 
         //ok, packet complete, now let's read
         std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
+        
+        // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
+        if ( fData ) delete fData;
+
+        fData = new Data();
+
+        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
+        fData->Set ( pBoard, cData , fNEventsperAcquistion, true );
+
+        if ( fSaveToFile )
+        {
+            fFileHandler->set ( cData );
+            fFileHandler->writeFile();
+        }
         return fNEventsperAcquistion;
     }
 
@@ -245,6 +262,20 @@ namespace Ph2_HwInterface {
         
         //ok, packet complete, now let's read
         std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
+
+        // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
+        if ( fData ) delete fData;
+
+        fData = new Data();
+
+        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
+        fData->Set ( pBoard, cData , fNEventsperAcquistion, true );
+
+        if ( fSaveToFile )
+        {
+            fFileHandler->set ( cData );
+            fFileHandler->writeFile();
+        }
     }
 
     std::vector<uint32_t> ICGlibFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
