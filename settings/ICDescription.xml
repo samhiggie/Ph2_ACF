@@ -3,7 +3,7 @@
   <BeBoard Id="0" boardType="ICGLIB">
     <!-- <connection id="board" uri="ipbusudp-2.0://192.168.000.175:50001" address_table="file://settings/address_table_2CBC.xml" /> -->
     <connection id="board" uri="ipbusudp-2.0://192.168.0.162:50001" address_table="file://settings/address_table_2CBC.xml" />
-    <Module FeId="0" FMCId="2" ModuleId="0" Status="1">
+    <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
       <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
     <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
       <CBC_Files path="./settings/" />

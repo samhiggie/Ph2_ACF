@@ -111,7 +111,10 @@ namespace Ph2_HwInterface {
         for (Module* cFe : pBoard->fModuleVector)
         {
             // need to find the correct FMC Id for each module
+            // better to get the fmc_cbc enable and use that since I assume only one module per board for the moment
             uint8_t cFmcId = cFe->getFMCId();
+            if(cfmc1_en) cFMCId = 1;
+            else if(cfmc2_en) cFMCId = 2;
 
             for ( Cbc* cCbc : cFe->fCbcVector)
             {
