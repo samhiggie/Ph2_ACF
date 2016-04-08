@@ -154,6 +154,7 @@ namespace Ph2_System {
 
         os << "\n";
         os << "\n";
+	std::string strUhalConfig = expandEnvironmentVariables(doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value());
 
         // Iterate over the BeBoard Nodes
         for ( pugi::xml_node cBeBoardNode = doc.child ( "HwDescription" ).child ( "BeBoard" ); cBeBoardNode; cBeBoardNode = cBeBoardNode.next_sibling() )
@@ -164,7 +165,7 @@ namespace Ph2_System {
             std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cBeBoardConnectionNode.attribute ("id").value() << BOLDBLUE << " URI: "
                       << BOLDYELLOW << cBeBoardConnectionNode.attribute ("uri").value()
                       << BOLDBLUE << " Address Table: "
-                      << BOLDYELLOW << cBeBoardConnectionNode.attribute ("address_table").value() << RESET << std::endl;
+                      << BOLDYELLOW << expandEnvironmentVariables(cBeBoardConnectionNode.attribute ("address_table").value()) << RESET << std::endl;
 
             // Iterate over the BeBoardRegister Nodes
             for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode/* != cBeBoardNode.child( "Module" )*/; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
@@ -173,14 +174,20 @@ namespace Ph2_System {
                 // os << BOLDCYAN << "|" << "  " << "|" << "_____" << cBeBoardRegNode.name() << "  " << cBeBoardRegNode.first_attribute().name() << " :" << cBeBoardRegNode.attribute( "name" ).value() << RESET << std:: endl;
             }
 
-            if ( !std::string ( cBeBoardNode.attribute ( "boardType" ).value() ).compare ( std::string ( "GLIB" ) ) )
-                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cBeBoardConnectionNode.attribute ( "id" ).value(), cBeBoardConnectionNode.attribute ( "uri" ).value(), cBeBoardConnectionNode.attribute ("address_table").value(), fFileHandler );
+            if ( !std::string ( cBeBoardNode.attribute ( "boardType" ).value() ).compare ( std::string ( "GLIB" ) ) ){
+		if (strUhalConfig.empty())
+			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cBeBoardConnectionNode.attribute ( "id" ).value(), cBeBoardConnectionNode.attribute ( "uri" ).value(), expandEnvironmentVariables(cBeBoardConnectionNode.attribute ("address_table").value()).c_str(), fFileHandler );
+		else
+			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "id" ).as_int(), fFileHandler );
 
-            else if ( !std::string ( cBeBoardNode.attribute ( "boardType" ).value() ).compare ( std::string ( "CTA" ) ) )
-                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cBeBoardConnectionNode.attribute ( "id" ).value(),
-                        cBeBoardConnectionNode.attribute ( "uri" ).value(),
-                        cBeBoardConnectionNode.attribute ("address_table").value(), fFileHandler );
-
+             } else if ( !std::string ( cBeBoardNode.attribute ( "boardType" ).value() ).compare ( std::string ( "CTA" ) ) ){
+		if (strUhalConfig.empty())
+			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cBeBoardConnectionNode.attribute ( "id" ).value(),
+					cBeBoardConnectionNode.attribute ( "uri" ).value(),
+					expandEnvironmentVariables(cBeBoardConnectionNode.attribute ("address_table").value()).c_str(), fFileHandler );
+		else
+			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "id" ).as_int(), fFileHandler );
+	     }
             /*else
               cBeBoardFWInterface = new OtherFWInterface();*/
 
@@ -263,7 +270,7 @@ namespace Ph2_System {
     void SystemController::parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os )
     {
         pugi::xml_node cCbcPathPrefixNode = pModuleNode.child ( "CBC_Files" );
-        std::string cFilePrefix = static_cast<std::string> ( cCbcPathPrefixNode.attribute ( "path" ).value() );
+        std::string cFilePrefix = expandEnvironmentVariables(static_cast<std::string> ( cCbcPathPrefixNode.attribute ( "path" ).value() ));
 
         if ( !cFilePrefix.empty() ) os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC Files Path : " << cFilePrefix << RESET << std::endl;
 
@@ -272,14 +279,14 @@ namespace Ph2_System {
         {
             os << BOLDCYAN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcNode.name() << "  "
                << cCbcNode.first_attribute().name() << " :" << cCbcNode.attribute ( "Id" ).value()
-               << ", File: " << cCbcNode.attribute ( "configfile" ).value() << RESET << std:: endl;
+               << ", File: " << expandEnvironmentVariables(cCbcNode.attribute ( "configfile" ).value()) << RESET << std:: endl;
 
 
             std::string cFileName;
 
             if ( !cFilePrefix.empty() )
-                cFileName = cFilePrefix + cCbcNode.attribute ( "configfile" ).value();
-            else cFileName = cCbcNode.attribute ( "configfile" ).value();
+                cFileName = cFilePrefix + expandEnvironmentVariables(cCbcNode.attribute ( "configfile" ).value());
+            else cFileName = expandEnvironmentVariables(cCbcNode.attribute ( "configfile" ).value());
 
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
 
