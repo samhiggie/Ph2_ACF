@@ -26,7 +26,8 @@ namespace Ph2_HwInterface {
         fpgaConfig (nullptr),
         fData ( nullptr ),
         fBroadcastCbcId (0),
-        fReplyBufferSize (1024)
+        fReplyBufferSize (1024),
+        fFMCId(1)
     {}
 
 
@@ -38,7 +39,8 @@ namespace Ph2_HwInterface {
         fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
-        fFileHandler ( pFileHandler )
+        fFileHandler ( pFileHandler ),
+        fFMCId(1)
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
@@ -51,7 +53,8 @@ namespace Ph2_HwInterface {
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
         fBroadcastCbcId (0),
-        fReplyBufferSize (1024)
+        fReplyBufferSize (1024),
+        fFMCId(1)
     {}
 
 
@@ -64,7 +67,8 @@ namespace Ph2_HwInterface {
         fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
-        fFileHandler ( pFileHandler )
+        fFileHandler ( pFileHandler ),
+        fFMCId(1)
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
@@ -112,14 +116,14 @@ namespace Ph2_HwInterface {
         {
             // need to find the correct FMC Id for each module
             // better to get the fmc_cbc enable and use that since I assume only one module per board for the moment
-            uint8_t cFmcId = cFe->getFMCId();
-            if(cfmc1_en) cFMCId = 1;
-            else if(cfmc2_en) cFMCId = 2;
+            fFMCId = cFe->getFMCId();
+            if(cfmc1_en) fFMCId = 1;
+            else if(cfmc2_en) fFMCId = 2;
 
             for ( Cbc* cCbc : cFe->fCbcVector)
             {
                 uint8_t cCbcId = cCbc->getCbcId();
-                sprintf (tmpChar, "cbc_daq_ctrl.cbc_i2c_addr_fmc%d.cbc%d", cFmcId, cCbcId);
+                sprintf (tmpChar, "cbc_daq_ctrl.cbc_i2c_addr_fmc%d.cbc%d", fFMCId, cCbcId);
                 std::string cRegString(tmpChar);
 
                 uint32_t cAddress = 0x41 + cCbcId;
@@ -320,7 +324,18 @@ namespace Ph2_HwInterface {
     {
         //use fBroadcastCBCId for broadcast commands
         uint8_t cRW =  ( ( pRead ? 1 : 0 ) << 1 ) + ( pWrite ? 1 : 0 );
-        pVecReq.push_back ( ( CBCFMC_ID << 28 ) | ( pCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( fFMCId << 28 ) | ( pCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+    }
+    void ICGlibFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
+                                        uint8_t pFeId, 
+                                        uint8_t pCbcId,
+                                        std::vector<uint32_t>& pVecReq,
+                                        bool pRead,
+                                        bool pWrite )
+    {
+        //use fBroadcastCBCId for broadcast commands
+        uint8_t cRW =  ( ( pRead ? 1 : 0 ) << 1 ) + ( pWrite ? 1 : 0 );
+        pVecReq.push_back ( ( pFeId << 28 ) | ( pCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void ICGlibFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
@@ -331,7 +346,7 @@ namespace Ph2_HwInterface {
     {
         //use fBroadcastCBCId for broadcast commands
         uint8_t cRW =  ( ( pRead ? 1 : 0 ) << 1 ) + ( pWrite ? 1 : 0 );
-        pVecReq.push_back ( ( CBCFMC_ID << 28 ) | ( fBroadcastCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( fFMCId << 28 ) | ( fBroadcastCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void ICGlibFWInterface::DecodeReg ( CbcRegItem& pRegItem,
@@ -356,7 +371,7 @@ namespace Ph2_HwInterface {
         bool cFailed (false);
 
         char tmp[256];
-        sprintf ( tmp, "cbc_daq_ctrl.i2c_reply_fifo_fmc%d_status.nwdata", pFeId );
+        sprintf ( tmp, "cbc_daq_ctrl.i2c_reply_fifo_fmc%d_status.nwdata", fFMCId );
         std::string cNode (tmp);
         cReplies = ReadBlockRegValue ( cNode, pNReplies );
         //here i create a dummy reg item for decoding so I can find if 1 cFailed
@@ -493,27 +508,27 @@ namespace Ph2_HwInterface {
 
     void ICGlibFWInterface::CbcFastReset()
     {
-        WriteReg ( "cbc_ctrl", FAST_RESET );
+        WriteReg ( "cbc_daq_ctrl.cbc_ctrl", FAST_RESET );
     }
 
     void ICGlibFWInterface::CbcHardReset()
     {
-        WriteReg ( "cbc_ctrl", HARD_RESET );
+        WriteReg ( "cbc_daq_ctrl.cbc_ctrl", HARD_RESET );
     }
 
     void ICGlibFWInterface::CbcI2CRefresh()
     {
-         WriteReg("cbc_ctrl", I2C_REFRESH);
+         WriteReg("cbc_daq_ctrl.cbc_ctrl", I2C_REFRESH);
     }
 
     void ICGlibFWInterface::CbcTestPulse()
     {
-        WriteReg("cbc_ctrl", TEST_PULSE);
+        WriteReg("cbc_daq_ctrl.cbc_ctrl", TEST_PULSE);
     }
 
     void ICGlibFWInterface::CbcTrigger()
     {
-         WriteReg("cbc_ctrl", L1A);
+         WriteReg("cbc_daq_ctrl.cbc_ctrl", L1A);
     }
 
     void ICGlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )

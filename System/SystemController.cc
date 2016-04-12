@@ -94,8 +94,8 @@ namespace Ph2_System {
             {
                 fBeBoardInterface->ConfigureBoard ( &pBoard );
 
-                if ( fCheck )
-                    fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
+                //if ( fCheck )
+                    //fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
 
                 los_ << GREEN << "Successfully configured Board " << int ( pBoard.getBeId() ) << RESET << std::endl;
             }
@@ -162,7 +162,7 @@ namespace Ph2_System {
             std::string cBoardType = cBeBoardNode.attribute ( "boardType" ).value();
 
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
-            std::string cId = cId;
+            std::string cId = cBeBoardConnectionNode.attribute ( "id" ).value();
             std::string cUri = cBeBoardConnectionNode.attribute ( "uri" ).value();
             std::string cAddressTable = cBeBoardConnectionNode.attribute ( "address_table" ).value();
 

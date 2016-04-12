@@ -15,9 +15,7 @@ subdirs: print $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@
-	#all: Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
 
-#libs: Utils HWDescription HWInterface System Tracker srcnoroot
 
 print:
 	@echo '   '   

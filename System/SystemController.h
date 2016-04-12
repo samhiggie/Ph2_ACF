@@ -13,9 +13,12 @@
 #ifndef __SYSTEMCONTROLLER_H__
 #define __SYSTEMCONTROLLER_H__
 
-#include "../HWInterface/BeBoardFWInterface.h"
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
+#include "../HWInterface/BeBoardFWInterface.h"
+#include "../HWInterface/GlibFWInterface.h"
+#include "../HWInterface/ICGlibFWInterface.h"
+#include "../HWInterface/CtaFWInterface.h"
 #include "../HWDescription/Definition.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"

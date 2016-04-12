@@ -58,10 +58,10 @@ namespace Ph2_HwInterface {
         uint32_t fReplyBufferSize;
         uint32_t fNEventsperAcquistion;
         uint32_t fDataSizeperEvent32;
+        uint32_t fFMCId;
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
         //  const uint32_t SINGLE_I2C_WAIT = 700; //usec for 100 kHz I2C
-        const unsigned CBCFMC_ID = 2;
 
 
       public:
@@ -182,13 +182,14 @@ namespace Ph2_HwInterface {
         * \param pCbcId : Id of the Cbc to work with
         * \param pVecReq : Vector to stack the encoded words
         */
-        void EncodeReg ( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ); /*!< Encode a/several word(s) readable for a Cbc*/
-        void BCEncodeReg ( const CbcRegItem& pRegItem, uint8_t pNCbc, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite );
-        void DecodeReg ( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed );
+        void EncodeReg ( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ) override; /*!< Encode a/several word(s) readable for a Cbc*/
+        void EncodeReg ( const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ) override; /*!< Encode a/several word(s) readable for a Cbc*/
+        void BCEncodeReg ( const CbcRegItem& pRegItem, uint8_t pNCbc, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ) override;
+        void DecodeReg ( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed ) override;
 
 
-        bool WriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback);
-        bool BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback);
+        bool WriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback) override;
+        bool BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback) override;
         void ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReg );
 
         void CbcHardReset();

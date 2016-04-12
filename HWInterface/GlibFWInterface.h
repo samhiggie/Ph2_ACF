@@ -58,24 +58,16 @@ namespace Ph2_HwInterface {
          * \param puHalConfigFileName : path of the uHal Config File
          * \param pBoardId
          */
-        GlibFWInterface ( const char* puHalConfigFileName,
-                          uint32_t pBoardId );
-        GlibFWInterface ( const char* puHalConfigFileName,
-                          uint32_t pBoardId,
-                          FileHandler* pFileHandler );
+        GlibFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
+        GlibFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
         /*!
         * \brief Constructor of the GlibFWInterface class
         * \param pId : ID string
         * \param pUri: URI string
         * \param pAddressTable: address tabel string
         */
-        GlibFWInterface ( const char* pId,
-                          const char* pUri,
-                          const char* pAddressTable );
-        GlibFWInterface ( const char* pId,
-                          const char* pUri,
-                          const char* pAddressTable,
-                          FileHandler* pFileHandler );
+        GlibFWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
+        GlibFWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
 
         /*!
          * \brief Destructor of the GlibFWInterface class
@@ -231,7 +223,7 @@ namespace Ph2_HwInterface {
                          uint8_t pCbcId,
                          std::vector<uint32_t>& pVecReq,
                          bool pRead = false,
-                         bool pWrite = false ) override; /*!< Encode a/several word(s) readable for a Cbc*/
+                         bool pWrite = false ) override; /* Encode a/several word(s) readable for a Cbc */
         /*!
         * \brief Decode a word from a read of a register of the Cbc
         * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to read
