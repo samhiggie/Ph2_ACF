@@ -27,7 +27,7 @@ namespace Ph2_HwInterface {
         fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
-        fFMCId(1)
+        fFMCId (1)
     {}
 
 
@@ -40,7 +40,7 @@ namespace Ph2_HwInterface {
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
         fFileHandler ( pFileHandler ),
-        fFMCId(1)
+        fFMCId (1)
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
@@ -54,7 +54,7 @@ namespace Ph2_HwInterface {
         fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
-        fFMCId(1)
+        fFMCId (1)
     {}
 
 
@@ -68,7 +68,7 @@ namespace Ph2_HwInterface {
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
         fFileHandler ( pFileHandler ),
-        fFMCId(1)
+        fFMCId (1)
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
@@ -117,14 +117,15 @@ namespace Ph2_HwInterface {
             // need to find the correct FMC Id for each module
             // better to get the fmc_cbc enable and use that since I assume only one module per board for the moment
             fFMCId = cFe->getFMCId();
-            if(cfmc1_en) fFMCId = 1;
-            else if(cfmc2_en) fFMCId = 2;
+
+            if (cfmc1_en) fFMCId = 1;
+            else if (cfmc2_en) fFMCId = 2;
 
             for ( Cbc* cCbc : cFe->fCbcVector)
             {
                 uint8_t cCbcId = cCbc->getCbcId();
                 sprintf (tmpChar, "cbc_daq_ctrl.cbc_i2c_addr_fmc%d.cbc%d", fFMCId, cCbcId);
-                std::string cRegString(tmpChar);
+                std::string cRegString (tmpChar);
 
                 uint32_t cAddress = 0x41 + cCbcId;
                 uint32_t cVal = (1 << 28) | (cCbcId << 24) | (cAddress & 0x7F);
@@ -133,8 +134,8 @@ namespace Ph2_HwInterface {
         }
 
         bool cVal = (fBroadcastCbcId == 2) ? 1 : 0;
-        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", static_cast<uint32_t>(cVal) });
-        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", static_cast<uint32_t>(!cVal) });
+        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", static_cast<uint32_t> (cVal) });
+        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", static_cast<uint32_t> (!cVal) });
 
         //last, loop over the variable registers from the HWDescription.xml file
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
@@ -149,7 +150,7 @@ namespace Ph2_HwInterface {
 
         //before I'm done I need to reset all the state machines which loads the configuration
         //all the daq_ctrl registers have to be used with hex values and not with the sub-masks but they are auto clearing after 1 has been written
-        //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset, 
+        //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset,
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
         cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET });
@@ -216,7 +217,7 @@ namespace Ph2_HwInterface {
 
         //ok, packet complete, now let's read
         std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
-        
+
         // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
         if ( fData ) delete fData;
 
@@ -230,6 +231,7 @@ namespace Ph2_HwInterface {
             fFileHandler->set ( cData );
             fFileHandler->writeFile();
         }
+
         return fNEventsperAcquistion;
     }
 
@@ -247,7 +249,7 @@ namespace Ph2_HwInterface {
         fNEventsperAcquistion = pNEvents;
         //now issue start
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START} );
-        cVecReg.push_back({"cbc_daq_ctrl.nevents_per_pcdaq", pNEvents});
+        cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", pNEvents});
 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
@@ -265,7 +267,7 @@ namespace Ph2_HwInterface {
 
         //now stop triggers & DAQ
         WriteReg ( "cbc_daq_ctrl.daq_ctrl", STOP );
-        
+
         //ok, packet complete, now let's read
         std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
 
@@ -327,7 +329,7 @@ namespace Ph2_HwInterface {
         pVecReq.push_back ( ( fFMCId << 28 ) | ( pCbcId << 24 ) | ( cRW << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
     void ICGlibFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
-                                        uint8_t pFeId, 
+                                        uint8_t pFeId,
                                         uint8_t pCbcId,
                                         std::vector<uint32_t>& pVecReq,
                                         bool pRead,
@@ -367,20 +369,44 @@ namespace Ph2_HwInterface {
     {
         usleep (SINGLE_I2C_WAIT * pNReplies );
 
-        uhal::ValVector<uint32_t> cReplies;
+        //uhal::ValVector<uint32_t> cReplies;
         bool cFailed (false);
 
+        //read the number of received replies from nwdata and use this number to compare with the number of expected replies and to read this number 32-bit words from the reply FIFO
         char tmp[256];
         sprintf ( tmp, "cbc_daq_ctrl.i2c_reply_fifo_fmc%d_status.nwdata", fFMCId );
         std::string cNode (tmp);
-        cReplies = ReadBlockRegValue ( cNode, pNReplies );
+        uint32_t cNReplies = ReadReg (cNode);
+
+        if (cNReplies != pNReplies)
+        {
+            std::cout << "Error: Read " << cNReplies << " I2C replies whereas " << pNReplies << " are expected!" << std::endl;
+            cFailed = true;
+        }
+
+        sprintf ( tmp, "cbc_i2c_reply.fmc%d", fFMCId );
+        cNode = tmp;
+
+        //not sure if necessary
+        try
+        {
+            pReplies = ReadBlockRegValue ( cNode, cNReplies );
+        }
+        catch ( Exception& except )
+        {
+            throw except;
+        }
+
         //here i create a dummy reg item for decoding so I can find if 1 cFailed
         CbcRegItem cItem;
         uint8_t cCbcId;
         bool cRead;
 
-        for (auto& cWord : cReplies)
-            DecodeReg (cItem, cCbcId, cWord, cRead, cFailed );
+        //for (auto& cWord : cReplies)
+            //DecodeReg (cItem, cCbcId, cWord, cRead, cFailed );
+
+        //explicitly reset the nwdata word
+        WriteReg ("cbc_daq_ctrl.cbc_i2c_ctrl", 0x2);
 
         return cFailed;
     }
@@ -444,6 +470,8 @@ namespace Ph2_HwInterface {
         // one option is to decode register by register...
         // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
         // could use a mask 0x0F01FFFF
+        
+        //for(auto& cWord : cReplies) std::cout << cWord << std::endl;
         auto cMismatchWord = std::mismatch ( pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICGlibFWInterface::cmd_reply_comp );
 
         if ( cMismatchWord.first == pVecReg.end() )
@@ -518,17 +546,17 @@ namespace Ph2_HwInterface {
 
     void ICGlibFWInterface::CbcI2CRefresh()
     {
-         WriteReg("cbc_daq_ctrl.cbc_ctrl", I2C_REFRESH);
+        WriteReg ("cbc_daq_ctrl.cbc_ctrl", I2C_REFRESH);
     }
 
     void ICGlibFWInterface::CbcTestPulse()
     {
-        WriteReg("cbc_daq_ctrl.cbc_ctrl", TEST_PULSE);
+        WriteReg ("cbc_daq_ctrl.cbc_ctrl", TEST_PULSE);
     }
 
     void ICGlibFWInterface::CbcTrigger()
     {
-         WriteReg("cbc_daq_ctrl.cbc_ctrl", L1A);
+        WriteReg ("cbc_daq_ctrl.cbc_ctrl", L1A);
     }
 
     void ICGlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
@@ -555,6 +583,7 @@ namespace Ph2_HwInterface {
 
     bool ICGlibFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
+        if((cWord1 & 0x0F01FFFF) != (cWord2 & 0x0F01FFFF))std::cout << std::endl << "Word1 " << std::bitset<32>(cWord1) << std::endl << "Word2 " << std::bitset<32>(cWord2) << std::endl;
         return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
     }
 
