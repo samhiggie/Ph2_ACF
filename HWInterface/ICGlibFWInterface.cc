@@ -107,6 +107,7 @@ namespace Ph2_HwInterface {
         bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_cbc_en");
         bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_cbc_en");
         fBroadcastCbcId = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
+        std::cout << " FMC1 en: " << cfmc1_en << " FMC2 en: " << cfmc2_en << " Broadcast id " << fBroadcastCbcId << std::endl;
         //this does not work because BeBoard* is const
         //pBoard->setNCbcDataSize(uint16_t(cNCbcperFMC));
 
@@ -129,6 +130,7 @@ namespace Ph2_HwInterface {
                 //TODO: make sure this is correct
                 uint32_t cVal = (1 << 28) | (cCbcId << 24) | (cAddress & 0x7F);
                 cVecReg.push_back ({cRegString, cVal });
+                std::cout << cRegString << " : " << std::bitset<32>(cVal) << " = " << std::hex << +cVal << std::dec << std::endl;
             }
         }
 
@@ -136,12 +138,14 @@ namespace Ph2_HwInterface {
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", static_cast<uint32_t> (cVal) });
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", static_cast<uint32_t> (!cVal) });
 
+        std::cout << "cbc_daq_ctrl.general.fmc_wrong_pol " << ReadReg("cbc_daq_ctrl.general.fmc_wrong_pol") << " cbc_daq_ctrl.general.fmc_pc045c_4hybrid " << ReadReg("cbc_daq_ctrl.general.fmc_pc045c_4hybrid") << std::endl; 
         //last, loop over the variable registers from the HWDescription.xml file
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
 
         for ( auto const& it : cGlibRegMap )
         {
             cVecReg.push_back ( {it.first, it.second} );
+            std::cout << it.first << " : " << it.second <<std::endl;
         }
 
         WriteStackReg ( cVecReg );
@@ -157,11 +161,13 @@ namespace Ph2_HwInterface {
         cVecReg.clear();
         std::vector<uint32_t> pReplies;
         bool cFailure = ReadI2C ( fFMCId, fBroadcastCbcId, pReplies);
+        for(auto & cWord2 : pReplies)
+        std::cout << " Initial "<< "Read:  CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF) << " ## " << std::bitset<32> (cWord2) << std::endl;
 
         if (!cFailure) std::cout << "Successfully received *Pings* from " << fBroadcastCbcId << " Cbcs on FMC " << +fFMCId << std::endl;
         else std::cout << "Error, did not receive the correct number of *Pings*; expected: " << fBroadcastCbcId << ", received: " << pReplies.size() << std::endl;
 
-        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", 2});
+        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", 0x2});
         //according to Kirika, this is not necessary to set explicitly any more
         //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x1 });
         WriteStackReg ( cVecReg );
@@ -411,7 +417,7 @@ namespace Ph2_HwInterface {
         //DecodeReg (cItem, cCbcId, cWord, cRead, cFailed );
 
         //explicitly reset the nwdata word
-        WriteReg ("cbc_daq_ctrl.cbc_i2c_ctrl", 2);
+        WriteReg ("cbc_daq_ctrl.cbc_i2c_ctrl", 0x2);
 
         return cFailed;
     }
@@ -442,7 +448,8 @@ namespace Ph2_HwInterface {
 
             uint32_t cNReplies = pVecSend.size() * ( pReadback ? 2 : 1 ) * ( pBroadcast ? fBroadcastCbcId : 1 );
 
-            if ( ReadI2C ( pFeId, cNReplies, pReplies) ) cFailed = true;
+            //if ( ReadI2C ( pFeId, cNReplies, pReplies) ) cFailed = true;
+            cFailed = ReadI2C ( pFeId, cNReplies, pReplies) ;
         }
         else
         {
@@ -450,14 +457,16 @@ namespace Ph2_HwInterface {
             {
                 std::vector<uint32_t> cCommandBlock ( pVecSend.begin() + cIndex * cM, pVecSend.begin() + ( cIndex + 1 ) * cM );
 
-                if ( WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast ) ) cFailed = true;
+                //if ( WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast ) ) cFailed = true;
+                cFailed = WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast );
             }
 
             if ( cRemNM )
             {
                 std::vector<uint32_t> cCommandBlock ( pVecSend.begin() + cDivNM * cM, pVecSend.end() );
 
-                if ( WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast ) ) cFailed = true;
+                //if ( WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast ) ) cFailed = true;
+                cFailed = WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast );
             }
         }
 
