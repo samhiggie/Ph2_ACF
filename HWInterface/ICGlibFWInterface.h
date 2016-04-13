@@ -172,7 +172,7 @@ namespace Ph2_HwInterface {
         template<class in_it, class out_it>
         out_it copy_every_n ( in_it b, in_it e, out_it r, size_t n)
         {
-            for (size_t i = distance (b, e) / n; i--; advance (b, n) )
+            for (size_t i = std::distance (b, e) / n; i--; std::advance (b, n) )
                 *r++ = *b;
 
             return r;
