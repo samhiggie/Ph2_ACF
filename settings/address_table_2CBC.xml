@@ -82,6 +82,8 @@
 		<node id="cdce_lock" mask="0x10000000" />
 	</node>
 	
+    <!--special register to output the internal GLIB clock on the SMA-->
+    <node id="FPGA_clkout_muxsel" address="0x80000003" mask="00007c00" permission="rw" />
 	<!-- SRAM CONTROL -->
 	<node id="ctrl_sram" address="0x00000008" permission="rw" mode="single">
 		<node id="sram1_user_logic" mask="0x00000001" />
