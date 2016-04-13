@@ -424,36 +424,36 @@ namespace Ph2_HwInterface {
 
     //Methods for Cbc's:
 
-   //void GlibFWInterface::StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
+    //void GlibFWInterface::StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
     //{
-        //if ( runningAcquisition ) return;
+    //if ( runningAcquisition ) return;
 
-        //runningAcquisition = true;
-        //numAcq = 0;
-        //nbMaxAcq = uNbAcq;
+    //runningAcquisition = true;
+    //numAcq = 0;
+    //nbMaxAcq = uNbAcq;
 
-        //thrAcq = boost::thread ( &Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
+    //thrAcq = boost::thread ( &Ph2_HwInterface::GlibFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
     //}
 
     //void GlibFWInterface::threadAcquisitionLoop ( BeBoard* pBoard, HwInterfaceVisitor* visitor )
     //{
-        //Start( );
-        //fBlockSize = computeBlockSize ( pBoard );
+    //Start( );
+    //fBlockSize = computeBlockSize ( pBoard );
 
-        //while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
-        //{
-            //ReadData ( pBoard, true );
+    //while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
+    //{
+    //ReadData ( pBoard, true );
 
-            //for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
-                //visitor->visit ( *cEvent );
+    //for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
+    //visitor->visit ( *cEvent );
 
-            //if ( runningAcquisition )
-                //numAcq++;
+    //if ( runningAcquisition )
+    //numAcq++;
 
-        //}
+    //}
 
-        //Stop ( );
-        //runningAcquisition = false;
+    //Stop ( );
+    //runningAcquisition = false;
     //};
 
     ///////////////////////////////////////////////////////
@@ -601,36 +601,19 @@ namespace Ph2_HwInterface {
 
             ReadI2C ( pVecReq );
 
-            //for(unsigned i = 0; i < pVecReq.size(); i++)
-                //if(cWriteVec.at(i)!= pVecReq.at(i)) std::cout << std::bitset<32> (cWriteVec.at(i)) << std::endl << std::bitset<32> (pVecReq.at(i)) << std::endl << std::endl;
             // now I need to make sure that the written and the read-back vector are the same
-            auto cMismatchWord = std::mismatch ( cWriteVec.begin(), cWriteVec.end(), pVecReq.begin() );
+            std::vector<uint32_t> cWriteAgain = get_mismatches (cWriteVec.begin(), cWriteVec.end(), pVecReq.begin(), GlibFWInterface::cmd_reply_comp);
 
-            if ( cMismatchWord.first == cWriteVec.end() ) cSuccess = true;
+            if (cWriteAgain.empty() ) cSuccess = true;
             else
             {
-                std::vector<uint32_t> cWriteAgain;
+                cSuccess = false;
 
-                while ( cMismatchWord.first != cWriteVec.end() )
+                // if the number of errors is greater than 100, give up
+                if (cWriteAgain.size() < 100)
                 {
-                    //here decode the items for printout if necessary
-                    //CbcRegItem cWriteItem;
-                    //uint8_t cCbcId;
-                    //DecodeReg (cWriteItem, cCbcId, *cMismatchWord.first );
-                    //CbcRegItem cReadItem;
-                    //DecodeReg (cVecReq, cCbcId, *cMismatchWord.second);
-                    cWriteAgain.push_back (*cMismatchWord.first);
-                    //move the iterator oneward
-                    cMismatchWord = std::mismatch (++cMismatchWord.first, cWriteVec.end(), ++cMismatchWord.second );
-                    cSuccess = false;
-                }
-
-                // this is recursive - da chit!
-                if (cWriteAgain.size() <= 500)
-                {
-                    std::cout << "There were " << cWriteAgain.size() << " readback errors, retrying!" << std::endl;
+                    std::cout << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" << std::endl;
                     this->WriteCbcBlockReg ( cWriteAgain, true);
-
                 }
                 else std::cout << "There were too many errors (>100 Registers). Something is wrong - aborting!" << std::endl;
             }
@@ -717,4 +700,8 @@ namespace Ph2_HwInterface {
         fpgaConfig->jumpToImage ( strConfig );
     }
 
+    bool GlibFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
+    {
+        return ( cWord1  == cWord2 );
+    }
 }
