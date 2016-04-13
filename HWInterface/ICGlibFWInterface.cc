@@ -98,8 +98,6 @@ namespace Ph2_HwInterface {
 
     void ICGlibFWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
-        //hard reset CBC according to Kirika however, this violates our paradigm....sort of
-        this->CbcHardReset();
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         //here i want to first configure the FW according to the HW structure attached - since this method is aware of pBoard, I can loop the HW structure and thus count CBCs, set i2c addresses and FMC config
 
@@ -136,23 +134,27 @@ namespace Ph2_HwInterface {
             }
         }
 
-        bool cVal = (fBroadcastCbcId == 2) ? 1 : 0;
+        bool cVal = (fBroadcastCbcId == 2) ? 0 : 1;
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", static_cast<uint32_t> (cVal) });
-        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", static_cast<uint32_t> (!cVal) });
+        cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", static_cast<uint32_t> (cVal) });
 
-        std::cout << "cbc_daq_ctrl.general.fmc_wrong_pol " << ReadReg("cbc_daq_ctrl.general.fmc_wrong_pol") << " cbc_daq_ctrl.general.fmc_pc045c_4hybrid " << ReadReg("cbc_daq_ctrl.general.fmc_pc045c_4hybrid") << std::endl; 
         //last, loop over the variable registers from the HWDescription.xml file
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
 
         for ( auto const& it : cGlibRegMap )
         {
             cVecReg.push_back ( {it.first, it.second} );
-            std::cout << it.first << " : " << it.second <<std::endl;
+            //std::cout << it.first << " : " << it.second <<std::endl;
         }
 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
+        std::cout << "cbc_daq_ctrl.general.fmc_wrong_pol " << ReadReg("cbc_daq_ctrl.general.fmc_wrong_pol") << " cbc_daq_ctrl.general.fmc_pc045c_4hybrid " << ReadReg("cbc_daq_ctrl.general.fmc_pc045c_4hybrid") << std::endl; 
+        std::cout << "i2caddr CBC0 "<< std::hex << ReadReg("cbc_daq_ctrl.cbc_i2c_addr_fmc1.cbc0") << " i2caddr CBC1 "<< ReadReg("cbc_daq_ctrl.cbc_i2c_addr_fmc1.cbc1") << std::dec << std::endl; 
+        //hard reset CBC according to Kirika however, this violates our paradigm....sort of
+        this->CbcHardReset();
+        //usleep(100);
         //before I'm done I need to reset all the state machines which loads the configuration
         //all the daq_ctrl registers have to be used with hex values and not with the sub-masks but they are auto clearing after 1 has been written
         //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset,
@@ -163,6 +165,7 @@ namespace Ph2_HwInterface {
         cVecReg.clear();
         std::vector<uint32_t> pReplies;
         bool cFailure = ReadI2C ( fFMCId, fBroadcastCbcId, pReplies);
+        //here I could introduce a bool that is set to true if one of the replies has a 1 in the info field
         for(auto & cWord2 : pReplies)
         std::cout << " Initial "<< "Read:  CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF) << " ## " << std::bitset<32> (cWord2) << std::endl;
 
@@ -372,6 +375,7 @@ namespace Ph2_HwInterface {
     {
         pCbcId   =  ( pWord & 0x07000000 ) >> 24;
         pFailed  =  ( pWord & 0x00100000 ) >> 20;
+        //pRead is 1 for read transaction, 0 for a write transaction
         pRead    =  ( pWord & 0x00020000 ) >> 17;
         pRegItem.fPage    =  ( pWord & 0x00010000 ) >> 16;
         pRegItem.fAddress =  ( pWord & 0x0000FF00 ) >> 8;
@@ -483,16 +487,18 @@ namespace Ph2_HwInterface {
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C (pFeId, pVecReg, cReplies, pReadback, false );
         // now here I have to compare the reply to the original sent vector - this is not super straight forward as the reply has a differnt format as the command word
+        // furthermore, for a write + readback transaction there are actually 2 replies so std::mismatch might not work
         // one option is to decode register by register...
         // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
         // could use a mask 0x0F01FFFF
 
-        //for(auto& cWord : cReplies) std::cout << cWord << std::endl;
         for(int index = 0; index < pVecReg.size(); index++)
         {
             uint32_t cWord1 = pVecReg.at(index);
-            uint32_t cWord2 = cReplies.at(index);
-            std::cout << std::endl << "Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF) << " ## " << std::bitset<32> (cWord1) << std::endl << "Read:  CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF) << " ## " << std::bitset<32> (cWord2) << std::endl;
+            uint32_t cWord2 = cReplies.at(2*index);
+            uint32_t cWord3 = cReplies.at((2*index)+1);
+            std::cout << std::endl << " ## " << std::bitset<32> (cWord1)<< " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2)<< " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord3)<< " ### Read:           CbcId " << + ( (cWord3 >> 24) & 0xF) << " Info " << + ( (cWord3 >> 20) & 0x1) << " ReadWrite " << + ( (cWord3 >> 17) & 0x1) << " Page  " << + ( (cWord3 >> 16) & 0x1) << " Address " << + ( (cWord3 >> 8) & 0xFF) << " Value " << + ( (cWord3) & 0xFF)  << std::endl;
+;
         }
         auto cMismatchWord = std::mismatch ( pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICGlibFWInterface::cmd_reply_comp );
 
@@ -521,6 +527,7 @@ namespace Ph2_HwInterface {
                 cSuccess = false;
             }
 
+            std::cout << "Number of failed transactions " << cWriteAgain.size() << std::endl;
             // this is recursive - da chit!
             if (cWriteAgain.size() < 100)
             {
