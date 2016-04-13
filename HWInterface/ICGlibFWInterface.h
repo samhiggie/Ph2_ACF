@@ -21,7 +21,6 @@
 #include "BeBoardFWInterface.h"
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
-//#include "CbcI2cReply.h"
 
 #define RESET 0x1
 #define START 0x2
@@ -168,6 +167,29 @@ namespace Ph2_HwInterface {
         //binary predicate for comparing sent I2C commands with replies using std::mismatch
         static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
 
+        //template to copy every nth element out of a vector to another vector
+        template<class in_it, class out_it>
+        out_it copy_every_n ( in_it b, in_it e, out_it r, size_t n)
+        {
+            for (size_t i = distance (b, e) / n; i--; advance (b, n) )
+                *r++ = *b;
+
+            return r;
+        }
+
+        //method to split a vector in vectors that contain elements from even and odd indices
+        void splitVectorEvenOdd (std::vector<uint32_t> pInputVector, std::vector<uint32_t>& pEvenVector, std::vector<uint32_t>& pOddVector)
+        {
+            bool ctoggle = false;
+            std::partition_copy (pInputVector.begin(),
+                                 pInputVector.end(),
+                                 std::back_inserter (pEvenVector),
+                                 std::back_inserter (pOddVector),
+                                 [&ctoggle] (int)
+            {
+                return ctoggle = !ctoggle;
+            });
+        }
 
 
       public:

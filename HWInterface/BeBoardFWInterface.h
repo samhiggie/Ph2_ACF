@@ -28,6 +28,8 @@
 #include "../HWDescription/BeBoard.h"
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+#include <iterator>
 
 using namespace Ph2_HwDescription;
 
@@ -183,7 +185,7 @@ namespace Ph2_HwInterface {
         //[>! \brief Is a parallel acquisition running ? <]
         //bool isRunningThread() const
         //{
-            //return runningAcquisition;
+        //return runningAcquisition;
         //}
         /*!
          * \brief Start a DAQ
@@ -230,6 +232,23 @@ namespace Ph2_HwInterface {
         uint32_t fBlockSize, fNPackets, numAcq, nbMaxAcq;
         //boost::thread thrAcq;
 
+        //template to return a vector of all mismatched elements in two vectors using std::mismatch for readback value comparison
+
+        template<typename T, class BinaryPredicate>
+        std::vector<typename std::iterator_traits<T>::value_type>
+        get_mismatches (T pWriteVector_begin, T pWriteVector_end , T pReadVector_begin, BinaryPredicate p)
+        {
+            std::vector<typename std::iterator_traits<T>::value_type> pMismatchedWriteVector;
+
+            for (std::pair<T, T> cPair = std::make_pair (pWriteVector_begin, pReadVector_begin);
+                    (cPair = std::mismatch (cPair.first, pWriteVector_end, cPair.second , p) ).first != pWriteVector_end;
+                    ++cPair.first, ++cPair.second
+                )
+            {
+                pMismatchedWriteVector.push_back (*cPair.first);
+            }
+            return pMismatchedWriteVector;
+        }
     };
 }
 
