@@ -166,6 +166,7 @@ namespace Ph2_HwInterface {
 
         //binary predicate for comparing sent I2C commands with replies using std::mismatch
         static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
+        static bool cmd_reply_ack (const uint32_t& cWord1, const uint32_t& cWord2);
 
         //template to copy every nth element out of a vector to another vector
         template<class in_it, class out_it>
