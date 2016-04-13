@@ -62,6 +62,7 @@ namespace Ph2_System {
 
     void SystemController::ConfigureHw ( std::ostream& os , bool bIgnoreI2c )
     {
+        os << std::endl << BOLDBLUE << "Configuring HW parsed from .xml file: " << RESET << std::endl;
 
         bool cHoleMode, cCheck;
 
@@ -72,7 +73,6 @@ namespace Ph2_System {
             if ( cSetting != fSettingsMap.end() )
             {
                 cHoleMode = cSetting->second;
-                os << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
             }
 
             cCheck = true;
@@ -94,9 +94,11 @@ namespace Ph2_System {
             {
                 fBeBoardInterface->ConfigureBoard ( &pBoard );
 
-                //if ( fCheck )
-                    //fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
-
+                if ( fCheck && pBoard.getBoardType() == "GLIB")
+                {
+                    fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
+                    los_ << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
+                }
                 los_ << GREEN << "Successfully configured Board " << int ( pBoard.getBeId() ) << RESET << std::endl;
             }
 
@@ -160,7 +162,7 @@ namespace Ph2_System {
         {
             BeBoard* cBeBoard = this->parseBeBoard (cBeBoardNode, os);
             std::string cBoardType = cBeBoardNode.attribute ( "boardType" ).value();
-
+            cBeBoard->setBoardType(cBoardType);
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
             std::string cId = cBeBoardConnectionNode.attribute ( "id" ).value();
             std::string cUri = cBeBoardConnectionNode.attribute ( "uri" ).value();
