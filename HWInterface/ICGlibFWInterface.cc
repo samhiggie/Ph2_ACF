@@ -107,7 +107,7 @@ namespace Ph2_HwInterface {
         bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_cbc_en");
         bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_cbc_en");
         fBroadcastCbcId = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
-        std::cout << " FMC1 en: " << cfmc1_en << " FMC2 en: " << cfmc2_en << " Broadcast id " << fBroadcastCbcId << std::endl;
+        std::cout << "FMC1 en: " << cfmc1_en << std::endl << "FMC2 en: " << cfmc2_en << std::endl << "Number of CBCs: " << fBroadcastCbcId << std::endl;
         //this does not work because BeBoard* is const
         //pBoard->setNCbcDataSize(uint16_t(cNCbcperFMC));
 
@@ -127,7 +127,6 @@ namespace Ph2_HwInterface {
                 sprintf (tmpChar, "cbc_daq_ctrl.cbc_i2c_addr_fmc%d.cbc%d", fFMCId, cCbcId);
                 std::string cRegString (tmpChar);
                 uint32_t cAddress = 0x41 + cCbcId;
-                //TODO: make sure this is correct
                 uint32_t cVal = (1 << 28) | (cCbcId << 24) | (cAddress & 0x7F);
                 cVecReg.push_back ({cRegString, cVal });
             }
@@ -160,13 +159,19 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
         std::vector<uint32_t> pReplies;
-        bool cFailure = ReadI2C ( fFMCId, fBroadcastCbcId, pReplies);
+        ReadI2C (  fBroadcastCbcId, pReplies);
 
-        //here I could introduce a bool that is set to true if one of the replies has a 1 in the info field
-        for (auto& cWord2 : pReplies)
-            std::cout << " Initial " << "Read:  CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF) << " ## " << std::bitset<32> (cWord2) << std::endl;
+        bool cSuccess = false;
 
-        if (!cFailure) std::cout << "Successfully received *Pings* from " << fBroadcastCbcId << " Cbcs on FMC " << +fFMCId << std::endl;
+        for (auto& cWord : pReplies)
+        {
+            if ( ( (cWord >> 20) & 0x1) == 0 ) cSuccess = true;
+            else cSuccess = false;
+
+            //std::cout << " Initial " << "Read:  CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF) << " ## " << std::bitset<32> (cWord2) << std::endl;
+        }
+
+        if (cSuccess) std::cout << "Successfully received *Pings* from " << fBroadcastCbcId << " Cbcs on FMC " << +fFMCId << std::endl;
         else std::cout << "Error, did not receive the correct number of *Pings*; expected: " << fBroadcastCbcId << ", received: " << pReplies.size() << std::endl;
 
         cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", 0x2});
@@ -377,7 +382,7 @@ namespace Ph2_HwInterface {
         pRegItem.fValue   =  ( pWord & 0x000000FF );
     }
 
-    bool ICGlibFWInterface::ReadI2C ( uint8_t pFeId, uint32_t pNReplies, std::vector<uint32_t>& pReplies)
+    bool ICGlibFWInterface::ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies)
     {
         usleep (SINGLE_I2C_WAIT * pNReplies );
 
@@ -423,7 +428,7 @@ namespace Ph2_HwInterface {
         return cFailed;
     }
 
-    bool ICGlibFWInterface::WriteI2C ( unsigned pFeId, std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pReadback, bool pBroadcast )
+    bool ICGlibFWInterface::WriteI2C ( std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pReadback, bool pBroadcast )
     {
         //This one's recursive, beware!
         // figure out how to best determine if this is boradcast or not? (decode the 1st word of the Vector and decide based on the CBC address?)
@@ -449,8 +454,8 @@ namespace Ph2_HwInterface {
 
             uint32_t cNReplies = pVecSend.size() * ( pReadback ? 2 : 1 ) * ( pBroadcast ? fBroadcastCbcId : 1 );
 
-            //if ( ReadI2C ( pFeId, cNReplies, pReplies) ) cFailed = true;
-            cFailed = ReadI2C ( pFeId, cNReplies, pReplies) ;
+            //if ( ReadI2C (  cNReplies, pReplies) ) cFailed = true;
+            cFailed = ReadI2C (  cNReplies, pReplies) ;
         }
         else
         {
@@ -458,16 +463,16 @@ namespace Ph2_HwInterface {
             {
                 std::vector<uint32_t> cCommandBlock ( pVecSend.begin() + cIndex * cM, pVecSend.begin() + ( cIndex + 1 ) * cM );
 
-                //if ( WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast ) ) cFailed = true;
-                cFailed = WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast );
+                //if ( WriteI2C (  cCommandBlock, pReplies, pReadback, pBroadcast ) ) cFailed = true;
+                cFailed = WriteI2C (  cCommandBlock, pReplies, pReadback, pBroadcast );
             }
 
             if ( cRemNM )
             {
                 std::vector<uint32_t> cCommandBlock ( pVecSend.begin() + cDivNM * cM, pVecSend.end() );
 
-                //if ( WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast ) ) cFailed = true;
-                cFailed = WriteI2C ( pFeId, cCommandBlock, pReplies, pReadback, pBroadcast );
+                //if ( WriteI2C (  cCommandBlock, pReplies, pReadback, pBroadcast ) ) cFailed = true;
+                cFailed = WriteI2C (  cCommandBlock, pReplies, pReadback, pBroadcast );
             }
         }
 
@@ -476,11 +481,11 @@ namespace Ph2_HwInterface {
 
 
 
-    bool ICGlibFWInterface::WriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback)
+    bool ICGlibFWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
     {
         // the actual write & readback command is in the vector
         std::vector<uint32_t> cReplies;
-        bool cSuccess = !WriteI2C (pFeId, pVecReg, cReplies, pReadback, false );
+        bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
         // the reply format is different from the sent format, therefore a binary predicate is necessary to compare
         // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
         // could use a mask 0x0F01FFFF
@@ -536,7 +541,7 @@ namespace Ph2_HwInterface {
                 else std::cout << "There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << std::endl;
 
                 //TODO!!!
-                //this->WriteCbcBlockReg (pFeId, cWriteAgain, true);
+                //this->WriteCbcBlockReg ( cWriteAgain, true);
             }
             else std::cout << "There were too many errors (>100 Registers). Something is wrong - aborting!" << std::endl;
         }
@@ -544,11 +549,11 @@ namespace Ph2_HwInterface {
         return cSuccess;
     }
 
-    bool ICGlibFWInterface::BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback)
+    bool ICGlibFWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
     {
         std::vector<uint32_t> cReplies;
-        //bool cSuccess = !WriteI2C (pFeId, pVecReg, cReplies, false, true );
-        bool cSuccess = !WriteI2C (pFeId, pVecReg, cReplies, pReadback, true );
+        //bool cSuccess = !WriteI2C ( pVecReg, cReplies, false, true );
+        bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, true );
         //just as above, I can check the replies - there will be NCbc * pVecReg.size() write replies and also read replies if I chose to enable readback
         //this needs to be adapted
         pVecReg.clear();
@@ -557,11 +562,11 @@ namespace Ph2_HwInterface {
         // not sure if I want to do readback and comparison here
     }
 
-    void ICGlibFWInterface::ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReg )
+    void ICGlibFWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg )
     {
         std::vector<uint32_t> cReplies;
         //it sounds weird, but ReadI2C is called inside writeI2c, therefore here I have to write and disable the readback. The actual read command is in the words of the vector, no broadcast, maybe I can get rid of it
-        WriteI2C (pFeId, pVecReg, cReplies, false, false);
+        WriteI2C ( pVecReg, cReplies, false, false);
         pVecReg.clear();
         pVecReg = cReplies;
     }
@@ -617,8 +622,7 @@ namespace Ph2_HwInterface {
     {
         //TODO: cleanup
         if ( (cWord1 & 0x0F01FFFF) != (cWord2 & 0x0F01FFFF) )
-            std::cout << std::endl << "Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF) << " ## " << std::bitset<32> (cWord1) << std::endl << "Read:  CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF) << " ## " << std::bitset<32> (cWord2) << std::endl;
-
+            std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
 
         return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
     }
@@ -629,11 +633,9 @@ namespace Ph2_HwInterface {
         if ( ( (cWord2 >> 20) & 0x1) == 0 && ( (cWord2 >> 17) & 0x1 ) == 0 && (cWord1 & 0x0F000000) == (cWord2 & 0x0F000000) ) return true;
         else
         {
-            std::cout << std::endl << "Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF) << " ## " << std::bitset<32> (cWord1) << std::endl << "Read:  CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF) << " ## " << std::bitset<32> (cWord2) << std::endl;
+            std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " ReadWrite " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
             return false;
         }
-
-        //else if()
     }
 
 

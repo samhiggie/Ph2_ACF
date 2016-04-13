@@ -572,7 +572,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool GlibFWInterface::WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback)
+    bool GlibFWInterface::WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback)
     {
         bool cSuccess = false;
         std::vector<uint32_t> cWriteVec = pVecReq;
@@ -629,7 +629,7 @@ namespace Ph2_HwInterface {
                 if (cWriteAgain.size() <= 500)
                 {
                     std::cout << "There were " << cWriteAgain.size() << " readback errors, retrying!" << std::endl;
-                    this->WriteCbcBlockReg (pFeId, cWriteAgain, true);
+                    this->WriteCbcBlockReg ( cWriteAgain, true);
 
                 }
                 else std::cout << "There were too many errors (>100 Registers). Something is wrong - aborting!" << std::endl;
@@ -641,7 +641,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool GlibFWInterface::BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback)
+    bool GlibFWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReq, bool pReadback)
     {
         //use the method above for that!
         bool cSuccess = false;
@@ -659,7 +659,7 @@ namespace Ph2_HwInterface {
         return cSuccess;
     }
 
-    void GlibFWInterface::ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
+    void GlibFWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReq )
     {
         try
         {

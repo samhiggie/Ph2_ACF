@@ -143,20 +143,20 @@ namespace Ph2_HwInterface {
         * \param pFeId : FrontEnd to work with
         * \param pVecReq : Block of words to write
         */
-        virtual bool WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
+        virtual bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
         //r/w the Cbc registers
         /*!
         * \brief Write register blocks of a Cbc
         * \param pFeId : FrontEnd to work with
         * \param pVecReq : Block of words to write
         */
-        virtual bool BCWriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
+        virtual bool BCWriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
         /*!
         * \brief Read register blocks of a Cbc
         * \param pFeId : FrontEnd to work with
         * \param pVecReq : Vector to stack the read words
         */
-        virtual void ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq ) = 0;
+        virtual void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReq ) = 0;
         /*!
         * \brief Configure the board with its Config File
         * \param pBoard

@@ -252,18 +252,18 @@ namespace Ph2_HwInterface {
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) override;
+        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) override;
         /*!
          * \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool BCWriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) override;
+        bool BCWriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) override;
         /*! \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        void ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq ) override;
+        void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReq ) override;
 
         void CbcHardReset();
 

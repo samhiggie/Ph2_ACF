@@ -161,8 +161,8 @@ namespace Ph2_HwInterface {
       private:
 
         //I2C command sending implementation
-        bool WriteI2C ( unsigned pFeId, std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pWriteRead, bool pBroadcast );
-        bool ReadI2C ( uint8_t pFeId, uint32_t pNReplies, std::vector<uint32_t>& pReplies);
+        bool WriteI2C (  std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pWriteRead, bool pBroadcast );
+        bool ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies);
 
         //binary predicate for comparing sent I2C commands with replies using std::mismatch
         static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
@@ -211,9 +211,9 @@ namespace Ph2_HwInterface {
         void DecodeReg ( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed ) override;
 
 
-        bool WriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback) override;
-        bool BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReg, bool pReadback) override;
-        void ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReg );
+        bool WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback) override;
+        bool BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback) override;
+        void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg );
 
         void CbcHardReset();
 
