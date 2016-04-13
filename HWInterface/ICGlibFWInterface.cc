@@ -508,9 +508,10 @@ namespace Ph2_HwInterface {
             //split the reply vector in even and odd replies
             //even is the write reply, odd is the read reply
             //since I am already reading back, might as well forget about the CMD acknowledge from the CBC and directly look at the read back value
-            std::vector<uint32_t> cEven;
+            //std::vector<uint32_t> cEven;
             std::vector<uint32_t> cOdd;
-            splitVectorEvenOdd (cReplies, cEven, cOdd);
+            //splitVectorEvenOdd (cReplies, cEven, cOdd);
+            copy_every_n(cReplies.begin(), cReplies.end(), cOdd.begin() , 2);
 
             //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
             cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), ICGlibFWInterface::cmd_reply_comp);
