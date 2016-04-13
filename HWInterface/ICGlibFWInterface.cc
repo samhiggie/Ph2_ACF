@@ -98,6 +98,8 @@ namespace Ph2_HwInterface {
 
     void ICGlibFWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
+        //hard reset CBC according to Kirika however, this violates our paradigm....sort of
+        this->CbcHardReset();
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         //here i want to first configure the FW according to the HW structure attached - since this method is aware of pBoard, I can loop the HW structure and thus count CBCs, set i2c addresses and FMC config
 

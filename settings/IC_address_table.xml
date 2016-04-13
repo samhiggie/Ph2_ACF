@@ -24,6 +24,10 @@
 		<node id="reg_status_2" address = "0x00000007" /> <!-- not used. -->
 		<node id="ctrl_sram"	address = "0x00000008" /> <!-- sram select 0 : ipbus, 1 : user -->
 	</node>
+   	<node id="ctrl_2"       address="0x00000005"   permission="rw">
+	    <node id="icap_page"    mask="0x00000003"       permission="rw"/>
+	    <node id="icap_trigg"      mask="0x00000010"       permission="rw"/>
+	</node>
 	<!-- GLIB user logic registers -->
 	<!-- firmware configurations -->
 	<node id="user_stat" address ="0x40000000" permission="r" mode="block" size="0x0000000F">

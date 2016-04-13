@@ -55,9 +55,9 @@
 		<node id="gbt_phase_mon_reset" address="0x0" mask="0x04000000" permission="rw" />
 		<node id="fpga_program_b_trst" address="0x0" mask="0x10000000" permission="rw" />
 	</node>
-    	<node id="ctrl_2"       address="0x00000005"   permission="rw">
-		<node id="icap_page"    mask="0x00000003"       permission="rw"/>
-		<node id="icap_trigg"      mask="0x00000010"       permission="rw"/>
+   	<node id="ctrl_2"       address="0x00000005"   permission="rw">
+	    <node id="icap_page"    mask="0x00000003"       permission="rw"/>
+	    <node id="icap_trigg"      mask="0x00000010"       permission="rw"/>
 	</node>
 	
 	<!-- SYSTEM STATUS -->
@@ -83,7 +83,7 @@
 	</node>
 	
     <!--special register to output the internal GLIB clock on the SMA-->
-    <node id="FPGA_clkout_muxsel" address="0x80000003" mask="00007c00" permission="rw" />
+    <node id="FPGA_clkout_muxsel" address="0x80000003" mask="0x00007c00" permission="rw" />
 	<!-- SRAM CONTROL -->
 	<node id="ctrl_sram" address="0x00000008" permission="rw" mode="single">
 		<node id="sram1_user_logic" mask="0x00000001" />
