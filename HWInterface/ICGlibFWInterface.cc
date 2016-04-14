@@ -233,7 +233,6 @@ namespace Ph2_HwInterface {
         //ok, packet complete, now let's read
         std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
 
-        std::cout << cData.size() << std::endl;
         // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
         if ( fData ) delete fData;
 

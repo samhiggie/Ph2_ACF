@@ -264,7 +264,7 @@ namespace Ph2_HwInterface {
         fData = new Data();
 
         // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNpackets, true );
+        fData->Set ( pBoard, cData , fNpackets, false );
 
         if ( fSaveToFile )
         {
@@ -346,7 +346,7 @@ namespace Ph2_HwInterface {
         fData = new Data();
 
         // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNpackets, true );
+        fData->Set ( pBoard, cData , fNpackets, false );
 
         if ( fSaveToFile )
         {

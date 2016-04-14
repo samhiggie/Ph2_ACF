@@ -7,6 +7,7 @@
       <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
     <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
       <CBC_Files path="./settings/" />
+      <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>
       <CBC Id="0" configfile="Cbc_default_hole.txt" />
       <CBC Id="1" configfile="Cbc_default_hole.txt" />
     </Module>
@@ -26,7 +27,7 @@
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.l1a_trigger_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 30000 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 8000 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.i2c_refresh_count"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 1 </Register>
@@ -48,6 +49,10 @@
   </BeBoard>
 </HwDescription>
 <Settings>
-    <Setting name="RunNumber">1</Setting>
+    <Setting name="TargetVcth">0x78</Setting>
+    <Setting name="TargetOffset">0x50</Setting>
+    <Setting name="Nevents">10</Setting>
+    <Setting name="TestPulsePotentiometer">0x00</Setting>
     <Setting name="HoleMode">1</Setting>
+    <Setting name="VerificationLoop">1</Setting>
 </Settings>

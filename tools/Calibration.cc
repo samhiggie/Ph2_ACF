@@ -211,6 +211,8 @@ void Calibration::bitwiseVplus ( int pTGroup )
         {
             // if the occupancy is larger than 0.5 I need to flip the bit back to 0, else leave it
             float cOccupancy = findCbcOccupancy ( cCbc.first, pTGroup, fEventsPerPoint );
+            
+             //std::cout << "VPlus " << +cCbc.second << " = 0b" << std::bitset<8>( cCbc.second ) << " on CBC " << +cCbc.first->getCbcId() << " Occupancy : " << cOccupancy << std::endl;
 
             if ( fHoleMode && cOccupancy > 0.56 )
             {
@@ -223,7 +225,6 @@ void Calibration::bitwiseVplus ( int pTGroup )
                 fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", cCbc.second );
             }
 
-            // std::cout << "VPlus " << +cCbc.second << " = 0b" << std::bitset<8>( cCbc.second ) << " on CBC " << +cCbc.first->getCbcId() << " Occupancy : " << cOccupancy << std::endl;
 
             // clear the occupancy histogram for the next bit
             clearOccupancyHists ( cCbc.first );
