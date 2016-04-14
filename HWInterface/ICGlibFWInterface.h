@@ -192,6 +192,18 @@ namespace Ph2_HwInterface {
             });
         }
 
+        void getOddElements (std::vector<uint32_t> pInputVector, std::vector<uint32_t>& pOddVector)
+        {
+            bool ctoggle = true;
+            std::copy_if (pInputVector.begin(),
+                                 pInputVector.end(),
+                                 std::back_inserter (pOddVector),
+                                 [&ctoggle] (int)
+            {
+                return ctoggle = !ctoggle;
+            });
+        }
+
 
       public:
         ///////////////////////////////////////////////////////
