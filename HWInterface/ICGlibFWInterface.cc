@@ -103,11 +103,12 @@ namespace Ph2_HwInterface {
 
         char tmpChar[64];
         //read a couple of useful data
-        uint32_t fDataSizeperEvent32 = ReadReg ("user_stat.fw_cnfg.data_size32.evt_total");
+        fDataSizeperEvent32 = ReadReg ("user_stat.fw_cnfg.data_size32.evt_total");
         bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_cbc_en");
         bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_cbc_en");
         fBroadcastCbcId = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
         std::cout << "FMC1 en: " << cfmc1_en << std::endl << "FMC2 en: " << cfmc2_en << std::endl << "Number of CBCs: " << fBroadcastCbcId << std::endl;
+        std::cout << "Number of 32-bit words/Event in this configuration: " << fDataSizeperEvent32 << std::endl;
         //this does not work because BeBoard* is const
         //pBoard->setNCbcDataSize(uint16_t(cNCbcperFMC));
 
@@ -232,6 +233,7 @@ namespace Ph2_HwInterface {
         //ok, packet complete, now let's read
         std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
 
+        std::cout << cData.size() << std::endl;
         // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
         if ( fData ) delete fData;
 
@@ -254,16 +256,16 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         // probably no need to reset everything since I am calling this a lot during commissioning
-        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", pNEvents});
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
         //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
-        //WriteStackReg ( cVecReg );
-        //cVecReg.clear();
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
 
         //here I optimize for speed during calibration, so I explicitly set the nevents_per_pcdaq to the event number I desire
         fNEventsperAcquistion = pNEvents;
         //now issue start
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START} );
-        cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", pNEvents});
 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
@@ -531,8 +533,7 @@ namespace Ph2_HwInterface {
                 if (pReadback) std::cout << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" << std::endl;
                 else std::cout << "There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << std::endl;
 
-                //TODO
-                //this->WriteCbcBlockReg ( cWriteAgain, true);
+                this->WriteCbcBlockReg ( cWriteAgain, true);
             }
             else std::cout << "There were too many errors (>100 Registers). Something is wrong - aborting!" << std::endl;
         }
@@ -623,10 +624,11 @@ namespace Ph2_HwInterface {
     bool ICGlibFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
         //TODO: cleanup
-        if ( (cWord1 & 0x0F01FFFF) != (cWord2 & 0x0F01FFFF) )
+        if ( (cWord1 & 0x0F00FFFF) != (cWord2 & 0x0F00FFFF) )
             std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
-
-        return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
+        //if the Register is FrontEndControl at p0 addr0, page is not defined and therefore I ignore it!
+        if(((cWord1>>16)& 0x1) == 0 && ((cWord1 >> 8 ) & 0xFF)== 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
+        else return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
     }
 
     bool ICGlibFWInterface::cmd_reply_ack (const uint32_t& cWord1, const uint32_t& cWord2)

@@ -2,7 +2,7 @@
 <HwDescription>
   <BeBoard Id="0" boardType="ICGLIB">
     <!-- <connection id="board" uri="ipbusudp-2.0://192.168.000.175:50001" address_table="file://settings/address_table_2CBC.xml" /> -->
-    <connection id="board" uri="ipbusudp-2.0://192.168.0.162:50001" address_table="file://settings/IC_address_table.xml" />
+    <connection id="board" uri="ipbusudp-2.0://192.168.0.170:50001" address_table="file://settings/IC_address_table.xml" />
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
       <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
     <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
@@ -20,16 +20,16 @@
     <Register name="cbc_daq_ctrl.trigger_cnfg.stubtrig_logic_and"> 1 </Register>
 
     <!--COMMISSIONING MODE-->
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.enable"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 1 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.enable"> 1 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.i2c_refresh_enable"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 1 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.l1a_trigger_enable"> 1 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 10 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 300 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.i2c_refresh_count"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> 4 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 10 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 100 </Register>
 
     <!--DAQ-->
     <Register name="cbc_daq_ctrl.nevents_per_pcdaq"> 10 </Register>

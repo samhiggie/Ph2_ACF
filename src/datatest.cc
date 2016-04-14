@@ -152,7 +152,6 @@ int main ( int argc, char* argv[] )
     }
 
     BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
-
     //if ( cmd.foundOption ( "parallel" ) )
     //{
         //uint32_t nbPacket = pBoard->getReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ), nbAcq = pEventsperVcth / ( nbPacket + 1 ) + ( pEventsperVcth % ( nbPacket + 1 ) != 0 ? 1 : 0 );
@@ -202,10 +201,10 @@ int main ( int argc, char* argv[] )
             {
                 uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData ( pBoard, false );
 
+                pEvents = &cSystemController.GetEvents ( pBoard );
+                
                 if ( cN + cPacketSize > pEventsperVcth )
                     cSystemController.fBeBoardInterface->Stop ( pBoard );
-
-                pEvents = &cSystemController.GetEvents ( pBoard );
             }
 
             for ( auto& ev : *pEvents )
