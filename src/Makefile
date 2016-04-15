@@ -17,8 +17,8 @@ endif
 
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O0 -w -Wall -pedantic -std=c++11 -fPIC 
-CCFlagsRoot	= `root-config --cflags --evelibs --glibs`
+CCFlags         = -g -O0 -w -Wall -pedantic -std=c++0x -fPIC 
+CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTVERSION := $(shell root-config --has-http)
 HttpFlag = -D__HTTP__
 
@@ -60,39 +60,39 @@ print:
 	@echo '****************************'
 
 systemtest: systemtest.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 calibrate: calibrate.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 datatest: datatest.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 configure: configure.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 hybridtest: hybridtest.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 cmtest: cmtest.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 commission: commission.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 fpgaconfig: fpgaconfig.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 pulseshape: pulseshape.cc
-	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 clean:

@@ -1,7 +1,7 @@
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -std=c++11 -fPIC 
-CCFlagsRoot	= `root-config --cflags --evelibs --glibs`
+CCFlagsRoot	= `root-config --cflags --glibs`
 
 #DevFlags       = -D__CBCDAQ_DEV__
 DevFlags        = 

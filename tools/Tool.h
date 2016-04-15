@@ -46,9 +46,16 @@ class Tool : public SystemController
 
     ~Tool()
     {
-        fResultFile->Close();
     }
 
+    void Destroy()
+    {
+        SystemController::Destroy();
+#ifdef __HTTP__
+        delete fHttpServer;
+#endif
+        delete fResultFile;
+    }
 
 
   public:
@@ -64,6 +71,24 @@ class Tool : public SystemController
      */
   public:
     Tool (const Tool& pTool);
+
+    void Inherit (Tool* pTool)
+    {
+        fBeBoardInterface = pTool->fBeBoardInterface;
+        fCbcInterface = pTool->fCbcInterface;
+        fBoardVector = pTool->fBoardVector;
+        fBeBoardFWMap = pTool->fBeBoardFWMap;
+        fSettingsMap = pTool->fSettingsMap;
+        fFileHandler = pTool->fFileHandler;
+        fDirectoryName = pTool->fDirectoryName;
+        fResultFile = pTool->fResultFile;
+#ifdef __HTTP__
+        fHttpServer = pTool->fHttpServer;
+#endif
+        fCanvasMap = pTool->fCanvasMap;
+        fCbcHistMap = pTool->fCbcHistMap;
+        fModuleHistMap = pTool->fModuleHistMap;
+    }
 
     void bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject );
 
@@ -82,6 +107,11 @@ class Tool : public SystemController
      * \param pFilename : Root filename
      */
     void InitResultFile ( const std::string& pFilename );
+    void CloseResultFile()
+    {
+        if (fResultFile)
+            fResultFile->Close();
+    }
 
     void StartHttpServer ( const int pPort = 8082, const int pRefreshTime = 100, bool pReadonly = true );
     void ProcessRequests()
@@ -90,5 +120,6 @@ class Tool : public SystemController
         fHttpServer->ProcessRequests();
 #endif
     }
+    void dumpConfigFiles();
 };
 #endif

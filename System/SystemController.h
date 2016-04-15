@@ -13,9 +13,12 @@
 #ifndef __SYSTEMCONTROLLER_H__
 #define __SYSTEMCONTROLLER_H__
 
-#include "../HWInterface/BeBoardFWInterface.h"
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
+#include "../HWInterface/BeBoardFWInterface.h"
+#include "../HWInterface/GlibFWInterface.h"
+#include "../HWInterface/ICGlibFWInterface.h"
+#include "../HWInterface/CtaFWInterface.h"
 #include "../HWDescription/Definition.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
@@ -62,21 +65,26 @@ namespace Ph2_System {
          */
         SystemController();
         /*!
-         * \brief: copy constructor
-         */
-        SystemController (const SystemController& pController)
-        {
-            fBeBoardInterface = pController.fBeBoardInterface;
-            fCbcInterface = pController.fCbcInterface;
-            fBoardVector = pController.fBoardVector;
-            fBeBoardFWMap = pController.fBeBoardFWMap;
-            fSettingsMap = pController.fSettingsMap;
-            fFileHandler = pController.fFileHandler;
-        }
-        /*!
          * \brief Destructor of the SystemController class
          */
         ~SystemController();
+        /*!
+         * \brief Method to construct a system controller object from another one while re-using the same members
+         */
+        //here all my members are set to the objects contained already in pController, I can then safely delete pController (because the destructor does not delete any of the objects)
+        void Inherit(SystemController* pController)
+        {
+             fBeBoardInterface = pController->fBeBoardInterface;
+             fCbcInterface = pController->fCbcInterface;
+             fBoardVector = pController->fBoardVector;
+             fBeBoardFWMap = pController->fBeBoardFWMap;
+             fSettingsMap = pController->fSettingsMap;
+             fFileHandler = pController->fFileHandler;
+        }
+        /*!
+         * \brief Destroy the SystemController object: clear the HWDescription Objects, FWInterface etc.
+         */
+        void Destroy();
         /*!
         * \brief create a FileHandler object with
          * \param pFilename : the filename of the binary file

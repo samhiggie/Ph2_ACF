@@ -170,6 +170,14 @@ namespace Ph2_HwDescription
 			return fNCbcDataSize;
 		};
 
+        void setBoardType(const std::string& pBoardType) {
+             fBoardType=pBoardType;
+        }
+
+        std::string getBoardType() const {
+             return fBoardType;
+        }
+
 		// Vector of FEModules, each module is supposed to know which FMC slot it is connected to...
 		std::vector< Module* > fModuleVector;
 
@@ -177,6 +185,7 @@ namespace Ph2_HwDescription
 		//Connection Members
 		uint8_t fBeId;
 		uint16_t fNCbcDataSize;
+        std::string fBoardType;
 
 
 		BeBoardRegMap fRegMap;             /*!< Map of BeBoard Register Names vs. Register Values */

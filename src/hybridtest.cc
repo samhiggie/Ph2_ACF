@@ -73,15 +73,16 @@ int main( int argc, char* argv[] )
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
+
 	HybridTester cHybridTester;
+    cHybridTester.InitializeHw ( cHWFile );
+    cHybridTester.InitializeSettings ( cHWFile );
+    cHybridTester.CreateResultDirectory ( cDirectory );
+    cHybridTester.InitResultFile ( "HybridTest" );
+    cHybridTester.StartHttpServer();
+    cHybridTester.ConfigureHw();
 
-
-	cHybridTester.InitializeHw( cHWFile );
-	cHybridTester.InitializeSettings( cHWFile );		
 	cHybridTester.Initialize( cScan );
-	cHybridTester.CreateResultDirectory( cDirectory );
-	cHybridTester.InitResultFile( "HybridTest" );
-	cHybridTester.ConfigureHw();
 
 	// Here comes our Part:
 	
@@ -115,6 +116,8 @@ std::cout << "This feature is only available if the CMSPh2_AntennaDriver package
 	}
 	
 	cHybridTester.SaveResults();
+    cHybridTester.CloseResultFile();
+    cHybridTester.Destroy();
 
 	if ( !batchMode ) cApp.Run();
 

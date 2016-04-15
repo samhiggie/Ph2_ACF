@@ -221,6 +221,9 @@ void PedeNoise::measureNoise()
 #endif
         }
     }
+
+    //now set back the initial offsets 
+    setInitialOffsets();
 }
 
 
@@ -403,12 +406,40 @@ void PedeNoise::saveInitialOffsets()
     }
 }
 
+void PedeNoise::setInitialOffsets()
+{
+    std::cout << "Re-applying the original offsets for all CBCs" << std::endl;
+    for ( auto cBoard : fBoardVector )
+    {
+        for ( auto cFe : cBoard->fModuleVector )
+        {
+            uint32_t cFeId = cFe->getFeId();
+
+            for ( auto cCbc : cFe->fCbcVector )
+            {
+                uint32_t cCbcId = cCbc->getCbcId();
+
+                // first, find the offset Histogram for this CBC
+                TH1F* cOffsetHist = static_cast<TH1F*> ( getHist ( cCbc, "Cbc_Offsets" ) );
+
+                for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
+                {
+                    uint8_t cOffset = cOffsetHist->GetBinContent ( iChan );
+                    cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
+                    //std::cout << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET << std::endl;
+                }
+
+            }
+        }
+    }
+}
+
 void PedeNoise::SaveResults()
 {
     // just use auto iterators to write everything to disk
     // this is the old method before Tool class was cool
     fResultFile->cd();
-    Tool::SaveResults();
+    //Tool::SaveResults();
 
     // Save canvasses too
 

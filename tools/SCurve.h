@@ -84,7 +84,6 @@ class SCurve : public Tool
 	void setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pTestGroup );
 
 	// little helpers
-	void dumpConfigFiles();
 	uint8_t reverse( uint8_t n ) {
 		// Reverse the top and bottom nibble then swap them.
 		return ( fLookup[n & 0b1111] << 4 ) | fLookup[n >> 4];

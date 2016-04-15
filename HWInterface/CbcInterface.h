@@ -13,9 +13,10 @@
 #define __CBCINTERFACE_H__
 
 #include <vector>
-#include "../HWInterface/GlibFWInterface.h"
-#include "../HWInterface/CtaFWInterface.h"
+//#include "../HWInterface/GlibFWInterface.h"
+//#include "../HWInterface/CtaFWInterface.h"
 //#include "../HWInterface/ICGlibFWInterface.h"
+#include "BeBoardFWInterface.h"
 
 using namespace Ph2_HwDescription;
 

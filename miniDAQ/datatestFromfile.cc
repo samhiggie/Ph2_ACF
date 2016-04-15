@@ -137,7 +137,7 @@ int main( int argc, char* argv[] )
 	Data d;
         int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32*cbcTypeEvtSizeMap[cbcType].first;
 	int nEvents = dataVec.size() / eventSize;
-	d.Set( pBoard, dataVec, nEvents, cSwap );
+	d.Set( pBoard, dataVec, nEvents, !cSwap );
 	const std::vector<Event*>& elist = d.GetEvents( pBoard );
 
 	if ( cDQMPage && elist.size() > 0 )
@@ -178,6 +178,7 @@ int main( int argc, char* argv[] )
                 delete dqmh;
 	}
 	else dumpEvents( elist );
+    cSystemController.Destroy();
 
 	return 0;
 }
