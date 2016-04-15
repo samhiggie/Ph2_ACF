@@ -339,27 +339,3 @@ void SCurve::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup )
 }
 
 
-void SCurve::dumpConfigFiles()
-{
-    // visitor to call dumpRegFile on each Cbc
-    struct RegMapDumper : public HwDescriptionVisitor
-    {
-        std::string fDirectoryName;
-        RegMapDumper ( std::string pDirectoryName ) : fDirectoryName ( pDirectoryName ) {};
-        void visit ( Cbc& pCbc )
-        {
-            if ( !fDirectoryName.empty() )
-            {
-                TString cFilename = fDirectoryName + Form ( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
-                // cFilename += Form( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
-                pCbc.saveRegMap ( cFilename.Data() );
-            }
-            else std::cout << "Error: no results Directory initialized! "  << std::endl;
-        }
-    };
-
-    RegMapDumper cDumper ( fDirectoryName );
-    accept ( cDumper );
-
-    std::cout << BOLDBLUE << "Configfiles for all Cbcs written to " << fDirectoryName << RESET << std::endl;
-}

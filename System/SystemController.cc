@@ -23,7 +23,14 @@ namespace Ph2_System {
 
     SystemController::~SystemController()
     {
+    }
+    void SystemController::Destroy()
+    {
         delete fFileHandler;
+        delete fBeBoardInterface;
+        delete fCbcInterface;
+        fBeBoardFWMap.clear();
+        fSettingsMap.clear();
 
         for ( auto& el : fBoardVector )
             delete el;
