@@ -178,6 +178,7 @@ int main( int argc, char* argv[] )
                 delete dqmh;
 	}
 	else dumpEvents( elist );
+    cSystemController.Destroy();
 
 	return 0;
 }

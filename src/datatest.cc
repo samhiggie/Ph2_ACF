@@ -232,4 +232,5 @@ int main ( int argc, char* argv[] )
 
     if (filNewDaq.is_open() )
         filNewDaq.close();
+    cSystemController.Destroy();
 }

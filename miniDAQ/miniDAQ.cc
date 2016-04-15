@@ -191,4 +191,5 @@ int main ( int argc, char* argv[] )
             cNthAcq++;
         }
     //}
+    cSystemController.Destroy();
 }

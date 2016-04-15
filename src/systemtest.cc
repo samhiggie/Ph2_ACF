@@ -42,5 +42,6 @@ int main( int argc, char** argv )
 	if ( cConfigure ) cSystemController.ConfigureHw();
 
 	std::cout << "*** End of the System test ***" << std::endl;
+    cSystemController.Destroy();
 	return 0;
 }

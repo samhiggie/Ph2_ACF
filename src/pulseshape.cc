@@ -75,6 +75,7 @@ int main( int argc, char* argv[] )
 	cPulseShape.ScanTestPulseDelay( cScanStep );
 	cPulseShape.SaveResults();
 
+    cPulseShape.Destroy();
 	if ( !batchMode ) cApp.Run();
 
 	return 0;
