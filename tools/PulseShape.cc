@@ -11,10 +11,6 @@ void PulseShape::Initialize()
     {
         uint32_t cBoardId = cBoard->getBeId();
         std::cerr << "cBoardId = " << cBoardId << std::endl;
-        // we could read the Delay_after_TestPulse Register in a variable
-        uint32_t cDelayAfterPulse = fBeBoardInterface->ReadBoardReg ( cBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE" );
-        fDelayAfterPulse = cDelayAfterPulse;
-        std::cout << "actual Delay: " << +cDelayAfterPulse << std::endl;
 
         for ( auto& cFe : cBoard->fModuleVector )
         {
@@ -286,8 +282,17 @@ void PulseShape::setDelayAndTesGroup ( uint32_t pDelay )
     std::cout << "cFineDelay: " << +cFineDelay << std::endl;
     std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
     std::cout << "Current Time: " << +pDelay << std::endl;
-    BeBoardRegWriter cBeBoardWriter ( fBeBoardInterface, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", cCoarseDelay );
-    this->accept ( cBeBoardWriter );
+
+    //since Strasbourg FW and IC FW work slightly differently, have to use the board type attribute of BeBoard to to decide which registers to write!
+    std::string cTPDelayRegisterName;
+    for(auto& cBoard : fBoardVector)
+    {
+        std::string cBoardType = cBoard->getBoardType();
+        if(cBoardType == "GLIB") cTPDelayRegisterName = "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE";
+        else if(cBoardType == "ICGLIB") cTPDelayRegisterName = "cbc_daq_ctrl.commissioning_cycle.test_pulse_count";
+        //potentially have to reset the IC FW commissioning cycle state machine?
+        fBeBoardInterface->WriteBoardReg(cBoard,cTPDelayRegisterName, cCoarseDelay);
+    }
     CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", to_reg ( cFineDelay, fTestGroup ) );
     this->accept ( cWriter );
 

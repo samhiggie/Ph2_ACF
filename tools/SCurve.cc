@@ -338,4 +338,26 @@ void SCurve::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup )
     // this->accept( cReader );
 }
 
+void SCurve::setFWTestPulse()
+{
+    for (auto& cBoard : fBoardVector)
+    {
+        std::vector<std::pair<std::string, uint32_t> > cRegVec;
+        std::string cBoardType = cBoard->getBoardType();
+
+        if (cBoardType == "GLIB")
+        {
+            cRegVec.push_back ({"COMMISSIONNING_MODE_RQ", 1 });
+            cRegVec.push_back ({"COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID", 1 });
+        }
+        else if (cBoardType == "ICGLIB")
+        {
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.enable", 1 });
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable", 1 });
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle_ctrl", 0x1 });
+        }
+
+        fBeBoardInterface->WriteBoardMultReg(cBoard,cRegVec);
+    }
+}
 

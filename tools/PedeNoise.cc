@@ -130,10 +130,8 @@ void PedeNoise::measureNoise()
         // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
         if ( fTestPulse )
         {
-            BeBoardRegWriter cBeBoardWriter ( fBeBoardInterface, "COMMISSIONNING_MODE_RQ", 1 );
-            this->accept ( cBeBoardWriter );
-            cBeBoardWriter.setRegister ( "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID", 1 );
-            this->accept ( cBeBoardWriter );
+            std::cout << BLUE << "Enabling Commissioninc cycle with TestPulse in FW" << RESET << std::endl;
+            setFWTestPulse();
             std::cout << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +fTestPulseAmplitude << RESET << std::endl;
             setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first );
 
