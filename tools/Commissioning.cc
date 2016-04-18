@@ -24,7 +24,7 @@ void Commissioning::Initialize()
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), 256, -.5, 255.5 );
+            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), 256 * 8, -.5, 255.5 * 8 );
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -89,7 +89,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
     this->accept ( cReader );
     uint8_t cVcth = cReader.fRegValue;
 
-    int cVcthStep = ( fHoleMode == 1 ) ? +20 : -20;
+    int cVcthStep = ( fHoleMode == 1 ) ? +15 : -15;
     std::cout << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" << std::endl;
     cVcth += cVcthStep;
 
@@ -107,40 +107,32 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
         cWriter.setRegister ( "TriggerLatency", cLat );
         this->accept ( cWriter );
 
-        uint32_t cN = 1;
-        uint32_t cNthAcq = 0;
-        int cNHits = 0;
 
         // Take Data for all Modules
         for ( BeBoard* pBoard : fBoardVector )
         {
-            //fBeBoardInterface->Start ( pBoard );
+            // I need this to normalize the TDC values I get from the Strasbourg FW
+            bool pStrasbourgFW = false;
 
-            //while ( cN <= fNevents )
-            //{
-                fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
-                const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+            if (pBoard->getBoardType() == "GLIB") pStrasbourgFW = true;
 
-                // Loop over Events from this Acquisition
-                for ( auto& cEvent : events )
-                {
-                    for ( auto cFe : pBoard->fModuleVector )
-                        cNHits += countHits ( cFe, cEvent, "module_latency", cLat );
+            fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
+            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
 
-                    cN++;
-                }
+            // Loop over Events from this Acquisition
+            for ( auto cFe : pBoard->fModuleVector )
+            {
+                int cNHits = 0;
+                cNHits += countHitsLat ( cFe, events, "module_latency", cLat, pStrasbourgFW );
 
-                cNthAcq++;
-            //}
-
-            //fBeBoardInterface->Stop ( pBoard );
-            std::cout << "Latency " << +cLat << " Hits " << cNHits  << " Events " << cN << std::endl;
-
+                std::cout << "FE: " << +cFe->getFeId() << " Latency " << +cLat << " Hits " << cNHits  << " Events " << fNevents << std::endl;
+            }
         }
 
         // done counting hits for all FE's, now update the Histograms
         updateHists ( "module_latency", false );
     }
+
 
     // analyze the Histograms
     std::map<Module*, uint8_t> cLatencyMap;
@@ -150,7 +142,8 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
     for ( auto cFe : fModuleHistMap )
     {
         TH1F* cTmpHist = ( TH1F* ) getHist ( static_cast<Ph2_HwDescription::Module*> ( cFe.first ), "module_latency" );
-        uint8_t cLatency =  static_cast<uint8_t> ( cTmpHist->GetMaximumBin() - 1 );
+        //the true latency now is the floor(iBin/8)
+        uint8_t cLatency =  static_cast<uint8_t> ( floor((cTmpHist->GetMaximumBin() - 1 )/8));
         cLatencyMap[cFe.first] = cLatency;
         cWriter.setRegister ( "TriggerLatency", cLatency );
         this->accept ( cWriter );
@@ -183,12 +176,6 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
 
     for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
     {
-        //  Set a Latency Value on all FEs
-        BeBoardRegWriter cLatWriter ( fBeBoardInterface, "cbc_stubdata_latency_adjust_fe1", cLat );
-        this->accept ( cLatWriter );
-        cLatWriter.setRegister ( "cbc_stubdata_latency_adjust_fe2", cLat );
-        this->accept ( cLatWriter );
-
         uint32_t cN = 1;
         uint32_t cNthAcq = 0;
         int cNStubs = 0;
@@ -196,10 +183,22 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
         // Take Data for all Modules
         for ( BeBoard* pBoard : fBoardVector )
         {
-            //fBeBoardInterface->Start( pBoard );
+            //here set the stub latency
+            std::string cBoardType = pBoard->getBoardType();
+            std::vector<std::pair<std::string, uint32_t>> cRegVec;
 
-            //while ( cN <= fNevents )
-            //{
+            if (cBoardType == "GLIB")
+            {
+                cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe1", cLat});
+                cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
+            }
+            else if (cBoardType == "ICGLIB")
+            {
+                cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});
+            }
+
+            fBeBoardInterface->WriteBoardMultReg (pBoard, cRegVec);
+
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
 
@@ -215,8 +214,6 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
             }
 
             cNthAcq++;
-            //}
-            //fBeBoardInterface->Stop( pBoard );
             std::cout << "Stub Latency " << +cLat << " Stubs " << cNStubs  << " Events " << cN << std::endl;
 
         }
@@ -236,12 +233,12 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
         uint8_t cStubLatency =  static_cast<uint8_t> ( cTmpHist->GetMaximumBin() - 1 );
         cStubLatencyMap[cFe.first] = cStubLatency;
 
-        BeBoardRegWriter cLatWriter ( fBeBoardInterface, "", 0 );
+        //BeBoardRegWriter cLatWriter ( fBeBoardInterface, "", 0 );
 
-        if ( cFe.first->getFeId() == 0 ) cLatWriter.setRegister ( "cbc_stubdata_latency_adjust_fe1", cStubLatency );
-        else if ( cFe.first->getFeId() == 1 ) cLatWriter.setRegister ( "cbc_stubdata_latency_adjust_fe2", cStubLatency );
+        //if ( cFe.first->getFeId() == 0 ) cLatWriter.setRegister ( "cbc_stubdata_latency_adjust_fe1", cStubLatency );
+        //else if ( cFe.first->getFeId() == 1 ) cLatWriter.setRegister ( "cbc_stubdata_latency_adjust_fe2", cStubLatency );
 
-        this->accept ( cLatWriter );
+        //this->accept ( cLatWriter );
 
         std::cout << "Stub Latency FE " << +cFe.first->getModuleId()  << ": " << +cStubLatency << " clock cycles!" << std::endl;
     }
@@ -303,6 +300,40 @@ void Commissioning::ScanThreshold ( bool pScanPedestal )
 
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
+
+int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, bool pStrasbourgGlib)
+{
+    int cHitSum = 0;
+    //  get histogram to fill
+    TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( pFe, pHistName ) );
+
+    for (auto& cEvent : pEventVec)
+    {
+        //first, reset the hit counter - I need separate counters for each event
+        int cHitCounter = 0;
+        //get TDC value for this particular event
+        uint32_t cTDCVal = cEvent->GetTDC();
+
+        for ( auto cCbc : pFe->fCbcVector )
+        {
+            //now loop the channels for this particular event and increment a counter
+            for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+            {
+                if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                    cHitCounter++;
+            }
+        }
+
+        //now I have the number of hits in this particular event for all CBCs and the TDC value
+        //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 4 from the TDC value to have it normalized between 1 and 8
+        if (pStrasbourgGlib) cTDCVal -= 4;
+
+        cTmpHist->Fill (pParameter + cTDCVal, cHitCounter);
+        cHitSum += cHitCounter;
+    }
+
+    return cHitSum;
+}
 
 int Commissioning::countHits ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter )
 {
@@ -485,22 +516,22 @@ void Commissioning::measureScurve ( std::string pHistName, uint32_t pNEvents )
 
             //while ( cN <=  pNEvents )
             //{
-                fBeBoardInterface->ReadNEvents ( pBoard, pNEvents );
+            fBeBoardInterface->ReadNEvents ( pBoard, pNEvents );
 
-                const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
 
-                // Loop over Events from this Acquisition
-                for ( auto& cEvent : events )
-                {
+            // Loop over Events from this Acquisition
+            for ( auto& cEvent : events )
+            {
 
-                    for ( auto cFe : pBoard->fModuleVector )
-                        cHitCounter += countHits ( cFe, cEvent, pHistName, static_cast<uint8_t> ( cVcth ) );
+                for ( auto cFe : pBoard->fModuleVector )
+                    cHitCounter += countHits ( cFe, cEvent, pHistName, static_cast<uint8_t> ( cVcth ) );
 
-                    cN++;
+                cN++;
 
-                }
+            }
 
-                cNthAcq++;
+            cNthAcq++;
             //}
 
             //fBeBoardInterface->Stop ( pBoard );
