@@ -23,6 +23,7 @@
 #include "TH1F.h"
 #include "TF1.h"
 #include "TH2F.h"
+#include "TGaxis.h"
 
 using namespace Ph2_System;
 using namespace Ph2_HwInterface;

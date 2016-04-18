@@ -143,7 +143,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
     {
         TH1F* cTmpHist = ( TH1F* ) getHist ( static_cast<Ph2_HwDescription::Module*> ( cFe.first ), "module_latency" );
         //the true latency now is the floor(iBin/8)
-        uint8_t cLatency =  static_cast<uint8_t> ( floor((cTmpHist->GetMaximumBin() - 1 )/8));
+        uint8_t cLatency =  static_cast<uint8_t> ( floor ( (cTmpHist->GetMaximumBin() - 1 ) / 8) );
         cLatencyMap[cFe.first] = cLatency;
         cWriter.setRegister ( "TriggerLatency", cLatency );
         this->accept ( cWriter );
@@ -389,6 +389,18 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
         {
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
             cTmpHist->Draw ( "same" );
+
+            //TGaxis* axis2;
+            //if (axis2 == nullptr)
+            //{
+                //axis2 = new TGaxis (cCanvas.second->GetUxmin(),
+                                    //cCanvas.second->GetUymax(),
+                                    //cCanvas.second->GetUxmax(),
+                                    //cCanvas.second->GetUymax(), cTmpHist->GetMinimumBin(), cTmpHist->GetMaximumBin(), cTmpHist->GetNbinsX() / 8, "+"); //or better line below
+                //// canv->GetUymax(),0.,10.,510,"-");
+
+                //axis2->Draw ("same");
+            //}
         }
         else if ( pHistName == "module_stub_latency" )
         {
