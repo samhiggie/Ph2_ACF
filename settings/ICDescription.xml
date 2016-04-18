@@ -29,8 +29,8 @@
     <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 8000 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.i2c_refresh_count"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 1000 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> 201 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 400 </Register>
 
     <!--DAQ-->
     <Register name="cbc_daq_ctrl.nevents_per_pcdaq"> 10 </Register>

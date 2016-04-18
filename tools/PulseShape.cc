@@ -11,6 +11,10 @@ void PulseShape::Initialize()
     {
         uint32_t cBoardId = cBoard->getBeId();
         std::cerr << "cBoardId = " << cBoardId << std::endl;
+        std::string cBoardType = cBoard->getBoardType();
+
+        if (cBoardType == "GLIB") fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE");
+        else if (cBoardType == "ICGLIB") fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, "cbc_daq_ctrl.commissioning_cycle.test_pulse_count");
 
         for ( auto& cFe : cBoard->fModuleVector )
         {
@@ -26,7 +30,11 @@ void PulseShape::Initialize()
                 TCanvas* ctmpCanvas = new TCanvas ( Form ( "c_online_canvas_fe%dcbc%d", cFeId, cCbcId ), Form ( "FE%dCBC%d  Online Canvas", cFeId, cCbcId ) );
                 ctmpCanvas->Divide ( 2, 1 );
                 fCanvasMap[cCbc] = ctmpCanvas;
-                TH2I* cFrame = new TH2I ( "cFrame", "PulseShape; Delay [ns]; Amplitude [VCth]", 350, 4950, 5300, 255, 0, 255 );
+
+                //should set the canvas frames sane!
+                int cLow = ( fDelayAfterPulse - 1 ) * 25;
+                int cHigh = ( fDelayAfterPulse + 8 ) * 25;
+                TH2I* cFrame = new TH2I ( "cFrame", "PulseShape; Delay [ns]; Amplitude [VCth]", 350, cLow, cHigh, 255, 0, 255 );
                 cFrame->SetStats ( false );
                 ctmpCanvas->cd ( 2 );
                 cFrame->Draw( );
@@ -63,7 +71,8 @@ void PulseShape::ScanTestPulseDelay ( uint8_t pStepSize )
     setSystemTestPulse ( fTPAmplitude/*, 0 */ );
     enableTestGroup();
     // initialize the historgram for the channel map
-    int cCoarseDefault = 201;
+    //should set the histogram boardes frames sane (from config file)!
+    int cCoarseDefault = fDelayAfterPulse;
     int cLow = ( cCoarseDefault - 1 ) * 25;
     int cHigh = ( cCoarseDefault + 8 ) * 25;
 
@@ -285,14 +294,18 @@ void PulseShape::setDelayAndTesGroup ( uint32_t pDelay )
 
     //since Strasbourg FW and IC FW work slightly differently, have to use the board type attribute of BeBoard to to decide which registers to write!
     std::string cTPDelayRegisterName;
-    for(auto& cBoard : fBoardVector)
+
+    for (auto& cBoard : fBoardVector)
     {
         std::string cBoardType = cBoard->getBoardType();
-        if(cBoardType == "GLIB") cTPDelayRegisterName = "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE";
-        else if(cBoardType == "ICGLIB") cTPDelayRegisterName = "cbc_daq_ctrl.commissioning_cycle.test_pulse_count";
+
+        if (cBoardType == "GLIB") cTPDelayRegisterName = "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE";
+        else if (cBoardType == "ICGLIB") cTPDelayRegisterName = "cbc_daq_ctrl.commissioning_cycle.test_pulse_count";
+
         //potentially have to reset the IC FW commissioning cycle state machine?
-        fBeBoardInterface->WriteBoardReg(cBoard,cTPDelayRegisterName, cCoarseDelay);
+        fBeBoardInterface->WriteBoardReg (cBoard, cTPDelayRegisterName, cCoarseDelay);
     }
+
     CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", to_reg ( cFineDelay, fTestGroup ) );
     this->accept ( cWriter );
 
