@@ -131,7 +131,9 @@ On this Repo, you can find different version of the software :
     - changed signatures of ReadData / Stop and remove the NthAcquisition parameter for simplicity
     - simplified the iterative error correction features in both FW Interfaces
     - implemented broadcast I2C write operations in both FW Interfaces (this needs further testing)
-    - 
+    - added Support for AMC13
+    - included TDC aware Trigger latency scan in Commissioning
+    - adapted FW aware commissioning procedures & tools to check the beBoardFWVersion (GLIB vs ICGLIB)
 
 ### Setup
 
