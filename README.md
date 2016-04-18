@@ -122,6 +122,16 @@ On this Repo, you can find different version of the software :
     - added support for CMS Tk Ph2 Data format (.daq) files generation
     - added the option for CMS Tk Ph2 Antenna driver as plugin
     - removed the Shelf objects from the code for simplicity
+- 18.04.2016: adding support for IC Firmware
+    - added an Interface for Imperial College GlibFW (K. Uchida)
+    - simplified Data class to allow for compatability with above FW
+    - added Inherit() & Destroy() methods to SystemController & tool to facilitate creating other tool classes with an already existing hw structure
+    - updated makefiles
+    - added ReadNEvents() method to BeBoardInterface that allows to read a given number of events from FW as 1 packet
+    - changed signatures of ReadData / Stop and remove the NthAcquisition parameter for simplicity
+    - simplified the iterative error correction features in both FW Interfaces
+    - implemented broadcast I2C write operations in both FW Interfaces (this needs further testing)
+    - 
 
 ### Setup
 
