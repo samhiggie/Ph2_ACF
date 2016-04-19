@@ -16,10 +16,9 @@ using namespace CommandLineProcessing;
 
 int main( int argc, char* argv[] )
 {
-	PulseShape cPulseShape;
+	// init
 	ArgvParser cmd;
 
-	// init
 	cmd.setIntroductoryDescription( "CMS Ph2_ACF  PulseShape tool to perform the following procedures:\n-Print scan test pulse delay" );
 	// error codes
 	cmd.addErrorCode( 0, "Success" );
@@ -60,6 +59,8 @@ int main( int argc, char* argv[] )
 	TApplication cApp( "Root Application", &argc, argv );
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
+
+	PulseShape cPulseShape;
 
 	cPulseShape.InitializeHw( cHWFile );
 	cPulseShape.InitializeSettings( cHWFile );

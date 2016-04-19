@@ -22,9 +22,9 @@
 
     <!--COMMISSIONING MODE-->
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.enable"> 1 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 0 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.i2c_refresh_enable"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 0 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.l1a_trigger_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 8000 </Register>
@@ -55,4 +55,13 @@
     <Setting name="TestPulsePotentiometer">0x00</Setting>
     <Setting name="HoleMode">1</Setting>
     <Setting name="VerificationLoop">1</Setting>
+    <!--PulseShape-->
+    <Setting name="Nevents" > 10 </Setting>
+    <Setting name="Vplus" > 0x50 </Setting>
+    <Setting name="TPAmplitude" > 0x0C </Setting>
+    <!-- <Setting name="Channel" > 1 </Setting> -->
+    <Setting name="TestGroup" > 1 </Setting>
+    <Setting name="ChannelOffset" > 0x40 </Setting>
+    <Setting name="StepSize" > 15 </Setting>
+    <Setting name="FitSCurves" > 0 </Setting>
 </Settings>

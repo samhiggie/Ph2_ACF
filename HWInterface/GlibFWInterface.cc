@@ -610,12 +610,12 @@ namespace Ph2_HwInterface {
                 cSuccess = false;
 
                 // if the number of errors is greater than 100, give up
-                if (cWriteAgain.size() < 100)
+                if (cWriteAgain.size() < 120)
                 {
                     std::cout << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" << std::endl;
                     this->WriteCbcBlockReg ( cWriteAgain, true);
                 }
-                else std::cout << "There were too many errors (>100 Registers). Something is wrong - aborting!" << std::endl;
+                else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
             }
         }
         else cSuccess = true;

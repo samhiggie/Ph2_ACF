@@ -541,9 +541,9 @@ void PulseShape::updateHists ( std::string pHistName, bool pFinal )
         cCanvas.second->Update();
     }
 
-#ifdef __HTTP__
-    fHttpServer->ProcessRequests();
-#endif
+//#ifdef __HTTP__
+    //fHttpServer->ProcessRequests();
+//#endif
 }
 
 double pulseshape ( double* x, double* par )
