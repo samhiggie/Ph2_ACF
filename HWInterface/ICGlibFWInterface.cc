@@ -565,6 +565,7 @@ namespace Ph2_HwInterface {
                 {
                     cSuccess = false;
                 }
+                //std::cout << std::bitset<32>(cWord) << std::endl;
             }
 
             //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICGlibFWInterface::cmd_reply_ack);

@@ -325,7 +325,7 @@ namespace Ph2_HwInterface {
         }
 
         // write the registerss, the answer will be in the same cVec
-        bool cSuccess = fBoardFW->BCWriteCbcBlockReg ( cVec, false);
+        bool cSuccess = fBoardFW->BCWriteCbcBlockReg ( cVec, true);
 
 #ifdef COUNT_FLAG
         fTransactionCount++;
