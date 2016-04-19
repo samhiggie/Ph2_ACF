@@ -69,7 +69,7 @@ void PulseShape::ScanTestPulseDelay ( uint8_t pStepSize )
     // setSystemTestPulse(fTPAmplitude, fChannelId);
     // enableChannel(fChannelId);
     setSystemTestPulse ( fTPAmplitude/*, 0 */ );
-    enableTestGroup();
+    toggleTestGroup(true);
     // initialize the historgram for the channel map
     //should set the histogram boardes frames sane (from config file)!
     int cCoarseDefault = fDelayAfterPulse;
@@ -84,6 +84,7 @@ void PulseShape::ScanTestPulseDelay ( uint8_t pStepSize )
 
     this->fitGraph ( cLow );
     updateHists ( "cbc_pulseshape", true );
+    toggleTestGroup(false);
 
 }
 
@@ -114,8 +115,8 @@ void PulseShape::ScanVcth ( uint32_t pDelay )
         }
 
         // if ( cAllOne ) break;
-        CbcRegWriter cWriter ( fCbcInterface, "VCth", cVcth );
-        this->accept ( cWriter );
+        //CbcRegWriter cWriter ( fCbcInterface, "VCth", cVcth );
+        //this->accept ( cWriter );
 
         // then we take fNEvents
         uint32_t cN = 1;
@@ -125,6 +126,9 @@ void PulseShape::ScanVcth ( uint32_t pDelay )
         // Take Data for all Modules
         for ( BeBoard* pBoard : fBoardVector )
         {
+            for (Module* cFe : pBoard->fModuleVector)
+                fCbcInterface->WriteBroadcast (cFe, "VCth", cVcth);
+
             //fBeBoardInterface->Start( pBoard );
             //while ( cN <= fNevents )
             //{
@@ -269,18 +273,25 @@ std::vector<uint32_t> PulseShape::findChannelsInTestGroup ( uint32_t pTestGroup 
     return cChannelVector;
 }
 
-void PulseShape::enableTestGroup( )
+void PulseShape::toggleTestGroup(bool pEnable )
 {
     std::vector<std::pair<std::string, uint8_t> > cRegVec;
+    uint8_t cDisableValue = fHoleMode ? 0x00 : 0xFF;
+        uint8_t cValue = pEnable ? fOffset : cDisableValue;
 
     for ( auto& cChannel : fChannelVector )
     {
         TString cRegName = Form ( "Channel%03d", cChannel );
-        cRegVec.push_back ( std::make_pair ( cRegName.Data(), fOffset ) );
+        cRegVec.push_back ( std::make_pair ( cRegName.Data(), cValue ) );
     }
 
-    CbcMultiRegWriter cWriter ( fCbcInterface, cRegVec );
-    this->accept ( cWriter );
+    //CbcMultiRegWriter cWriter ( fCbcInterface, cRegVec );
+    //this->accept ( cWriter );
+    for(BeBoard* cBoard : fBoardVector)
+    {
+         for(Module* cFe : cBoard->fModuleVector)
+             fCbcInterface->WriteBroadcastMultReg(cFe, cRegVec);
+    }
 }
 
 void PulseShape::setDelayAndTesGroup ( uint32_t pDelay )

@@ -94,7 +94,7 @@ private:
     /*!
     * \brief enable the test group
     */
-    void enableTestGroup();
+    void toggleTestGroup(bool pEnable);
 
     /*!
     * \brief fit the graph with the fitting function
