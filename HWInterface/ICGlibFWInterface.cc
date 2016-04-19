@@ -165,7 +165,7 @@ namespace Ph2_HwInterface {
         bool cSuccess = false;
 
         for (auto& cWord : pReplies)
-            cSuccess = ( ( (cWord >> 20) & 0x1) == 0 && ((cWord) & 0x000000FF) != 0 ) ? true : false;
+            cSuccess = ( ( (cWord >> 20) & 0x1) == 0 && ( (cWord) & 0x000000FF) != 0 ) ? true : false;
 
         if (cSuccess) std::cout << "Successfully received *Pings* from " << fBroadcastCbcId << " Cbcs on FMC " << +fFMCId << std::endl;
         else std::cout << "Error, did not receive the correct number of *Pings*; expected: " << fBroadcastCbcId << ", received: " << pReplies.size() << std::endl;
@@ -502,7 +502,7 @@ namespace Ph2_HwInterface {
             //even is the write reply, odd is the read reply
             //since I am already reading back, might as well forget about the CMD acknowledge from the CBC and directly look at the read back value
             std::vector<uint32_t> cOdd;
-            getOddElements(cReplies, cOdd);
+            getOddElements (cReplies, cOdd);
 
             //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
             cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), ICGlibFWInterface::cmd_reply_comp);
@@ -544,23 +544,35 @@ namespace Ph2_HwInterface {
     {
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C ( pVecReg, cReplies, false, true );
+
         //just as above, I can check the replies - there will be NCbc * pVecReg.size() write replies and also read replies if I chose to enable readback
         //this needs to be adapted
-        if(pReadback)
+        if (pReadback)
         {
             //TODO: actually, i just need to check the read write and the info bit in each reply - if all info bits are 0, this is as good as it gets, else collect the replies that faild for decoding - potentially no iterative retrying
             //TODO: maybe I can do something with readback here - think about it
-            for(auto& cWord : cReplies)
+            for (auto& cWord : cReplies)
             {
-                //it is a write reply and the info is ok
-                if(((cWord >> 20) & 0x1) == 0 && ((cWord >> 17) & 0x1 == 0)) cSuccess = true;
-                else cSuccess = false;
+                //it was a write transaction!
+                if ( ( (cWord >> 17) & 0x1) == 0)
+                {
+                    // infor bit is 0 which means that the transaction was acknowledged by the CBC
+                    if ( ( (cWord >> 20) & 0x1) == 0)
+                        cSuccess = true;
+                    else cSuccess == false;
+                }
+                else
+                {
+                    cSuccess = false;
+                }
             }
+
             //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICGlibFWInterface::cmd_reply_ack);
             pVecReg.clear();
             pVecReg = cReplies;
-   
+
         }
+
         return cSuccess;
     }
 
@@ -625,19 +637,21 @@ namespace Ph2_HwInterface {
         //TODO: cleanup
         if ( (cWord1 & 0x0F00FFFF) != (cWord2 & 0x0F00FFFF) )
             std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
+
         //if the Register is FrontEndControl at p0 addr0, page is not defined and therefore I ignore it!
-        if(((cWord1>>16)& 0x1) == 0 && ((cWord1 >> 8 ) & 0xFF)== 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
+        if ( ( (cWord1 >> 16) & 0x1) == 0 && ( (cWord1 >> 8 ) & 0xFF) == 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
         else return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
     }
 
-    bool ICGlibFWInterface::cmd_reply_ack (const uint32_t& cWord1, const uint32_t& cWord2)
+    bool ICGlibFWInterface::cmd_reply_ack (const uint32_t& cWord1, const
+                                           uint32_t& cWord2)
     {
-        // if Info (>>17) is 1 and  it was a write transaction and  the CBC id matches it is false
-        if ( ( (cWord2 >> 20) & 0x1) == 0 && ( (cWord2 >> 17) & 0x1 ) == 0 && (cWord1 & 0x0F000000) == (cWord2 & 0x0F000000) ) return true;
+        // if Info (>>20) is 0 and  it was a write transaction (>>17 == 0) and
+        // the CBC id matches it is false
+        if ( ( (cWord2 >> 20) & 0x1) == 0 && ( (cWord2 >> 17) & 0x1 ) == 0 &&
+                (cWord1 & 0x0F000000) == (cWord2 & 0x0F000000) ) return true;
         else
-        {
             return false;
-        }
     }
 
 

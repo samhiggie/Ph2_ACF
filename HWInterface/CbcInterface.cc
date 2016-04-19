@@ -288,7 +288,9 @@ namespace Ph2_HwInterface {
         // the 1st boolean could be true if I acually wanted to read back from each CBC but this somehow does not make sense!
         fBoardFW->BCEncodeReg ( cRegItem, pModule->fCbcVector.size(), cVec, false, true );
 
-        bool cSuccess = fBoardFW->BCWriteCbcBlockReg (  cVec, false );
+        //true is the readback bit - the IC FW just checks that the transaction was successful and the 
+        //Strasbourg FW does nothing
+        bool cSuccess = fBoardFW->BCWriteCbcBlockReg (  cVec, true );
 
 #ifdef COUNT_FLAG
         fRegisterCount++;

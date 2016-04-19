@@ -1,5 +1,7 @@
 #include "../System/SystemController.h"
+#include "../Utils/CommonVisitors.h"
 #include "../Utils/argvparser.h"
+#include "../Utils/Timer.h"
 
 
 using namespace Ph2_System;
@@ -40,6 +42,19 @@ int main( int argc, char** argv )
 	cSystemController.InitializeHw( cHWFile );
 	cSystemController.InitializeSettings( cHWFile );
 	if ( cConfigure ) cSystemController.ConfigureHw();
+
+    //Timer t;
+    //t.start();
+
+    //for(uint8_t cVcth = 0x00; cVcth < 0xFF; cVcth++)
+    //{
+        //std::cout << "Writing " << +cVcth << std::endl;
+         //cSystemController.fCbcInterface->WriteBroadcast(cSystemController.fBoardVector.at(0)->fModuleVector.at(0), "VCth", cVcth);
+         //CbcRegReader cReader(cSystemController.fCbcInterface, "VCth");
+         //cSystemController.accept(cReader);
+    //}
+    //t.stop();
+    //t.show("Time to loop VCth from 0 to ff with broadcast:");
 
 	std::cout << "*** End of the System test ***" << std::endl;
     cSystemController.Destroy();
