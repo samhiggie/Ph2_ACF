@@ -397,7 +397,7 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
         if ( pHistName == "module_latency" )
         {
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->Draw ( "same" );
+            cTmpHist->DrawCopy ( "same" );
 
             //TGaxis* axis2;
             //if (axis2 == nullptr)
@@ -414,17 +414,17 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
         else if ( pHistName == "module_stub_latency" )
         {
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->Draw ( "same" );
+            cTmpHist->DrawCopy ( "same" );
         }
         else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
         {
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->Draw ( "P same" );
+            cTmpHist->DrawCopy ( "P same" );
 
             if ( pFinal )
             {
                 // cTmpHist->Scale( double( 1 / ( NCHANNELS * fNCbc * fNevents ) ) );
-                cTmpHist->Draw ( "P same" );
+                cTmpHist->DrawCopy ( "P same" );
                 // get the fit and draw that too
                 // TF1* cFit = ( TF1* )getHist( cCanvas.first, "module_fit" );
 

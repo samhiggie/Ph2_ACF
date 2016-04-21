@@ -49,8 +49,8 @@ class PedeNoise : public SCurve
     {
         //if ( fResultFile )
         //{
-            //fResultFile->Write();
-            //fResultFile->Close();
+        //fResultFile->Write();
+        //fResultFile->Close();
         //}
     }
 
@@ -71,6 +71,8 @@ class PedeNoise : public SCurve
     void setOffset ( uint8_t pOffset, int  pTGrpId );
     void enableTestGroupforNoise ( int  pTGrpId );
     void processSCurvesNoise ( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
+    void setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma);
+    void fillOccupancyHist (BeBoard* pBoard, const std::vector<Event*>& pEvents);
     void writeGraphs();
 
 };

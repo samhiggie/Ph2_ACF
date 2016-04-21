@@ -74,6 +74,11 @@ void PedeNoise::Initialise()
                 cHist->SetLineColor ( 2 );
                 bookHistogram ( cCbc, "Cbc_noise_odd", cHist );
 
+                cHistname = Form ( "Fe%dCBC%d_Occupancy", cFe->getFeId(), cCbc->getCbcId() );
+                cHist = new TH1F ( cHistname, cHistname, 255, -0.5, 254.5 );
+                cHist->SetLineColor ( 2 );
+                bookHistogram ( cCbc, "Cbc_occupancy", cHist );
+
             }
 
             TString cNoisehistname =  Form ( "Fe%d_Noise", cFeId );
@@ -182,10 +187,10 @@ void PedeNoise::measureNoise()
 
                 std::cout << BOLDRED << "Average noise on FE " << +cCbc->getFeId() << " CBC " << +cCbc->getCbcId() << " : " << cNoiseHist->GetMean() << " ; RMS : " << cNoiseHist->GetRMS() << " ; Pedestal : " << cPedeHist->GetMean() << " VCth units." << RESET << std::endl;
 
-                fNoiseCanvas->cd ( fNCbc + cCbc->getCbcId() + 1 );
+                //fNoiseCanvas->cd ( fNCbc + cCbc->getCbcId() + 1 );
                 // cStripHist->DrawCopy();
-                cEvenHist->DrawCopy();
-                cOddHist->DrawCopy ( "same" );
+                //cEvenHist->DrawCopy();
+                //cOddHist->DrawCopy ( "same" );
 
                 fPedestalCanvas->cd ( cCbc->getCbcId() + 1 );
                 cNoiseHist->DrawCopy();
@@ -209,6 +214,8 @@ void PedeNoise::measureNoise()
                 }
             }
 
+            //now apply
+
             fFeSummaryCanvas->cd ( cFeId + 1 );
             cTmpHist->DrawCopy();
             fFeSummaryCanvas->cd ( fNFe + cFeId + 1 );
@@ -220,8 +227,67 @@ void PedeNoise::measureNoise()
         }
     }
 
-    //now set back the initial offsets 
+    //now set back the initial offsets
     setInitialOffsets();
+}
+
+
+void PedeNoise::Validate()
+{
+    std::cout << "Validation: Taking Data with " << fEventsPerPoint * 200 << " random triggers!" << std::endl;
+
+    for ( auto cBoard : fBoardVector )
+    {
+        uint32_t cBoardId = cBoard->getBeId();
+
+        //increase threshold to supress noise
+        setThresholdtoNSigma(cBoard, 5);
+        
+        //take data
+        fBeBoardInterface->ReadNEvents (cBoard, fEventsPerPoint * 200);
+
+        //analyze
+        const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( cBoard );
+
+        fillOccupancyHist(cBoard, events);
+
+        //now I've filled the histogram with the occupancy
+        //let's say if there is more than 1% noise occupancy, we consider the strip as noise and thus set the offset to either 0 or FF
+        for ( auto cFe : cBoard->fModuleVector )
+        {
+            for ( auto cCbc : cFe->fCbcVector )
+            {
+                //get the histogram for the occupancy
+                TH1F* cHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_occupancy" ) );
+
+                //as we are at it, draw the plot
+                fNoiseCanvas->cd ( fNCbc + cCbc->getCbcId() + 1 );
+                cHist->DrawCopy();
+                fNoiseCanvas->Modified();
+                fNoiseCanvas->Update();
+
+                RegisterVector cRegVec;
+
+                for (uint32_t iBin = 0; iBin < cHist->GetNbinsX(); iBin++)
+                {
+                    if (cHist->GetBinContent (iBin) > double (0.01 * fEventsPerPoint * 200) ) // consider it noisy
+                    {
+                        //TODO
+                        TString cRegName = Form ( "Channel%03d", iBin + 1 );
+                        uint8_t cValue = fHoleMode ? 0x00 : 0xFF;
+                        std::cout << "iBin " << iBin << " Content " << cHist->GetBinContent (iBin) << " should be channel " << iBin + 1 << std::endl;
+                        cRegVec.push_back ({cRegName.Data(), cValue });
+                        std::cout << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iBin + 1 << "; setting offset to " << cValue << RESET << std::endl;
+                    }
+
+                }
+
+                //Write the changes
+                fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);
+            }
+        }
+        setThresholdtoNSigma(cBoard, 0);
+    }
 }
 
 
@@ -407,6 +473,7 @@ void PedeNoise::saveInitialOffsets()
 void PedeNoise::setInitialOffsets()
 {
     std::cout << "Re-applying the original offsets for all CBCs" << std::endl;
+
     for ( auto cBoard : fBoardVector )
     {
         for ( auto cFe : cBoard->fModuleVector )
@@ -430,6 +497,53 @@ void PedeNoise::setInitialOffsets()
             }
         }
     }
+}
+
+void PedeNoise::setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma)
+{
+    for ( auto cFe : pBoard->fModuleVector )
+    {
+        uint32_t cFeId = cFe->getFeId();
+
+        for ( auto cCbc : cFe->fCbcVector )
+        {
+            uint32_t cCbcId = cCbc->getCbcId();
+            TH1F* cNoiseHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Noise" ) );
+            TH1F* cPedeHist  = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Pedestal" ) );
+
+            uint8_t cPedestal = floor (cPedeHist->GetMean() );
+            uint8_t cNoise = ceil (cNoiseHist->GetMean() );
+            int cDiff = fHoleMode ? pNSigma * cNoise : -pNSigma * cNoise;
+            uint8_t cValue = cPedestal + cDiff;
+
+            if (pNSigma > 0) std::cout << "Changing Threshold by " << cDiff << " to " << cPedestal + cDiff << " to supress noise!" << std::endl;
+            else std::cout << "Changing Threshold back to the pedestal at " << cPedestal << std::endl;
+
+            fCbcInterface->WriteCbcReg (cCbc, "VCth", cValue);
+        }
+    }
+}
+
+void PedeNoise::fillOccupancyHist(BeBoard* pBoard, const std::vector<Event*>& pEvents)
+{
+        for ( auto cFe : pBoard->fModuleVector )
+        {
+            for ( auto cCbc : cFe->fCbcVector )
+            {
+                //get the histogram for the occupancy
+                TH1F* cHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_occupancy" ) );
+
+                for (auto& cEvent : pEvents)
+                {
+                    for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                    {
+                        if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                            cHist->Fill (cId);
+                    }
+                }
+            }
+        }
+     
 }
 
 void PedeNoise::SaveResults()
