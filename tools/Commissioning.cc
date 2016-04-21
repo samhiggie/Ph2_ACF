@@ -24,15 +24,13 @@ void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange + 1) * fTDCBins, pStartLatency - .5, ( (pStartLatency + pLatencyRange) + .5) * fTDCBins );
+            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange + 1) * fTDCBins, pStartLatency - 0.5, ( (pStartLatency + pLatencyRange) + 0.5) * fTDCBins );
             //Modify the axis ticks
             //pLatencyRange main divisions and 8 sub divisions per main division
             cLatHist->SetNdivisions (pLatencyRange + 100 * fTDCBins, "X");
             //and the labels
             for(uint32_t cBin = 0; cBin < cLatHist->GetNbinsX(); cBin++)
-            {
-                if(cBin % fTDCBins == 0) cLatHist->GetXaxis()->SetBinLabel(cBin, std::to_string(cBin/fTDCBins).c_str());
-            }
+                //if(cBin % fTDCBins == 0) cLatHist->GetXaxis()->SetBinLabel(cBin, std::to_string(cBin/fTDCBins).c_str());
 
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
@@ -310,7 +308,7 @@ void Commissioning::ScanThreshold ( bool pScanPedestal )
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
-int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, bool pStrasbourgGlib)
+int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, bool pStrasbourgGlib/*, uint32_t pDifffromStart*/)
 {
     int cHitSum = 0;
     //  get histogram to fill
@@ -338,7 +336,8 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         //if (pStrasbourgGlib) cTDCVal -= 4;
 
         //std::cout << "Latency " << +pParameter << " TDC Value (normalized) " << +cTDCVal << " NHits: " << cHitCounter << std::endl;
-        cTmpHist->Fill ( (fTDCBins * pParameter) + cTDCVal, cHitCounter);
+        //TODO: fix me!
+        cTmpHist->Fill ( (pParameter) + /*pDifffromStart */ cTDCVal, cHitCounter);
         cHitSum += cHitCounter;
     }
 

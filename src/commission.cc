@@ -128,11 +128,9 @@ int main( int argc, char* argv[] )
 
     cTool.SaveResults();
     cTool.CloseResultFile();
-
+    cTool.Destroy();
 
 	if ( !batchMode ) cApp.Run();
-
-    cTool.Destroy();
 	return 0;
 
 }
