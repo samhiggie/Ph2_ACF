@@ -75,7 +75,7 @@ void PedeNoise::Initialise()
                 bookHistogram ( cCbc, "Cbc_noise_odd", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Occupancy", cFe->getFeId(), cCbc->getCbcId() );
-                cHist = new TH1F ( cHistname, cHistname, 255, -0.5, 254.5 );
+                cHist = new TH1F ( cHistname, cHistname, 254, 0, 254 );
                 cHist->SetLineColor ( 2 );
                 bookHistogram ( cCbc, "Cbc_occupancy", cHist );
 
@@ -268,16 +268,14 @@ void PedeNoise::Validate()
 
                 RegisterVector cRegVec;
 
-                for (uint32_t iBin = 0; iBin < cHist->GetNbinsX(); iBin++)
+                for (uint32_t iChan = 0; iChan < NCHANNELS; iChan++)
                 {
-                    if (cHist->GetBinContent (iBin) > double (0.01 * fEventsPerPoint * 200) ) // consider it noisy
+                    if (cHist->GetBinContent (iChan) > double (0.01 * fEventsPerPoint * 200) ) // consider it noisy
                     {
-                        //TODO
-                        TString cRegName = Form ( "Channel%03d", iBin + 1 );
+                        TString cRegName = Form ( "Channel%03d", iChan+1 );
                         uint8_t cValue = fHoleMode ? 0x00 : 0xFF;
-                        std::cout << "iBin " << iBin << " Content " << cHist->GetBinContent (iBin) << " should be channel " << iBin + 1 << std::endl;
                         cRegVec.push_back ({cRegName.Data(), cValue });
-                        std::cout << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iBin + 1 << "; setting offset to " << cValue << RESET << std::endl;
+                        std::cout << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iChan + 1 << " with an occupancy of " << double(cHist->GetBinContent(iChan)/(fEventsPerPoint*200.)) << "; setting offset to " << +cValue << RESET << std::endl;
                     }
 
                 }
@@ -486,14 +484,17 @@ void PedeNoise::setInitialOffsets()
 
                 // first, find the offset Histogram for this CBC
                 TH1F* cOffsetHist = static_cast<TH1F*> ( getHist ( cCbc, "Cbc_Offsets" ) );
-
+                
+                //also write to CBCs
+                RegisterVector cRegVec;
                 for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
                 {
                     uint8_t cOffset = cOffsetHist->GetBinContent ( iChan );
-                    cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
+                    //cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
+                    cRegVec.push_back ({ Form ( "Channel%03d", iChan + 1 ), cOffset } );
                     //std::cout << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET << std::endl;
                 }
-
+                fCbcInterface->WriteCbcMultReg(cCbc, cRegVec);
             }
         }
     }
@@ -512,12 +513,12 @@ void PedeNoise::setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma)
             TH1F* cPedeHist  = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Pedestal" ) );
 
             uint8_t cPedestal = floor (cPedeHist->GetMean() );
-            uint8_t cNoise = ceil (cNoiseHist->GetMean() );
+            uint8_t cNoise =  round(cNoiseHist->GetMean() );
             int cDiff = fHoleMode ? pNSigma * cNoise : -pNSigma * cNoise;
             uint8_t cValue = cPedestal + cDiff;
 
-            if (pNSigma > 0) std::cout << "Changing Threshold by " << cDiff << " to " << cPedestal + cDiff << " to supress noise!" << std::endl;
-            else std::cout << "Changing Threshold back to the pedestal at " << cPedestal << std::endl;
+            if (pNSigma > 0) std::cout << "Changing Threshold on CBC " << +cCbcId << " by " << cDiff << " to " << cPedestal + cDiff << " VCth units to supress noise!" << std::endl;
+            else std::cout << "Changing Threshold back to the pedestal at " << +cPedestal << std::endl;
 
             fCbcInterface->WriteCbcReg (cCbc, "VCth", cValue);
         }

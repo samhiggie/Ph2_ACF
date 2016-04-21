@@ -119,7 +119,7 @@ int main ( int argc, char* argv[] )
         cPedeNoise.measureNoise();
         cPedeNoise.Validate();
         cPedeNoise.SaveResults( );
-        //cPedeNoise.dumpConfigFiles();
+        cPedeNoise.dumpConfigFiles();
         t.stop();
         t.show ( "Time to Scan Pedestals and Noise" );
     }

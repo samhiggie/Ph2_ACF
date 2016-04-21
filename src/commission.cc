@@ -123,7 +123,9 @@ int main( int argc, char* argv[] )
         cPedeNoise.Inherit(&cTool);
 		cPedeNoise.Initialise(); // canvases etc. for fast calibration
 		cPedeNoise.measureNoise();
+		cPedeNoise.Validate();
 		cPedeNoise.SaveResults( );
+        cPedeNoise.dumpConfigFiles();
 	}
 
     cTool.SaveResults();
