@@ -107,7 +107,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
 
     // Now the actual scan
     std::cout << "Scanning Latency ... " << std::endl;
-
+    uint32_t cIterationCount = 0;
     for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
     {
         //  Set a Latency Value on all FEs
@@ -130,7 +130,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
             for ( auto cFe : pBoard->fModuleVector )
             {
                 int cNHits = 0;
-                cNHits += countHitsLat ( cFe, events, "module_latency", cLat, pStrasbourgFW );
+                cNHits += countHitsLat ( cFe, events, "module_latency", cLat, cIterationCount, pStrasbourgFW);
 
                 std::cout << "FE: " << +cFe->getFeId() << " Latency " << +cLat << " Hits " << cNHits  << " Events " << fNevents << std::endl;
             }
@@ -138,6 +138,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
 
         // done counting hits for all FE's, now update the Histograms
         updateHists ( "module_latency", false );
+        cIterationCount++;
     }
 
 
@@ -308,7 +309,7 @@ void Commissioning::ScanThreshold ( bool pScanPedestal )
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
-int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, bool pStrasbourgGlib/*, uint32_t pDifffromStart*/)
+int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount, bool pStrasbourgGlib)
 {
     int cHitSum = 0;
     //  get histogram to fill
@@ -336,8 +337,9 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         //if (pStrasbourgGlib) cTDCVal -= 4;
 
         //std::cout << "Latency " << +pParameter << " TDC Value (normalized) " << +cTDCVal << " NHits: " << cHitCounter << std::endl;
-        //TODO: fix me!
-        cTmpHist->Fill ( (pParameter) + /*pDifffromStart */ cTDCVal, cHitCounter);
+        if(pIterationCount > 0) cTmpHist->Fill ( pParameter + pIterationCount * cTDCVal, cHitCounter);
+        else cTmpHist->Fill ( pParameter +  cTDCVal, cHitCounter);
+
         cHitSum += cHitCounter;
     }
 
@@ -398,18 +400,8 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
         {
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
             cTmpHist->DrawCopy ( "same" );
+            cTmpHist->Draw( "same" );
 
-            //TGaxis* axis2;
-            //if (axis2 == nullptr)
-            //{
-            //axis2 = new TGaxis (cCanvas.second->GetUxmin(),
-            //cCanvas.second->GetUymax(),
-            //cCanvas.second->GetUxmax(),
-            //cCanvas.second->GetUymax(), cTmpHist->GetMinimumBin(), cTmpHist->GetMaximumBin(), cTmpHist->GetNbinsX() / 8, "+"); //or better line below
-            //// canv->GetUymax(),0.,10.,510,"-");
-
-            //axis2->Draw ("same");
-            //}
         }
         else if ( pHistName == "module_stub_latency" )
         {
@@ -487,6 +479,7 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
         //  TH2F* cTmpHist = ( TH2F* )getHist( cCanvas.first, pHistName );
         //  cTmpHist->Draw( "box" );
         // }
+        cCanvas.second->Modified();
         cCanvas.second->Update();
 #ifdef __HTTP__
         fHttpServer->ProcessRequests();

@@ -518,7 +518,7 @@ void PedeNoise::setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma)
             uint8_t cValue = cPedestal + cDiff;
 
             if (pNSigma > 0) std::cout << "Changing Threshold on CBC " << +cCbcId << " by " << cDiff << " to " << cPedestal + cDiff << " VCth units to supress noise!" << std::endl;
-            else std::cout << "Changing Threshold back to the pedestal at " << +cPedestal << std::endl;
+            else std::cout << "Changing Threshold on CBC " << +cCbcId << " back to the pedestal at " << +cPedestal << std::endl;
 
             fCbcInterface->WriteCbcReg (cCbc, "VCth", cValue);
         }
