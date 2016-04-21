@@ -114,7 +114,7 @@ int main( int argc, char* argv[] )
 		if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
 		if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
 		if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
-		cCommissioning.SaveResults();
+		//cCommissioning.SaveResults();
 	}
 
 	if ( cNoise )
@@ -128,11 +128,11 @@ int main( int argc, char* argv[] )
 
     cTool.SaveResults();
     cTool.CloseResultFile();
-    cTool.Destroy();
 
 
 	if ( !batchMode ) cApp.Run();
 
+    cTool.Destroy();
 	return 0;
 
 }

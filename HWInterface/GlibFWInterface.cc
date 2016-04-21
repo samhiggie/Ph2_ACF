@@ -117,6 +117,12 @@ namespace Ph2_HwInterface {
         cVecReg.push_back ( {"pc_commands.SPURIOUS_FRAME", 0} );
         cVecReg.push_back ( {"pc_commands2.force_BG0_start", 0} );
         cVecReg.push_back ( {"cbc_acquisition.CBC_TRIGGER_ONE_SHOT", 0} );
+        //cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
+        //cVecReg.push_back ( {"pc_commands.SRAM1_end_readout", 0} );
+        //cVecReg.push_back ( {"pc_commands.SRAM2_end_readout", 0} );
+        //cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
+        //cVecReg.push_back ( {"ctrl_sram.sram2_user_logic", 1} );
+        cVecReg.push_back ({"cbc_reg_i2c_settings", 0x000009F4});
 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
@@ -522,6 +528,7 @@ namespace Ph2_HwInterface {
 
         uhal::ValWord<uint32_t> cVal;
         uint32_t cLoop = 0;
+        bool cAckReceived = false;
 
         do
         {
@@ -529,25 +536,43 @@ namespace Ph2_HwInterface {
 
             if ( cVal != pAckVal )
                 usleep ( cWait );
-            else return true;
+            else cAckReceived = true;
         }
         while ( cVal != pAckVal && ++cLoop < 70 );
 
-        return false;
+        return cAckReceived;
+    }
+
+    void GlibFWInterface::EnableI2c ( bool pEnable )
+    {
+        uint32_t cValue = pEnable ? 0x000009F4 : 0 ;
+        WriteReg ( "cbc_reg_i2c_settings", cValue );
+
+        //if ( pEnable )
+        //usleep ( 100000 );
     }
 
     void GlibFWInterface::WriteI2C ( std::vector<uint32_t>& pVecReq, bool pWrite )
     {
+        //WriteReg ( "ctrl_sram.sram1_user_logic", 1 );
         pVecReq.push_back ( 0xFFFFFFFF );
 
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
         WriteBlockReg ( "sram1", pVecReq );
+        //WriteReg ("sram2" , 0xFFFFFFFF );
 
         cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
         cVecReg.push_back ( {"cbc_i2c_cmd_rq", pWrite ? 3 : 1} );
         WriteStackReg ( cVecReg );
+        //WriteReg ( "ctrl_sram.sram1_user_logic", 1 );
+        //WriteReg ( "cbc_i2c_cmd_rq", pWrite ? 3 : 1 );
+        //WriteReg ("cbc_hard_reset", 0);
+
+        WriteReg ( "cbc_i2c_cmd_rq", pWrite ? 3 : 1 );
+        //now remove the 0xFFFFFFFF word again so I can re-use the vector
+        pVecReq.pop_back();
 
         if ( I2cCmdAckWait ( ( uint32_t ) 1, pVecReq.size() ) == 0 )
             throw Exception ( "CbcInterface: Command Request Timed out." );
@@ -556,19 +581,20 @@ namespace Ph2_HwInterface {
 
         if ( I2cCmdAckWait ( ( uint32_t ) 0, pVecReq.size() ) == 0 )
             throw Exception ( "CbcInterface: I2C realease timed out." );
-
-        //now remove the 0xFFFFFFFF word again so I can re-use the vector
-        pVecReq.pop_back();
     }
 
     void GlibFWInterface::ReadI2C ( std::vector<uint32_t>& pVecReq )
     {
+        uint32_t pVecReqSize = pVecReq.size();
+        pVecReq.clear();
         WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
-        pVecReq = ReadBlockRegValue ( "sram1", pVecReq.size() );
+        pVecReq = ReadBlockRegValue ( "sram1", pVecReqSize );
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
         cVecReg.push_back ( {"cbc_i2c_cmd_rq", 0} );
         WriteStackReg ( cVecReg );
+        //WriteReg ( "ctrl_sram.sram1_user_logic", 1 );
+        //WriteReg ( "cbc_i2c_cmd_rq", 0 );
     }
 
 
@@ -577,22 +603,29 @@ namespace Ph2_HwInterface {
         bool cSuccess = false;
         std::vector<uint32_t> cWriteVec = pVecReq;
 
+        //EnableI2c (true);
+
         try
         {
-            WriteI2C ( pVecReq, true );
+            WriteI2C ( cWriteVec, true );
         }
         catch ( Exception& except )
         {
             throw except;
         }
 
+
         // now read back
-        // not sure if I should clear the last 8 bits of the vector, let's assume it is safe to not do that
         if (pReadback)
         {
+            //to use exactly the same algorithm, I should copy the vector and mask out the last 8 bits
+            for (auto& cWord : pVecReq)
+                cWord = (cWord & 0xFFFFFF00);
+
             try
             {
                 WriteI2C ( pVecReq, false );
+                //usleep (20000);
             }
             catch ( Exception& e )
             {
@@ -601,6 +634,7 @@ namespace Ph2_HwInterface {
 
             ReadI2C ( pVecReq );
 
+            //EnableI2c (false);
             // now I need to make sure that the written and the read-back vector are the same
             std::vector<uint32_t> cWriteAgain = get_mismatches (cWriteVec.begin(), cWriteVec.end(), pVecReq.begin(), GlibFWInterface::cmd_reply_comp);
 
@@ -620,6 +654,8 @@ namespace Ph2_HwInterface {
         }
         else cSuccess = true;
 
+        //EnableI2c (false);
+
         return cSuccess;
     }
 
@@ -630,6 +666,8 @@ namespace Ph2_HwInterface {
         bool cSuccess = true;
         std::vector<uint32_t> cWriteVec = pVecReq;
 
+        //EnableI2c (true);
+
         try
         {
             WriteI2C ( pVecReq, true );
@@ -639,11 +677,15 @@ namespace Ph2_HwInterface {
             throw except;
         }
 
+        //EnableI2c (false);
+
         return cSuccess;
     }
 
     void GlibFWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReq )
     {
+        //EnableI2c (true);
+
         try
         {
             WriteI2C ( pVecReq, false );
@@ -654,28 +696,29 @@ namespace Ph2_HwInterface {
         }
 
         ReadI2C ( pVecReq );
+        //EnableI2c (false);
     }
 
     void GlibFWInterface::CbcFastReset()
     {
         WriteReg ( "cbc_fast_reset", 1 );
 
-        usleep ( 200000 );
+        //usleep ( 200000 );
 
         WriteReg ( "cbc_fast_reset", 0 );
 
-        usleep ( 200000 );
+        //usleep ( 200000 );
     }
 
     void GlibFWInterface::CbcHardReset()
     {
         WriteReg ( "cbc_hard_reset", 1 );
 
-        usleep ( 200000 );
+        //usleep ( 200000 );
 
         WriteReg ( "cbc_hard_reset", 0 );
 
-        usleep ( 200000 );
+        //usleep ( 200000 );
     }
 
     void GlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
@@ -702,8 +745,10 @@ namespace Ph2_HwInterface {
 
     bool GlibFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
-        if(cWord1 != cWord2) 
-            //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ((cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
+        //if (cWord1 != cWord2)
+            //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ( (cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
+            //std::cout << "Readback error" << std::endl;
+
         return ( cWord1  == cWord2 );
     }
 }

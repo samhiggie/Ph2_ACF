@@ -24,7 +24,11 @@ void Commissioning::Initialize()
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), 256 * 8, -.5, 255.5 * 8 );
+            uint8_t cTDCMaxVal = 12;
+            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), 256 * cTDCMaxVal, -.5, 255.5 * cTDCMaxVal );
+            //Modify the axis ticks
+            //256 main divisions and 8 sub divisions per main division
+            cLatHist->SetNdivisions(256 + 100 * cTDCMaxVal,"X");
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -312,7 +316,7 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         //first, reset the hit counter - I need separate counters for each event
         int cHitCounter = 0;
         //get TDC value for this particular event
-        uint32_t cTDCVal = cEvent->GetTDC();
+        uint8_t cTDCVal = cEvent->GetTDC();
 
         for ( auto cCbc : pFe->fCbcVector )
         {
@@ -326,9 +330,10 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
 
         //now I have the number of hits in this particular event for all CBCs and the TDC value
         //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 4 from the TDC value to have it normalized between 1 and 8
-        if (pStrasbourgGlib) cTDCVal -= 4;
+        //if (pStrasbourgGlib) cTDCVal -= 4;
 
-        cTmpHist->Fill (pParameter + cTDCVal, cHitCounter);
+        //std::cout << "Latency " << +pParameter << " TDC Value (normalized) " << +cTDCVal << " NHits: " << cHitCounter << std::endl;
+        cTmpHist->Fill ((12*pParameter) + cTDCVal, cHitCounter);
         cHitSum += cHitCounter;
     }
 

@@ -2,14 +2,14 @@
 <HwDescription>
   <BeBoard Id="0" boardType="GLIB">
     <!-- <connection id="board" uri="ipbusudp-2.0://192.168.000.175:50001" address_table="file://settings/address_table_2CBC.xml" /> -->
-    <connection id="board" uri="chtcp-2.0://cmsuptracker008:10203?target=192.168.0.163:50001" address_table="file://settings/address_table_2CBC.xml" />
+    <connection id="board" uri="chtcp-2.0://cmsuptracker008:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" />
     <FW_Version NCbcDataSize="4" />
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
       <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
     <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
-      <CBC_Files path="./settings/" />
-      <CBC Id="0" configfile="Cbc_default_hole.txt" />
-      <CBC Id="1" configfile="Cbc_default_hole.txt" />
+      <CBC_Files path="./Results/Calibration_Hole_21-04-16_12:52/" />
+      <CBC Id="0" configfile="FE0CBC0.txt" />
+      <CBC Id="1" configfile="FE0CBC1.txt" />
     </Module>
     <!-- Commissioning Mode -->
     <!-- set to 1 to enable commissioning mode -->
@@ -27,7 +27,7 @@
     <Register name="pc_commands.ACQ_MODE">1</Register>
     <!-- Trigger -->
     <!-- set to 1 to use external triggers -->
-    <Register name="pc_commands.TRIGGER_SEL">0</Register>
+    <Register name="pc_commands.TRIGGER_SEL">1</Register>
     <Register name="pc_commands.INT_TRIGGER_FREQ">10</Register>
     <!-- Clock -->
     <!-- set to 1 for external clocking -->
@@ -50,6 +50,7 @@
   </BeBoard>
 </HwDescription>
 <Settings>
+    <Setting name="Nevents"> 500 </Setting>
     <Setting name="RunNumber">1</Setting>
     <Setting name="HoleMode">1</Setting>
 </Settings>

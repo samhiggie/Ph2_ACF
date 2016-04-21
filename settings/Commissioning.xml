@@ -14,11 +14,7 @@
       <CBC_Files path="./Results/Calibration_Hole_04-03-16_16:00/"/>
       <CBC Id="0" configfile="FE0CBC0.txt"/>
       <CBC Id="1" configfile="FE0CBC1.txt"/>
-<<<<<<< HEAD
-      <!-- <CBC Id="2" configfile="FE0CBC2.txt"/>
-=======
      <!--  <CBC Id="2" configfile="FE0CBC2.txt"/>
->>>>>>> ICFW
       <CBC Id="3" configfile="FE0CBC3.txt"/>
       <CBC Id="4" configfile="FE0CBC4.txt"/>
       <CBC Id="5" configfile="FE0CBC5.txt"/>

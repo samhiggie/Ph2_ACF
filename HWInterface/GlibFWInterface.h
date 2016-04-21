@@ -51,7 +51,7 @@ namespace Ph2_HwInterface {
          * \brief SRAM selection for DAQ
          */
         void SelectDaqSRAM();
-        static bool cmd_reply_comp(const uint32_t& cWord1, const uint32_t& cWord2);
+        static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
 
       public:
         /*!
@@ -163,6 +163,7 @@ namespace Ph2_HwInterface {
          * \return boolean confirming the acknowledgement
          */
         bool I2cCmdAckWait ( uint32_t pAckVal, uint8_t pNcount = 1 );
+        void EnableI2c ( bool pEnable );
         /*!
          * \brief Send request to r/w blocks via I2C
          * \param pVecReq : Block of words to send
