@@ -42,7 +42,7 @@ class Commissioning : public Tool
 {
 
   public:
-	void Initialize();
+	void Initialize(uint32_t pStartLatency, uint32_t pLatencyRange);
 	void ScanThreshold( bool pScanPedestal );
 	std::map<Module*, uint8_t> ScanLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	std::map<Module*, uint8_t> ScanStubLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
@@ -64,6 +64,8 @@ class Commissioning : public Tool
 	uint32_t fInitialThreshold;
 	uint32_t fHoleMode;
 	uint32_t fNCbc;
+
+    const uint32_t fTDCBins = 12;
 };
 
 #endif

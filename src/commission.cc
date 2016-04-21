@@ -108,7 +108,7 @@ int main( int argc, char* argv[] )
 	{
 		Commissioning cCommissioning;
         cCommissioning.Inherit(&cTool);
-		cCommissioning.Initialize( );
+		cCommissioning.Initialize(cStartLatency, cLatencyRange );
 
 		// Here comes our Part:
 		if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );

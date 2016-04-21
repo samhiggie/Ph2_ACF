@@ -1,6 +1,6 @@
 #include "Commissioning.h"
 
-void Commissioning::Initialize()
+void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
 {
     // gStyle->SetOptStat( 000000 );
     // gStyle->SetTitleOffset( 1.3, "Y" );
@@ -24,11 +24,16 @@ void Commissioning::Initialize()
 
             if ( cObj ) delete cObj;
 
-            uint8_t cTDCMaxVal = 12;
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), 256 * cTDCMaxVal, -.5, 255.5 * cTDCMaxVal );
+            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange + 1) * fTDCBins, pStartLatency - .5, ( (pStartLatency + pLatencyRange) + .5) * fTDCBins );
             //Modify the axis ticks
-            //256 main divisions and 8 sub divisions per main division
-            cLatHist->SetNdivisions(256 + 100 * cTDCMaxVal,"X");
+            //pLatencyRange main divisions and 8 sub divisions per main division
+            cLatHist->SetNdivisions (pLatencyRange + 100 * fTDCBins, "X");
+            //and the labels
+            for(uint32_t cBin = 0; cBin < cLatHist->GetNbinsX(); cBin++)
+            {
+                if(cBin % fTDCBins == 0) cLatHist->GetXaxis()->SetBinLabel(cBin, std::to_string(cBin/fTDCBins).c_str());
+            }
+
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -38,7 +43,7 @@ void Commissioning::Initialize()
 
             if ( cObj ) delete cObj;
 
-            TH1F* cStubHist = new TH1F ( cName, Form ( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), 256, -0.5, 255.5 );
+            TH1F* cStubHist = new TH1F ( cName, Form ( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), pLatencyRange + 1, pStartLatency - 0.5, pStartLatency + pLatencyRange + .5 );
             cStubHist->SetMarkerStyle ( 2 );
             bookHistogram ( cFe, "module_stub_latency", cStubHist );
 
@@ -333,7 +338,7 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         //if (pStrasbourgGlib) cTDCVal -= 4;
 
         //std::cout << "Latency " << +pParameter << " TDC Value (normalized) " << +cTDCVal << " NHits: " << cHitCounter << std::endl;
-        cTmpHist->Fill ((12*pParameter) + cTDCVal, cHitCounter);
+        cTmpHist->Fill ( (fTDCBins * pParameter) + cTDCVal, cHitCounter);
         cHitSum += cHitCounter;
     }
 
@@ -398,13 +403,13 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
             //TGaxis* axis2;
             //if (axis2 == nullptr)
             //{
-                //axis2 = new TGaxis (cCanvas.second->GetUxmin(),
-                                    //cCanvas.second->GetUymax(),
-                                    //cCanvas.second->GetUxmax(),
-                                    //cCanvas.second->GetUymax(), cTmpHist->GetMinimumBin(), cTmpHist->GetMaximumBin(), cTmpHist->GetNbinsX() / 8, "+"); //or better line below
-                //// canv->GetUymax(),0.,10.,510,"-");
+            //axis2 = new TGaxis (cCanvas.second->GetUxmin(),
+            //cCanvas.second->GetUymax(),
+            //cCanvas.second->GetUxmax(),
+            //cCanvas.second->GetUymax(), cTmpHist->GetMinimumBin(), cTmpHist->GetMaximumBin(), cTmpHist->GetNbinsX() / 8, "+"); //or better line below
+            //// canv->GetUymax(),0.,10.,510,"-");
 
-                //axis2->Draw ("same");
+            //axis2->Draw ("same");
             //}
         }
         else if ( pHistName == "module_stub_latency" )

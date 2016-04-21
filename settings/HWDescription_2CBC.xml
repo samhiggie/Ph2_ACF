@@ -27,7 +27,7 @@
     <Register name="pc_commands.ACQ_MODE">1</Register>
     <!-- Trigger -->
     <!-- set to 1 to use external triggers -->
-    <Register name="pc_commands.TRIGGER_SEL">1</Register>
+    <Register name="pc_commands.TRIGGER_SEL">0</Register>
     <Register name="pc_commands.INT_TRIGGER_FREQ">10</Register>
     <!-- Clock -->
     <!-- set to 1 for external clocking -->
