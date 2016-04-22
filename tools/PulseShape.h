@@ -94,7 +94,7 @@ private:
     /*!
     * \brief enable the test group
     */
-    void enableTestGroup();
+    void toggleTestGroup(bool pEnable);
 
     /*!
     * \brief fit the graph with the fitting function
@@ -136,7 +136,7 @@ private:
     uint8_t fVplus;/*!< Postamp  bias voltage */
     uint8_t fTestGroup; /*!< Number of the test group */
     uint8_t fTPAmplitude; /*!< Test pulse Amplitude */
-    uint32_t fDelayAfterPulse ; /*!< Delay after test pulse */
+    uint32_t fDelayAfterPulse ; // Delay after test pulse 
     uint32_t fChannel; /*!< channel number */
     uint8_t fOffset; /*!< Offset value for the channel */
     uint32_t fStepSize; /*!< Step size */

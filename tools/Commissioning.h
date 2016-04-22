@@ -23,6 +23,7 @@
 #include "TH1F.h"
 #include "TF1.h"
 #include "TH2F.h"
+#include "TGaxis.h"
 
 using namespace Ph2_System;
 using namespace Ph2_HwInterface;
@@ -41,7 +42,7 @@ class Commissioning : public Tool
 {
 
   public:
-	void Initialize();
+	void Initialize(uint32_t pStartLatency, uint32_t pLatencyRange);
 	void ScanThreshold( bool pScanPedestal );
 	std::map<Module*, uint8_t> ScanLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	std::map<Module*, uint8_t> ScanStubLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
@@ -51,6 +52,7 @@ class Commissioning : public Tool
   private:
 	void initializeHists();
 	void measureScurve( std::string pHistName, uint32_t pNEvents );
+	int countHitsLat( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount, bool pStrasbourgGlib = false );
 	int countHits( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	int countStubs( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	void updateHists( std::string pHistName, bool pFinal );
@@ -62,6 +64,8 @@ class Commissioning : public Tool
 	uint32_t fInitialThreshold;
 	uint32_t fHoleMode;
 	uint32_t fNCbc;
+
+    const uint32_t fTDCBins = 12;
 };
 
 #endif

@@ -133,8 +133,6 @@ public:
      */
     void getBoardInfo( const BeBoard* pBoard );
 
-	BoardType getBoardType(const BeBoard* pBoard ) ;
-
     /*!
      * \brief Configure the board with its Config File
      * \param pBoard

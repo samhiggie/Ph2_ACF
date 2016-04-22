@@ -90,47 +90,49 @@ int main( int argc, char* argv[] )
 	if ( batchMode ) gROOT->SetBatch( true );
 	else TQObject::Connect( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
-	if ( !cNoise )
-	{
-		Commissioning cCommissioning;
-		cCommissioning.InitializeHw( cHWFile );
-		cCommissioning.InitializeSettings( cHWFile );
-		cCommissioning.Initialize( );
-		cCommissioning.CreateResultDirectory( cDirectory );
+
 		std::string cResultfile;
 		if ( cLatency || cStubLatency ) cResultfile = "Latency";
 		else if ( cThreshold ) cResultfile = "Threshold";
 		else cResultfile = "Commissioning";
-		cCommissioning.InitResultFile( cResultfile );
-		cCommissioning.StartHttpServer();
 
-		if ( !gui ) cCommissioning.ConfigureHw();
+    Tool cTool;
+    cTool.InitializeHw ( cHWFile );
+    cTool.InitializeSettings ( cHWFile );
+    cTool.CreateResultDirectory ( cDirectory );
+    cTool.InitResultFile ( cResultfile );
+    cTool.StartHttpServer();
+    cTool.ConfigureHw();
+
+	if ( !cNoise )
+	{
+		Commissioning cCommissioning;
+        cCommissioning.Inherit(&cTool);
+		cCommissioning.Initialize(cStartLatency, cLatencyRange );
 
 		// Here comes our Part:
 		if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
 		if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
 		if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
-		cCommissioning.SaveResults();
+		//cCommissioning.SaveResults();
 	}
 
 	if ( cNoise )
 	{
 		PedeNoise cPedeNoise;
-		cPedeNoise.InitializeHw( cHWFile );
-		cPedeNoise.InitializeSettings( cHWFile );
-		cPedeNoise.CreateResultDirectory( cDirectory );
-		std::string cResultfile = "NoiseScan";
-		cPedeNoise.InitResultFile( cResultfile );
-		cPedeNoise.StartHttpServer();
-		cPedeNoise.ConfigureHw();
+        cPedeNoise.Inherit(&cTool);
 		cPedeNoise.Initialise(); // canvases etc. for fast calibration
 		cPedeNoise.measureNoise();
+		cPedeNoise.Validate();
 		cPedeNoise.SaveResults( );
+        cPedeNoise.dumpConfigFiles();
 	}
 
+    cTool.SaveResults();
+    cTool.CloseResultFile();
+    cTool.Destroy();
 
 	if ( !batchMode ) cApp.Run();
-
 	return 0;
 
 }

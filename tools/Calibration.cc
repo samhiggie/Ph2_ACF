@@ -211,6 +211,8 @@ void Calibration::bitwiseVplus ( int pTGroup )
         {
             // if the occupancy is larger than 0.5 I need to flip the bit back to 0, else leave it
             float cOccupancy = findCbcOccupancy ( cCbc.first, pTGroup, fEventsPerPoint );
+            
+             //std::cout << "VPlus " << +cCbc.second << " = 0b" << std::bitset<8>( cCbc.second ) << " on CBC " << +cCbc.first->getCbcId() << " Occupancy : " << cOccupancy << std::endl;
 
             if ( fHoleMode && cOccupancy > 0.56 )
             {
@@ -223,7 +225,6 @@ void Calibration::bitwiseVplus ( int pTGroup )
                 fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", cCbc.second );
             }
 
-            // std::cout << "VPlus " << +cCbc.second << " = 0b" << std::bitset<8>( cCbc.second ) << " on CBC " << +cCbc.first->getCbcId() << " Occupancy : " << cOccupancy << std::endl;
 
             // clear the occupancy histogram for the next bit
             clearOccupancyHists ( cCbc.first );
@@ -562,7 +563,7 @@ void Calibration::writeGraphs()
 
     // Save hist maps for CBCs
     //
-    Tool::SaveResults();
+    //Tool::SaveResults();
 
     // save canvases too
     fVplusCanvas->Write ( fVplusCanvas->GetName(), TObject::kOverwrite );
@@ -571,27 +572,3 @@ void Calibration::writeGraphs()
 
 }
 
-void Calibration::dumpConfigFiles()
-{
-    // visitor to call dumpRegFile on each Cbc
-    struct RegMapDumper : public HwDescriptionVisitor
-    {
-        std::string fDirectoryName;
-        RegMapDumper ( std::string pDirectoryName ) : fDirectoryName ( pDirectoryName ) {};
-        void visit ( Cbc& pCbc )
-        {
-            if ( !fDirectoryName.empty() )
-            {
-                TString cFilename = fDirectoryName + Form ( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
-                // cFilename += Form( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
-                pCbc.saveRegMap ( cFilename.Data() );
-            }
-            else std::cout << "Error: no results Directory initialized! "  << std::endl;
-        }
-    };
-
-    RegMapDumper cDumper ( fDirectoryName );
-    accept ( cDumper );
-
-    std::cout << BOLDBLUE << "Configfiles for all Cbcs written to " << fDirectoryName << RESET << std::endl;
-}

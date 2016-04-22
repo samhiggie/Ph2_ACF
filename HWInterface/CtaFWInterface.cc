@@ -267,7 +267,7 @@ namespace Ph2_HwInterface {
         fData = new Data();
 
         // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNpackets, true );
+        fData->Set ( pBoard, cData , fNpackets, false );
 
         if ( fSaveToFile )
         {
@@ -349,7 +349,7 @@ namespace Ph2_HwInterface {
         fData = new Data();
 
         // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNpackets, true );
+        fData->Set ( pBoard, cData , fNpackets, false );
 
         if ( fSaveToFile )
         {
@@ -571,7 +571,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool CtaFWInterface::WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback)
+    bool CtaFWInterface::WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback)
     {
         bool cSuccess = false;
         std::vector<uint32_t> cWriteVec = pVecReq;
@@ -635,7 +635,7 @@ namespace Ph2_HwInterface {
                 if (cWriteAgain.size() < 100)
                 {
                     std::cout << "There were readback errors, retrying!" << std::endl;
-                    this->WriteCbcBlockReg (pFeId, cWriteAgain, true);
+                    this->WriteCbcBlockReg ( cWriteAgain, true);
 
                 }
                 else std::cout << "There were too many errors (>100 Registers). Something is wrong - aborting!" << std::endl;
@@ -647,7 +647,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool CtaFWInterface::BCWriteCbcBlockReg (uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback)
+    bool CtaFWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReq, bool pReadback)
     {
         //use the method above for that!
         bool cSuccess = false;
@@ -665,7 +665,7 @@ namespace Ph2_HwInterface {
         return cSuccess;
     }
 
-    void CtaFWInterface::ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
+    void CtaFWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReq )
     {
         try
         {

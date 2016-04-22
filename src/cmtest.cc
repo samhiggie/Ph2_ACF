@@ -82,6 +82,8 @@ int main( int argc, char* argv[] )
 	cTester.TakeData();
 	cTester.FinishRun();
 	cTester.SaveResults();
+    cTester.CloseResultFile();
+    cTester.Destroy();
 
 	if ( !batchMode ) cApp.Run();
 

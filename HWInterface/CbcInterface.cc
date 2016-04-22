@@ -80,7 +80,7 @@ namespace Ph2_HwInterface {
         }
 
         // write the registers, the answer will be in the same cVec
-        bool cSuccess = fBoardFW->WriteCbcBlockReg (pCbc->getFeId(), cVec, pVerifLoop);
+        bool cSuccess = fBoardFW->WriteCbcBlockReg ( cVec, pVerifLoop);
 
 #ifdef COUNT_FLAG
         fTransactionCount++;
@@ -107,7 +107,7 @@ namespace Ph2_HwInterface {
         // encode the reg specific to the FW, pVerifLoop decides if it should be read back, true means to write it
         fBoardFW->EncodeReg ( cRegItem, pCbc->getCbcId(), cVec, pVerifLoop, true );
         // write the register, the answer is in the same cVec
-        bool cSuccess = fBoardFW->WriteCbcBlockReg ( pCbc->getFeId(), cVec, pVerifLoop );
+        bool cSuccess = fBoardFW->WriteCbcBlockReg (  cVec, pVerifLoop );
 
         //update the HWDescription object
         if (cSuccess)
@@ -143,7 +143,7 @@ namespace Ph2_HwInterface {
         }
 
         // write the registerss, the answer will be in the same cVec
-        bool cSuccess = fBoardFW->WriteCbcBlockReg (pCbc->getFeId(), cVec, pVerifLoop);
+        bool cSuccess = fBoardFW->WriteCbcBlockReg ( cVec, pVerifLoop);
 
 #ifdef COUNT_FLAG
         fTransactionCount++;
@@ -173,7 +173,7 @@ namespace Ph2_HwInterface {
         std::vector<uint32_t> cVecReq;
 
         fBoardFW->EncodeReg ( cRegItem, pCbc->getCbcId(), cVecReq, true, false );
-        fBoardFW->ReadCbcBlockReg ( pCbc->getFeId(), cVecReq );
+        fBoardFW->ReadCbcBlockReg (  cVecReq );
 
         //bools to find the values of failed and read
         bool cFailed=false;
@@ -208,7 +208,7 @@ namespace Ph2_HwInterface {
         }
 
         // write the registers, the answer will be in the same cVec
-        fBoardFW->ReadCbcBlockReg (pCbc->getFeId(), cVec);
+        fBoardFW->ReadCbcBlockReg ( cVec);
 
 #ifdef COUNT_FLAG
         fTransactionCount++;
@@ -264,7 +264,7 @@ namespace Ph2_HwInterface {
     //cVecRegNode.push_back ( it.first );
     //}
 
-    //fBoardFW->ReadCbcBlockReg ( cCbc->getFeId(), cVecReq );
+    //fBoardFW->ReadCbcBlockReg (  cVecReq );
 
     //for ( uint32_t j = 0; j < cVecReq.size(); j++ )
     //{
@@ -292,7 +292,9 @@ namespace Ph2_HwInterface {
         // the 1st boolean could be true if I acually wanted to read back from each CBC but this somehow does not make sense!
         fBoardFW->BCEncodeReg ( cRegItem, pModule->fCbcVector.size(), cVec, false, true );
 
-        bool cSuccess = fBoardFW->BCWriteCbcBlockReg ( pModule->getFeId(), cVec, false );
+        //true is the readback bit - the IC FW just checks that the transaction was successful and the 
+        //Strasbourg FW does nothing
+        bool cSuccess = fBoardFW->BCWriteCbcBlockReg (  cVec, true );
 
 #ifdef COUNT_FLAG
         fRegisterCount++;
@@ -327,7 +329,7 @@ namespace Ph2_HwInterface {
         }
 
         // write the registerss, the answer will be in the same cVec
-        bool cSuccess = fBoardFW->BCWriteCbcBlockReg (pModule->getFeId(), cVec, false);
+        bool cSuccess = fBoardFW->BCWriteCbcBlockReg ( cVec, true);
 
 #ifdef COUNT_FLAG
         fTransactionCount++;

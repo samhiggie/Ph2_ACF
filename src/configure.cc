@@ -1,17 +1,6 @@
 #include <cstring>
-// #include "../Utils/Utilities.h"
-// #include "../HWDescription/Cbc.h"
-// #include "../HWDescription/Module.h"
-// #include "../HWDescription/BeBoard.h"
-// #include "../HWInterface/CbcInterface.h"
-// #include "../HWInterface/BeBoardInterface.h"
-// #include "../HWDescription/Definition.h"
-//#include "../tools/Calibration.h"
 #include "../Utils/Timer.h"
-//#include <TApplication.h>
-// #include <inttypes.h>
 #include "../Utils/argvparser.h"
-// #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 #include "../Utils/CommonVisitors.h"
 
@@ -93,4 +82,6 @@ int main( int argc, char* argv[] )
 		CbcRegReader cReader( cSystemController.fCbcInterface, "VCth" );
 		cSystemController.accept( cReader );
 	}
+
+    cSystemController.Destroy();
 }

@@ -1,5 +1,7 @@
 #include "../System/SystemController.h"
+#include "../Utils/CommonVisitors.h"
 #include "../Utils/argvparser.h"
+#include "../Utils/Timer.h"
 
 
 using namespace Ph2_System;
@@ -41,6 +43,23 @@ int main( int argc, char** argv )
 	cSystemController.InitializeSettings( cHWFile );
 	if ( cConfigure ) cSystemController.ConfigureHw();
 
+    //Timer t;
+    //t.start();
+
+    //for(uint8_t cVcth = 0x00; cVcth < 0xFF; cVcth++)
+    //{
+        //std::vector<std::pair<std::string, uint8_t>> cRegVec;
+        //cRegVec.push_back({"VCth", cVcth});
+        //cRegVec.push_back({"TriggerLatency", 255 - cVcth});
+        //std::cout << "Writing Vcth " << +cVcth << " Trigger Lat:" << 255-cVcth << std::endl;
+         //cSystemController.fCbcInterface->WriteBroadcastMultReg(cSystemController.fBoardVector.at(0)->fModuleVector.at(0), cRegVec);
+         //CbcRegReader cReader(cSystemController.fCbcInterface, "TriggerLatency");
+         //cSystemController.accept(cReader);
+    //}
+    //t.stop();
+    //t.show("Time to loop VCth from 0 to ff with broadcast:");
+
 	std::cout << "*** End of the System test ***" << std::endl;
+    cSystemController.Destroy();
 	return 0;
 }

@@ -28,10 +28,10 @@
 #include "../HWDescription/BeBoard.h"
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+#include <iterator>
 
 using namespace Ph2_HwDescription;
-
-enum class BoardType {GLIB, CTA};
 
 /*!
  * \namespace Ph2_HwInterface
@@ -79,7 +79,7 @@ namespace Ph2_HwInterface {
         /*!
         * \brief Get the board type
         */
-        virtual std::string readBoardType();
+        virtual std::string getBoardType();
         /*!
         * \brief Get the board infos
         */
@@ -143,20 +143,20 @@ namespace Ph2_HwInterface {
         * \param pFeId : FrontEnd to work with
         * \param pVecReq : Block of words to write
         */
-        virtual bool WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
+        virtual bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
         //r/w the Cbc registers
         /*!
         * \brief Write register blocks of a Cbc
         * \param pFeId : FrontEnd to work with
         * \param pVecReq : Block of words to write
         */
-        virtual bool BCWriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
+        virtual bool BCWriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) = 0;
         /*!
         * \brief Read register blocks of a Cbc
         * \param pFeId : FrontEnd to work with
         * \param pVecReq : Vector to stack the read words
         */
-        virtual void ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq ) = 0;
+        virtual void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReq ) = 0;
         /*!
         * \brief Configure the board with its Config File
         * \param pBoard
@@ -185,7 +185,7 @@ namespace Ph2_HwInterface {
         //[>! \brief Is a parallel acquisition running ? <]
         //bool isRunningThread() const
         //{
-            //return runningAcquisition;
+        //return runningAcquisition;
         //}
         /*!
          * \brief Start a DAQ
@@ -226,14 +226,29 @@ namespace Ph2_HwInterface {
 
         virtual std::vector<uint32_t> ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-	virtual BoardType getBoardType() const=0;
-
       protected:
 
         //bool runningAcquisition;
         uint32_t fBlockSize, fNPackets, numAcq, nbMaxAcq;
         //boost::thread thrAcq;
 
+        //template to return a vector of all mismatched elements in two vectors using std::mismatch for readback value comparison
+
+        template<typename T, class BinaryPredicate>
+        std::vector<typename std::iterator_traits<T>::value_type>
+        get_mismatches (T pWriteVector_begin, T pWriteVector_end , T pReadVector_begin, BinaryPredicate p)
+        {
+            std::vector<typename std::iterator_traits<T>::value_type> pMismatchedWriteVector;
+
+            for (std::pair<T, T> cPair = std::make_pair (pWriteVector_begin, pReadVector_begin);
+                    (cPair = std::mismatch (cPair.first, pWriteVector_end, cPair.second , p) ).first != pWriteVector_end;
+                    ++cPair.first, ++cPair.second
+                )
+            {
+                pMismatchedWriteVector.push_back (*cPair.first);
+            }
+            return pMismatchedWriteVector;
+        }
     };
 }
 

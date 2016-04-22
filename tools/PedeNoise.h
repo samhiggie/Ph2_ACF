@@ -40,34 +40,40 @@ class PedeNoise : public SCurve
 {
 
   public:
-	PedeNoise() {
-		SCurve::MakeTestGroups( false );
-	}
+    PedeNoise()
+    {
+        SCurve::MakeTestGroups ( false );
+    }
 
-	~PedeNoise() {
-		if ( fResultFile ) {
-			fResultFile->Write();
-			fResultFile->Close();
-		}
-	}
+    ~PedeNoise()
+    {
+        //if ( fResultFile )
+        //{
+        //fResultFile->Write();
+        //fResultFile->Close();
+        //}
+    }
 
-	void Initialise();
-	void measureNoise();
-	void Validate();
-	void SaveResults();
+    void Initialise();
+    void measureNoise();
+    void Validate();
+    void SaveResults();
 
   private:
-	// Canvases for Pede/Noise Plots
-	TCanvas* fNoiseCanvas;
-	TCanvas* fPedestalCanvas;
-	TCanvas* fFeSummaryCanvas;
+    // Canvases for Pede/Noise Plots
+    TCanvas* fNoiseCanvas;
+    TCanvas* fPedestalCanvas;
+    TCanvas* fFeSummaryCanvas;
 
   protected:
-	void saveInitialOffsets();
-	void setOffset( uint8_t pOffset, int  pTGrpId );
-	void enableTestGroupforNoise( int  pTGrpId );
-	void processSCurvesNoise( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
-	void writeGraphs();
+    void saveInitialOffsets();
+    void setInitialOffsets();
+    void setOffset ( uint8_t pOffset, int  pTGrpId );
+    void enableTestGroupforNoise ( int  pTGrpId );
+    void processSCurvesNoise ( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
+    void setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma);
+    void fillOccupancyHist (BeBoard* pBoard, const std::vector<Event*>& pEvents);
+    void writeGraphs();
 
 };
 

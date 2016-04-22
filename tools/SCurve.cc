@@ -45,11 +45,11 @@ void SCurve::setOffset ( uint8_t pOffset, int  pGroup )
     {
         for ( auto cFe : cBoard->fModuleVector )
         {
-            uint32_t cFeId = cFe->getFeId();
+            //uint32_t cFeId = cFe->getFeId();
 
-            for ( auto cCbc : cFe->fCbcVector )
-            {
-                uint32_t cCbcId = cCbc->getCbcId();
+            //for ( auto cCbc : cFe->fCbcVector )
+            //{
+                //uint32_t cCbcId = cCbc->getCbcId();
 
                 RegisterVector cRegVec;   // vector of pairs for the write operation
 
@@ -60,8 +60,8 @@ void SCurve::setOffset ( uint8_t pOffset, int  pGroup )
                     cRegVec.push_back ( {cRegName.Data(), pOffset} );
                 }
 
-                fCbcInterface->WriteCbcMultReg ( cCbc, cRegVec );
-            }
+                fCbcInterface->WriteBroadcastMultReg ( cFe, cRegVec );
+            //}
         }
     }
 }
@@ -105,8 +105,8 @@ void SCurve::measureSCurves ( int  pTGrpId )
         }
 
 
-        CbcRegWriter cWriter ( fCbcInterface, "VCth", cValue );
-        accept ( cWriter );
+        //CbcRegWriter cWriter ( fCbcInterface, "VCth", cValue );
+        //accept ( cWriter );
 
 
         uint32_t cN = 1;
@@ -118,8 +118,10 @@ void SCurve::measureSCurves ( int  pTGrpId )
 
         for ( BeBoard* pBoard : fBoardVector )
         {
-            Counter cCounter;
-            pBoard->accept ( cCounter );
+            for(Module* cFe : pBoard->fModuleVector)
+                fCbcInterface->WriteBroadcast(cFe, "VCth", cValue);
+            //Counter cCounter;
+            //pBoard->accept ( cCounter );
 
             fBeBoardInterface->ReadNEvents ( pBoard, fEventsPerPoint );
 
@@ -216,8 +218,8 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
 
         for ( BeBoard* pBoard : fBoardVector )
         {
-            Counter cCounter;
-            pBoard->accept ( cCounter );
+            //Counter cCounter;
+            //pBoard->accept ( cCounter );
 
             fBeBoardInterface->ReadNEvents ( pBoard, fEventsPerPoint );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
@@ -338,28 +340,26 @@ void SCurve::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup )
     // this->accept( cReader );
 }
 
-
-void SCurve::dumpConfigFiles()
+void SCurve::setFWTestPulse()
 {
-    // visitor to call dumpRegFile on each Cbc
-    struct RegMapDumper : public HwDescriptionVisitor
+    for (auto& cBoard : fBoardVector)
     {
-        std::string fDirectoryName;
-        RegMapDumper ( std::string pDirectoryName ) : fDirectoryName ( pDirectoryName ) {};
-        void visit ( Cbc& pCbc )
+        std::vector<std::pair<std::string, uint32_t> > cRegVec;
+        std::string cBoardType = cBoard->getBoardType();
+
+        if (cBoardType == "GLIB")
         {
-            if ( !fDirectoryName.empty() )
-            {
-                TString cFilename = fDirectoryName + Form ( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
-                // cFilename += Form( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
-                pCbc.saveRegMap ( cFilename.Data() );
-            }
-            else std::cout << "Error: no results Directory initialized! "  << std::endl;
+            cRegVec.push_back ({"COMMISSIONNING_MODE_RQ", 1 });
+            cRegVec.push_back ({"COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID", 1 });
         }
-    };
+        else if (cBoardType == "ICGLIB")
+        {
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.enable", 1 });
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable", 1 });
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle_ctrl", 0x1 });
+        }
 
-    RegMapDumper cDumper ( fDirectoryName );
-    accept ( cDumper );
-
-    std::cout << BOLDBLUE << "Configfiles for all Cbcs written to " << fDirectoryName << RESET << std::endl;
+        fBeBoardInterface->WriteBoardMultReg(cBoard,cRegVec);
+    }
 }
+

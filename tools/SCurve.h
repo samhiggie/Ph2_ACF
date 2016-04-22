@@ -82,9 +82,10 @@ class SCurve : public Tool
 
 	// general stuff
 	void setSystemTestPulse( uint8_t pTPAmplitude, uint8_t pTestGroup );
+    //enable commissioning loops and Test Pulse
+    void setFWTestPulse();
 
 	// little helpers
-	void dumpConfigFiles();
 	uint8_t reverse( uint8_t n ) {
 		// Reverse the top and bottom nibble then swap them.
 		return ( fLookup[n & 0b1111] << 4 ) | fLookup[n >> 4];

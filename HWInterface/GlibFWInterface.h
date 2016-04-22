@@ -51,6 +51,7 @@ namespace Ph2_HwInterface {
          * \brief SRAM selection for DAQ
          */
         void SelectDaqSRAM();
+        static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
 
       public:
         /*!
@@ -58,24 +59,16 @@ namespace Ph2_HwInterface {
          * \param puHalConfigFileName : path of the uHal Config File
          * \param pBoardId
          */
-        GlibFWInterface ( const char* puHalConfigFileName,
-                          uint32_t pBoardId );
-        GlibFWInterface ( const char* puHalConfigFileName,
-                          uint32_t pBoardId,
-                          FileHandler* pFileHandler );
+        GlibFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
+        GlibFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
         /*!
         * \brief Constructor of the GlibFWInterface class
         * \param pId : ID string
         * \param pUri: URI string
         * \param pAddressTable: address tabel string
         */
-        GlibFWInterface ( const char* pId,
-                          const char* pUri,
-                          const char* pAddressTable );
-        GlibFWInterface ( const char* pId,
-                          const char* pUri,
-                          const char* pAddressTable,
-                          FileHandler* pFileHandler );
+        GlibFWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
+        GlibFWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
 
         /*!
          * \brief Destructor of the GlibFWInterface class
@@ -103,7 +96,6 @@ namespace Ph2_HwInterface {
          */
         void getBoardInfo();
 
-	BoardType getBoardType() const {return BoardType::GLIB;}
         /*!
          * \brief Configure the board with its Config File
          * \param pBoard
@@ -172,6 +164,7 @@ namespace Ph2_HwInterface {
          * \return boolean confirming the acknowledgement
          */
         bool I2cCmdAckWait ( uint32_t pAckVal, uint8_t pNcount = 1 );
+        void EnableI2c ( bool pEnable );
         /*!
          * \brief Send request to r/w blocks via I2C
          * \param pVecReq : Block of words to send
@@ -233,7 +226,7 @@ namespace Ph2_HwInterface {
                          uint8_t pCbcId,
                          std::vector<uint32_t>& pVecReq,
                          bool pRead = false,
-                         bool pWrite = false ) override; /*!< Encode a/several word(s) readable for a Cbc*/
+                         bool pWrite = false ) override; /* Encode a/several word(s) readable for a Cbc */
         /*!
         * \brief Decode a word from a read of a register of the Cbc
         * \param pRegItem : RegItem containing infos (name, adress, value...) about the register to read
@@ -251,18 +244,18 @@ namespace Ph2_HwInterface {
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool WriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) override;
+        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) override;
         /*!
          * \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool BCWriteCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq, bool pReadback ) override;
+        bool BCWriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) override;
         /*! \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        void ReadCbcBlockReg ( uint8_t pFeId, std::vector<uint32_t>& pVecReq );
+        void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReq );
 
         void CbcHardReset();
 
