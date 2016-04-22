@@ -57,7 +57,6 @@ class Commissioning : public Tool
 	int countStubs( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	void updateHists( std::string pHistName, bool pFinal );
 	void parseSettings();
-	void dumpConfigFiles();
 
 	//  Members
 	uint32_t fNevents;
@@ -65,7 +64,7 @@ class Commissioning : public Tool
 	uint32_t fHoleMode;
 	uint32_t fNCbc;
 
-    const uint32_t fTDCBins = 12;
+    const uint32_t fTDCBins = 8;
 };
 
 #endif

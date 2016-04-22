@@ -314,11 +314,6 @@ void Calibration::measureOccupancy ( uint32_t pNEvents, int pTGroup )
         uint32_t cN = 0;
         uint32_t cNthAcq = 0;
 
-        //fBeBoardInterface->Start ( pBoard );
-
-        //while ( cN < pNEvents )
-        //{
-        //fBeBoardInterface->ReadData ( pBoard, false );
         fBeBoardInterface->ReadNEvents (pBoard, pNEvents);
         std::vector<Event*> events = fBeBoardInterface->GetEvents ( pBoard );
 
@@ -336,9 +331,6 @@ void Calibration::measureOccupancy ( uint32_t pNEvents, int pTGroup )
         }
 
         cNthAcq++;
-        //}
-
-        //fBeBoardInterface->Stop ( pBoard );
     }
 }
 

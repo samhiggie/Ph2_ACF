@@ -24,23 +24,25 @@ void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange + 1) * fTDCBins, pStartLatency ,  pStartLatency + (pLatencyRange + 1)  * fTDCBins );
-            std::cout << "NBins " << (pLatencyRange+1) * fTDCBins << " min " << pStartLatency << " max " << pStartLatency + (pLatencyRange+1) * fTDCBins << std::endl;
+            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency ,  pStartLatency + (pLatencyRange )  * fTDCBins );
+            //std::cout << "NBins " << (pLatencyRange ) * fTDCBins << " min " << pStartLatency << " max " << pStartLatency + (pLatencyRange) * fTDCBins << std::endl;
             //Modify the axis ticks
             //pLatencyRange main divisions and 8 sub divisions per main division
-            cLatHist->SetNdivisions (pLatencyRange + 100 * fTDCBins, "X");
+            //cLatHist->SetNdivisions (pLatencyRange + 100 * fTDCBins * pLatencyRange, "X");
             //and the labels
             uint32_t pLabel = pStartLatency;
-            for(uint32_t cBin = 0; cBin < cLatHist->GetNbinsX(); cBin++)
+
+            for (uint32_t cBin = 0; cBin < cLatHist->GetNbinsX(); cBin++)
             {
-                    std::cout << "Bin " << cBin << " Show " << pLabel << std::endl;
-                if((cBin-1) % (fTDCBins+1) == 0)
+                std::cout << "Bin " << cBin << " Show " << pLabel << std::endl;
+
+                if ( cBin % fTDCBins == 1)
                 {
-                    std::cout << "Bin " << cBin << " Show " << pLabel << std::endl;
-                    cLatHist->GetXaxis()->SetBinLabel(cBin, std::to_string(pLabel).c_str());
+                    cLatHist->GetXaxis()->SetBinLabel (cBin, std::to_string (pLabel).c_str() );
                     pLabel++;
                 }
             }
+            cLatHist->GetXaxis()->SetTitle("Trigger Latency [cc]");
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -50,7 +52,7 @@ void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
 
             if ( cObj ) delete cObj;
 
-            TH1F* cStubHist = new TH1F ( cName, Form ( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), pLatencyRange + 1, pStartLatency - 0.5, pStartLatency + pLatencyRange + .5 );
+            TH1F* cStubHist = new TH1F ( cName, Form ( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), pLatencyRange, pStartLatency, pStartLatency + pLatencyRange);
             cStubHist->SetMarkerStyle ( 2 );
             bookHistogram ( cFe, "module_stub_latency", cStubHist );
 
@@ -117,6 +119,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
     // Now the actual scan
     std::cout << "Scanning Latency ... " << std::endl;
     uint32_t cIterationCount = 0;
+
     for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
     {
         //  Set a Latency Value on all FEs
@@ -152,21 +155,22 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
 
 
     // analyze the Histograms
-    std::map<Module*, uint8_t> cLatencyMap;
+    //std::map<Module*, uint8_t> cLatencyMap;
 
-    std::cout << "Identified the Latency with the maximum number of Hits at: " << std::endl;
+    //std::cout << "Identified the Latency with the maximum number of Hits at: " << std::endl;
 
-    for ( auto cFe : fModuleHistMap )
-    {
-        TH1F* cTmpHist = ( TH1F* ) getHist ( static_cast<Ph2_HwDescription::Module*> ( cFe.first ), "module_latency" );
-        //the true latency now is the floor(iBin/8)
-        uint8_t cLatency =  static_cast<uint8_t> ( floor ( (cTmpHist->GetMaximumBin() - 1 ) / 8) );
-        cLatencyMap[cFe.first] = cLatency;
-        cWriter.setRegister ( "TriggerLatency", cLatency );
-        this->accept ( cWriter );
+    //for ( auto cFe : fModuleHistMap )
+    //{
+        //TH1F* cTmpHist = ( TH1F* ) getHist ( static_cast<Ph2_HwDescription::Module*> ( cFe.first ), "module_latency" );
+        ////the true latency now is the floor(iBin/8)
+        //uint8_t cLatency =  static_cast<uint8_t> ( floor ( (cTmpHist->GetMaximumBin() - 1 ) / 8) );
+        //cLatencyMap[cFe.first] = cLatency;
+        //cWriter.setRegister ( "TriggerLatency", cLatency );
+        //this->accept ( cWriter );
 
-        std::cout << "	FE " << +cFe.first->getModuleId()  << ": " << +cLatency << " clock cycles!" << std::endl;
-    }
+        //std::cout << "	FE " << +cFe.first->getModuleId()  << ": " << +cLatency << " clock cycles!" << std::endl;
+    //}
+        updateHists ( "module_latency", true );
 
     return cLatencyMap;
 }
@@ -330,6 +334,8 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         int cHitCounter = 0;
         //get TDC value for this particular event
         uint8_t cTDCVal = cEvent->GetTDC();
+        if(cTDCVal != 0) cTDCVal -= 5;
+        if (cTDCVal > 8 ) std::cout << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << std::endl; 
 
         for ( auto cCbc : pFe->fCbcVector )
         {
@@ -345,7 +351,7 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 4 from the TDC value to have it normalized between 1 and 8
         //if (pStrasbourgGlib) cTDCVal -= 4;
 
-        uint32_t iBin = pParameter + pIterationCount * fTDCBins + cTDCVal;
+        uint32_t iBin = pParameter + pIterationCount * (fTDCBins-1) + cTDCVal;
         cTmpHist->Fill ( iBin , cHitCounter);
         //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
 
@@ -402,94 +408,35 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
 {
     for ( auto& cCanvas : fCanvasMap )
     {
-        cCanvas.second->cd();
 
         // maybe need to declare temporary pointers outside the if condition?
         if ( pHistName == "module_latency" )
         {
+            cCanvas.second->cd();
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            //cTmpHist->DrawCopy ( "same" );
-            cTmpHist->Draw( "same" );
+            cTmpHist->DrawCopy ( );
+            //cCanvas.second->Modified();
+            cCanvas.second->Update();
+            //cTmpHist->Draw( "same" );
 
         }
         else if ( pHistName == "module_stub_latency" )
         {
+            cCanvas.second->cd();
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->Draw( "same" );
+            cTmpHist->DrawCopy ( );
+            //cCanvas.second->Modified();
+            cCanvas.second->Update();
         }
         else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
         {
+            cCanvas.second->cd();
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->Draw( "P same" );
-
-            if ( pFinal )
-            {
-                // cTmpHist->Scale( double( 1 / ( NCHANNELS * fNCbc * fNevents ) ) );
-                cTmpHist->Draw( "P same" );
-                // get the fit and draw that too
-                // TF1* cFit = ( TF1* )getHist( cCanvas.first, "module_fit" );
-
-                // // TODO: figure something smart out to restrict the range!
-
-                // // Estimate parameters for the Fit
-                // double cFirstNon0( 0 );
-                // double cFirst1( 0 );
-
-                // // Not Hole Mode
-                // if ( !fHoleMode )
-                // {
-                //  for ( Int_t cBin = 1; cBin <= cTmpHist->GetNbinsX(); cBin++ )
-                //  {
-                //      double cContent = cTmpHist->GetBinContent( cBin );
-                //      if ( !cFirstNon0 )
-                //      {
-                //          if ( cContent ) cFirstNon0 = cTmpHist->GetBinCenter( cBin );
-                //      }
-                //      else if ( cContent == 1 )
-                //      {
-                //          cFirst1 = cTmpHist->GetBinCenter( cBin );
-                //          break;
-                //      }
-                //  }
-                // }
-                // // Hole mode
-                // else
-                // {
-                //  for ( Int_t cBin = cTmpHist->GetNbinsX(); cBin >= 1; cBin-- )
-                //  {
-                //      double cContent = cTmpHist->GetBinContent( cBin );
-                //      if ( !cFirstNon0 )
-                //      {
-                //          if ( cContent ) cFirstNon0 = cTmpHist->GetBinCenter( cBin );
-                //      }
-                //      else if ( cContent == 1 )
-                //      {
-                //          cFirst1 = cTmpHist->GetBinCenter( cBin );
-                //          break;
-                //      }
-                //  }
-                // }
-
-                // // Get rough midpoint & width
-                // double cMid = ( cFirst1 + cFirstNon0 ) * 0.5;
-                // double cWidth = ( cFirst1 - cFirstNon0 ) * 0.5;
-
-                // cFit->SetParameter( 0, cMid );
-                // cFit->SetParameter( 1, cWidth );
-
-                // cTmpHist->Fit( cFit, "RNQ+" );
-                // cFit->Draw( "same" );
-
-            }
+            cTmpHist->DrawCopy ( );
+            //cCanvas.second->Modified();
+            cCanvas.second->Update();
         }
 
-        // else if ( pHistName == "module_lat_threshold" )
-        // {
-        //  TH2F* cTmpHist = ( TH2F* )getHist( cCanvas.first, pHistName );
-        //  cTmpHist->Draw( "box" );
-        // }
-        cCanvas.second->Modified();
-        cCanvas.second->Update();
 #ifdef __HTTP__
         fHttpServer->ProcessRequests();
 #endif
@@ -509,8 +456,6 @@ void Commissioning::measureScurve ( std::string pHistName, uint32_t pNEvents )
     uint8_t  cDoubleVcth;
     int cVcth = ( fHoleMode ) ?  0xFF : 0x00;
     int cStep = ( fHoleMode ) ? -10 : 10;
-
-
 
     // Adaptive VCth loop
     while ( 0x00 <= cVcth && cVcth <= 0xFF )
@@ -626,27 +571,3 @@ void Commissioning::parseSettings()
 }
 
 
-void Commissioning::dumpConfigFiles()
-{
-    // visitor to call dumpRegFile on each Cbc
-    struct RegMapDumper : public HwDescriptionVisitor
-    {
-        std::string fDirectoryName;
-        RegMapDumper ( std::string pDirectoryName ) : fDirectoryName ( pDirectoryName ) {};
-        void visit ( Cbc& pCbc )
-        {
-            if ( !fDirectoryName.empty() )
-            {
-                TString cFilename = fDirectoryName + Form ( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
-                // cFilename += Form( "/FE%dCBC%d.txt", pCbc.getFeId(), pCbc.getCbcId() );
-                pCbc.saveRegMap ( cFilename.Data() );
-            }
-            else std::cout << "Error: no results Directory initialized! "  << std::endl;
-        }
-    };
-
-    RegMapDumper cDumper ( fDirectoryName );
-    accept ( cDumper );
-
-    std::cout << BOLDBLUE << "Configfiles for all Cbcs written to " << fDirectoryName << RESET << std::endl;
-}
