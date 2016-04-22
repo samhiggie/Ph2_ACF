@@ -75,7 +75,7 @@ void PedeNoise::Initialise()
                 bookHistogram ( cCbc, "Cbc_noise_odd", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Occupancy", cFe->getFeId(), cCbc->getCbcId() );
-                cHist = new TH1F ( cHistname, cHistname, 254, 0, 254 );
+                cHist = new TH1F ( cHistname, cHistname, 254, 0, 253 );
                 cHist->SetLineColor ( 2 );
                 bookHistogram ( cCbc, "Cbc_occupancy", cHist );
 

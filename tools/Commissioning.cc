@@ -24,14 +24,23 @@ void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange + 1) * fTDCBins, pStartLatency - 0.5, ( (pStartLatency + pLatencyRange) + 0.5) * fTDCBins );
+            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange + 1) * fTDCBins, pStartLatency ,  pStartLatency + (pLatencyRange + 1)  * fTDCBins );
+            std::cout << "NBins " << (pLatencyRange+1) * fTDCBins << " min " << pStartLatency << " max " << pStartLatency + (pLatencyRange+1) * fTDCBins << std::endl;
             //Modify the axis ticks
             //pLatencyRange main divisions and 8 sub divisions per main division
             cLatHist->SetNdivisions (pLatencyRange + 100 * fTDCBins, "X");
             //and the labels
+            uint32_t pLabel = pStartLatency;
             for(uint32_t cBin = 0; cBin < cLatHist->GetNbinsX(); cBin++)
-                //if(cBin % fTDCBins == 0) cLatHist->GetXaxis()->SetBinLabel(cBin, std::to_string(cBin/fTDCBins).c_str());
-
+            {
+                    std::cout << "Bin " << cBin << " Show " << pLabel << std::endl;
+                if((cBin-1) % (fTDCBins+1) == 0)
+                {
+                    std::cout << "Bin " << cBin << " Show " << pLabel << std::endl;
+                    cLatHist->GetXaxis()->SetBinLabel(cBin, std::to_string(pLabel).c_str());
+                    pLabel++;
+                }
+            }
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -336,9 +345,9 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 4 from the TDC value to have it normalized between 1 and 8
         //if (pStrasbourgGlib) cTDCVal -= 4;
 
-        //std::cout << "Latency " << +pParameter << " TDC Value (normalized) " << +cTDCVal << " NHits: " << cHitCounter << std::endl;
-        if(pIterationCount > 0) cTmpHist->Fill ( pParameter + pIterationCount * cTDCVal, cHitCounter);
-        else cTmpHist->Fill ( pParameter +  cTDCVal, cHitCounter);
+        uint32_t iBin = pParameter + pIterationCount * fTDCBins + cTDCVal;
+        cTmpHist->Fill ( iBin , cHitCounter);
+        //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
 
         cHitSum += cHitCounter;
     }
@@ -399,24 +408,24 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
         if ( pHistName == "module_latency" )
         {
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->DrawCopy ( "same" );
+            //cTmpHist->DrawCopy ( "same" );
             cTmpHist->Draw( "same" );
 
         }
         else if ( pHistName == "module_stub_latency" )
         {
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->DrawCopy ( "same" );
+            cTmpHist->Draw( "same" );
         }
         else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
         {
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->DrawCopy ( "P same" );
+            cTmpHist->Draw( "P same" );
 
             if ( pFinal )
             {
                 // cTmpHist->Scale( double( 1 / ( NCHANNELS * fNCbc * fNevents ) ) );
-                cTmpHist->DrawCopy ( "P same" );
+                cTmpHist->Draw( "P same" );
                 // get the fit and draw that too
                 // TF1* cFit = ( TF1* )getHist( cCanvas.first, "module_fit" );
 
