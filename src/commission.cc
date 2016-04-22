@@ -34,9 +34,6 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "latency", "scan the trigger latency", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "latency", "l" );
 
-	cmd.defineOption( "threshold", "scan the CBC comparator threshold", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "threshold", "t" );
-
 	cmd.defineOption( "stublatency", "scan the stub latency", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "stublatency", "s" );
 
@@ -50,17 +47,11 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "range", "range in clock cycles for latency scan", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "range", "r" );
 
-	cmd.defineOption( "pedestal", "scan the CBC pedestals in addition with the threshold scan", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "pedestal", "p" );
-
 	cmd.defineOption( "output", "Output Directory . Default value: Results/", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
 	cmd.defineOptionAlternative( "output", "o" );
 
 	cmd.defineOption( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "batch", "b" );
-
-	cmd.defineOption( "gui", "option only suitable when launching from gui", ArgvParser::NoOptionAttribute );
-	cmd.defineOptionAlternative( "gui", "g" );
 
 	int result = cmd.parse( argc, argv );
 	if ( result != ArgvParser::NoParserError )
@@ -73,14 +64,11 @@ int main( int argc, char* argv[] )
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Commissioning.xml";
 	bool cLatency = ( cmd.foundOption( "latency" ) ) ? true : false;
 	bool cStubLatency = ( cmd.foundOption( "stublatency" ) ) ? true : false;
-	bool cThreshold = ( cmd.foundOption( "threshold" ) ) ? true : false;
-	bool cScanPedestal = ( cmd.foundOption( "pedestal" ) ) ? true : false;
 	bool cNoise = ( cmd.foundOption( "noise" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	if ( !cNoise )cDirectory += "Commissioning";
 	else if ( cNoise ) cDirectory += "NoiseScan";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
-	bool gui = ( cmd.foundOption( "gui" ) ) ? true : false;
 
 	uint8_t cStartLatency = ( cmd.foundOption( "minimum" ) ) ? convertAnyInt( cmd.optionValue( "minimum" ).c_str() ) :  0;
 	uint8_t cLatencyRange = ( cmd.foundOption( "range" ) ) ?  convertAnyInt( cmd.optionValue( "range" ).c_str() ) :  10;
@@ -93,7 +81,6 @@ int main( int argc, char* argv[] )
 
 		std::string cResultfile;
 		if ( cLatency || cStubLatency ) cResultfile = "Latency";
-		else if ( cThreshold ) cResultfile = "Threshold";
 		else cResultfile = "Commissioning";
 
     Tool cTool;
@@ -113,8 +100,6 @@ int main( int argc, char* argv[] )
 		// Here comes our Part:
 		if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
 		if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
-		if ( cThreshold ) cCommissioning.ScanThreshold( cScanPedestal );
-		//cCommissioning.SaveResults();
 	}
 
 	if ( cNoise )
