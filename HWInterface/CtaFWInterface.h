@@ -54,6 +54,7 @@ namespace Ph2_HwInterface {
          * \brief SRAM selection for DAQ
          */
         void SelectDaqSRAM();
+        static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
 
       public:
         /*!

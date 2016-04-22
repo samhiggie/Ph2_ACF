@@ -607,38 +607,21 @@ namespace Ph2_HwInterface {
                 throw e;
             }
 
-            // now pVecReq contains the read data, I could add the comparison in here by making a copy of the original data in the beginning
             // now I need to make sure that the written and the read-back vector are the same
-            auto cMismatchWord = std::mismatch ( cWriteVec.begin(), cWriteVec.end(), pVecReq.begin() );
+            std::vector<uint32_t> cWriteAgain = get_mismatches (cWriteVec.begin(), cWriteVec.end(), pVecReq.begin(), CtaFWInterface::cmd_reply_comp);
 
-            if ( cMismatchWord.first == cWriteVec.end() ) cSuccess = true;
+            if (cWriteAgain.empty() ) cSuccess = true;
             else
             {
-                std::vector<uint32_t> cWriteAgain;
+                cSuccess = false;
 
-                while ( cMismatchWord.first != cWriteVec.end() )
+                // if the number of errors is greater than 100, give up
+                if (cWriteAgain.size() < 120)
                 {
-                    //here decode the items for printout if necessary
-                    //CbcRegItem cWriteItem;
-                    //uint8_t cCbcId;
-                    //DecodeReg (cWriteItem, cCbcId, *cMismatchWord.first );
-                    //CbcRegItem cReadItem;
-                    //DecodeReg (cVecReq, cCbcId, *cMismatchWord.second);
-
-                    cWriteAgain.push_back (*cMismatchWord.first);
-                    //move the iterator oneward
-                    cMismatchWord = std::mismatch (++cMismatchWord.first, cWriteVec.end(), ++cMismatchWord.second );
-                    cSuccess = false;
-                }
-
-                // this is recursive - da chit!
-                if (cWriteAgain.size() < 100)
-                {
-                    std::cout << "There were readback errors, retrying!" << std::endl;
+                    std::cout << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" << std::endl;
                     this->WriteCbcBlockReg ( cWriteAgain, true);
-
                 }
-                else std::cout << "There were too many errors (>100 Registers). Something is wrong - aborting!" << std::endl;
+                else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
             }
         }
         else cSuccess = true;
@@ -743,5 +726,12 @@ namespace Ph2_HwInterface {
 
         if ( !fpgaConfig )
             fpgaConfig = new CtaFpgaConfig ( this );
+    }
+    bool CtaFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
+    {
+        //if (cWord1 != cWord2)
+            //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ( (cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
+            //std::cout << "Readback error" << std::endl;
+        return ( cWord1  == cWord2 );
     }
 }

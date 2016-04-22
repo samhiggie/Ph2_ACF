@@ -117,11 +117,6 @@ namespace Ph2_HwInterface {
         cVecReg.push_back ( {"pc_commands.SPURIOUS_FRAME", 0} );
         cVecReg.push_back ( {"pc_commands2.force_BG0_start", 0} );
         cVecReg.push_back ( {"cbc_acquisition.CBC_TRIGGER_ONE_SHOT", 0} );
-        //cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
-        //cVecReg.push_back ( {"pc_commands.SRAM1_end_readout", 0} );
-        //cVecReg.push_back ( {"pc_commands.SRAM2_end_readout", 0} );
-        //cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
-        //cVecReg.push_back ( {"ctrl_sram.sram2_user_logic", 1} );
         cVecReg.push_back ({"cbc_reg_i2c_settings", 0x000009F4});
 
         WriteStackReg ( cVecReg );
@@ -514,7 +509,6 @@ namespace Ph2_HwInterface {
         pRegItem.fPage = ( pWord & cMask6 ) >> 16;
         pRegItem.fAddress = ( pWord & cMask2 ) >> 8;
         pRegItem.fValue = pWord & cMask1;
-        //std::cout << "FEID " << +(cFeId) << " pCbcID " << +(pCbcId) << std::endl;
     }
 
     bool GlibFWInterface::I2cCmdAckWait ( uint32_t pAckVal, uint8_t pNcount )
@@ -547,30 +541,24 @@ namespace Ph2_HwInterface {
     {
         uint32_t cValue = pEnable ? 0x000009F4 : 0 ;
         WriteReg ( "cbc_reg_i2c_settings", cValue );
-
         //if ( pEnable )
         //usleep ( 100000 );
     }
 
     void GlibFWInterface::WriteI2C ( std::vector<uint32_t>& pVecReq, bool pWrite )
     {
-        //WriteReg ( "ctrl_sram.sram1_user_logic", 1 );
         pVecReq.push_back ( 0xFFFFFFFF );
 
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
         WriteBlockReg ( "sram1", pVecReq );
-        //WriteReg ("sram2" , 0xFFFFFFFF );
 
         cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
+        //TODO
         cVecReg.push_back ( {"cbc_i2c_cmd_rq", pWrite ? 3 : 1} );
         WriteStackReg ( cVecReg );
-        //WriteReg ( "ctrl_sram.sram1_user_logic", 1 );
-        //WriteReg ( "cbc_i2c_cmd_rq", pWrite ? 3 : 1 );
-        //WriteReg ("cbc_hard_reset", 0);
 
-        WriteReg ( "cbc_i2c_cmd_rq", pWrite ? 3 : 1 );
         //now remove the 0xFFFFFFFF word again so I can re-use the vector
         pVecReq.pop_back();
 
@@ -593,8 +581,6 @@ namespace Ph2_HwInterface {
         cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
         cVecReg.push_back ( {"cbc_i2c_cmd_rq", 0} );
         WriteStackReg ( cVecReg );
-        //WriteReg ( "ctrl_sram.sram1_user_logic", 1 );
-        //WriteReg ( "cbc_i2c_cmd_rq", 0 );
     }
 
 
@@ -602,8 +588,6 @@ namespace Ph2_HwInterface {
     {
         bool cSuccess = false;
         std::vector<uint32_t> cWriteVec = pVecReq;
-
-        //EnableI2c (true);
 
         try
         {
@@ -613,7 +597,6 @@ namespace Ph2_HwInterface {
         {
             throw except;
         }
-
 
         // now read back
         if (pReadback)
@@ -625,16 +608,21 @@ namespace Ph2_HwInterface {
             try
             {
                 WriteI2C ( pVecReq, false );
-                //usleep (20000);
             }
             catch ( Exception& e )
             {
                 throw e;
             }
 
-            ReadI2C ( pVecReq );
+            try
+            {
+                ReadI2C ( pVecReq );
+            }
+            catch (Exception& e )
+            {
+                throw e;
+            }
 
-            //EnableI2c (false);
             // now I need to make sure that the written and the read-back vector are the same
             std::vector<uint32_t> cWriteAgain = get_mismatches (cWriteVec.begin(), cWriteVec.end(), pVecReq.begin(), GlibFWInterface::cmd_reply_comp);
 
@@ -654,8 +642,6 @@ namespace Ph2_HwInterface {
         }
         else cSuccess = true;
 
-        //EnableI2c (false);
-
         return cSuccess;
     }
 
@@ -666,8 +652,6 @@ namespace Ph2_HwInterface {
         bool cSuccess = true;
         std::vector<uint32_t> cWriteVec = pVecReq;
 
-        //EnableI2c (true);
-
         try
         {
             WriteI2C ( pVecReq, true );
@@ -677,15 +661,11 @@ namespace Ph2_HwInterface {
             throw except;
         }
 
-        //EnableI2c (false);
-
         return cSuccess;
     }
 
     void GlibFWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReq )
     {
-        //EnableI2c (true);
-
         try
         {
             WriteI2C ( pVecReq, false );
@@ -696,29 +676,22 @@ namespace Ph2_HwInterface {
         }
 
         ReadI2C ( pVecReq );
-        //EnableI2c (false);
     }
 
     void GlibFWInterface::CbcFastReset()
     {
         WriteReg ( "cbc_fast_reset", 1 );
-
-        //usleep ( 200000 );
-
+        usleep ( 2000 );
         WriteReg ( "cbc_fast_reset", 0 );
-
-        //usleep ( 200000 );
+        usleep ( 20 );
     }
 
     void GlibFWInterface::CbcHardReset()
     {
         WriteReg ( "cbc_hard_reset", 1 );
-
-        //usleep ( 200000 );
-
+        usleep ( 2000 );
         WriteReg ( "cbc_hard_reset", 0 );
-
-        //usleep ( 200000 );
+        usleep ( 20 );
     }
 
     void GlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
