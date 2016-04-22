@@ -59,6 +59,8 @@ void PedeNoise::Initialise()
 
                 cHistname = Form ( "Fe%dCBC%d_StripNoise", cFe->getFeId(), cCbc->getCbcId() );
                 cHist = new TH1F ( cHistname, cHistname, 254, -0.5, 253.5 );
+                cHist->SetMaximum(10);
+                cHist->SetMinimum(0);
                 bookHistogram ( cCbc, "Cbc_Stripnoise", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Pedestal", cFe->getFeId(), cCbc->getCbcId() );
@@ -67,16 +69,22 @@ void PedeNoise::Initialise()
 
                 cHistname = Form ( "Fe%dCBC%d_Noise_even", cFe->getFeId(), cCbc->getCbcId() );
                 cHist = new TH1F ( cHistname, cHistname, 128, -0.5, 127.5 );
+                cHist->SetMaximum(10);
+                cHist->SetMinimum(0);
                 bookHistogram ( cCbc, "Cbc_Noise_even", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Noise_odd", cFe->getFeId(), cCbc->getCbcId() );
                 cHist = new TH1F ( cHistname, cHistname, 128, -0.5, 127.5 );
                 cHist->SetLineColor ( 2 );
+                cHist->SetMaximum(10);
+                cHist->SetMinimum(0);
                 bookHistogram ( cCbc, "Cbc_noise_odd", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Occupancy", cFe->getFeId(), cCbc->getCbcId() );
                 cHist = new TH1F ( cHistname, cHistname, 254, 0, 253 );
-                cHist->SetLineColor ( 2 );
+                cHist->SetLineColor ( 31 );
+                cHist->SetMaximum(1);
+                cHist->SetMinimum(0);
                 bookHistogram ( cCbc, "Cbc_occupancy", cHist );
 
             }
@@ -87,6 +95,8 @@ void PedeNoise::Initialise()
 
             cNoisehistname = Form ( "Fe%d_StripNoise", cFeId );
             TProfile* cStripnoise = new TProfile ( cNoisehistname, cNoisehistname, ( NCHANNELS * cCbcCount ) + 1, -.5, cCbcCount * NCHANNELS + .5 );
+            cStripnoise->SetMinimum(0);
+            cStripnoise->SetMaximum(15);
             bookHistogram ( cFe, "Module_Stripnoise", cStripnoise );
         }
 
@@ -187,10 +197,10 @@ void PedeNoise::measureNoise()
 
                 std::cout << BOLDRED << "Average noise on FE " << +cCbc->getFeId() << " CBC " << +cCbc->getCbcId() << " : " << cNoiseHist->GetMean() << " ; RMS : " << cNoiseHist->GetRMS() << " ; Pedestal : " << cPedeHist->GetMean() << " VCth units." << RESET << std::endl;
 
-                //fNoiseCanvas->cd ( fNCbc + cCbc->getCbcId() + 1 );
-                // cStripHist->DrawCopy();
-                //cEvenHist->DrawCopy();
-                //cOddHist->DrawCopy ( "same" );
+                fNoiseCanvas->cd ( fNCbc + cCbc->getCbcId() + 1 );
+                 //cStripHist->DrawCopy();
+                cEvenHist->DrawCopy();
+                cOddHist->DrawCopy ( "same" );
 
                 fPedestalCanvas->cd ( cCbc->getCbcId() + 1 );
                 cNoiseHist->DrawCopy();
@@ -232,7 +242,7 @@ void PedeNoise::measureNoise()
 }
 
 
-void PedeNoise::Validate()
+void PedeNoise::Validate( uint32_t pNoiseStripThreshold )
 {
     std::cout << "Validation: Taking Data with " << fEventsPerPoint * 200 << " random triggers!" << std::endl;
 
@@ -259,10 +269,14 @@ void PedeNoise::Validate()
             {
                 //get the histogram for the occupancy
                 TH1F* cHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_occupancy" ) );
+                cHist->Scale(1/(fEventsPerPoint * 200.));
+                TLine* line = new TLine(0, pNoiseStripThreshold*0.01, NCHANNELS, pNoiseStripThreshold*0.01);
 
                 //as we are at it, draw the plot
-                fNoiseCanvas->cd ( fNCbc + cCbc->getCbcId() + 1 );
+                fNoiseCanvas->cd ( cCbc->getCbcId() + 1 );
+                gPad->SetLogy();
                 cHist->DrawCopy();
+                line->Draw("same");
                 fNoiseCanvas->Modified();
                 fNoiseCanvas->Update();
 
@@ -270,12 +284,12 @@ void PedeNoise::Validate()
 
                 for (uint32_t iChan = 0; iChan < NCHANNELS; iChan++)
                 {
-                    if (cHist->GetBinContent (iChan) > double (0.01 * fEventsPerPoint * 200) ) // consider it noisy
+                    if (cHist->GetBinContent (iChan) > double ( pNoiseStripThreshold * 0.01 ) ) // consider it noisy
                     {
                         TString cRegName = Form ( "Channel%03d", iChan+1 );
                         uint8_t cValue = fHoleMode ? 0x00 : 0xFF;
                         cRegVec.push_back ({cRegName.Data(), cValue });
-                        std::cout << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iChan + 1 << " with an occupancy of " << double(cHist->GetBinContent(iChan)/(fEventsPerPoint*200.)) << "; setting offset to " << +cValue << RESET << std::endl;
+                        std::cout << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iChan + 1 << " with an occupancy of " << cHist->GetBinContent(iChan) << "; setting offset to " << +cValue << RESET << std::endl;
                     }
 
                 }

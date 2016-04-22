@@ -27,6 +27,7 @@
 #include "TGraphErrors.h"
 #include "TString.h"
 #include "TText.h"
+#include "TLine.h"
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
@@ -56,7 +57,7 @@ class PedeNoise : public SCurve
 
     void Initialise();
     void measureNoise();
-    void Validate();
+    void Validate(uint32_t pNoiseStripThreshold = 1);
     void SaveResults();
 
   private:
