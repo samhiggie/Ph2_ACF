@@ -2,8 +2,6 @@
 
 void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
 {
-    // gStyle->SetOptStat( 000000 );
-    // gStyle->SetTitleOffset( 1.3, "Y" );
     for ( auto& cBoard : fBoardVector )
     {
         uint32_t cBoardId = cBoard->getBeId();
@@ -25,24 +23,19 @@ void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
             if ( cObj ) delete cObj;
 
             TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency ,  pStartLatency + (pLatencyRange )  * fTDCBins );
-            //std::cout << "NBins " << (pLatencyRange ) * fTDCBins << " min " << pStartLatency << " max " << pStartLatency + (pLatencyRange) * fTDCBins << std::endl;
-            //Modify the axis ticks
-            //pLatencyRange main divisions and 8 sub divisions per main division
-            //cLatHist->SetNdivisions (pLatencyRange + 100 * fTDCBins * pLatencyRange, "X");
-            //and the labels
+            //modify the axis labels
             uint32_t pLabel = pStartLatency;
 
             for (uint32_t cBin = 0; cBin < cLatHist->GetNbinsX(); cBin++)
             {
-                std::cout << "Bin " << cBin << " Show " << pLabel << std::endl;
-
                 if ( cBin % fTDCBins == 1)
                 {
                     cLatHist->GetXaxis()->SetBinLabel (cBin, std::to_string (pLabel).c_str() );
                     pLabel++;
                 }
             }
-            cLatHist->GetXaxis()->SetTitle("Trigger Latency [cc]");
+
+            cLatHist->GetXaxis()->SetTitle ("Trigger Latency [cc]");
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -55,47 +48,10 @@ void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
             TH1F* cStubHist = new TH1F ( cName, Form ( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), pLatencyRange, pStartLatency, pStartLatency + pLatencyRange);
             cStubHist->SetMarkerStyle ( 2 );
             bookHistogram ( cFe, "module_stub_latency", cStubHist );
-
-            cName =  Form ( "h_module_threshold_ext_Fe%d", cFeId );
-            cObj = gROOT->FindObject ( cName );
-
-            if ( cObj ) delete cObj;
-
-            TH1F* cThresHist_ext = new TH1F ( cName, Form ( "Threshold FE%d w external trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
-            cThresHist_ext->SetMarkerStyle ( 2 );
-            bookHistogram ( cFe, "module_threshold_ext", cThresHist_ext );
-
-            cName =  Form ( "h_module_threshold_int_Fe%d", cFeId );
-            cObj = gROOT->FindObject ( cName );
-
-            if ( cObj ) delete cObj;
-
-            TH1F* cThresHist_int = new TH1F ( cName, Form ( "Threshold FE%d w internal trg; Vcth; # of Hits", cFeId ), 256, -0.5, 255.5 );
-            cThresHist_int->SetMarkerStyle ( 2 );
-            cThresHist_int->SetMarkerColor ( 2 );
-            bookHistogram ( cFe, "module_threshold_int", cThresHist_int );
-
-            cName =  Form ( "f_module_threshold_Fit_Fe%d", cFeId );
-            cObj = gROOT->FindObject ( cName );
-
-            if ( cObj ) delete cObj;
-
-            TF1* cThresFit = new TF1 ( cName, MyErf, 0, 255, 2 );
-            bookHistogram ( cFe, "module_fit", cThresFit );
-
-            cName =  Form ( "h_module_lat_threshold_Fe%d", cFeId );
-            cObj = gROOT->FindObject ( cName );
-
-            if ( cObj ) delete cObj;
-
-            TH2F* cThresLatHist = new TH2F ( cName, Form ( " Threshold/Latency FE%d; Latency; Threshold; # of Hits", cFeId ), 9, -4.5, 4.5, 256, -0.5, 255.5 );
-            bookHistogram ( cFe, "module_lat_threshold", cThresLatHist );
         }
     }
 
     parseSettings();
-    // initializeHists();
-
     std::cout << "Histograms and Settings initialised." << std::endl;
 }
 
@@ -155,22 +111,22 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
 
 
     // analyze the Histograms
-    //std::map<Module*, uint8_t> cLatencyMap;
+    std::map<Module*, uint8_t> cLatencyMap;
 
     //std::cout << "Identified the Latency with the maximum number of Hits at: " << std::endl;
 
     //for ( auto cFe : fModuleHistMap )
     //{
-        //TH1F* cTmpHist = ( TH1F* ) getHist ( static_cast<Ph2_HwDescription::Module*> ( cFe.first ), "module_latency" );
-        ////the true latency now is the floor(iBin/8)
-        //uint8_t cLatency =  static_cast<uint8_t> ( floor ( (cTmpHist->GetMaximumBin() - 1 ) / 8) );
-        //cLatencyMap[cFe.first] = cLatency;
-        //cWriter.setRegister ( "TriggerLatency", cLatency );
-        //this->accept ( cWriter );
+    //TH1F* cTmpHist = ( TH1F* ) getHist ( static_cast<Ph2_HwDescription::Module*> ( cFe.first ), "module_latency" );
+    ////the true latency now is the floor(iBin/8)
+    //uint8_t cLatency =  static_cast<uint8_t> ( floor ( (cTmpHist->GetMaximumBin() - 1 ) / 8) );
+    //cLatencyMap[cFe.first] = cLatency;
+    //cWriter.setRegister ( "TriggerLatency", cLatency );
+    //this->accept ( cWriter );
 
-        //std::cout << "	FE " << +cFe.first->getModuleId()  << ": " << +cLatency << " clock cycles!" << std::endl;
+    //std::cout << "    FE " << +cFe.first->getModuleId()  << ": " << +cLatency << " clock cycles!" << std::endl;
     //}
-        updateHists ( "module_latency", true );
+    updateHists ( "module_latency", true );
 
     return cLatencyMap;
 }
@@ -268,61 +224,10 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
 }
 
 
-void Commissioning::ScanThreshold ( bool pScanPedestal )
-{
-    //method to scan thresholds with actual particles - this will not stop but continue through the whole Vcth range
-    std::cout << "Scanning the Threshold ... " ;
-
-    if ( pScanPedestal ) std::cout << "including pedestals!";
-
-    std::cout << std::endl;
-
-    std::cout << "with external triggers ... " << std::endl;
-
-    BeBoardRegWriter cWriter_ext ( fBeBoardInterface, "pc_commands.TRIGGER_SEL", 1 );
-    this->accept ( cWriter_ext );
-    measureScurve ( "module_threshold_ext", fNevents );
-
-    if ( pScanPedestal )
-    {
-
-        std::cout << "and with internal triggers ... turn off particles and press Enter!" << std::endl;
-        mypause();
-
-        BeBoardRegWriter cWriter_int ( fBeBoardInterface, "pc_commands.TRIGGER_SEL", 0 );
-        this->accept ( cWriter_int );
-        measureScurve ( "module_threshold_int", fNevents );
-    }
-
-    std::cout << "Done scanning threshold!" << std::endl;
-
-    // analyze
-    for ( auto cFe : fModuleHistMap )
-    {
-        // find the apropriate canvas
-        auto cCanvas = fCanvasMap.find ( cFe.first );
-
-        if ( cCanvas == fCanvasMap.end() ) std::cout << "ERROR: Courld not find the right canvas!" << std::endl;
-        else cCanvas->second->cd();
-
-        // get the SCurve with internal & external trigger
-        TH1F* cTmpHist_ext = dynamic_cast<TH1F*> ( getHist ( cFe.first, "module_threshold_ext" ) );
-
-        if ( pScanPedestal ) TH1F* cTmpHist_int = dynamic_cast<TH1F*> ( getHist ( cFe.first, "module_threshold_int" ) );
-
-        // subtract
-
-
-        // cLatencyMap[cFe.first] = static_cast<uint8_t>( cTmpHist->GetMaxBin() );
-
-    }
-}
-
-
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
-int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount, bool pStrasbourgGlib)
+int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount, bool pStrasbourgFW)
 {
     int cHitSum = 0;
     //  get histogram to fill
@@ -334,28 +239,32 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         int cHitCounter = 0;
         //get TDC value for this particular event
         uint8_t cTDCVal = cEvent->GetTDC();
-        if(cTDCVal != 0) cTDCVal -= 5;
-        if (cTDCVal > 8 ) std::cout << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << std::endl; 
 
-        for ( auto cCbc : pFe->fCbcVector )
+        if (cTDCVal != 0 && pStrasbourgFW) cTDCVal -= 5;
+
+        if (cTDCVal > 8 ) std::cout << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
+
+        else
         {
-            //now loop the channels for this particular event and increment a counter
-            for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+            for ( auto cCbc : pFe->fCbcVector )
             {
-                if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                    cHitCounter++;
+                //now loop the channels for this particular event and increment a counter
+                for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                {
+                    if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                        cHitCounter++;
+                }
             }
+
+            //now I have the number of hits in this particular event for all CBCs and the TDC value
+            //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 5 from the TDC value to have it normalized between 0 and 7
+
+            uint32_t iBin = pParameter + pIterationCount * (fTDCBins - 1) + cTDCVal;
+            cTmpHist->Fill ( iBin , cHitCounter);
+            //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
+
+            cHitSum += cHitCounter;
         }
-
-        //now I have the number of hits in this particular event for all CBCs and the TDC value
-        //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 4 from the TDC value to have it normalized between 1 and 8
-        //if (pStrasbourgGlib) cTDCVal -= 4;
-
-        uint32_t iBin = pParameter + pIterationCount * (fTDCBins-1) + cTDCVal;
-        cTmpHist->Fill ( iBin , cHitCounter);
-        //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
-
-        cHitSum += cHitCounter;
     }
 
     return cHitSum;
@@ -408,16 +317,13 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
 {
     for ( auto& cCanvas : fCanvasMap )
     {
-
         // maybe need to declare temporary pointers outside the if condition?
         if ( pHistName == "module_latency" )
         {
             cCanvas.second->cd();
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
             cTmpHist->DrawCopy ( );
-            //cCanvas.second->Modified();
             cCanvas.second->Update();
-            //cTmpHist->Draw( "same" );
 
         }
         else if ( pHistName == "module_stub_latency" )
@@ -425,15 +331,6 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
             cCanvas.second->cd();
             TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
             cTmpHist->DrawCopy ( );
-            //cCanvas.second->Modified();
-            cCanvas.second->Update();
-        }
-        else if ( pHistName == "module_threshold_int" || pHistName == "module_threshold_ext" )
-        {
-            cCanvas.second->cd();
-            TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->DrawCopy ( );
-            //cCanvas.second->Modified();
             cCanvas.second->Update();
         }
 
@@ -441,111 +338,6 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
         fHttpServer->ProcessRequests();
 #endif
     }
-}
-
-void Commissioning::measureScurve ( std::string pHistName, uint32_t pNEvents )
-{
-    // Necessary variables
-    // uint32_t cEventsperVcth = 50;
-    bool cNonZero = false;
-    // bool cAllOne = false;
-    bool cSlopeZero = false;
-    // uint32_t cAllOneCounter = 0;
-    uint32_t cSlopeZeroCounter = 0;
-    uint32_t cOldHitCounter = 0;
-    uint8_t  cDoubleVcth;
-    int cVcth = ( fHoleMode ) ?  0xFF : 0x00;
-    int cStep = ( fHoleMode ) ? -10 : 10;
-
-    // Adaptive VCth loop
-    while ( 0x00 <= cVcth && cVcth <= 0xFF )
-    {
-        // if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
-        if ( cVcth == cDoubleVcth )
-        {
-            cVcth +=  cStep;
-            continue;
-        }
-
-        // Set current Vcth value on all Cbc's
-        CbcRegWriter cWriter ( fCbcInterface, "VCth", static_cast<uint8_t> ( cVcth ) );
-        accept ( cWriter );
-
-        uint32_t cN = 1;
-        uint32_t cNthAcq = 0;
-        uint32_t cHitCounter = 0;
-
-        // maybe restrict to pBoard? instead of looping?
-        // if ( cSlopeZero && (cVcth == 0x00 || cVcth = 0xFF) ) break;
-        for ( BeBoard* pBoard : fBoardVector )
-        {
-
-            //fBeBoardInterface->Start ( pBoard );
-
-            //while ( cN <=  pNEvents )
-            //{
-            fBeBoardInterface->ReadNEvents ( pBoard, pNEvents );
-
-            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
-
-            // Loop over Events from this Acquisition
-            for ( auto& cEvent : events )
-            {
-
-                for ( auto cFe : pBoard->fModuleVector )
-                    cHitCounter += countHits ( cFe, cEvent, pHistName, static_cast<uint8_t> ( cVcth ) );
-
-                cN++;
-
-            }
-
-            cNthAcq++;
-            //}
-
-            //fBeBoardInterface->Stop ( pBoard );
-
-            std::cout << "Threshold " << +cVcth << " Hits " << cHitCounter << " Events " << cN << std::endl;
-            // now update the Histograms
-            updateHists ( pHistName, false );
-
-            // check if the hitcounter is all ones
-
-            if ( cNonZero == false && cHitCounter > pNEvents / 10 )
-            {
-                cDoubleVcth = cVcth;
-                cNonZero = true;
-                cVcth -= 2 * cStep;
-                cStep /= 10;
-                continue;
-            }
-
-            if ( cNonZero && cHitCounter > NCHANNELS * fNCbc * pNEvents * 0.95 )
-            {
-                // check if all Cbcs have reached full occupancy
-                // if ( cHitCounter > 0.95 * pNEvents * fNCbc * NCHANNELS ) cAllOneCounter++;
-                // if the number of hits does not change any more,  increase stepsize by a factor of 10
-                if ( fabs ( cHitCounter - cOldHitCounter ) < 10 && cHitCounter != 0 ) cSlopeZeroCounter++;
-            }
-
-            // if ( cSlopeZeroCounter >= 10 ) cAllOne = true;
-            if ( cSlopeZeroCounter >= 10 ) cSlopeZero = true;
-
-            // if ( cAllOne )
-            // {
-            //  std::cout << "All strips firing -- ending the scan at VCth " << +cVcth << std::endl;
-            //  break;
-            // }
-            if ( cSlopeZero )
-                cStep *= 10;
-
-            cOldHitCounter = cHitCounter;
-            cVcth += cStep;
-        }
-    }
-
-    // finished scanning the comparator threshold range
-    // need to see what range to fit and what threshold to extract automatically!!
-    updateHists ( pHistName, true );
 }
 
 
@@ -566,8 +358,5 @@ void Commissioning::parseSettings()
     std::cout << "Parsed the following settings:" << std::endl;
     std::cout << "	Nevents = " << fNevents << std::endl;
     std::cout << "	HoleMode = " << int ( fHoleMode ) << std::endl;
-    // std::cout << "   InitialThreshold = " << int( fInitialThreshold ) << std::endl;
-
 }
-
 
