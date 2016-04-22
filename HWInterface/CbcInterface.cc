@@ -176,7 +176,7 @@ namespace Ph2_HwInterface {
         fBoardFW->ReadCbcBlockReg (  cVecReq );
 
         //bools to find the values of failed and read
-        bool cFailed=false;
+        bool cFailed = false;
         bool cRead;
         uint8_t cCbcId;
         fBoardFW->DecodeReg ( cRegItem, cCbcId, cVecReq[0], cRead, cFailed );
@@ -214,19 +214,21 @@ namespace Ph2_HwInterface {
         fTransactionCount++;
 #endif
 
-        bool cFailed=false;
+        bool cFailed = false;
         bool cRead;
         uint8_t cCbcId;
         //update the HWDescription object with the value I just read
-        uint32_t idxReadWord=0;
+        uint32_t idxReadWord = 0;
+
         for ( const auto& cReg : pVecReg )
-        //for ( const auto& cReadWord : cVec )
+            //for ( const auto& cReadWord : cVec )
         {
-	    uint32_t cReadWord=cVec[idxReadWord++];
+            uint32_t cReadWord = cVec[idxReadWord++];
             fBoardFW->DecodeReg ( cRegItem, cCbcId, cReadWord, cRead, cFailed );
+
             // here I need to find the string matching to the reg item!
-            if (!cFailed) 	
-		pCbc->setReg ( cReg, cRegItem.fValue );
+            if (!cFailed)
+                pCbc->setReg ( cReg, cRegItem.fValue );
         }
     }
 
@@ -292,7 +294,7 @@ namespace Ph2_HwInterface {
         // the 1st boolean could be true if I acually wanted to read back from each CBC but this somehow does not make sense!
         fBoardFW->BCEncodeReg ( cRegItem, pModule->fCbcVector.size(), cVec, false, true );
 
-        //true is the readback bit - the IC FW just checks that the transaction was successful and the 
+        //true is the readback bit - the IC FW just checks that the transaction was successful and the
         //Strasbourg FW does nothing
         bool cSuccess = fBoardFW->BCWriteCbcBlockReg (  cVec, true );
 

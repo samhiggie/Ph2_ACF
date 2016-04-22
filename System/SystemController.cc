@@ -78,9 +78,7 @@ namespace Ph2_System {
             SettingsMap::iterator cSetting = fSettingsMap.find ( "HoleMode" );
 
             if ( cSetting != fSettingsMap.end() )
-            {
                 cHoleMode = cSetting->second;
-            }
 
             cCheck = true;
         }
@@ -106,6 +104,7 @@ namespace Ph2_System {
                     fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
                     los_ << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
                 }
+
                 los_ << GREEN << "Successfully configured Board " << int ( pBoard.getBeId() ) << RESET << std::endl;
             }
 
@@ -163,26 +162,26 @@ namespace Ph2_System {
 
         os << "\n";
         os << "\n";
-	std::string strUhalConfig = expandEnvironmentVariables(doc.child( "HwDescription" ).child( "Connections" ).attribute( "name" ).value());
+        std::string strUhalConfig = expandEnvironmentVariables (doc.child ( "HwDescription" ).child ( "Connections" ).attribute ( "name" ).value() );
 
         // Iterate over the BeBoard Nodes
         for ( pugi::xml_node cBeBoardNode = doc.child ( "HwDescription" ).child ( "BeBoard" ); cBeBoardNode; cBeBoardNode = cBeBoardNode.next_sibling() )
         {
             BeBoard* cBeBoard = this->parseBeBoard (cBeBoardNode, os);
             std::string cBoardType = cBeBoardNode.attribute ( "boardType" ).value();
-            cBeBoard->setBoardType(cBoardType);
+            cBeBoard->setBoardType (cBoardType);
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
-	   
+
             std::string cId = cBeBoardConnectionNode.attribute ( "id" ).value();
             std::string cUri = cBeBoardConnectionNode.attribute ( "uri" ).value();
-            std::string cAddressTable = expandEnvironmentVariables(cBeBoardConnectionNode.attribute ( "address_table" ).value());
- if (strUhalConfig.empty())
-	{
-            std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " URI: " << BOLDYELLOW << cUri << BOLDBLUE << " Address Table: " << BOLDYELLOW << cAddressTable << RESET << std::endl;
-	}
-	else
-		std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " Type: "
-                      << BOLDYELLOW << cBoardType << RESET << std::endl;
+            std::string cAddressTable = expandEnvironmentVariables (cBeBoardConnectionNode.attribute ( "address_table" ).value() );
+
+            if (strUhalConfig.empty() )
+                std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " URI: " << BOLDYELLOW << cUri << BOLDBLUE << " Address Table: " << BOLDYELLOW << cAddressTable << RESET << std::endl;
+            else
+                std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " Type: "
+                          << BOLDYELLOW << cBoardType << RESET << std::endl;
+
             // Iterate over the BeBoardRegister Nodes
             for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode/* != cBeBoardNode.child( "Module" )*/; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
             {
@@ -191,26 +190,27 @@ namespace Ph2_System {
             }
 
             if ( !cBoardType.compare ( std::string ( "GLIB" ) ) )
-{
-if (strUhalConfig.empty())
-                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
-else
-		fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
-}
+            {
+                if (strUhalConfig.empty() )
+                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
+                else
+                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
+            }
             else if ( !cBoardType.compare ( std::string ( "ICGLIB" ) ) )
-{
-if (strUhalConfig.empty())
-                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
-else
-		fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
-}
+            {
+                if (strUhalConfig.empty() )
+                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
+                else
+                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
+            }
             else if ( !cBoardType.compare ( std::string ( "CTA" ) ) )
-{
-if (strUhalConfig.empty())
-                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
-else
-		fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
-}
+            {
+                if (strUhalConfig.empty() )
+                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
+                else
+                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
+            }
+
             /*else
               cBeBoardFWInterface = new OtherFWInterface();*/
 
@@ -293,7 +293,7 @@ else
     void SystemController::parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os )
     {
         pugi::xml_node cCbcPathPrefixNode = pModuleNode.child ( "CBC_Files" );
-        std::string cFilePrefix = expandEnvironmentVariables(static_cast<std::string> ( cCbcPathPrefixNode.attribute ( "path" ).value() ));
+        std::string cFilePrefix = expandEnvironmentVariables (static_cast<std::string> ( cCbcPathPrefixNode.attribute ( "path" ).value() ) );
 
         if ( !cFilePrefix.empty() ) os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << "CBC Files Path : " << cFilePrefix << RESET << std::endl;
 
@@ -302,14 +302,14 @@ else
         {
             os << BOLDCYAN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcNode.name() << "  "
                << cCbcNode.first_attribute().name() << " :" << cCbcNode.attribute ( "Id" ).value()
-               << ", File: " << expandEnvironmentVariables(cCbcNode.attribute ( "configfile" ).value()) << RESET << std:: endl;
+               << ", File: " << expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() ) << RESET << std:: endl;
 
 
             std::string cFileName;
 
             if ( !cFilePrefix.empty() )
-                cFileName = cFilePrefix + expandEnvironmentVariables(cCbcNode.attribute ( "configfile" ).value());
-            else cFileName = expandEnvironmentVariables(cCbcNode.attribute ( "configfile" ).value());
+                cFileName = cFilePrefix + expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() );
+            else cFileName = expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() );
 
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
 
