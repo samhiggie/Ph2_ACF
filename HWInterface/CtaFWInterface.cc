@@ -393,24 +393,12 @@ namespace Ph2_HwInterface {
         uhal::ValVector<uint32_t> valBlock = ReadBlockReg ( pRegNode, pBlocksize );
         std::vector<uint32_t> vBlock = valBlock.value();
 
-        // To avoid the IPBUS bug
-        // need to convert uHal::ValVector to vector<uint32_t> so we can replace the 256th word
-        if ( pBlocksize > 255 )
-        {
-            std::string fSram_256 = pRegNode + "_256";
-            uhal::ValWord<uint32_t> cWord = ReadReg ( fSram_256 );
-            vBlock[255] = cWord.value();
-        }
-
         return vBlock;
     }
 
     bool CtaFWInterface::WriteBlockReg ( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
     {
         bool cWriteCorr = RegManager::WriteBlockReg ( pRegNode, pValues );
-
-        if ( pValues.size() > 255 )
-            WriteReg ( pRegNode + "_256", pValues[255] );
 
         return cWriteCorr;
     }
@@ -473,7 +461,7 @@ namespace Ph2_HwInterface {
         // will have to be corrected if we want to read two modules from the same GLIB
         // (pCbcId >> 3) becomes FE ID and is encoded starting from bit21 (not used so far)
         // (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
-        pVecReq.push_back ( ( pCbcId >> 3 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+        pVecReq.push_back ( ( pCbcId +0x41 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
     }
 
     void CtaFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
@@ -495,7 +483,7 @@ namespace Ph2_HwInterface {
     {
         // here I need to loop over all CBCs somehow...
         for (uint8_t cCbcId = 0; cCbcId < pNCbc; cCbcId++)
-            pVecReq.push_back ( ( cCbcId >> 3 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+            pVecReq.push_back ( ( cCbcId +0x41 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
     }
 
     void CtaFWInterface::DecodeReg ( CbcRegItem& pRegItem,
@@ -506,20 +494,20 @@ namespace Ph2_HwInterface {
     {
         // temporary for 16CBC readout FW  (Beamtest NOV 15)
         // will have to be corrected if we want to read two modules from the same GLIB
-        uint8_t cFeId = ( pWord & cMask7 ) >> 21;
-        pCbcId = ( ( pWord & cMask5 ) | ( cFeId << 3 ) ) >> 17;
+        uint8_t cbcAddr = ( pWord & cMask7 ) >> 21;
+        pCbcId = ( ( pWord & cMask5 )  ) >> 17;
         pRegItem.fPage = ( pWord & cMask6 ) >> 16;
         pRegItem.fAddress = ( pWord & cMask2 ) >> 8;
         pRegItem.fValue = pWord & cMask1;
-        //std::cout << "FEID " << +(cFeId) << " pCbcID " << +(pCbcId) << std::endl;
+        //std::cout << "FEID " << +(cbcAddr) << " pCbcID " << +(pCbcId) << std::endl;
     }
 
-    bool CtaFWInterface::I2cCmdAckWait ( uint32_t pAckVal, uint8_t pNcount )
+    bool CtaFWInterface::I2cCmdAckWait (  bool bZero, uint8_t pNcount )
     {
         unsigned int cWait ( 100 );
 
-        if ( pAckVal )
-            cWait = pNcount * 500;
+        if ( bZero ) 
+		cWait = pNcount * 500;
 
         usleep ( cWait );
 
@@ -530,43 +518,54 @@ namespace Ph2_HwInterface {
         {
             cVal = ReadReg ( "cbc_i2c_cmd_ack" );
 
-            if ( cVal != pAckVal )
-                usleep ( cWait );
-            else return true;
+            if ( bZero ){
+		if (cVal == 0 )
+			usleep ( cWait );
+		else 	
+			if (cVal == 0b01)
+				return true;
+			else
+				throw Exception ( " CbcInterface::I2cCmdAckWait bad acknowledge value" );
+	    } else {
+		if (cVal!=0)
+			usleep ( cWait );
+		else 
+			return true;
+	    }
         }
-        while ( cVal != pAckVal && ++cLoop < 70 );
+        while ( cVal == 0 && ++cLoop < 70 );
 
         return false;
     }
 
     void CtaFWInterface::WriteI2C ( std::vector<uint32_t>& pVecReq, bool pWrite )
     {
-        pVecReq.push_back ( 0xFFFFFFFF );
+        //pVecReq.push_back ( 0xFFFFFFFF );
 
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
-        WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
-        WriteBlockReg ( "sram1", pVecReq );
+        //WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
+        WriteBlockReg ( "cbc_config_fifo_tx_FE0", pVecReq );
 
-        cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
-        cVecReg.push_back ( {"cbc_i2c_cmd_rq", pWrite ? 3 : 1} );
+        //cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
+        cVecReg.push_back ( {"cbc_i2c_cmd_rq", pWrite ? 1 : 3} );
         WriteStackReg ( cVecReg );
 
-        if ( I2cCmdAckWait ( ( uint32_t ) 1, pVecReq.size() ) == 0 )
-            throw Exception ( "CbcInterface: I2cCmdAckWait 1 failed." );
+        if ( I2cCmdAckWait ( true, pVecReq.size() ) == false)
+            throw Exception ( " CbcInterface::I2cCmdAckWait not 0 failed." );
 
         WriteReg ( "cbc_i2c_cmd_rq", 0 );
 
-        if ( I2cCmdAckWait ( ( uint32_t ) 0, pVecReq.size() ) == 0 )
-            throw Exception ( "CbcInterface: I2cCmdAckWait 0 failed." );
+        if ( I2cCmdAckWait ( false, pVecReq.size() ) == false)
+            throw Exception ( " CbcInterface::I2cCmdAckWait 0 failed." );
     }
 
     void CtaFWInterface::ReadI2C ( std::vector<uint32_t>& pVecReq )
     {
-        WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
-        pVecReq = ReadBlockRegValue ( "sram1", pVecReq.size() );
+        //WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
+        pVecReq = ReadBlockRegValue ( "cbc_config_fifo_rx_FE0", pVecReq.size() );
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
-        cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
+        //cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
         cVecReg.push_back ( {"cbc_i2c_cmd_rq", 0} );
         WriteStackReg ( cVecReg );
     }
@@ -689,11 +688,9 @@ namespace Ph2_HwInterface {
 
     void CtaFWInterface::CbcFastReset()
     {
-        WriteReg ( "cbc_fast_reset", 1 );
-
-        usleep ( 2000 );
-
-        WriteReg ( "cbc_fast_reset", 0 );
+        //WriteReg ( "cbc_fast_reset", 1 );
+        //usleep ( 2000 ); 
+        //WriteReg ( "cbc_fast_reset", 0 );
     }
 
     void CtaFWInterface::CbcHardReset()

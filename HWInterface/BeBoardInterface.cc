@@ -86,9 +86,13 @@ void BeBoardInterface::ReadBoardMultReg( BeBoard* pBoard, std::vector < std::pai
     setBoard( pBoard->getBeBoardIdentifier() );
 
     for ( auto& cReg : pRegVec )
+    try
     {
         cReg.second = static_cast<uint32_t>( fBoardFW->ReadReg( cReg.first ) );
         pBoard->setReg( cReg.first, cReg.second );
+    } catch(...) {
+	std::cerr<<"Error while reading: " + cReg.first <<std::endl;
+	throw ;
     }
 }
 
@@ -102,6 +106,11 @@ void BeBoardInterface::getBoardInfo( const BeBoard* pBoard )
 {
     setBoard( pBoard->getBeBoardIdentifier() );
     fBoardFW->getBoardInfo();
+}
+
+BoardType BeBoardInterface::getBoardType(const BeBoard* pBoard ){
+    setBoard( pBoard->getBeBoardIdentifier() );
+    return fBoardFW->getBoardType(); 
 }
 
 void BeBoardInterface::ConfigureBoard( const BeBoard* pBoard )

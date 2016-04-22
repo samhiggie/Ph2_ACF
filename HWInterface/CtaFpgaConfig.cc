@@ -41,13 +41,7 @@ CtaFpgaConfig::CtaFpgaConfig(BeBoardFWInterface* pbbi):
 
 void CtaFpgaConfig::runUpload(const std::string& strImage, const char* szFile) throw (std::string)
 {
-    vector<string> lstNames = lNode.ListFilesOnSD();
-    for (int iName = 0; iName < lstNames.size(); iName++)
-    {
-        if (!strImage.compare(lstNames[iName]))
-            numUploadingFpga = iName + 1;
-        break;
-    }
+    numUploadingFpga = 1;
     progressValue = 0;
     progressString = "Starting upload";
     boost::thread(&CtaFpgaConfig::dumpFromFileIntoSD, this, strImage, szFile);

@@ -144,7 +144,7 @@ namespace Ph2_System {
 
         const BeBoard* getBoard (int index) const
         {
-            (index < fBoardVector.size() ) ? fBoardVector.at (index) : nullptr;
+            return (index < (int)fBoardVector.size() ) ? fBoardVector.at (index) : nullptr;
         }
         /*!
          * \brief Get next event from data buffer

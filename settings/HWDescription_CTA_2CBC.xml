@@ -2,7 +2,7 @@
 <HwDescription>
 
   <BeBoard Id="1" boardType="CTA">
-    <connection id="board" uri="ipbusudp-2.0://192.168.000.175:50001" address_table="file://settings/address_table_2CBC.xml" />
+    <connection id="board" uri="ipbusudp-2.0://192.168.007.222:50001" address_table="file://settings/address_table_CTA_2CBC.xml" />
     
     <FW_Version NCbcDataSize="4"/>
     
@@ -58,11 +58,8 @@
     <Register name="dio5.fmcdio5_trig_in_50ohms">1</Register>
     <Register name="dio5.fmcdio5_trig_out_50ohms">0</Register>
     
+    <!-- I2C -->
+    <Register name="cbc_i2c_clk_prescaler"> 39 </Register>
   </BeBoard>
 </HwDescription>
-
-<Settings>
-    <Setting name="RunNumber"> 1 </Setting>
-    <Setting name="HoleMode"> 1 </Setting>
-</Settings>
 

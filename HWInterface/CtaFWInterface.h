@@ -105,6 +105,8 @@ namespace Ph2_HwInterface {
          * \brief Get the FW info
          */
         void getBoardInfo();
+	
+	BoardType getBoardType() const {return BoardType::CTA;}
         /*!
          * \brief Configure the board with its Config File
          * \param pBoard
@@ -172,7 +174,7 @@ namespace Ph2_HwInterface {
          * \param pNcount : Number of registers at stake
          * \return boolean confirming the acknowledgement
          */
-        bool I2cCmdAckWait ( uint32_t pAckVal, uint8_t pNcount = 1 );
+        bool I2cCmdAckWait ( bool pAckVal, uint8_t pNcount = 1 );
         /*!
          * \brief Send request to r/w blocks via I2C
          * \param pVecReq : Block of words to send
