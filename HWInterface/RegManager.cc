@@ -102,12 +102,18 @@ bool RegManager::WriteStackReg( const std::vector< std::pair<std::string, uint32
 {
 
     fBoardMutex.lock();
-    for ( auto const& v : pVecReg )
-    {
-        fBoard->getNode( v.first ).write( v.second );
-        // std::cout << v.first << "  :  " << v.second << std::endl;
+    for ( auto const& v : pVecReg ){
+		    fBoard->getNode( v.first ).write( v.second );
+		    // std::cout << v.first << "  :  " << v.second << std::endl;
     }
-    fBoard->dispatch();
+    try{
+	    fBoard->dispatch();
+    } catch(...) {
+	    std::cerr<<"Error while writing the following parameters: "<< std::endl;
+	    for ( auto const& v : pVecReg ) std::cerr<< v.first<<", ";
+	    std::cerr<<std::endl;
+	    throw ;
+    }
     fBoardMutex.unlock();
 
     if ( DEV_FLAG )

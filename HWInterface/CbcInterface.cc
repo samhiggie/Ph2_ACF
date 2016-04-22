@@ -176,7 +176,7 @@ namespace Ph2_HwInterface {
         fBoardFW->ReadCbcBlockReg ( pCbc->getFeId(), cVecReq );
 
         //bools to find the values of failed and read
-        bool cFailed;
+        bool cFailed=false;
         bool cRead;
         uint8_t cCbcId;
         fBoardFW->DecodeReg ( cRegItem, cCbcId, cVecReq[0], cRead, cFailed );
@@ -214,15 +214,19 @@ namespace Ph2_HwInterface {
         fTransactionCount++;
 #endif
 
-        bool cFailed;
+        bool cFailed=false;
         bool cRead;
         uint8_t cCbcId;
         //update the HWDescription object with the value I just read
-        for ( const auto& cReadWord : cVec )
+        uint32_t idxReadWord=0;
+        for ( const auto& cReg : pVecReg )
+        //for ( const auto& cReadWord : cVec )
         {
+	    uint32_t cReadWord=cVec[idxReadWord++];
             fBoardFW->DecodeReg ( cRegItem, cCbcId, cReadWord, cRead, cFailed );
             // here I need to find the string matching to the reg item!
-            //if (!cFailed) pCbc->setReg ( cReadWord, cRegItem.fValue );
+            if (!cFailed) 	
+		pCbc->setReg ( cReg, cRegItem.fValue );
         }
     }
 

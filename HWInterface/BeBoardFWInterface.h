@@ -31,6 +31,8 @@
 
 using namespace Ph2_HwDescription;
 
+enum class BoardType {GLIB, CTA};
+
 /*!
  * \namespace Ph2_HwInterface
  * \brief Namespace regrouping all the interfaces to the hardware
@@ -77,7 +79,7 @@ namespace Ph2_HwInterface {
         /*!
         * \brief Get the board type
         */
-        virtual std::string getBoardType();
+        virtual std::string readBoardType();
         /*!
         * \brief Get the board infos
         */
@@ -223,6 +225,8 @@ namespace Ph2_HwInterface {
         virtual const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const = 0;
 
         virtual std::vector<uint32_t> ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
+
+	virtual BoardType getBoardType() const=0;
 
       protected:
 

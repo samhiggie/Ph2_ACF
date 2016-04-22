@@ -81,7 +81,7 @@ namespace Ph2_HwInterface
 			return ( ( fCurrentEvent >= fEventList.size() ) ? nullptr : fEventList.at( fCurrentEvent++ ) );
 		}
 		const Event* GetEvent( const BeBoard* pBoard, int i ) const {
-			return ( ( i >= fEventList.size() ) ? nullptr : fEventList.at( i ) );
+			return ( ( i >= (int)fEventList.size() ) ? nullptr : fEventList.at( i ) );
 		}
 		const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const {
 			return fEventList;

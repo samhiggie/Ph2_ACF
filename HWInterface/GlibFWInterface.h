@@ -102,6 +102,8 @@ namespace Ph2_HwInterface {
          * \brief Get the FW info
          */
         void getBoardInfo();
+
+	BoardType getBoardType() const {return BoardType::GLIB;}
         /*!
          * \brief Configure the board with its Config File
          * \param pBoard

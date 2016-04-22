@@ -162,10 +162,14 @@ namespace Ph2_System {
             BeBoard* cBeBoard = this->parseBeBoard (cBeBoardNode, os);
 
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
-            std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cBeBoardConnectionNode.attribute ("id").value() << BOLDBLUE << " URI: "
+	    if (strUhalConfig.empty())
+		    std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cBeBoardConnectionNode.attribute ("id").value() << BOLDBLUE << " URI: "
                       << BOLDYELLOW << cBeBoardConnectionNode.attribute ("uri").value()
                       << BOLDBLUE << " Address Table: "
                       << BOLDYELLOW << expandEnvironmentVariables(cBeBoardConnectionNode.attribute ("address_table").value()) << RESET << std::endl;
+	    else 
+		    std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cBeBoardNode.attribute ("Id").value() << BOLDBLUE << " Type: "
+                      << BOLDYELLOW << cBeBoardNode.attribute ("boardType").value() << RESET << std::endl;
 
             // Iterate over the BeBoardRegister Nodes
             for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode/* != cBeBoardNode.child( "Module" )*/; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
@@ -178,7 +182,7 @@ namespace Ph2_System {
 		if (strUhalConfig.empty())
 			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cBeBoardConnectionNode.attribute ( "id" ).value(), cBeBoardConnectionNode.attribute ( "uri" ).value(), expandEnvironmentVariables(cBeBoardConnectionNode.attribute ("address_table").value()).c_str(), fFileHandler );
 		else
-			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "id" ).as_int(), fFileHandler );
+			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
 
              } else if ( !std::string ( cBeBoardNode.attribute ( "boardType" ).value() ).compare ( std::string ( "CTA" ) ) ){
 		if (strUhalConfig.empty())
@@ -186,7 +190,7 @@ namespace Ph2_System {
 					cBeBoardConnectionNode.attribute ( "uri" ).value(),
 					expandEnvironmentVariables(cBeBoardConnectionNode.attribute ("address_table").value()).c_str(), fFileHandler );
 		else
-			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "id" ).as_int(), fFileHandler );
+			fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
 	     }
             /*else
               cBeBoardFWInterface = new OtherFWInterface();*/
