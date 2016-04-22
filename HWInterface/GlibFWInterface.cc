@@ -557,6 +557,7 @@ namespace Ph2_HwInterface {
         cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
         //TODO
         cVecReg.push_back ( {"cbc_i2c_cmd_rq", pWrite ? 3 : 1} );
+        //cVecReg.push_back ( {"cbc_i2c_cmd_rq", pWrite ? 1 : 3} );
         WriteStackReg ( cVecReg );
 
         //now remove the 0xFFFFFFFF word again so I can re-use the vector
@@ -573,10 +574,13 @@ namespace Ph2_HwInterface {
 
     void GlibFWInterface::ReadI2C ( std::vector<uint32_t>& pVecReq )
     {
-        uint32_t pVecReqSize = pVecReq.size();
+        //Read Size + 1 to have the ffffffff word 
+        uint32_t pVecReqSize = pVecReq.size()+1;
         pVecReq.clear();
         WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
         pVecReq = ReadBlockRegValue ( "sram1", pVecReqSize );
+        if(pVecReq.back() != 0xFFFFFFFF) std::cout << "ERROR, the last word read was not 0xFFFFFFFF - not sure if I read all required words!" << std::endl;
+        else pVecReq.pop_back();
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
         cVecReg.push_back ( {"cbc_i2c_cmd_rq", 0} );
