@@ -155,8 +155,8 @@ namespace Ph2_HwInterface {
         //all the daq_ctrl registers have to be used with hex values and not with the sub-masks but they are auto clearing after 1 has been written
         //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset,
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
-        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
+        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET_ALL });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
         std::vector<uint32_t> pReplies;
@@ -181,7 +181,7 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         //first reset all the counters and state machines
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
 
         //according to Kirika, this is not necessary to set explicitly any more
@@ -256,7 +256,7 @@ namespace Ph2_HwInterface {
 
         // probably no need to reset everything since I am calling this a lot during commissioning
         cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", pNEvents});
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
         //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
         WriteStackReg ( cVecReg );
         cVecReg.clear();

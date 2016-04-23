@@ -22,15 +22,6 @@
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
 
-#define RESET 0x1
-#define START 0x2
-#define STOP  0x4
-#define CTR_RESET 0x800
-#define HARD_RESET 0x1
-#define FAST_RESET 0x2
-#define I2C_REFRESH 0x4
-#define TEST_PULSE 0x8
-#define L1A        0x010
 
 using namespace Ph2_HwDescription;
 
@@ -39,7 +30,7 @@ using namespace Ph2_HwDescription;
  * \brief Namespace regrouping all the interfaces to the hardware
  */
 namespace Ph2_HwInterface {
-    class FpgaConfig;
+    class CtaFpgaConfig;
     /*!
      * \class ICFc7FWInterface
      * \brief init/config of the Fc7 and its Cbc's
@@ -51,7 +42,7 @@ namespace Ph2_HwInterface {
         Data* fData; /*!< Data read storage*/
 
         struct timeval fStartVeto;
-        FpgaConfig* fpgaConfig;
+        CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fBroadcastCbcId;
         uint32_t fReplyBufferSize;
@@ -61,29 +52,38 @@ namespace Ph2_HwInterface {
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
         //  const uint32_t SINGLE_I2C_WAIT = 700; //usec for 100 kHz I2C
+        static const int RESET_ALL=0x1;
+        static const int START=0x2;
+        static const int STOP= 0x4;
+        static const int CTR_RESET=0x800;
+        static const int HARD_RESET=0x1;
+        static const int FAST_RESET=0x2;
+        static const int I2C_REFRESH=0x4;
+        static const int TEST_PULSE=0x8;
+        static const int L1A=       0x010;
 
 
-      public:
-        /*!
-         * \brief Constructor of the ICFc7FWInterface class
-         * \param puHalConfigFileName : path of the uHal Config File
-         * \param pBoardId
-         */
-        ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
-        ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
-        /*!
-        * \brief Constructor of the ICFc7FWInterface class
-        * \param pId : ID string
-        * \param pUri: URI string
-        * \param pAddressTable: address tabel string
-        */
-        ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
-        ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
+        public:
+            /*!
+             * \brief Constructor of the ICFc7FWInterface class
+             * \param puHalConfigFileName : path of the uHal Config File
+             * \param pBoardId
+             */
+            ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
+            ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+            /*!
+            * \brief Constructor of the ICFc7FWInterface class
+            * \param pId : ID string
+            * \param pUri: URI string
+            * \param pAddressTable: address tabel string
+            */
+            ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
+            ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
 
-        /*!
-         * \brief Destructor of the ICFc7FWInterface class
-         */
-        ~ICFc7FWInterface()
+            /*!
+             * \brief Destructor of the ICFc7FWInterface class
+             */
+            ~ICFc7FWInterface()
         {
             if (fData) delete fData;
         }
@@ -201,9 +201,9 @@ namespace Ph2_HwInterface {
         {
             bool ctoggle = true;
             std::copy_if (pInputVector.begin(),
-                                 pInputVector.end(),
-                                 std::back_inserter (pOddVector),
-                                 [&ctoggle] (int)
+                          pInputVector.end(),
+                          std::back_inserter (pOddVector),
+                          [&ctoggle] (int)
             {
                 return ctoggle = !ctoggle;
             });

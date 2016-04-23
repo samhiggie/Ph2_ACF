@@ -89,7 +89,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
             // I need this to normalize the TDC values I get from the Strasbourg FW
             bool pStrasbourgFW = false;
 
-            if (pBoard->getBoardType() == "GLIB" || pBoard=>getBoardType() == "CTA") pStrasbourgFW = true;
+            if (pBoard->getBoardType() == "GLIB" || pBoard->getBoardType() == "CTA") pStrasbourgFW = true;
 
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );

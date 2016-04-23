@@ -157,8 +157,8 @@ namespace Ph2_HwInterface {
         //all the daq_ctrl registers have to be used with hex values and not with the sub-masks but they are auto clearing after 1 has been written
         //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset,
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
-        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
+        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET_ALL });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
         std::vector<uint32_t> pReplies;
@@ -183,7 +183,7 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         //first reset all the counters and state machines
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
 
         //according to Kirika, this is not necessary to set explicitly any more
@@ -258,7 +258,7 @@ namespace Ph2_HwInterface {
 
         // probably no need to reset everything since I am calling this a lot during commissioning
         cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", pNEvents});
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
         //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
@@ -613,39 +613,39 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_daq_ctrl.cbc_ctrl", L1A);
     }
 
-    void ICFc7Interface::FlashProm ( const std::string& strConfig, const char* pstrFile )
+    void ICFc7FWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
     {
         checkIfUploading();
 
         fpgaConfig->runUpload ( strConfig, pstrFile );
     }
 
-    void ICFc7Interface::JumpToFpgaConfig ( const std::string& strConfig)
+    void ICFc7FWInterface::JumpToFpgaConfig ( const std::string& strConfig)
     {
         checkIfUploading();
 
         fpgaConfig->jumpToImage ( strConfig);
     }
 
-    void ICFc7Interface::DownloadFpgaConfig ( const std::string& strConfig, const std::string& strDest)
+    void ICFc7FWInterface::DownloadFpgaConfig ( const std::string& strConfig, const std::string& strDest)
     {
         checkIfUploading();
         fpgaConfig->runDownload ( strConfig, strDest.c_str() );
     }
 
-    std::vector<std::string> ICFc7Interface::getFpgaConfigList()
+    std::vector<std::string> ICFc7FWInterface::getFpgaConfigList()
     {
         checkIfUploading();
         return fpgaConfig->getFirmwareImageNames( );
     }
 
-    void ICFc7Interface::DeleteFpgaConfig ( const std::string& strId)
+    void ICFc7FWInterface::DeleteFpgaConfig ( const std::string& strId)
     {
         checkIfUploading();
         fpgaConfig->deleteFirmwareImage ( strId);
     }
 
-    void ICFc7Interface::checkIfUploading()
+    void ICFc7FWInterface::checkIfUploading()
     {
         if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
             throw Exception ( "This board is uploading an FPGA configuration" );
@@ -678,3 +678,4 @@ namespace Ph2_HwInterface {
 
 
 }
+
