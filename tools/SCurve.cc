@@ -347,12 +347,12 @@ void SCurve::setFWTestPulse()
         std::vector<std::pair<std::string, uint32_t> > cRegVec;
         std::string cBoardType = cBoard->getBoardType();
 
-        if (cBoardType == "GLIB")
+        if (cBoardType == "GLIB" || cBoardType =="CTA")
         {
             cRegVec.push_back ({"COMMISSIONNING_MODE_RQ", 1 });
             cRegVec.push_back ({"COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID", 1 });
         }
-        else if (cBoardType == "ICGLIB")
+        else if (cBoardType == "ICGLIB" || cBoardType =="ICFC7")
         {
             cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.enable", 1 });
             cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable", 1 });

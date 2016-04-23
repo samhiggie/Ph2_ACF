@@ -33,7 +33,7 @@
 
 using namespace Ph2_HwDescription;
 
-enum class BoardType {GLIB, ICGLIB, CTA};
+enum class BoardType {GLIB, ICGLIB, CTA, ICFC7};
 
 /*!
  * \namespace Ph2_HwInterface

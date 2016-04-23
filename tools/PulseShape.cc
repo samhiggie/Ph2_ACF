@@ -13,8 +13,8 @@ void PulseShape::Initialize()
         std::cerr << "cBoardId = " << cBoardId << std::endl;
         std::string cBoardType = cBoard->getBoardType();
 
-        if (cBoardType == "GLIB") fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE");
-        else if (cBoardType == "ICGLIB") fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, "cbc_daq_ctrl.commissioning_cycle.test_pulse_count");
+        if (cBoardType == "GLIB" || cBoardType == "CTA") fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE");
+        else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7") fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, "cbc_daq_ctrl.commissioning_cycle.test_pulse_count");
 
         for ( auto& cFe : cBoard->fModuleVector )
         {
@@ -310,8 +310,8 @@ void PulseShape::setDelayAndTesGroup ( uint32_t pDelay )
     {
         std::string cBoardType = cBoard->getBoardType();
 
-        if (cBoardType == "GLIB") cTPDelayRegisterName = "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE";
-        else if (cBoardType == "ICGLIB") cTPDelayRegisterName = "cbc_daq_ctrl.commissioning_cycle.test_pulse_count";
+        if (cBoardType == "GLIB" || cBoardType == "CTA") cTPDelayRegisterName = "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE";
+        else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7") cTPDelayRegisterName = "cbc_daq_ctrl.commissioning_cycle.test_pulse_count";
 
         //potentially have to reset the IC FW commissioning cycle state machine?
         fBeBoardInterface->WriteBoardReg (cBoard, cTPDelayRegisterName, cCoarseDelay);

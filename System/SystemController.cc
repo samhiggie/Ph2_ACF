@@ -99,7 +99,7 @@ namespace Ph2_System {
             {
                 fBeBoardInterface->ConfigureBoard ( &pBoard );
 
-                if ( fCheck && pBoard.getBoardType() == "GLIB")
+                if ( fCheck && (pBoard.getBoardType() == "GLIB" || pBoard.getBoardType() == "CTA" ))
                 {
                     fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
                     los_ << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
@@ -209,6 +209,13 @@ namespace Ph2_System {
                     fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
                 else
                     fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
+            }
+            else if ( !cBoardType.compare ( std::string ( "ICFC7" ) ) )
+            {
+                if (strUhalConfig.empty() )
+                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
+                else
+                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
             }
 
             /*else

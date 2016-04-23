@@ -89,7 +89,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
             // I need this to normalize the TDC values I get from the Strasbourg FW
             bool pStrasbourgFW = false;
 
-            if (pBoard->getBoardType() == "GLIB") pStrasbourgFW = true;
+            if (pBoard->getBoardType() == "GLIB" || pBoard=>getBoardType() == "CTA") pStrasbourgFW = true;
 
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
@@ -164,12 +164,12 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
             std::string cBoardType = pBoard->getBoardType();
             std::vector<std::pair<std::string, uint32_t>> cRegVec;
 
-            if (cBoardType == "GLIB")
+            if (cBoardType == "GLIB" || cBoardType == "CTA")
             {
                 cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe1", cLat});
                 cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
             }
-            else if (cBoardType == "ICGLIB")
+            else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7")
             {
                 cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});
             }
