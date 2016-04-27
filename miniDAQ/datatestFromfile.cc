@@ -86,7 +86,7 @@ int main( int argc, char* argv[] )
 
         std::map<std::string,pair<int, std::string>>  cbcTypeEvtSizeMap;
         cbcTypeEvtSizeMap["2"] = { 2, XML_DESCRIPTION_FILE_2CBC };
-        cbcTypeEvtSizeMap["4"] = { 4, XML_DESCRIPTION_FILE_2CBC };
+        cbcTypeEvtSizeMap["4"] = { 4, XML_DESCRIPTION_FILE_4CBC };
         cbcTypeEvtSizeMap["8"] = { 8, XML_DESCRIPTION_FILE_8CBC };
         cbcTypeEvtSizeMap["16"] = { 16, XML_DESCRIPTION_FILE_16CBC };
 	int result = cmd.parse( argc, argv );
@@ -137,7 +137,6 @@ int main( int argc, char* argv[] )
         // Now split the data buffer in events
 	Data d;
         int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32*cbcTypeEvtSizeMap[cbcType].first;
-        std::cout << eventSize << " DEBUG " << std::endl;
 	int nEvents = dataVec.size() / eventSize;
 	d.Set( pBoard, dataVec, nEvents, !cSwap );
 	const std::vector<Event*>& elist = d.GetEvents( pBoard );
