@@ -134,6 +134,11 @@ On this Repo, you can find different version of the software :
     - added Support for AMC13
     - included TDC aware Trigger latency scan in Commissioning
     - adapted FW aware commissioning procedures & tools to check the beBoardFWVersion (GLIB vs ICGLIB)
+    - simplified byte swapping / bit reversal in Data & Event classes
+    - added ICFc7FWInterface
+    - updated CtaFWInterface (Strasbourg FW)
+    - much cleaner CbcInterface
+    - calibration can now automatically perform a noise scan and a noise strip mask procedure!
 
 ### Setup
 

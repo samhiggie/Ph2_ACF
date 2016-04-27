@@ -137,7 +137,7 @@ namespace Ph2_HwInterface {
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", static_cast<uint32_t> (cVal) });
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", static_cast<uint32_t> (cVal) });
         //power on FMC l12 to power the DIO5
-        cVecReg.push_back ({"ctrl2.fmc_l12_pwr_en", 1 });
+        cVecReg.push_back ({"ctrl_2.fmc_l12_pwr_en", 1 });
 
         //last, loop over the variable registers from the HWDescription.xml file
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();

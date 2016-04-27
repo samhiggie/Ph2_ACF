@@ -411,7 +411,7 @@ void PedeNoise::processSCurvesNoise ( TString pParameter, uint8_t pValue, bool p
                 cOddHist->Fill ( int ( cChan.fChannelId / 2.0 ), cChan.getNoise() );
 
             // some output
-            std::cout << "FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " Chanel " << +cChan.fChannelId << " Pedestal " << cChan.getPedestal() << " Noise " << cChan.getNoise() << std::endl;
+            //std::cout << "FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " Chanel " << +cChan.fChannelId << " Pedestal " << cChan.getPedestal() << " Noise " << cChan.getNoise() << std::endl;
 
             cStripHist->Fill ( cChan.fChannelId, cChan.getNoise() );
 
@@ -526,7 +526,7 @@ void PedeNoise::setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma)
             TH1F* cNoiseHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Noise" ) );
             TH1F* cPedeHist  = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Pedestal" ) );
 
-            uint8_t cPedestal = floor (cPedeHist->GetMean() );
+            uint8_t cPedestal = round (cPedeHist->GetMean() );
             uint8_t cNoise =  round(cNoiseHist->GetMean() );
             int cDiff = fHoleMode ? pNSigma * cNoise : -pNSigma * cNoise;
             uint8_t cValue = cPedestal + cDiff;
