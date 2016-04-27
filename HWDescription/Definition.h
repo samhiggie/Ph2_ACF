@@ -14,7 +14,8 @@
 //-----------------------------------------------------------------------------
 //Glib Config Files
 
-#define XML_DESCRIPTION_FILE_2CBC "settings/HWDescription_2CBC.xml"
+#define XML_DESCRIPTION_FILE_2CBC "settings/ICDescription.xml"
+#define XML_DESCRIPTION_FILE_4CBC "settings/HWDescription_2CBC.xml"
 #define XML_DESCRIPTION_FILE_8CBC "settings/HWDescription_8CBC.xml"
 #define XML_DESCRIPTION_FILE_16CBC "settings/Beamtest_Nov15.xml"
 

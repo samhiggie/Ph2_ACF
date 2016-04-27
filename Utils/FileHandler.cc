@@ -8,13 +8,13 @@ FileHandler::FileHandler( const std::string& pBinaryFileName, char pOption ):
 	is_set( false )
 {
 	openFile();
-	//if ( fOption == 'w' ) fThread = std::thread( &FileHandler::writeFile, this );
+    if ( fOption == 'w' ) fThread = std::thread( &FileHandler::writeFile, this );
 }
 
 //destructor
 FileHandler::~FileHandler()
 {
-	//fThread.join();
+    fThread.join();
 	closeFile();
 }
 void FileHandler::set( std::vector<uint32_t> pVector )
