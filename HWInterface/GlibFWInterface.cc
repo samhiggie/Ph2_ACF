@@ -146,6 +146,7 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
+        fNthAcq=0;
         // Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
         fNpackets = ReadReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
 

@@ -47,7 +47,7 @@ namespace Ph2_HwInterface {
         std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
         CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
-        uint32_t fNthAcq, fNpackets;
+        uint32_t fNthAcq, fNpackets, uEvtSize, uEvtReadSize;
 
       private:
         /*!
