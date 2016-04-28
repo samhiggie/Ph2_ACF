@@ -252,39 +252,67 @@ namespace Ph2_HwInterface {
 
     void ICGlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents )
     {
+        // I need a check if pNEvents is grater than 2000 - in this case I have to split in packets of 2000
+        uint32_t cNCycles = 1;
+        uint32_t cNEvents = pNEvents;
+
+        if ( pNEvents > 2000 )
+        {
+            if (pNEvents % 2000 == 0)
+            {
+                //total number of events is divisible by 2000 so lets just get the number of cycles
+                cNCycles = pNEvents / 2000;
+                cNEvents = 2000;
+            }
+            else
+            {
+                // if not, let's take the remainder of the division as packet size
+                cNEvents = pNEvents % 2000;
+                cNCycles = ceil (pNEvents / double (cNEvents) );
+            }
+            std::cout << "Packet Size larger than 2000, splitting in Acquisitions of " << cNEvents << " in " << cNCycles << " cycles!" << std::endl;
+        }
+
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         // probably no need to reset everything since I am calling this a lot during commissioning
-        cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", pNEvents});
+        cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", cNEvents});
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
         //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
         //here I optimize for speed during calibration, so I explicitly set the nevents_per_pcdaq to the event number I desire
-        fNEventsperAcquistion = pNEvents;
-        //now issue start
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START} );
+        fNEventsperAcquistion = cNEvents;
+        std::vector<uint32_t> cData;
 
-        WriteStackReg ( cVecReg );
-        cVecReg.clear();
-        //now poll for data to be ready
-        std::chrono::milliseconds cWait ( 1 );
-
-        //first, poll if the packet is ready
-        uint32_t cVal = 0;
-
-        while (cVal == 0)
+        // I have to do cNCycles with cNEvents
+        for (uint32_t cIndex = 0; cIndex < cNCycles; cIndex++)
         {
-            cVal = ReadReg ("cbc_daq_ctrl.event_data_buf_status.data_ready" ) & 0x1;
-            std::this_thread::sleep_for ( cWait );
+            //now issue start
+            cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START} );
+
+            WriteStackReg ( cVecReg );
+            cVecReg.clear();
+            //now poll for data to be ready
+            std::chrono::milliseconds cWait ( 1 );
+
+            //first, poll if the packet is ready
+            uint32_t cVal = 0;
+
+            while (cVal == 0)
+            {
+                cVal = ReadReg ("cbc_daq_ctrl.event_data_buf_status.data_ready" ) & 0x1;
+                std::this_thread::sleep_for ( cWait );
+            }
+
+            //now stop triggers & DAQ
+            WriteReg ( "cbc_daq_ctrl.daq_ctrl", STOP );
+
+            //ok, packet complete, now let's read and append to cData
+            std::vector<uint32_t> cTmpData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
+            cData.insert (cData.end(), std::make_move_iterator (cTmpData.begin() ), std::make_move_iterator (cTmpData.end() ) );
         }
-
-        //now stop triggers & DAQ
-        WriteReg ( "cbc_daq_ctrl.daq_ctrl", STOP );
-
-        //ok, packet complete, now let's read
-        std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
 
         // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
         if ( fData ) delete fData;
@@ -292,7 +320,7 @@ namespace Ph2_HwInterface {
         fData = new Data();
 
         // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNEventsperAcquistion, true );
+        fData->Set ( pBoard, cData , cNCycles * fNEventsperAcquistion, true );
 
         if ( fSaveToFile )
         {
@@ -562,9 +590,8 @@ namespace Ph2_HwInterface {
                     else cSuccess == false;
                 }
                 else
-                {
                     cSuccess = false;
-                }
+
                 //std::cout << std::bitset<32>(cWord) << std::endl;
             }
 

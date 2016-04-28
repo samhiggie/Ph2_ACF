@@ -63,7 +63,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
     this->accept ( cReader );
     uint8_t cVcth = cReader.fRegValue;
 
-    int cVcthStep = ( fHoleMode == 1 ) ? +15 : -15;
+    int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
     std::cout << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" << std::endl;
     cVcth += cVcthStep;
 
@@ -139,7 +139,7 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
     this->accept ( cReader );
     uint8_t cVcth = cReader.fRegValue;
 
-    int cVcthStep = ( fHoleMode == 1 ) ? +20 : -20;
+    int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
     std::cout << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" << std::endl;
     cVcth += cVcthStep;
 
@@ -240,6 +240,7 @@ int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEvent
         //get TDC value for this particular event
         uint8_t cTDCVal = cEvent->GetTDC();
 
+        //std::cout << "TDC Val: " << +cTDCVal << std::endl;
         if (cTDCVal != 0 && pStrasbourgFW) cTDCVal -= 5;
 
         if (cTDCVal > 8 ) std::cout << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
