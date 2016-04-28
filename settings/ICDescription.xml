@@ -6,15 +6,17 @@
     <!--<connection id="board" uri="ipbusudp-2.0://192.168.0.170:50001" address_table="file://settings/IC_address_table.xml" />-->
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
-        <!--<Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>-->
-        <!--<Global_CBC_Register name="TriggerLatency"> 0x0D </Global_CBC_Register>-->
-      <!--<Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>-->
-      <CBC_Files path="./settings/" />
-      <CBC Id="0" configfile="Cbc_default_hole.txt" />
-      <CBC Id="1" configfile="Cbc_default_hole.txt" />
-      <!--<CBC_Files path="./Results/NoiseScan_Hole_28-04-16_10:01/" />-->
-      <!--<CBC Id="0" configfile="FE0CBC0.txt" />-->
-      <!--<CBC Id="1" configfile="FE0CBC1.txt" />-->
+        <Global_CBC_Register name="TriggerLatency"> 0x09 </Global_CBC_Register>
+        <!--<Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register>-->
+      <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0xE1</Global_CBC_Register>
+      <Global_CBC_Register name="TestPulsePot">0xE0</Global_CBC_Register>
+      <Global_CBC_Register name="SelTestPulseDel&ChanGroup">0x00</Global_CBC_Register>
+      <!--<CBC_Files path="./settings/" />-->
+      <!--<CBC Id="0" configfile="Cbc_default_hole.txt" />-->
+      <!--<CBC Id="1" configfile="Cbc_default_hole.txt" />-->
+      <CBC_Files path="./Results/Calibration_Hole_28-04-16_17:30/" />
+      <CBC Id="0" configfile="FE0CBC0.txt" />
+      <CBC Id="1" configfile="FE0CBC1.txt" />
     </Module>
 
     <!--TRIGGER-->
@@ -27,22 +29,22 @@
 
     <!--COMMISSIONING MODE-->
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.enable"> 1 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 0 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.i2c_refresh_enable"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 0 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.l1a_trigger_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 3000 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 400 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.i2c_refresh_count"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> 201 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 400 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> 90 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 100 </Register>
 
     <!--DAQ-->
     <Register name="cbc_daq_ctrl.nevents_per_pcdaq"> 10 </Register>
     <Register name="cbc_daq_ctrl.nevents_for_event_data_buf_full_warning"> 8 </Register>
 
     <!--LATENCIES-->
-    <Register name="cbc_daq_ctrl.latencies.trigger_latency"> 14 </Register>
+    <Register name="cbc_daq_ctrl.latencies.trigger_latency"> 8 </Register>
     <Register name="cbc_daq_ctrl.latencies.stub_latency"> 9 </Register>
 
     <!-- DIO5 Config -->

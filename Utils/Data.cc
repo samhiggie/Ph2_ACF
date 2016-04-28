@@ -68,9 +68,9 @@ namespace Ph2_HwInterface {
 
         for ( auto i = 0; i < flist.size(); ++i )
         {
-            // std::cout << std::bitset<8>(flist.at(i)) << " ";
-            // if((i+1)%4 == 0 && i != 0) std::cout << std::endl;
-            // if(i%78 == 0 && i != 0) std::cout << std::endl << std::endl;
+             //std::cout << std::bitset<8>(flist.at(i)) << " ";
+             //if((i+1)%4 == 0 && i != 0) std::cout << std::endl;
+             //if(i%96 == 0 && i != 0) std::cout << std::endl << std::endl;
 
             lvec.push_back ( flist[i] );
 

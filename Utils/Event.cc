@@ -440,7 +440,8 @@ namespace Ph2_HwInterface {
                     os << data.substr ( FIRST_LINE_WIDTH + LINE_WIDTH * i, LINE_WIDTH ) << std::endl;
 
                 os << data.substr ( FIRST_LINE_WIDTH + LINE_WIDTH * 7, LAST_LINE_WIDTH ) << std::endl;
-                os << BLUE << "Stubs: " << ev.StubBitString ( feId, cbcId ).c_str() << RESET << std::endl;
+                os << BLUE << "Stubs Strasbourg: " << ev.StubBitString ( feId, cbcId ).c_str() << RESET << std::endl;
+                os << BLUE << "Stubs IC: " << ev.Bit ( feId, cbcId,  IC_OFFSET_CBCSTUBDATA ) << RESET << std::endl;
             }
 
             os << std::endl;

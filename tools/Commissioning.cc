@@ -162,16 +162,19 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
         {
             //here set the stub latency
             std::string cBoardType = pBoard->getBoardType();
+            bool cStrasbourgFW;
             std::vector<std::pair<std::string, uint32_t>> cRegVec;
 
             if (cBoardType == "GLIB" || cBoardType == "CTA")
             {
                 cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe1", cLat});
                 cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
+                cStrasbourgFW = true;
             }
             else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7")
             {
                 cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});
+                cStrasbourgFW = false;
             }
 
             fBeBoardInterface->WriteBoardMultReg (pBoard, cRegVec);
@@ -185,7 +188,7 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
             for ( auto& cEvent : events )
             {
                 for ( auto cFe : pBoard->fModuleVector )
-                    cNStubs += countStubs ( cFe, cEvent, "module_stub_latency", cLat );
+                    cNStubs += countStubs ( cFe, cEvent, "module_stub_latency", cLat,cStrasbourgFW );
 
                 cN++;
             }
@@ -294,7 +297,7 @@ int Commissioning::countHits ( Module* pFe,  const Event* pEvent, std::string pH
     return cHitCounter;
 }
 
-int Commissioning::countStubs ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter )
+int Commissioning::countStubs ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter, bool pStrasbourgFW )
 {
     // loop over Modules & Cbcs and count hits separately
     int cStubCounter = 0;
@@ -302,13 +305,29 @@ int Commissioning::countStubs ( Module* pFe,  const Event* pEvent, std::string p
     //  get histogram to fill
     TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( pFe, pHistName ) );
 
-    for ( auto cCbc : pFe->fCbcVector )
+    if (pStrasbourgFW)
     {
-        if ( pEvent->StubBit ( cCbc->getFeId(), cCbc->getCbcId() ) )
+        for ( auto cCbc : pFe->fCbcVector )
         {
-            cTmpHist->Fill ( pParameter );
-            cStubCounter++;
+            if ( pEvent->StubBit ( cCbc->getFeId(), cCbc->getCbcId() ) )
+                if ( pEvent->StubBit ( cCbc->getFeId(), cCbc->getCbcId() ) )
+                {
+                    cTmpHist->Fill ( pParameter );
+                    cStubCounter++;
+                }
         }
+    }
+    else
+    {
+        for ( auto cCbc : pFe->fCbcVector )
+        {
+            if ( pEvent->Bit ( cCbc->getFeId(), cCbc->getCbcId(), IC_OFFSET_CBCSTUBDATA ) )
+            {
+                cTmpHist->Fill ( pParameter );
+                cStubCounter++;
+            }
+        }
+
     }
 
     return cStubCounter;
@@ -360,4 +379,3 @@ void Commissioning::parseSettings()
     std::cout << "	Nevents = " << fNevents << std::endl;
     std::cout << "	HoleMode = " << int ( fHoleMode ) << std::endl;
 }
-
