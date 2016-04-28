@@ -24,10 +24,35 @@
 		<node id="reg_status_2" address = "0x00000007" /> <!-- not used. -->
 		<node id="ctrl_sram"	address = "0x00000008" /> <!-- sram select 0 : ipbus, 1 : user -->
 	</node>
-   	<node id="ctrl_2"       address="0x00000005"   permission="rw">
-	    <node id="icap_page"    mask="0x00000003"       permission="rw"/>
-	    <node id="icap_trigg"      mask="0x00000010"       permission="rw"/>
-	</node>
+    <!--CTA VERSION OF CONTROL2 and STATUS-->
+    <!-- CONTROL_2 -->
+    <node id="ctrl_2" address="0x00000005">
+        <node id="icap_page" mask="0x00000003" permission="rw" />
+        <node id="icap_trigg" mask="0x00000010" permission="rw" />
+        <node id="phase_mon_lower" mask="0x0000ff00" permission="rw" />
+        <node id="phase_mon_upper" mask="0x00ff0000" permission="rw" />
+        <node id="phase_mon_strobe" mask="0x01000000" permission="rw" />
+        <node id="phase_mon_refclk_sel" mask="0x02000000" permission="rw" />
+        <node id="phase_mon_auto" mask="0x08000000" permission="rw" />
+        <node id="fmc_l12_pwr_en" mask="0x10000000" permission="rw" />
+        <node id="fmc_l8_pwr_en" mask="0x20000000" permission="rw" />
+        <node id="fmc_pg_c2m" mask="0x40000000" permission="rw" />
+    </node>
+    <!-- STATUS -->
+    <node id="status" address="0x00000006">
+        <node id="cpld2fpga_gpio" mask="0x0000000f" permission="r" />
+        <node id="pca8574_int" mask="0x00000010" permission="r" />
+        <node id="phase_mon_count" mask="0x0000ff00" permission="r" />
+        <node id="phase_mon_done" mask="0x00010000" permission="r" />
+        <node id="phase_mon_ok" mask="0x00020000" permission="r" />
+        <node id="cdce_sync_busy" mask="0x01000000" permission="r" />
+        <node id="cdce_sync_done" mask="0x02000000" permission="r" />
+        <node id="cdce_lock" mask="0x04000000" permission="r" />
+        <node id="fmc_l12_pg_m2c" mask="0x10000000" permission="r" />
+        <node id="fmc_l12_present" mask="0x20000000" permission="r" />
+        <node id="fmc_l8_pg_m2c" mask="0x40000000" permission="r" />
+        <node id="fmc_l8_present" mask="0x80000000" permission="r" />
+    </node>
 	<!-- GLIB user logic registers -->
 	<!-- firmware configurations -->
 	<node id="user_stat" address ="0x40000000" permission="r" mode="block" size="0x0000000F">
@@ -192,4 +217,15 @@
 		<node id="fmc1" address = "0x0" mode="non-incremental" size="1024"/>	
 		<node id="fmc2" address = "0x1" mode="non-incremental" size="1024"/>	
 	</node>
+    <!--Present in Glib or FC7 address table for fpgaconfig-->
+	  <node id="flash_async_read_cmd"	address="0x0800bddf"  mask="0xFFFFFFFF" description="FLASH memory asynchronous read mode"/>
+    <node id="flash_block" address="0x08000000"     mode="block" size="0x00800000" permission="rw" description="FLASH memory for FPGA configuration"/>
+    <!-- ICAP MEMORY SPACE -->
+    <node id="icap" address="0x00000200" mask="0xffffffff" permission="rw" />
+
+    <node id="buf_cta" address="0x0000400" class="MmcPipeInterface" description="UC link buffer test register" size="0x3" tags="slave">
+      <node id="FPGAtoMMCcounters" address="0x0"/>
+      <node id="MMCtoFPGAcounters" address="0x1"/>
+      <node id="FIFO" address="0x2" mode="non-incremental" size="512" />
+  	</node>
 </node>

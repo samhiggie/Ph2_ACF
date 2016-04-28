@@ -19,6 +19,7 @@
 #include "../HWInterface/GlibFWInterface.h"
 #include "../HWInterface/ICGlibFWInterface.h"
 #include "../HWInterface/CtaFWInterface.h"
+#include "../HWInterface/ICFc7FWInterface.h"
 #include "../HWDescription/Definition.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"

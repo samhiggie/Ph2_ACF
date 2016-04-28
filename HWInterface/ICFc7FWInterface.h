@@ -1,8 +1,8 @@
 
 /*!
 
-        \file                           ICICGlibFWInterface.h
-        \brief                          ICICGlibFWInterface init/config of the Glib and its Cbc's
+        \file                           ICICFc7FWInterface.h
+        \brief                          ICICFc7FWInterface init/config of the Glib and its Cbc's
         \author                         G. Auzinger, K. Uchida
         \version            1.0
         \date                           25.02.2016
@@ -10,8 +10,8 @@
 
  */
 
-#ifndef __ICGLIBFWINTERFACE_H__
-#define __ICGLIBFWINTERFACE_H__
+#ifndef _ICFC7FWINTERFACE_H__
+#define _ICFC7FWINTERFACE_H__
 
 #include <string>
 #include <map>
@@ -30,19 +30,19 @@ using namespace Ph2_HwDescription;
  * \brief Namespace regrouping all the interfaces to the hardware
  */
 namespace Ph2_HwInterface {
-    class FpgaConfig;
+    class CtaFpgaConfig;
     /*!
-     * \class ICGlibFWInterface
-     * \brief init/config of the Glib and its Cbc's
+     * \class ICFc7FWInterface
+     * \brief init/config of the Fc7 and its Cbc's
      */
-    class ICGlibFWInterface : public BeBoardFWInterface
+    class ICFc7FWInterface : public BeBoardFWInterface
     {
 
       private:
         Data* fData; /*!< Data read storage*/
 
         struct timeval fStartVeto;
-        FpgaConfig* fpgaConfig;
+        CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fBroadcastCbcId;
         uint32_t fReplyBufferSize;
@@ -63,27 +63,27 @@ namespace Ph2_HwInterface {
         static const int L1A=       0x010;
 
 
-      public:
-        /*!
-         * \brief Constructor of the ICGlibFWInterface class
-         * \param puHalConfigFileName : path of the uHal Config File
-         * \param pBoardId
-         */
-        ICGlibFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
-        ICGlibFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
-        /*!
-        * \brief Constructor of the ICGlibFWInterface class
-        * \param pId : ID string
-        * \param pUri: URI string
-        * \param pAddressTable: address tabel string
-        */
-        ICGlibFWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
-        ICGlibFWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
+        public:
+            /*!
+             * \brief Constructor of the ICFc7FWInterface class
+             * \param puHalConfigFileName : path of the uHal Config File
+             * \param pBoardId
+             */
+            ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
+            ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+            /*!
+            * \brief Constructor of the ICFc7FWInterface class
+            * \param pId : ID string
+            * \param pUri: URI string
+            * \param pAddressTable: address tabel string
+            */
+            ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
+            ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
 
-        /*!
-         * \brief Destructor of the ICGlibFWInterface class
-         */
-        ~ICGlibFWInterface()
+            /*!
+             * \brief Destructor of the ICFc7FWInterface class
+             */
+            ~ICFc7FWInterface()
         {
             if (fData) delete fData;
         }
@@ -107,7 +107,7 @@ namespace Ph2_HwInterface {
 
         BoardType getBoardType() const
         {
-            return BoardType::ICGLIB;
+            return BoardType::ICFC7;
         }
         /*!
          * \brief Configure the board with its Config File
@@ -201,9 +201,9 @@ namespace Ph2_HwInterface {
         {
             bool ctoggle = true;
             std::copy_if (pInputVector.begin(),
-                                 pInputVector.end(),
-                                 std::back_inserter (pOddVector),
-                                 [&ctoggle] (int)
+                          pInputVector.end(),
+                          std::back_inserter (pOddVector),
+                          [&ctoggle] (int)
             {
                 return ctoggle = !ctoggle;
             });
@@ -245,19 +245,26 @@ namespace Ph2_HwInterface {
         //      FPGA CONFIG                                 //
         /////////////////////////////////////////////////////
 
+        void checkIfUploading();
         /*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration
-         * \param numConfig FPGA configuration number (1 or 2)
+         * \param strConfig FPGA configuration name
          * \param pstrFile path to MCS file
          */
         void FlashProm ( const std::string& strConfig, const char* pstrFile );
         /*! \brief Jump to an FPGA configuration */
         void JumpToFpgaConfig ( const std::string& strConfig);
+
+        void DownloadFpgaConfig ( const std::string& strConfig, const std::string& strDest );
         /*! \brief Is the FPGA being configured ?
          * \return FPGA configuring process or NULL if configuration occurs */
         const FpgaConfig* getConfiguringFpga()
         {
-            return fpgaConfig;
+            return (const FpgaConfig*) fpgaConfig;
         }
+        /*! \brief Get the list of available FPGA configuration (or firmware images)*/
+        std::vector<std::string> getFpgaConfigList( );
+        /*! \brief Delete one Fpga configuration (or firmware image)*/
+        void DeleteFpgaConfig ( const std::string& strId);
 
     };
 }

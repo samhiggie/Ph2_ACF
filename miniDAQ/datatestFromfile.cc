@@ -85,7 +85,8 @@ int main( int argc, char* argv[] )
 	cmd.defineOptionAlternative( "cbcType", "c" );
 
         std::map<std::string,pair<int, std::string>>  cbcTypeEvtSizeMap;
-        cbcTypeEvtSizeMap["2"] = { 4, XML_DESCRIPTION_FILE_2CBC };
+        cbcTypeEvtSizeMap["2"] = { 2, XML_DESCRIPTION_FILE_2CBC };
+        cbcTypeEvtSizeMap["4"] = { 4, XML_DESCRIPTION_FILE_4CBC };
         cbcTypeEvtSizeMap["8"] = { 8, XML_DESCRIPTION_FILE_8CBC };
         cbcTypeEvtSizeMap["16"] = { 16, XML_DESCRIPTION_FILE_16CBC };
 	int result = cmd.parse( argc, argv );

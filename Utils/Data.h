@@ -22,7 +22,8 @@
 
 
 using namespace Ph2_HwDescription;
-namespace Ph2_HwInterface {
+namespace Ph2_HwInterface
+{
 
     /*!
      * \class Data

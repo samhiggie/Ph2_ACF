@@ -43,21 +43,17 @@ class Commissioning : public Tool
 
   public:
 	void Initialize(uint32_t pStartLatency, uint32_t pLatencyRange);
-	void ScanThreshold( bool pScanPedestal );
 	std::map<Module*, uint8_t> ScanLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	std::map<Module*, uint8_t> ScanStubLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 	// void ScanLatencyThreshold();
 	// void SaveResults();
 
   private:
-	void initializeHists();
-	void measureScurve( std::string pHistName, uint32_t pNEvents );
-	int countHitsLat( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount, bool pStrasbourgGlib = false );
+	int countHitsLat( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount, bool pStrasbourgFW = false );
 	int countHits( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	int countStubs( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	void updateHists( std::string pHistName, bool pFinal );
 	void parseSettings();
-	void dumpConfigFiles();
 
 	//  Members
 	uint32_t fNevents;
@@ -65,7 +61,7 @@ class Commissioning : public Tool
 	uint32_t fHoleMode;
 	uint32_t fNCbc;
 
-    const uint32_t fTDCBins = 12;
+    const uint32_t fTDCBins = 8;
 };
 
 #endif

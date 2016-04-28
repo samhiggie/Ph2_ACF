@@ -1,7 +1,7 @@
 /*!
 
-        \file                           ICICICGlibFWInterface.h
-        \brief                          ICICICGlibFWInterface init/config of the Glib and its Cbc's
+        \file                           ICICICFc7FWInterface.h
+        \brief                          ICICICFc7FWInterface init/config of the Glib and its Cbc's
         \author                         G. Auzinger, K. Uchida
         \version            1.0
         \date                           25.02.2016
@@ -12,14 +12,14 @@
 #include <time.h>
 #include <chrono>
 #include <uhal/uhal.hpp>
-#include "ICGlibFWInterface.h"
-#include "GlibFpgaConfig.h"
+#include "ICFc7FWInterface.h"
+#include "CtaFpgaConfig.h"
 //#include "CbcInterface.h"
 
 
 namespace Ph2_HwInterface {
 
-    ICGlibFWInterface::ICGlibFWInterface ( const char* puHalConfigFileName,
+    ICFc7FWInterface::ICFc7FWInterface ( const char* puHalConfigFileName,
                                            uint32_t pBoardId ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
@@ -30,7 +30,7 @@ namespace Ph2_HwInterface {
     {}
 
 
-    ICGlibFWInterface::ICGlibFWInterface ( const char* puHalConfigFileName,
+    ICFc7FWInterface::ICFc7FWInterface ( const char* puHalConfigFileName,
                                            uint32_t pBoardId,
                                            FileHandler* pFileHandler ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
@@ -45,7 +45,7 @@ namespace Ph2_HwInterface {
         else fSaveToFile = true;
     }
 
-    ICGlibFWInterface::ICGlibFWInterface ( const char* pId,
+    ICFc7FWInterface::ICFc7FWInterface ( const char* pId,
                                            const char* pUri,
                                            const char* pAddressTable ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
@@ -57,7 +57,7 @@ namespace Ph2_HwInterface {
     {}
 
 
-    ICGlibFWInterface::ICGlibFWInterface ( const char* pId,
+    ICFc7FWInterface::ICFc7FWInterface ( const char* pId,
                                            const char* pUri,
                                            const char* pAddressTable,
                                            FileHandler* pFileHandler ) :
@@ -73,7 +73,7 @@ namespace Ph2_HwInterface {
         else fSaveToFile = true;
     }
 
-    void ICGlibFWInterface::getBoardInfo()
+    void ICFc7FWInterface::getBoardInfo()
     {
         //std::cout << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) << std::endl;
         //std::cout << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) << std::endl;
@@ -96,7 +96,7 @@ namespace Ph2_HwInterface {
         std::cout << cChar << std::endl;
     }
 
-    void ICGlibFWInterface::ConfigureBoard ( const BeBoard* pBoard )
+    void ICFc7FWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         //here i want to first configure the FW according to the HW structure attached - since this method is aware of pBoard, I can loop the HW structure and thus count CBCs, set i2c addresses and FMC config
@@ -136,6 +136,8 @@ namespace Ph2_HwInterface {
         bool cVal = (fBroadcastCbcId == 2) ? 0 : 1;
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_wrong_pol", static_cast<uint32_t> (cVal) });
         cVecReg.push_back ({"cbc_daq_ctrl.general.fmc_pc045c_4hybrid", static_cast<uint32_t> (cVal) });
+        //power on FMC l12 to power the DIO5
+        cVecReg.push_back ({"ctrl_2.fmc_l12_pwr_en", 1 });
 
         //last, loop over the variable registers from the HWDescription.xml file
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
@@ -176,7 +178,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    void ICGlibFWInterface::Start()
+    void ICFc7FWInterface::Start()
     {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
@@ -196,25 +198,25 @@ namespace Ph2_HwInterface {
         cVecReg.clear();
     }
 
-    void ICGlibFWInterface::Stop()
+    void ICFc7FWInterface::Stop()
     {
         WriteReg ( "cbc_daq_ctrl.daq_ctrl", STOP );
     }
 
 
-    void ICGlibFWInterface::Pause()
+    void ICFc7FWInterface::Pause()
     {
         //this should just brake triggers
         WriteReg ( "cbc_daq_ctrl.daq_ctrl", 0x4000 );
     }
 
 
-    void ICGlibFWInterface::Resume()
+    void ICFc7FWInterface::Resume()
     {
         WriteReg ( "cbc_daq_ctrl.daq_ctrl", 0x2000 );
     }
 
-    uint32_t ICGlibFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger )
+    uint32_t ICFc7FWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger )
     {
         std::chrono::milliseconds cWait ( 1 );
         //first, read how many Events per Acquisition
@@ -250,7 +252,7 @@ namespace Ph2_HwInterface {
         return fNEventsperAcquistion;
     }
 
-    void ICGlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents )
+    void ICFc7FWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents )
     {
         // I need a check if pNEvents is grater than 2000 - in this case I have to split in packets of 2000
         uint32_t cNCycles = 1;
@@ -329,7 +331,7 @@ namespace Ph2_HwInterface {
         }
     }
 
-    std::vector<uint32_t> ICGlibFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
+    std::vector<uint32_t> ICFc7FWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
     {
         uhal::ValVector<uint32_t> valBlock = ReadBlockReg ( pRegNode, pBlocksize );
         std::vector<uint32_t> vBlock = valBlock.value();
@@ -346,7 +348,7 @@ namespace Ph2_HwInterface {
         return vBlock;
     }
 
-    bool ICGlibFWInterface::WriteBlockReg ( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
+    bool ICFc7FWInterface::WriteBlockReg ( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
     {
         bool cWriteCorr = RegManager::WriteBlockReg ( pRegNode, pValues );
 
@@ -361,7 +363,7 @@ namespace Ph2_HwInterface {
     /////////////////////////////////////////////////////
 
     // this is clearly for addressing individual CBCs, have to see how to deal with broadcast commands
-    void ICGlibFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
+    void ICFc7FWInterface::EncodeReg ( const CbcRegItem& pRegItem,
                                         uint8_t pCbcId,
                                         std::vector<uint32_t>& pVecReq,
                                         bool pRead,
@@ -370,7 +372,7 @@ namespace Ph2_HwInterface {
         //use fBroadcastCBCId for broadcast commands
         pVecReq.push_back ( ( fFMCId << 28 ) | ( pCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
-    void ICGlibFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
+    void ICFc7FWInterface::EncodeReg ( const CbcRegItem& pRegItem,
                                         uint8_t pFeId,
                                         uint8_t pCbcId,
                                         std::vector<uint32_t>& pVecReq,
@@ -381,7 +383,7 @@ namespace Ph2_HwInterface {
         pVecReq.push_back ( ( pFeId << 28 ) | ( pCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
-    void ICGlibFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
+    void ICFc7FWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
                                           uint8_t pNCbc,
                                           std::vector<uint32_t>& pVecReq,
                                           bool pRead,
@@ -391,7 +393,7 @@ namespace Ph2_HwInterface {
         pVecReq.push_back ( ( fFMCId << 28 ) | ( fBroadcastCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 )  | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
-    void ICGlibFWInterface::DecodeReg ( CbcRegItem& pRegItem,
+    void ICFc7FWInterface::DecodeReg ( CbcRegItem& pRegItem,
                                         uint8_t& pCbcId,
                                         uint32_t pWord,
                                         bool& pRead,
@@ -406,7 +408,7 @@ namespace Ph2_HwInterface {
         pRegItem.fValue   =  ( pWord & 0x000000FF );
     }
 
-    bool ICGlibFWInterface::ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies)
+    bool ICFc7FWInterface::ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies)
     {
         usleep (SINGLE_I2C_WAIT * pNReplies );
 
@@ -449,7 +451,7 @@ namespace Ph2_HwInterface {
         return cFailed;
     }
 
-    bool ICGlibFWInterface::WriteI2C ( std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pReadback, bool pBroadcast )
+    bool ICFc7FWInterface::WriteI2C ( std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pReadback, bool pBroadcast )
     {
         //This one's recursive, beware!
         // figure out how to best determine if this is boradcast or not? (decode the 1st word of the Vector and decide based on the CBC address?)
@@ -502,7 +504,7 @@ namespace Ph2_HwInterface {
 
 
 
-    bool ICGlibFWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
+    bool ICFc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
     {
         // the actual write & readback command is in the vector
         std::vector<uint32_t> cReplies;
@@ -533,7 +535,7 @@ namespace Ph2_HwInterface {
             getOddElements (cReplies, cOdd);
 
             //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), ICGlibFWInterface::cmd_reply_comp);
+            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), ICFc7FWInterface::cmd_reply_comp);
 
             // now clear the initial cmd Vec and set the read-back
             pVecReg.clear();
@@ -543,7 +545,7 @@ namespace Ph2_HwInterface {
         {
             //since I do not read back, I can safely just check that the info bit of the reply is 0 and that it was an actual write reply
             //then i put the replies in pVecReg so I can decode later in CBCInterface
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICGlibFWInterface::cmd_reply_ack);
+            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICFc7FWInterface::cmd_reply_ack);
             pVecReg.clear();
             pVecReg = cReplies;
         }
@@ -568,7 +570,7 @@ namespace Ph2_HwInterface {
         return cSuccess;
     }
 
-    bool ICGlibFWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
+    bool ICFc7FWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
     {
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C ( pVecReg, cReplies, false, true );
@@ -590,12 +592,13 @@ namespace Ph2_HwInterface {
                     else cSuccess == false;
                 }
                 else
+                {
                     cSuccess = false;
-
+                }
                 //std::cout << std::bitset<32>(cWord) << std::endl;
             }
 
-            //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICGlibFWInterface::cmd_reply_ack);
+            //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), ICFc7FWInterface::cmd_reply_ack);
             pVecReg.clear();
             pVecReg = cReplies;
 
@@ -604,7 +607,7 @@ namespace Ph2_HwInterface {
         return cSuccess;
     }
 
-    void ICGlibFWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg )
+    void ICFc7FWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg )
     {
         std::vector<uint32_t> cReplies;
         //it sounds weird, but ReadI2C is called inside writeI2c, therefore here I have to write and disable the readback. The actual read command is in the words of the vector, no broadcast, maybe I can get rid of it
@@ -613,65 +616,84 @@ namespace Ph2_HwInterface {
         pVecReg = cReplies;
     }
 
-    void ICGlibFWInterface::CbcFastReset()
+    void ICFc7FWInterface::CbcFastReset()
     {
         WriteReg ( "cbc_daq_ctrl.cbc_ctrl", FAST_RESET );
     }
 
-    void ICGlibFWInterface::CbcHardReset()
+    void ICFc7FWInterface::CbcHardReset()
     {
         WriteReg ( "cbc_daq_ctrl.cbc_ctrl", HARD_RESET );
     }
 
-    void ICGlibFWInterface::CbcI2CRefresh()
+    void ICFc7FWInterface::CbcI2CRefresh()
     {
         WriteReg ("cbc_daq_ctrl.cbc_ctrl", I2C_REFRESH);
     }
 
-    void ICGlibFWInterface::CbcTestPulse()
+    void ICFc7FWInterface::CbcTestPulse()
     {
         WriteReg ("cbc_daq_ctrl.cbc_ctrl", TEST_PULSE);
     }
 
-    void ICGlibFWInterface::CbcTrigger()
+    void ICFc7FWInterface::CbcTrigger()
     {
         WriteReg ("cbc_daq_ctrl.cbc_ctrl", L1A);
     }
 
-    void ICGlibFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
+    void ICFc7FWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
     {
-        if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
-            throw Exception ( "This board is already uploading an FPGA configuration" );
-
-        if ( !fpgaConfig )
-            fpgaConfig = new GlibFpgaConfig ( this );
+        checkIfUploading();
 
         fpgaConfig->runUpload ( strConfig, pstrFile );
     }
 
-    void ICGlibFWInterface::JumpToFpgaConfig ( const std::string& strConfig )
+    void ICFc7FWInterface::JumpToFpgaConfig ( const std::string& strConfig)
+    {
+        checkIfUploading();
+
+        fpgaConfig->jumpToImage ( strConfig);
+    }
+
+    void ICFc7FWInterface::DownloadFpgaConfig ( const std::string& strConfig, const std::string& strDest)
+    {
+        checkIfUploading();
+        fpgaConfig->runDownload ( strConfig, strDest.c_str() );
+    }
+
+    std::vector<std::string> ICFc7FWInterface::getFpgaConfigList()
+    {
+        checkIfUploading();
+        return fpgaConfig->getFirmwareImageNames( );
+    }
+
+    void ICFc7FWInterface::DeleteFpgaConfig ( const std::string& strId)
+    {
+        checkIfUploading();
+        fpgaConfig->deleteFirmwareImage ( strId);
+    }
+
+    void ICFc7FWInterface::checkIfUploading()
     {
         if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
             throw Exception ( "This board is uploading an FPGA configuration" );
 
         if ( !fpgaConfig )
-            fpgaConfig = new GlibFpgaConfig ( this );
-
-        fpgaConfig->jumpToImage ( strConfig );
+            fpgaConfig = new CtaFpgaConfig ( this );
     }
 
-    bool ICGlibFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
+    bool ICFc7FWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
         //TODO: cleanup
-        if ( (cWord1 & 0x0F00FFFF) != (cWord2 & 0x0F00FFFF) )
-            std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
+        //if ( (cWord1 & 0x0F00FFFF) != (cWord2 & 0x0F00FFFF) )
+            //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
 
         //if the Register is FrontEndControl at p0 addr0, page is not defined and therefore I ignore it!
         if ( ( (cWord1 >> 16) & 0x1) == 0 && ( (cWord1 >> 8 ) & 0xFF) == 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
         else return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
     }
 
-    bool ICGlibFWInterface::cmd_reply_ack (const uint32_t& cWord1, const
+    bool ICFc7FWInterface::cmd_reply_ack (const uint32_t& cWord1, const
                                            uint32_t& cWord2)
     {
         // if Info (>>20) is 0 and  it was a write transaction (>>17 == 0) and
@@ -684,3 +706,4 @@ namespace Ph2_HwInterface {
 
 
 }
+
