@@ -47,7 +47,6 @@ namespace Ph2_HwInterface {
         {
             //if the SwapIndex is greater than 0 and a multiple of the event size in 32 bit words, reset SwapIndex to 0
             if (cSwapIndex > 0 && cSwapIndex % fEventSize == 0) cSwapIndex = 0;
-
             if (swapBits && is_channel_data (cSwapIndex, fNCbc) ) word = reverse_bits (word);
 
 #ifdef __CBCDAQ_DEV__
@@ -55,11 +54,9 @@ namespace Ph2_HwInterface {
              if((cWordIndex+1)%fEventSize == 0 && cWordIndex >0 ) std::cout << std::endl << std::endl;
 #endif
 
-            lvec.push_back ( pData.at(cWordIndex));
-
+            lvec.push_back ( word );
             if ( cWordIndex > 0 &&  (cWordIndex+1) % fEventSize == 0 )
             { 
-                std::cout << "I Happen" << std::endl;
                 fEventList.push_back ( new Event ( pBoard, fNCbc, lvec ) );
                 lvec.clear();
             }

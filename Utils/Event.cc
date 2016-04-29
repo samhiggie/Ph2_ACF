@@ -446,7 +446,7 @@ namespace Ph2_HwInterface {
         os << "Bunch Counter: " << ev.GetBunch() << std::endl;
         os << "Orbit Counter: " << ev.GetOrbit() << std::endl;
         os << " Lumi Section: " << ev.GetLumi() << std::endl;
-        os << "  TDC Counter: " << ev.GetTDC() << std::endl;
+        os << BOLDRED << "  TDC Counter: " << ev.GetTDC() << RESET << std::endl;
 
         os << "CBC Data:" << std::endl;
         const EventMap& evmap = ev.GetEventMap();
