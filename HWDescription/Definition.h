@@ -33,12 +33,6 @@
 #define EVENT_HEADER_TDC_SIZE_32    6 // total of 6 32 bit words for HEADER + TDC
 #define EVENT_HEADER_SIZE_32    5  // 5 words for the header
 
-//in chars
-#define CBC_EVENT_SIZE_CHAR 9 * 4
-#define EVENT_HEADER_TDC_SIZE_CHAR  6 * 4
-#define EVENT_HEADER_SIZE_CHAR    5 * 4
-
-
 //Event
 #define OFFSET_BUNCH               8
 #define WIDTH_BUNCH                24

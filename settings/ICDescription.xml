@@ -9,9 +9,9 @@
         <Global_CBC_Register name="TriggerLatency"> 0x09 </Global_CBC_Register>
         <Global_CBC_Register name="VCth"> 0x80 </Global_CBC_Register>
         <!--this has to be E1 for TP in hole mode-->
-      <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>
-      <!--<Global_CBC_Register name="TestPulsePot">0xE0</Global_CBC_Register>-->
-      <!--<Global_CBC_Register name="SelTestPulseDel&ChanGroup">0x00</Global_CBC_Register>-->
+      <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0xE1</Global_CBC_Register>
+      <Global_CBC_Register name="TestPulsePot">0xE0</Global_CBC_Register>
+      <Global_CBC_Register name="SelTestPulseDel&ChanGroup">0x00</Global_CBC_Register>
       <CBC_Files path="./settings/" />
       <CBC Id="0" configfile="Cbc_default_hole.txt" />
       <CBC Id="1" configfile="Cbc_default_hole.txt" />
@@ -30,9 +30,9 @@
 
     <!--COMMISSIONING MODE-->
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.enable"> 1 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 0 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.i2c_refresh_enable"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 0 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.l1a_trigger_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 0 </Register>
     <!--should be 400 for TP-->
