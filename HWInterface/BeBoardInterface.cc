@@ -244,4 +244,14 @@ void BeBoardInterface::DeleteFpgaConfig(BeBoard* pBoard, const std::string& strI
     setBoard( pBoard->getBeBoardIdentifier() );
     fBoardFW->DeleteFpgaConfig( strId );
 }
+
+void BeBoardInterface::RebootBoard(BeBoard* pBoard){
+    setBoard( pBoard->getBeBoardIdentifier() );
+    fBoardFW->RebootBoard();
+}
+
+void BeBoardInterface::SetForceStart(BeBoard* pBoard, bool bStart){
+    setBoard( pBoard->getBeBoardIdentifier() );
+    fBoardFW->SetForceStart( bStart );
+}
 }

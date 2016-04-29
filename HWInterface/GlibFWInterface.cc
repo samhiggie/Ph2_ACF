@@ -729,4 +729,18 @@ namespace Ph2_HwInterface {
 
         return ( cWord1  == cWord2 );
     }
+    /*! \brief Reboot the board */
+    void GlibFWInterface::RebootBoard(){
+        if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
+            throw Exception ( "This board is uploading an FPGA configuration" );
+
+        if ( !fpgaConfig )
+            fpgaConfig = new GlibFpgaConfig ( this );
+
+	fpgaConfig->resetBoard();
+    }
+    /*! \brief Set or reset the start signal */
+    void GlibFWInterface::SetForceStart( bool bStart){
+	    WriteReg ( "pc_commands2.force_BG0_start", bStart ? 1 : 0);
+    }
 }

@@ -61,6 +61,8 @@ public:
      * \param strConfig FPGA configuration number or name
      */
     virtual void jumpToImage( const std::string& strImage) = 0;
+    /*! \brief Board hard reset */
+    virtual void resetBoard() = 0;
 
 protected:
 
