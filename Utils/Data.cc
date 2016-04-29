@@ -34,45 +34,45 @@ namespace Ph2_HwInterface {
         fNevents = static_cast<uint32_t> ( pNevents );
         fEventSize = static_cast<uint32_t> ( (pData.size() ) / fNevents );
         fNCbc = ( fEventSize - ( EVENT_HEADER_TDC_SIZE_32 ) ) / ( CBC_EVENT_SIZE_32 );
-        std::vector<uint32_t> flist;
 
-        //use and index to decide wether to swap a word or not
-        uint32_t cIndex = 0;
+        //use a SwapIndex to decide wether to swap a word or not
+        //use a WordIndex to pick events apart
+        uint32_t cWordIndex = 0;
+        uint32_t cSwapIndex = 0;
+
+        // to Fill fEventList
+        std::vector<uint32_t> lvec;
 
         for ( auto word : pData )
         {
-            //if the index is greater than 0 and a multiple of the event size in 32 bit words, reset index to 0
-            if (cIndex > 0 && cIndex % fEventSize == 0) cIndex = 0;
+            //if the SwapIndex is greater than 0 and a multiple of the event size in 32 bit words, reset SwapIndex to 0
+            if (cSwapIndex > 0 && cSwapIndex % fEventSize == 0) cSwapIndex = 0;
 
-            if (swapBits && is_channel_data (cIndex, fNCbc) ) word = reverse_bits (word);
-
-            flist.push_back (  word );
-            cIndex++;
-        }
+            if (swapBits && is_channel_data (cSwapIndex, fNCbc) ) word = reverse_bits (word);
 
 #ifdef __CBCDAQ_DEV__
-        std::cout << "Initializing list with " << flist.size() << " 32 bit words, should be equal to " << pData.size()
-                  << " 32 bit words containing data from "
-                  << fNevents << "  Events with an eventbuffer size of " << fEventSize << " and " << fNCbc
-                  << " CBCs each! " << EVENT_HEADER_TDC_SIZE_32 << " " << CBC_EVENT_SIZE_32 << std::endl;
+             std::cout << std::setw(3) <<  cWordIndex << " ### " << std::bitset<32>(pData.at(cWordIndex)) << std::endl;
+             if((cWordIndex+1)%fEventSize == 0 && cWordIndex >0 ) std::cout << std::endl << std::endl;
 #endif
 
-        // Fill fEventList
-        std::vector<uint32_t> lvec;
+            lvec.push_back ( pData.at(cWordIndex));
 
-        for ( auto i = 0; i < flist.size(); ++i )
-        {
-             //std::cout << std::setw(3) <<  i << " ### " << std::bitset<32>(flist.at(i)) << std::endl;
-             //if((i+1)%fEventSize == 0 && i >0 ) std::cout << std::endl << std::endl;
-
-            lvec.push_back ( flist[i] );
-
-            if ( i > 0 &&  (i+1) % fEventSize == 0 )
+            if ( cWordIndex > 0 &&  (cWordIndex+1) % fEventSize == 0 )
             { 
+                std::cout << "I Happen" << std::endl;
                 fEventList.push_back ( new Event ( pBoard, fNCbc, lvec ) );
                 lvec.clear();
             }
+            cWordIndex++;
+            cSwapIndex++;
         }
+
+#ifdef __CBCDAQ_DEV__
+        std::cout << "Initializing list with " << pData.size() << " 32 bit words
+                  << " containing data from "
+                  << fNevents << "  Events with an eventbuffer size of " << fEventSize << " and " << fNCbc
+                  << " CBCs each! " << EVENT_HEADER_TDC_SIZE_32 << " " << CBC_EVENT_SIZE_32 << std::endl;
+#endif
     }
 
     void Data::Reset()
