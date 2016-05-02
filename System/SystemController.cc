@@ -99,7 +99,7 @@ namespace Ph2_System {
             {
                 fBeBoardInterface->ConfigureBoard ( &pBoard );
 
-                if ( fCheck && (pBoard.getBoardType() == "GLIB" || pBoard.getBoardType() == "CTA" ))
+                if ( fCheck && pBoard.getBoardType() == "GLIB")
                 {
                     fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
                     los_ << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;

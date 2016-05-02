@@ -125,4 +125,8 @@ void CtaFpgaConfig::deleteFirmwareImage(const std::string& strId)
 {
     lNode.DeleteFromSD(strId, SECURE_MODE_PASSWORD);
 }
+
+void CtaFpgaConfig::resetBoard(){
+	lNode.BoardHardReset(SECURE_MODE_PASSWORD);
+}
 }

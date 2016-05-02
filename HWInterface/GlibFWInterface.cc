@@ -141,6 +141,7 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
+        fNthAcq=0;
         // Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
         fNpackets = ReadReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
 
@@ -727,5 +728,19 @@ namespace Ph2_HwInterface {
             //std::cout << "Readback error" << std::endl;
 
         return ( cWord1  == cWord2 );
+    }
+    /*! \brief Reboot the board */
+    void GlibFWInterface::RebootBoard(){
+        if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
+            throw Exception ( "This board is uploading an FPGA configuration" );
+
+        if ( !fpgaConfig )
+            fpgaConfig = new GlibFpgaConfig ( this );
+
+	fpgaConfig->resetBoard();
+    }
+    /*! \brief Set or reset the start signal */
+    void GlibFWInterface::SetForceStart( bool bStart){
+	    WriteReg ( "pc_commands2.force_BG0_start", bStart ? 1 : 0);
     }
 }

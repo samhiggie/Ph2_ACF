@@ -31,6 +31,8 @@ namespace Ph2_HwInterface
  * \param numConfig FPGA configuration number
  */
 			void jumpToImage( const std::string& strImage);
+/*! \brief Board hard reset */
+			void resetBoard();
 
 		private:
     ///Sets the read mode as asynchronous.

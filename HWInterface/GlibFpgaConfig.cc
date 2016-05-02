@@ -210,7 +210,7 @@ void GlibFpgaConfig::dumpFromFileIntoFlash(bool bGolden, const char* strFile) th
 	cout<<progressString<<endl;
 	progressValue=100;
 	//lBoard->setTimeoutPeriod(uTimeout);
-	fwManager->WriteReg(PARAM_FPGA_PROGRAM_B_TRST, 0);//reboot GLIB
+	resetBoard();
 }
 
     ///Sets the read mode as asynchronous.
@@ -344,9 +344,13 @@ void GlibFpgaConfig::dumpFromFileIntoFlash(bool bGolden, const char* strFile) th
         }
    }
 
-   void GlibFpgaConfig::jumpToImage( const std::string& strImage){
+    void GlibFpgaConfig::jumpToImage( const std::string& strImage){
 	fwManager->WriteReg(PARAM_FPGA_ICAP_PAGE, strImage.compare("1")==0 ? 0 : 2);
 	fwManager->WriteReg(PARAM_FPGA_ICAP_TRIGG, 1);
-   }
+    }
+
+    void GlibFpgaConfig::resetBoard(){
+	fwManager->WriteReg(PARAM_FPGA_PROGRAM_B_TRST, 0);//reboot GLIB
+    }
 }
 

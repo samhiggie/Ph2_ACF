@@ -133,8 +133,6 @@ public:
      */
     void getBoardInfo( const BeBoard* pBoard );
 
-	BoardType getBoardType(const BeBoard* pBoard ) ;
-
     /*!
      * \brief Configure the board with its Config File
      * \param pBoard
@@ -233,6 +231,10 @@ public:
     * \param pBoard pointer to a board description
      * \param strId Firmware image identifier*/
     void DeleteFpgaConfig(BeBoard* pBoard, const std::string& strId);
+    /*! \brief Reboot the board */
+    void RebootBoard(BeBoard* pBoard);
+    /*! \brief Set or reset the start signal */
+    void SetForceStart(BeBoard* pBoard, bool bStart);
 
 };
 }

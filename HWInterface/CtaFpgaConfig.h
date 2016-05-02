@@ -48,6 +48,8 @@ public:
     std::vector<std::string> getFirmwareImageNames();
     /*! \brief Delete one Fpga configuration (or firmware image)*/
     void deleteFirmwareImage(const std::string& strId);
+    /*! \brief Board hard reset */
+    void resetBoard();
 private:
     ///Sets the read mode as asynchronous.
     void confAsyncRead() throw (std::string);

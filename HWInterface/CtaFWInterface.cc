@@ -15,6 +15,8 @@
 #include "CtaFWInterface.h"
 #include "CtaFpgaConfig.h"
 
+using namespace std;
+
 namespace Ph2_HwInterface {
 
     CtaFWInterface::CtaFWInterface ( const char* puHalConfigFileName,
@@ -105,11 +107,9 @@ namespace Ph2_HwInterface {
         std::chrono::milliseconds cPause ( 200 );
 
         //Primary Configuration
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
+        cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
         cVecReg.push_back ( {"pc_commands.SRAM1_end_readout", 0} );
         cVecReg.push_back ( {"pc_commands.SRAM2_end_readout", 0} );
-        cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
-        cVecReg.push_back ( {"ctrl_sram.sram2_user_logic", 1} );
 
         // iterate the BeBoardRegMap to get the user configuration
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
@@ -117,15 +117,11 @@ namespace Ph2_HwInterface {
         for ( auto const& it : cGlibRegMap )
             cVecReg.push_back ( {it.first, it.second} );
 
-        cVecReg.push_back ( {"pc_commands.SPURIOUS_FRAME", 0} );
-        cVecReg.push_back ( {"pc_commands2.force_BG0_start", 0} );
-        cVecReg.push_back ( {"cbc_acquisition.CBC_TRIGGER_ONE_SHOT", 0} );
-
+        cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
-
+        cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} ); 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
     }
@@ -136,28 +132,29 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         //Starting the DAQ
-        cVecReg.push_back ( {"break_trigger", 0} );
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
-        cVecReg.push_back ( {"pc_commands2.force_BG0_start", 1} );
+        WriteReg ( "break_trigger", 0 );
+        WriteReg ( "pc_commands.PC_config_ok", 1 );
+        WriteReg ( "pc_commands.force_BG0_start", 1 );
 
-        WriteStackReg ( cVecReg );
+        //WriteStackReg ( cVecReg );
         cVecReg.clear();
 
+        fNthAcq=0;
         // Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
         fNpackets = ReadReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
-
+	fBlockSize=0;
         //Wait for start acknowledge
         uhal::ValWord<uint32_t> cVal;
         std::chrono::milliseconds cWait ( 100 );
 
-        do
+        /*do
         {
             cVal = ReadReg ( "status_flags.CMD_START_VALID" );
 
             if ( cVal == 0 )
                 std::this_thread::sleep_for ( cWait );
         }
-        while ( cVal == 0 );
+        while ( cVal == 0 );*/
     }
 
     void CtaFWInterface::Stop()
@@ -169,9 +166,9 @@ namespace Ph2_HwInterface {
         //Select SRAM
         SelectDaqSRAM();
         //Stop the DAQ
-        cVecReg.push_back ( {"break_trigger", 1} );
+        cVecReg.push_back ( {"break_trigger", 0} );
         cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
-        cVecReg.push_back ( {"pc_commands2.force_BG0_start", 0} );
+        cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
@@ -188,20 +185,29 @@ namespace Ph2_HwInterface {
         }
         while ( cVal == 1 );
 
-        WriteReg ( fStrReadout, 0 );
+        //WriteReg ( fStrReadout, 0 );
+        WriteReg("pc_commands.SRAM1_end_readout", 0);
+	WriteReg("pc_commands.SRAM2_end_readout", 0);
         fNTotalAcq++;
     }
 
 
     void CtaFWInterface::Pause()
     {
+	bJustPaused=true;
         WriteReg ( "break_trigger", 1 );
+	//std::this_thread::sleep_for ( std::chrono::milliseconds(10) );
+	
+        //uhal::ValWord<uint32_t> cVal= ReadReg("EVENT_COUNTER_CLEARED");
+	//cout<<"Event counter cleared: "<<cVal.value()<<endl;
     }
 
 
     void CtaFWInterface::Resume()
     {
-        WriteReg ( "break_trigger", 0 );
+        std::vector< std::pair<std::string, uint32_t> > cVecReg;
+        cVecReg.push_back ( {"break_trigger", 0} );
+        WriteStackReg ( cVecReg );
     }
 
     uint32_t CtaFWInterface::ReadData ( BeBoard* pBoard,  bool pBreakTrigger )
@@ -210,19 +216,15 @@ namespace Ph2_HwInterface {
         std::chrono::milliseconds cWait ( 1 );
 
         uhal::ValWord<uint32_t> cVal;
-
-        if ( pBoard )
+        if ( fBlockSize==0 )
             fBlockSize = computeBlockSize ( pBoard );
 
         //FIFO goes to write_data state
         //Select SRAM
         SelectDaqSRAM();
 
-        //Wait for the SRAM full condition.
-        cVal = ReadReg ( fStrFull );
-
-        do
-        {
+        
+        do {//Wait for the SRAM full condition.
             cVal = ReadReg ( fStrFull );
 
             if ( cVal == 0 )
@@ -232,15 +234,26 @@ namespace Ph2_HwInterface {
 
         //break trigger
         if ( pBreakTrigger ) WriteReg ( "break_trigger", 1 );
-
+	uint32_t nbEvtPacket=fNpackets;
+	uint32_t nbBlockSize=fBlockSize;
+	std::vector<uint32_t> cData;
+	if (bJustPaused){
+		bJustPaused=false;
+		nbEvtPacket=fNpackets-ReadReg(fStrEvtCounter);
+		nbBlockSize=fBlockSize/fNpackets*nbEvtPacket;
+	}
         //Set read mode to SRAM
-        WriteReg ( fStrSramUserLogic, 0 );
+        //WriteReg ( fStrSramUserLogic, 0 );
 
         //Read SRAM
-        std::vector<uint32_t> cData =  ReadBlockRegValue ( fStrSram, fBlockSize );
+        if (nbBlockSize>0)
+		cData =  ReadBlockRegValue ( fStrSram, nbBlockSize );
+	//if (uEvtReadSize>uEvtSize) for (int iPad=fBlockSize+uEvtSize-uEvtReadSize; iPad>0; iPad-= uEvtReadSize) cData.erase(cData.begin()+iPad, cData.begin()+(iPad+uEvtReadSize-uEvtSize));//remove padding
 
-        WriteReg ( fStrSramUserLogic, 1 );
+	std::this_thread::sleep_for ( 10*cWait );
+        //WriteReg ( fStrSramUserLogic, 1 );
         WriteReg ( fStrReadout, 1 );
+	std::this_thread::sleep_for ( 10*cWait );
 
         //now I did an acquistion, so I need to increment the counter
         fNthAcq++;
@@ -258,6 +271,7 @@ namespace Ph2_HwInterface {
         //Wait for the non SRAM full condition ends.
 
         WriteReg ( fStrReadout, 0 );
+        WriteReg ( "pc_commands.force_BG0_start", 0 );
 
         if ( pBreakTrigger ) WriteReg ( "break_trigger", 0 );
 
@@ -266,16 +280,15 @@ namespace Ph2_HwInterface {
 
         fData = new Data();
 
-        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNpackets, false );
+	if (nbEvtPacket>0){        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
+	        fData->Set ( pBoard, cData , nbEvtPacket, false );
 
-        if ( fSaveToFile )
-        {
-            fFileHandler->set ( cData );
-            fFileHandler->writeFile();
-        }
-
-        return fNpackets;
+		if ( fSaveToFile ) {
+			fFileHandler->set ( cData );
+			fFileHandler->writeFile();
+		}
+	}
+        return nbEvtPacket;
     }
 
     void CtaFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents )
@@ -284,10 +297,10 @@ namespace Ph2_HwInterface {
 
         fNpackets = pNEvents;
         //Starting the DAQ
-        cVecReg.push_back ( {"pc_commands.CBC_DATA_PACKET_NUMBE", pNEvents - 1} );
+        cVecReg.push_back ( {"pc_commands.CBC_DATA_PACKET_NUMBER", pNEvents - 1} );
         cVecReg.push_back ( {"break_trigger", 0} );
         cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
-        cVecReg.push_back ( {"pc_commands2.force_BG0_start", 1} );
+        cVecReg.push_back ( {"pc_commands.force_BG0_start", 1} );
 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
@@ -306,7 +319,7 @@ namespace Ph2_HwInterface {
         }
         while ( cVal == 0 );
 
-        if ( pBoard )
+        if ( fBlockSize==0 )
             fBlockSize = computeBlockSize ( pBoard );
 
         //Select SRAM
@@ -327,18 +340,21 @@ namespace Ph2_HwInterface {
         //break trigger
         cVecReg.push_back ({ "break_trigger", 1 } );
         cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
-        cVecReg.push_back ( {"pc_commands2.force_BG0_start", 0} );
+        cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
 
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
         //Set read mode to SRAM
-        WriteReg ( fStrSramUserLogic, 0 );
+        //WriteReg ( fStrSramUserLogic, 0 );
 
         //Read SRAM
         std::vector<uint32_t> cData =  ReadBlockRegValue ( fStrSram, fBlockSize );
+	if (uEvtReadSize>uEvtSize)
+		for (int iPad=fBlockSize+uEvtSize-uEvtReadSize; iPad>0; iPad-= uEvtReadSize)//remove padding
+			cData.erase(cData.begin()+iPad, cData.begin()+(iPad+uEvtReadSize-uEvtSize));
 
-        WriteReg ( fStrSramUserLogic, 1 );
+        //WriteReg ( fStrSramUserLogic, 1 );
 
         //need to increment the internal Acquisition counter
         fNthAcq++;
@@ -383,9 +399,13 @@ namespace Ph2_HwInterface {
 
         CbcCounter cCounter;
         pBoard->accept ( cCounter );
+        if ( pBoard->getNCbcDataSize() != 0 ) 	
+		uEvtSize= std::max(pBoard->getNCbcDataSize()	, (uint16_t)4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ;
+        else 	
+		uEvtSize= std::max(cCounter.getNCbc()	, (uint32_t)4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ; // in 32 bit words
 
-        if ( pBoard->getNCbcDataSize() != 0 ) return fNpackets * ( pBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 );
-        else return fNpackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
+	uEvtReadSize=uEvtSize;//(uEvtSize+7)/8*8;
+	return uEvtReadSize * fNpackets;
     }
 
     std::vector<uint32_t> CtaFWInterface::ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -405,10 +425,11 @@ namespace Ph2_HwInterface {
 
     void CtaFWInterface::SelectDaqSRAM()
     {
-        fStrSram  = ( ( fNthAcq % 2 + 1 ) == 1 ? "sram1" : "sram2" );
-        fStrSramUserLogic = ( ( fNthAcq % 2 + 1 ) == 1 ? "ctrl_sram.sram1_user_logic" : "ctrl_sram.sram2_user_logic" );
-        fStrFull = ( ( fNthAcq % 2 + 1 ) == 1 ? "flags.SRAM1_full" : "flags.SRAM2_full" );
-        fStrReadout = ( ( fNthAcq % 2 + 1 ) == 1 ? "pc_commands.SRAM1_end_readout" : "pc_commands.SRAM2_end_readout" );
+        fStrSram  = ( fNthAcq % 2 == 0 ? "sram1" : "sram2" );
+        //fStrSramUserLogic = ( ( fNthAcq % 2 + 1 ) == 1 ? "ctrl_sram.sram1_user_logic" : "ctrl_sram.sram2_user_logic" );
+        fStrFull = ( fNthAcq % 2  == 0 ? "flags.SRAM1_full" : "flags.SRAM2_full" );
+        fStrReadout = ( fNthAcq % 2  == 0 ? "pc_commands.SRAM1_end_readout" : "pc_commands.SRAM2_end_readout" );
+        fStrEvtCounter  = ( fNthAcq % 2 == 0 ? "event_counter_SRAM1" : "event_counter_SRAM2" );
     }
 
 
@@ -734,4 +755,15 @@ namespace Ph2_HwInterface {
             //std::cout << "Readback error" << std::endl;
         return ( cWord1  == cWord2 );
     }
+
+    /*! \brief Reboot the board */
+    void CtaFWInterface::RebootBoard(){
+        checkIfUploading();
+	fpgaConfig->resetBoard();
+    }
+    /*! \brief Set or reset the start signal */
+    void CtaFWInterface::SetForceStart( bool bStart){
+	    WriteReg ( "pc_commands.force_BG0_start", bStart ? 1 : 0);
+    }
+
 }

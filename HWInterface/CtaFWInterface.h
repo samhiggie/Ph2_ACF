@@ -43,11 +43,12 @@ namespace Ph2_HwInterface {
         Data* fData; /*!< Data read storage*/
 
         struct timeval fStartVeto;
-        std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
+        std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic, fStrEvtCounter;
         std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
         CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
-        uint32_t fNthAcq, fNpackets;
+        uint32_t fNthAcq, fNpackets, uEvtSize, uEvtReadSize;
+	bool bJustPaused;
 
       private:
         /*!
@@ -107,7 +108,10 @@ namespace Ph2_HwInterface {
          */
         void getBoardInfo();
 	
-	BoardType getBoardType() const {return BoardType::CTA;}
+        BoardType getBoardType() const
+        {
+            return BoardType::CTA;
+        }
         /*!
          * \brief Configure the board with its Config File
          * \param pBoard
@@ -293,6 +297,10 @@ namespace Ph2_HwInterface {
         /*! \brief Delete one Fpga configuration (or firmware image)*/
         void DeleteFpgaConfig ( const std::string& strId);
 
+	/*! \brief Reboot the board */
+	void RebootBoard();
+	/*! \brief Set or reset the start signal */
+	void SetForceStart( bool bStart);
     };
 }
 
