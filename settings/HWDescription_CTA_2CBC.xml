@@ -1,14 +1,15 @@
 <?xml version='1.0' encoding = 'UTF-8' ?>
 <HwDescription>
 
-  <BeBoard Id="1" boardType="CTA">
-    <connection id="board" uri="ipbusudp-2.0://192.168.007.222:50001" address_table="file://settings/address_table_CTA_2CBC.xml" />
+  <BeBoard Id="0" boardType="CTA">
+    <connection id="board" uri="chtcp-2.0://cmsuptracker008.cern.ch:10203?target=192.168.0.80:50001" address_table="file://settings/address_table_CTA_2CBC.xml" />
     
     <FW_Version NCbcDataSize="4"/>
     
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
       <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
     <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
+      <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>
       
       <CBC_Files path="./settings/"/>
       <CBC Id="0" configfile="Cbc_default_hole.txt"/>
@@ -19,23 +20,25 @@
     <!-- set to 1 to enable commissioning mode -->
     <Register name="COMMISSIONNING_MODE_RQ">0</Register>
     <!-- set to 1 to enable test pulse in commissioning mode -->
-    <Register name="COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID">0</Register>
     <Register name="COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET">50</Register>
     <Register name="COMMISSIONNING_MODE_DELAY_AFTER_L1A">400</Register>
     <Register name="COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE">201</Register>
     
     <!-- Acquisition -->
-    <Register name="cbc_stubdata_latency_adjust_fe1">1</Register>
-    <Register name="cbc_stubdata_latency_adjust_fe2">1</Register>
+    <!--<Register name="cbc_stubdata_latency_adjust_fe1">1</Register>-->
+    <Register name="cbc.STUBDATA_LATENCY_ADJUST">1</Register>
+    <!--set to 0 for stub after trigger = default, 1 for GBT (dual GLIB) FW-->
+    <Register name="cbc.STUBDATA_LATENCY_MODE">0</Register>
+    <!--<Register name="cbc_stubdata_latency_adjust_fe2">1</Register>-->
     <Register name="pc_commands.CBC_DATA_PACKET_NUMBER">9</Register>
     <Register name="pc_commands.CBC_DATA_GENE"> 1 </Register>
-    <Register name="pc_commands.ACQ_MODE"> 1 </Register>
+    <Register name="pc_commands.readoutDataType"> 1 </Register>
+    <!--<Register name="pc_commands.ACQ_MODE"> 1 </Register>-->
     
     <!-- Trigger -->
-    <!-- set to 1 to use external triggers -->
+    <!-- set to 2 to use external triggers, set to 1 to use external triggers with backpressure -->
     <Register name="pc_commands.TRIGGER_SEL">0</Register>
     <Register name="pc_commands.INT_TRIGGER_FREQ">10</Register>
-    
     <!-- Clock -->
     <!-- set to 1 for external clocking -->
     <Register name="dio5.clk_mux_sel">0</Register>
@@ -59,7 +62,15 @@
     <Register name="dio5.fmcdio5_trig_out_50ohms">0</Register>
     
     <!-- I2C -->
-    <Register name="cbc_i2c_clk_prescaler"> 39 </Register>
+    <Register name="cbc_i2c_clk_prescaler"> 79 </Register>
   </BeBoard>
 </HwDescription>
+
+<Settings>
+    <Setting name="TargetVcth">0x78</Setting>
+    <Setting name="TargetOffset">0x50</Setting>
+    <Setting name="TestPulsePotentiometer">0x00</Setting>
+    <Setting name="HoleMode">1</Setting>
+    <Setting name="VerificationLoop">1</Setting>
+</Settings>
 
