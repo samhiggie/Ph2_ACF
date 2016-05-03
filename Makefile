@@ -10,7 +10,7 @@ ifneq ("$(wildcard $(ANTENNADIR))","")
 	DEPENDENCIES := CMSPh2_AntennaDriver $(DEPENDENCIES)
 	ANTENNAINSTALLED = yes
 else
-	ANTENNAINSTRUCTIONS = To use the USB Antenna, please download the Driver from 'https://github.com/gauzinge/CMSPh2_AntennaDriver.git' and make sure that libusb-devel is installed!
+	ANTENNAINSTRUCTIONS = To use the USB Antenna, please download the Driver from 'https://gitlab.cern.ch/cms_tk_ph2/CMSPh2_AntennaDriver.git' and make sure that libusb-devel is installed!
 endif
 
 ifneq ("$(wildcard $(AMC13DIR))","")
