@@ -142,7 +142,7 @@ namespace Ph2_HwInterface {
         fNthAcq = 0;
         // Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
         fNpackets = ReadReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
-        fBlockSize = 0;
+        //fBlockSize = 0;
         //Wait for start acknowledge
         uhal::ValWord<uint32_t> cVal;
         std::chrono::milliseconds cWait ( 100 );
@@ -217,7 +217,7 @@ namespace Ph2_HwInterface {
 
         uhal::ValWord<uint32_t> cVal;
 
-        if ( fBlockSize == 0 )
+        if ( pBoard )
             fBlockSize = computeBlockSize ( pBoard );
 
         //FIFO goes to write_data state
@@ -254,8 +254,6 @@ namespace Ph2_HwInterface {
         //Read SRAM
         if (nbBlockSize > 0)
             cData =  ReadBlockRegValue ( fStrSram, nbBlockSize );
-
-        //if (uEvtReadSize>uEvtSize) for (int iPad=fBlockSize+uEvtSize-uEvtReadSize; iPad>0; iPad-= uEvtReadSize) cData.erase(cData.begin()+iPad, cData.begin()+(iPad+uEvtReadSize-uEvtSize));//remove padding
 
         std::this_thread::sleep_for ( 10 * cWait );
         //WriteReg ( fStrSramUserLogic, 1 );
@@ -329,7 +327,7 @@ namespace Ph2_HwInterface {
         }
         while ( cVal == 0 );
 
-        if ( fBlockSize == 0 )
+        if ( pBoard )
             fBlockSize = computeBlockSize ( pBoard );
 
         //Select SRAM
@@ -360,10 +358,6 @@ namespace Ph2_HwInterface {
 
         //Read SRAM
         std::vector<uint32_t> cData =  ReadBlockRegValue ( fStrSram, fBlockSize );
-
-        if (uEvtReadSize > uEvtSize)
-            for (int iPad = fBlockSize + uEvtSize - uEvtReadSize; iPad > 0; iPad -= uEvtReadSize) //remove padding
-                cData.erase (cData.begin() + iPad, cData.begin() + (iPad + uEvtReadSize - uEvtSize) );
 
         //WriteReg ( fStrSramUserLogic, 1 );
 
@@ -411,13 +405,14 @@ namespace Ph2_HwInterface {
         CbcCounter cCounter;
         pBoard->accept ( cCounter );
 
-        if ( pBoard->getNCbcDataSize() != 0 )
-            uEvtSize = std::max (pBoard->getNCbcDataSize()    , (uint16_t) 4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ;
-        else
-            uEvtSize = std::max (cCounter.getNCbc()   , (uint32_t) 4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ; // in 32 bit words
 
-        uEvtReadSize = uEvtSize; //(uEvtSize+7)/8*8;
-        return uEvtReadSize * fNpackets;
+        uint32_t cEvtSize = 0;
+        if ( pBoard->getNCbcDataSize() != 0 )
+            cEvtSize = std::max (pBoard->getNCbcDataSize(), (uint16_t) 4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ;
+        else
+            cEvtSize = std::max (cCounter.getNCbc()   , (uint32_t) 4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ; // in 32 bit words
+
+        return cEvtSize * fNpackets;
     }
 
     std::vector<uint32_t> CtaFWInterface::ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize )
