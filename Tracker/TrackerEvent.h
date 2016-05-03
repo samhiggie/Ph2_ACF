@@ -14,7 +14,7 @@ public:
  * \param Mask of enabled CBCs
  * \param bFakeData True if data is coming from a file instead of a physical board
  * \param pPSet pointer to a parameter set containing configuration of condition data and acquisition mode and event type*/
-	TrackerEvent( Ph2_HwInterface::Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, bool bFakeData, ParamSet* pPSet);
+	TrackerEvent( const Ph2_HwInterface::Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, bool bFakeData, ParamSet* pPSet);
 	virtual ~TrackerEvent();
 	/*! \brief size of generated event in bytes including DAQ header and trailer */
 	uint32_t getDaqSize() const;
@@ -31,11 +31,11 @@ private :
 	uint32_t size_;
 
 	/*! \brief Fill data in the event Tracker header */
-	void fillTrackerHeader( Ph2_HwInterface::Event* pEvt, uint64_t uFE, uint32_t nbCBC, uint32_t nbCbcFe, uint32_t uAcqMode, bool bZeroSuppr, bool bConditionData, bool bFakeData) ;
+	void fillTrackerHeader(const Ph2_HwInterface::Event* pEvt, uint64_t uFE, uint32_t nbCBC, uint32_t nbCbcFe, uint32_t uAcqMode, bool bZeroSuppr, bool bConditionData, bool bFakeData) ;
 	/*! \brief Fill data in the event payload */
-	void fillTrackerPayload(Ph2_HwInterface::Event* pEvt, uint32_t nbFE, uint32_t nbCBC, uint32_t uCBC, uint32_t nbBitsHeader, bool bZeroSuppr, bool bCondition, uint32_t nbCondition, ParamSet* pPSet);
+	void fillTrackerPayload(const Ph2_HwInterface::Event* pEvt, uint32_t nbFE, uint32_t nbCBC, uint32_t uCBC, uint32_t nbBitsHeader, bool bZeroSuppr, bool bCondition, uint32_t nbCondition, ParamSet* pPSet);
 	/*! \brief Fill data in the event condition data */
-	void fillTrackerConditionData(Ph2_HwInterface::Event* pEvt, uint32_t idxPayload, uint32_t nbFE, uint32_t nbCBC, uint32_t nbCondition, ParamSet* pPSet);
+	void fillTrackerConditionData(const Ph2_HwInterface::Event* pEvt, uint32_t idxPayload, uint32_t nbFE, uint32_t nbCBC, uint32_t nbCondition, ParamSet* pPSet);
 	/*! \brief Data buffer construction and data size computing for one FE in sparsified mode for 2S modules. 	
  	* Two pass are necessary: <ul>
 	 * <li> one to compute size with NULL as destination buffer</li>
@@ -47,7 +47,7 @@ private :
 	 * \param bitDest bit index to put data into destination buffer
 	 * \param nbCBC Number of CBCs in this FE
 	 */
-	uint32_t calcBitsForFE(Ph2_HwInterface::Event* pEvt, uint32_t uFront, char* dest, uint32_t bitDest, uint32_t nbCBC);
+	uint32_t calcBitsForFE(const Ph2_HwInterface::Event* pEvt, uint32_t uFront, char* dest, uint32_t bitDest, uint32_t nbCBC);
 	/*! \brief Set some bit values in the destination buffer */
 	void setValueBits(char* arrDest, uint32_t bitDest, uint8_t width, uint8_t uVal);
 	/*! \brief Counts the number of enabled condition data in configuration parameter set */
@@ -59,7 +59,7 @@ private :
 	uint32_t littleEndian8(uint32_t n);
 	/*! \brief reverse bits of a byte */
 	void reverseByte(char & b);
-	void fillDaqHeaderAndTrailer(Ph2_HwInterface::Event *pEvt);
+	void fillDaqHeaderAndTrailer(const Ph2_HwInterface::Event *pEvt);
 	/** \brief Compute Cyclic Redundancy Check code 
 	 * \param Adresse_tab data address
 	 * \param Taille_max data size
