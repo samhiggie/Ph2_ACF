@@ -62,7 +62,7 @@
     <Register name="dio5.fmcdio5_trig_out_50ohms">0</Register>
     
     <!-- I2C -->
-    <Register name="cbc_i2c_clk_prescaler"> 79 </Register>
+    <Register name="cbc_i2c_clk_prescaler"> 7 </Register>
   </BeBoard>
 </HwDescription>
 

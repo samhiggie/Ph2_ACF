@@ -119,17 +119,6 @@ namespace Ph2_HwInterface {
          * \param pModule : Module containing vector of Cbcs
          */
         //void ReadAllCbc ( const Module* pModule );
-        /*!
-         * \brief Hard reset of the Cbc
-         * \param pCbc
-         */
-        void CbcHardReset ( const Cbc* pCbc );
-        /*!
-         * \brief Fast Reset of the Cbc
-         * \param pCbc
-         */
-        void CbcFastReset ( const Cbc* pCbc );
-
         //void CbcCalibrationTrigger(const Cbc* pCbc );
         void output();
 
