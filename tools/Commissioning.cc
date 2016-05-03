@@ -165,12 +165,14 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
             bool cStrasbourgFW;
             std::vector<std::pair<std::string, uint32_t>> cRegVec;
 
-            if (cBoardType == "GLIB" || cBoardType == "CTA")
+            if (cBoardType == "GLIB" )
             {
                 cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe1", cLat});
                 cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
                 cStrasbourgFW = true;
             }
+            else if(cBoardType == "CTA")
+                cRegVec.push_back({"STUBDATA_LATENCY_ADJUST", cLat});
             else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7")
             {
                 cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});

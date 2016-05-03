@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='utf-8'?>
 <HwDescription>
-  <BeBoard Id="0" boardType="ICFC7">
-    <connection id="board" uri="ipbusudp-2.0://192.168.0.80:50001" address_table="file://settings/IC_address_table.xml" />
-  <!--<BeBoard Id="0" boardType="ICGLIB">-->
-    <!--<connection id="board" uri="ipbusudp-2.0://192.168.0.170:50001" address_table="file://settings/IC_address_table.xml" />-->
+  <!--<BeBoard Id="0" boardType="ICFC7">-->
+    <!--<connection id="board" uri="ipbusudp-2.0://192.168.0.80:50001" address_table="file://settings/IC_address_table.xml" />-->
+  <BeBoard Id="0" boardType="ICGLIB">
+    <connection id="board" uri="ipbusudp-2.0://192.168.0.162:50001" address_table="file://settings/IC_address_table.xml" />
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
-        <Global_CBC_Register name="TriggerLatency"> 0x09 </Global_CBC_Register>
-        <Global_CBC_Register name="VCth"> 0x80 </Global_CBC_Register>
+        <!--<Global_CBC_Register name="TriggerLatency"> 0x09 </Global_CBC_Register>-->
+        <!--<Global_CBC_Register name="VCth"> 0x80 </Global_CBC_Register>-->
         <!--this has to be E1 for TP in hole mode-->
-      <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0xE1</Global_CBC_Register>
-      <Global_CBC_Register name="TestPulsePot">0xE0</Global_CBC_Register>
-      <Global_CBC_Register name="SelTestPulseDel&ChanGroup">0x00</Global_CBC_Register>
+      <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>
+      <!--<Global_CBC_Register name="TestPulsePot">0xE0</Global_CBC_Register>-->
+      <!--<Global_CBC_Register name="SelTestPulseDel&ChanGroup">0x00</Global_CBC_Register>-->
       <CBC_Files path="./settings/" />
       <CBC Id="0" configfile="Cbc_default_hole.txt" />
       <CBC Id="1" configfile="Cbc_default_hole.txt" />
@@ -30,13 +30,13 @@
 
     <!--COMMISSIONING MODE-->
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.enable"> 1 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 1 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.fast_reset_enable"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.i2c_refresh_enable"> 0 </Register>
-    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 1 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.mode_flags.l1a_trigger_enable"> 1 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.ncycle"> 0 </Register>
     <!--should be 400 for TP-->
-    <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 400 </Register>
+    <Register name="cbc_daq_ctrl.commissioning_cycle.count"> 4000 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.i2c_refresh_count"> 0 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.test_pulse_count"> 90 </Register>
     <Register name="cbc_daq_ctrl.commissioning_cycle.l1a_trigger_count"> 100 </Register>
@@ -54,10 +54,9 @@
     <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.vtrig"> 0 </Register>
     <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.xclk"> 1 </Register>
     <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.tsigo"> 0 </Register>
-
   </BeBoard>
-
 </HwDescription>
+
 <Settings>
     <Setting name="TargetVcth">0x78</Setting>
     <Setting name="TargetOffset">0x50</Setting>
