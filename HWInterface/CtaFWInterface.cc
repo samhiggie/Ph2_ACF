@@ -478,11 +478,12 @@ namespace Ph2_HwInterface {
                                      bool pRead,
                                      bool pWrite )
     {
+	uint8_t uValue = pRegItem.fAddress==0 ? pRegItem.fValue&0x7F : pRegItem.fValue;
         // temporary for 16CBC readout FW  (Beamtest NOV 15)
         // will have to be corrected if we want to read two modules from the same GLIB
         // (pCbcId >> 3) becomes FE ID and is encoded starting from bit21 (not used so far)
         // (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
-        pVecReq.push_back ( ( pCbcId +0x41 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+        pVecReq.push_back ( ( pCbcId +0x41 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | uValue );
     }
 
     void CtaFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
@@ -493,7 +494,8 @@ namespace Ph2_HwInterface {
                                      bool pWrite )
     {
         // (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
-        pVecReq.push_back ( pFeId  << 21 | pCbcId << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+	uint8_t uValue = pRegItem.fAddress==0 ? pRegItem.fValue&0x7F : pRegItem.fValue;
+        pVecReq.push_back ( ( pCbcId +0x41 ) << 21 | pCbcId << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | uValue );
     }
 
     void CtaFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
@@ -502,9 +504,10 @@ namespace Ph2_HwInterface {
                                        bool pRead,
                                        bool pWrite )
     {
+	uint8_t uValue = pRegItem.fAddress==0 ? pRegItem.fValue&0x7F : pRegItem.fValue;
         // here I need to loop over all CBCs somehow...
         for (uint8_t cCbcId = 0; cCbcId < pNCbc; cCbcId++)
-            pVecReq.push_back ( ( cCbcId +0x41 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+            pVecReq.push_back ( ( cCbcId +0x41 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | uValue );
     }
 
     void CtaFWInterface::DecodeReg ( CbcRegItem& pRegItem,
