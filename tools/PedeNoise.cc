@@ -504,7 +504,7 @@ void PedeNoise::setInitialOffsets()
                 for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
                 {
                     uint8_t cOffset = cOffsetHist->GetBinContent ( iChan );
-                    //cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
+                    cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
                     cRegVec.push_back ({ Form ( "Channel%03d", iChan + 1 ), cOffset } );
                     //std::cout << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET << std::endl;
                 }

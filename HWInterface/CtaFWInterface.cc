@@ -121,7 +121,7 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} ); 
+        cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
         WriteStackReg ( cVecReg );
         cVecReg.clear();
     }
@@ -139,10 +139,10 @@ namespace Ph2_HwInterface {
         //WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        fNthAcq=0;
+        fNthAcq = 0;
         // Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
         fNpackets = ReadReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
-	fBlockSize=0;
+        //fBlockSize = 0;
         //Wait for start acknowledge
         uhal::ValWord<uint32_t> cVal;
         std::chrono::milliseconds cWait ( 100 );
@@ -186,20 +186,20 @@ namespace Ph2_HwInterface {
         while ( cVal == 1 );
 
         //WriteReg ( fStrReadout, 0 );
-        WriteReg("pc_commands.SRAM1_end_readout", 0);
-	WriteReg("pc_commands.SRAM2_end_readout", 0);
+        WriteReg ("pc_commands.SRAM1_end_readout", 0);
+        WriteReg ("pc_commands.SRAM2_end_readout", 0);
         fNTotalAcq++;
     }
 
 
     void CtaFWInterface::Pause()
     {
-	bJustPaused=true;
+        bJustPaused = true;
         WriteReg ( "break_trigger", 1 );
-	//std::this_thread::sleep_for ( std::chrono::milliseconds(10) );
-	
+        //std::this_thread::sleep_for ( std::chrono::milliseconds(10) );
+
         //uhal::ValWord<uint32_t> cVal= ReadReg("EVENT_COUNTER_CLEARED");
-	//cout<<"Event counter cleared: "<<cVal.value()<<endl;
+        //cout<<"Event counter cleared: "<<cVal.value()<<endl;
     }
 
 
@@ -216,15 +216,17 @@ namespace Ph2_HwInterface {
         std::chrono::milliseconds cWait ( 1 );
 
         uhal::ValWord<uint32_t> cVal;
-        if ( fBlockSize==0 )
+
+        if ( pBoard )
             fBlockSize = computeBlockSize ( pBoard );
 
         //FIFO goes to write_data state
         //Select SRAM
         SelectDaqSRAM();
 
-        
-        do {//Wait for the SRAM full condition.
+
+        do  //Wait for the SRAM full condition.
+        {
             cVal = ReadReg ( fStrFull );
 
             if ( cVal == 0 )
@@ -234,26 +236,29 @@ namespace Ph2_HwInterface {
 
         //break trigger
         if ( pBreakTrigger ) WriteReg ( "break_trigger", 1 );
-	uint32_t nbEvtPacket=fNpackets;
-	uint32_t nbBlockSize=fBlockSize;
-	std::vector<uint32_t> cData;
-	if (bJustPaused){
-		bJustPaused=false;
-		nbEvtPacket=fNpackets-ReadReg(fStrEvtCounter);
-		nbBlockSize=fBlockSize/fNpackets*nbEvtPacket;
-	}
+
+        uint32_t nbEvtPacket = fNpackets;
+        uint32_t nbBlockSize = fBlockSize;
+        std::vector<uint32_t> cData;
+
+        if (bJustPaused)
+        {
+            bJustPaused = false;
+            nbEvtPacket = fNpackets - ReadReg (fStrEvtCounter);
+            nbBlockSize = fBlockSize / fNpackets * nbEvtPacket;
+        }
+
         //Set read mode to SRAM
         //WriteReg ( fStrSramUserLogic, 0 );
 
         //Read SRAM
-        if (nbBlockSize>0)
-		cData =  ReadBlockRegValue ( fStrSram, nbBlockSize );
-	//if (uEvtReadSize>uEvtSize) for (int iPad=fBlockSize+uEvtSize-uEvtReadSize; iPad>0; iPad-= uEvtReadSize) cData.erase(cData.begin()+iPad, cData.begin()+(iPad+uEvtReadSize-uEvtSize));//remove padding
+        if (nbBlockSize > 0)
+            cData =  ReadBlockRegValue ( fStrSram, nbBlockSize );
 
-	std::this_thread::sleep_for ( 10*cWait );
+        std::this_thread::sleep_for ( 10 * cWait );
         //WriteReg ( fStrSramUserLogic, 1 );
         WriteReg ( fStrReadout, 1 );
-	std::this_thread::sleep_for ( 10*cWait );
+        std::this_thread::sleep_for ( 10 * cWait );
 
         //now I did an acquistion, so I need to increment the counter
         fNthAcq++;
@@ -280,14 +285,17 @@ namespace Ph2_HwInterface {
 
         fData = new Data();
 
-	if (nbEvtPacket>0){        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-	        fData->Set ( pBoard, cData , nbEvtPacket, false );
+        if (nbEvtPacket > 0)       // set the vector<uint32_t> as event buffer and let him know how many packets it contains
+        {
+            fData->Set ( pBoard, cData , nbEvtPacket, false );
 
-		if ( fSaveToFile ) {
-			fFileHandler->set ( cData );
-			fFileHandler->writeFile();
-		}
-	}
+            if ( fSaveToFile )
+            {
+                fFileHandler->set ( cData );
+                fFileHandler->writeFile();
+            }
+        }
+
         return nbEvtPacket;
     }
 
@@ -319,7 +327,7 @@ namespace Ph2_HwInterface {
         }
         while ( cVal == 0 );
 
-        if ( fBlockSize==0 )
+        if ( pBoard )
             fBlockSize = computeBlockSize ( pBoard );
 
         //Select SRAM
@@ -350,9 +358,6 @@ namespace Ph2_HwInterface {
 
         //Read SRAM
         std::vector<uint32_t> cData =  ReadBlockRegValue ( fStrSram, fBlockSize );
-	if (uEvtReadSize>uEvtSize)
-		for (int iPad=fBlockSize+uEvtSize-uEvtReadSize; iPad>0; iPad-= uEvtReadSize)//remove padding
-			cData.erase(cData.begin()+iPad, cData.begin()+(iPad+uEvtReadSize-uEvtSize));
 
         //WriteReg ( fStrSramUserLogic, 1 );
 
@@ -399,13 +404,15 @@ namespace Ph2_HwInterface {
 
         CbcCounter cCounter;
         pBoard->accept ( cCounter );
-        if ( pBoard->getNCbcDataSize() != 0 ) 	
-		uEvtSize= std::max(pBoard->getNCbcDataSize()	, (uint16_t)4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ;
-        else 	
-		uEvtSize= std::max(cCounter.getNCbc()	, (uint32_t)4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ; // in 32 bit words
 
-	uEvtReadSize=uEvtSize;//(uEvtSize+7)/8*8;
-	return uEvtReadSize * fNpackets;
+
+        uint32_t cEvtSize = 0;
+        if ( pBoard->getNCbcDataSize() != 0 )
+            cEvtSize = std::max (pBoard->getNCbcDataSize(), (uint16_t) 4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ;
+        else
+            cEvtSize = std::max (cCounter.getNCbc()   , (uint32_t) 4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ; // in 32 bit words
+
+        return cEvtSize * fNpackets;
     }
 
     std::vector<uint32_t> CtaFWInterface::ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -438,34 +445,34 @@ namespace Ph2_HwInterface {
 
     //void CtaFWInterface::StartThread ( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
     //{
-        //if ( runningAcquisition ) return;
+    //if ( runningAcquisition ) return;
 
-        //runningAcquisition = true;
-        //numAcq = 0;
-        //nbMaxAcq = uNbAcq;
+    //runningAcquisition = true;
+    //numAcq = 0;
+    //nbMaxAcq = uNbAcq;
 
-        //thrAcq = boost::thread ( &Ph2_HwInterface::CtaFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
+    //thrAcq = boost::thread ( &Ph2_HwInterface::CtaFWInterface::threadAcquisitionLoop, this, pBoard, visitor );
     //}
 
     //void CtaFWInterface::threadAcquisitionLoop ( BeBoard* pBoard, HwInterfaceVisitor* visitor )
     //{
-        //Start( );
-        //fBlockSize = computeBlockSize ( pBoard );
+    //Start( );
+    //fBlockSize = computeBlockSize ( pBoard );
 
-        //while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
-        //{
-            //ReadData ( pBoard, true );
+    //while ( runningAcquisition && ( nbMaxAcq == 0 || numAcq < nbMaxAcq ) )
+    //{
+    //ReadData ( pBoard, true );
 
-            //for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
-                //visitor->visit ( *cEvent );
+    //for ( const Ph2_HwInterface::Event* cEvent = GetNextEvent ( pBoard ); cEvent; cEvent = GetNextEvent ( pBoard ) )
+    //visitor->visit ( *cEvent );
 
-            //if ( runningAcquisition )
-                //numAcq++;
+    //if ( runningAcquisition )
+    //numAcq++;
 
-        //}
+    //}
 
-        //Stop ( );
-        //runningAcquisition = false;
+    //Stop ( );
+    //runningAcquisition = false;
     //};
 
     ///////////////////////////////////////////////////////
@@ -482,7 +489,7 @@ namespace Ph2_HwInterface {
         // will have to be corrected if we want to read two modules from the same GLIB
         // (pCbcId >> 3) becomes FE ID and is encoded starting from bit21 (not used so far)
         // (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
-        pVecReq.push_back ( ( pCbcId +0x41 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+        pVecReq.push_back ( ( pCbcId + 0x41 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
     }
 
     void CtaFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
@@ -504,7 +511,7 @@ namespace Ph2_HwInterface {
     {
         // here I need to loop over all CBCs somehow...
         for (uint8_t cCbcId = 0; cCbcId < pNCbc; cCbcId++)
-            pVecReq.push_back ( ( cCbcId +0x41 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+            pVecReq.push_back ( ( cCbcId + 0x41 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
     }
 
     void CtaFWInterface::DecodeReg ( CbcRegItem& pRegItem,
@@ -527,8 +534,8 @@ namespace Ph2_HwInterface {
     {
         unsigned int cWait ( 100 );
 
-        if ( bZero ) 
-		cWait = pNcount * 500;
+        if ( bZero )
+            cWait = pNcount * 500;
 
         usleep ( cWait );
 
@@ -539,20 +546,22 @@ namespace Ph2_HwInterface {
         {
             cVal = ReadReg ( "cbc_i2c_cmd_ack" );
 
-            if ( bZero ){
-		if (cVal == 0 )
-			usleep ( cWait );
-		else 	
-			if (cVal == 0b01)
-				return true;
-			else
-				throw Exception ( " CbcInterface::I2cCmdAckWait bad acknowledge value" );
-	    } else {
-		if (cVal!=0)
-			usleep ( cWait );
-		else 
-			return true;
-	    }
+            if ( bZero )
+            {
+                if (cVal == 0 )
+                    usleep ( cWait );
+                else if (cVal == 0b01)
+                    return true;
+                else
+                    throw Exception ( " CbcInterface::I2cCmdAckWait bad acknowledge value" );
+            }
+            else
+            {
+                if (cVal != 0)
+                    usleep ( cWait );
+                else
+                    return true;
+            }
         }
         while ( cVal == 0 && ++cLoop < 70 );
 
@@ -693,7 +702,7 @@ namespace Ph2_HwInterface {
     void CtaFWInterface::CbcFastReset()
     {
         //WriteReg ( "cbc_fast_reset", 1 );
-        //usleep ( 2000 ); 
+        //usleep ( 2000 );
         //WriteReg ( "cbc_fast_reset", 0 );
     }
 
@@ -751,19 +760,21 @@ namespace Ph2_HwInterface {
     bool CtaFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
         //if (cWord1 != cWord2)
-            //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ( (cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
-            //std::cout << "Readback error" << std::endl;
+        //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ( (cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
+        //std::cout << "Readback error" << std::endl;
         return ( cWord1  == cWord2 );
     }
 
     /*! \brief Reboot the board */
-    void CtaFWInterface::RebootBoard(){
+    void CtaFWInterface::RebootBoard()
+    {
         checkIfUploading();
-	fpgaConfig->resetBoard();
+        fpgaConfig->resetBoard();
     }
     /*! \brief Set or reset the start signal */
-    void CtaFWInterface::SetForceStart( bool bStart){
-	    WriteReg ( "pc_commands.force_BG0_start", bStart ? 1 : 0);
+    void CtaFWInterface::SetForceStart ( bool bStart)
+    {
+        WriteReg ( "pc_commands.force_BG0_start", bStart ? 1 : 0);
     }
 
 }

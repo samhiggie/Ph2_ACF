@@ -179,6 +179,18 @@ void BeBoardInterface::ReadNEvents( BeBoard* pBoard, uint32_t pNEvents )
     fBoardFW->ReadNEvents( pBoard, pNEvents );
 }
 
+void BeBoardInterface::CbcFastReset( const BeBoard* pBoard )
+{
+    setBoard( pBoard->getBeBoardIdentifier() );
+    fBoardFW->CbcFastReset();
+}
+
+void BeBoardInterface::CbcHardReset( const BeBoard* pBoard )
+{
+    setBoard( pBoard->getBeBoardIdentifier() );
+    fBoardFW->CbcHardReset();
+}
+
 const Event* BeBoardInterface::GetNextEvent( const BeBoard* pBoard )
 {
     setBoard( pBoard->getBeBoardIdentifier() );
