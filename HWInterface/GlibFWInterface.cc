@@ -177,7 +177,7 @@ namespace Ph2_HwInterface {
 
         std::chrono::milliseconds cWait ( 100 );
 
-        //Wait for the selected SRAM to be full then empty it
+        /*//Wait for the selected SRAM to be full then empty it
         do
         {
             cVal = ReadReg ( fStrFull );
@@ -186,7 +186,7 @@ namespace Ph2_HwInterface {
                 std::this_thread::sleep_for ( cWait );
         }
         while ( cVal == 1 );
-
+	*/
         WriteReg ( fStrReadout, 0 );
         fNTotalAcq++;
     }
