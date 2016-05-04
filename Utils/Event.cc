@@ -210,6 +210,17 @@ namespace Ph2_HwInterface {
             std::cout << "Event: FE " << +pFeId << " is not found." << std::endl;
     }
 
+    void Event::GetEventBytes ( std::vector< uint8_t >& cbcData ) const{
+	    cbcData.clear();
+	    for (auto& cWord : GetEventData())
+	    {
+		    cbcData.push_back ( ( cWord >> 24 ) & 0xFF);
+		    cbcData.push_back ( ( cWord >> 16 ) & 0xFF);
+		    cbcData.push_back ( ( cWord >> 8 ) & 0xFF);
+		    cbcData.push_back ( ( cWord ) & 0xFF);
+	    }
+    }
+
     std::string Event::HexString() const
     {
         std::stringbuf tmp;

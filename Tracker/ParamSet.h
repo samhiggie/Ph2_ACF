@@ -8,6 +8,7 @@
 */ 
 class ParamSet{
 public:
+	ParamSet(){}
 	ParamSet(const std::string& strFile);
 	/// get a parameter value
 	uint32_t getValue(const std::string& strName);
@@ -31,7 +32,7 @@ public:
 	bool loadParamValuePairsFromFile(const std::string& strFile);
 	/// Remove all values
 	void clearValues();
-private:
+protected:
 	///Internal values map
 	std::map <std::string, uint32_t> mapIntValues;
 	std::map <std::string, std::string> mapStrValues;
