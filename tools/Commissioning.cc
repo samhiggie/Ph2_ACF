@@ -87,21 +87,15 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
         for ( BeBoard* pBoard : fBoardVector )
         {
             // I need this to normalize the TDC values I get from the Strasbourg FW
-            bool pStrasbourgFW = false;
 
-            if (pBoard->getBoardType() == "GLIB" || pBoard->getBoardType() == "CTA") pStrasbourgFW = true;
 
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
 
             // Loop over Events from this Acquisition
-            for ( auto cFe : pBoard->fModuleVector )
-            {
-                int cNHits = 0;
-                cNHits += countHitsLat ( cFe, events, "module_latency", cLat, cIterationCount, pStrasbourgFW);
+            countHitsLat ( pBoard, events, "module_latency", cLat, cIterationCount );
 
-                std::cout << "FE: " << +cFe->getFeId() << " Latency " << +cLat << " Hits " << cNHits  << " Events " << fNevents << std::endl;
-            }
+
         }
 
         // done counting hits for all FE's, now update the Histograms
@@ -153,8 +147,7 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
 
     for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
     {
-        uint32_t cN = 1;
-        uint32_t cNthAcq = 0;
+        uint32_t cN = 0;
         int cNStubs = 0;
 
         // Take Data for all Modules
@@ -171,8 +164,11 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
                 cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
                 cStrasbourgFW = true;
             }
-            else if(cBoardType == "CTA")
-                cRegVec.push_back({"STUBDATA_LATENCY_ADJUST", cLat});
+            else if (cBoardType == "CTA")
+            {
+                cRegVec.push_back ({"cbc.STUBDATA_LATENCY_ADJUST", cLat});
+                cStrasbourgFW = true;
+            }
             else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7")
             {
                 cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});
@@ -190,12 +186,11 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
             for ( auto& cEvent : events )
             {
                 for ( auto cFe : pBoard->fModuleVector )
-                    cNStubs += countStubs ( cFe, cEvent, "module_stub_latency", cLat,cStrasbourgFW );
+                    cNStubs += countStubs ( cFe, cEvent, "module_stub_latency", cLat, cStrasbourgFW );
 
                 cN++;
             }
 
-            cNthAcq++;
             std::cout << "Stub Latency " << +cLat << " Stubs " << cNStubs  << " Events " << cN << std::endl;
 
         }
@@ -232,48 +227,58 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
-int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount, bool pStrasbourgFW)
+int Commissioning::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount)
 {
-    int cHitSum = 0;
-    //  get histogram to fill
-    TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( pFe, pHistName ) );
+    std::string cBoardType = pBoard->getBoardType();
+    uint32_t cTotalHits = 0;
 
-    for (auto& cEvent : pEventVec)
+    for ( auto cFe : pBoard->fModuleVector )
     {
-        //first, reset the hit counter - I need separate counters for each event
-        int cHitCounter = 0;
-        //get TDC value for this particular event
-        uint8_t cTDCVal = cEvent->GetTDC();
+        uint32_t cHitSum = 0;
+        //  get histogram to fill
+        TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( cFe, pHistName ) );
 
-        //std::cout << "TDC Val: " << +cTDCVal << std::endl;
-        if (cTDCVal != 0 && pStrasbourgFW) cTDCVal -= 5;
-
-        if (cTDCVal > 8 ) std::cout << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
-
-        else
+        for (auto& cEvent : pEventVec)
         {
-            for ( auto cCbc : pFe->fCbcVector )
+            //first, reset the hit counter - I need separate counters for each event
+            int cHitCounter = 0;
+            //get TDC value for this particular event
+            uint8_t cTDCVal = cEvent->GetTDC();
+
+            if (cTDCVal != 0 && cBoardType == "GLIB") cTDCVal -= 5;
+            else if (cTDCVal != 0 && cBoardType == "CTA") cTDCVal -= 3;
+
+            if (cTDCVal > 8 ) std::cout << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
+
+            else
             {
-                //now loop the channels for this particular event and increment a counter
-                for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                for ( auto cCbc : cFe->fCbcVector )
                 {
-                    if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                        cHitCounter++;
+                    //now loop the channels for this particular event and increment a counter
+                    for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                    {
+                        if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                            cHitCounter++;
+                    }
                 }
+
+                //now I have the number of hits in this particular event for all CBCs and the TDC value
+                //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 5 from the TDC value to have it normalized between 0 and 7
+
+                uint32_t iBin = pParameter + pIterationCount * (fTDCBins - 1) + cTDCVal;
+                cTmpHist->Fill ( iBin-1 , cHitCounter);
+                //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
+
+                cHitSum += cHitCounter;
             }
 
-            //now I have the number of hits in this particular event for all CBCs and the TDC value
-            //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 5 from the TDC value to have it normalized between 0 and 7
-
-            uint32_t iBin = pParameter + pIterationCount * (fTDCBins - 1) + cTDCVal;
-            cTmpHist->Fill ( iBin , cHitCounter);
-            //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
-
-            cHitSum += cHitCounter;
         }
+
+        std::cout << "FE: " << +cFe->getFeId() << " Latency " << +pParameter << " Hits " << cHitSum  << " Events " << fNevents << std::endl;
+        cTotalHits += cHitSum;
     }
 
-    return cHitSum;
+    return cTotalHits;
 }
 
 int Commissioning::countHits ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter )
