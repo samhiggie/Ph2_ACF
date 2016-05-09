@@ -62,7 +62,7 @@ using namespace std;
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 
-TrackerEvent::TrackerEvent(  Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, bool bFakeData, ParamSet* pPSet){
+TrackerEvent::TrackerEvent(const Event * pEvt, uint32_t nbCBC, uint32_t uFE,  uint32_t uCBC, bool bFakeData, ParamSet* pPSet){
 	data_=NULL;
 	size_=0;
 
@@ -135,7 +135,7 @@ uint32_t TrackerEvent::getDaqSize() const{
 }
 							
 ///Fill the tracker header
-void TrackerEvent::fillTrackerHeader( Event* pEvt, uint64_t uFE, uint32_t nbCBC, uint32_t nbCbcFe, uint32_t uAcqMode, bool bZeroSuppr, bool bConditionData, bool bFakeData){
+void TrackerEvent::fillTrackerHeader( const Event* pEvt, uint64_t uFE, uint32_t nbCBC, uint32_t nbCbcFe, uint32_t uAcqMode, bool bZeroSuppr, bool bConditionData, bool bFakeData){
 	data_[DAQ_HEADER_SIZE+IDX_FORMAT] = FORMAT_VERSION<<4 | uAcqMode<<2 | (bZeroSuppr ? ZERO_SUPPRESSION : VIRGIN_RAW);//Data format version, Header format, 
 	data_[DAQ_HEADER_SIZE+IDX_EVENT_TYPE] = (bConditionData ? 1 : 0)<<7 | (bFakeData ? 0 : 1)<<6 | (GLIB_STATUS_REGISTERS&0x3F000000)>>24;//Event type, DTC status registers
 	data_[DAQ_HEADER_SIZE+IDX_GLIB_STATUS+2]= (GLIB_STATUS_REGISTERS&0xFF0000)>>16;
@@ -163,7 +163,7 @@ void TrackerEvent::fillTrackerHeader( Event* pEvt, uint64_t uFE, uint32_t nbCBC,
 		}//nothing if STREAMER_ACQ_MODE_SUMMARYERROR
 }
 
-void TrackerEvent::fillTrackerPayload(Event* pEvt, uint32_t nbFE, uint32_t nbCBC, uint32_t uCBC, uint32_t nbBitsHeader, bool bZeroSuppr, bool bCondition, uint32_t nbCondition, ParamSet* pPSet){
+void TrackerEvent::fillTrackerPayload(const Event* pEvt, uint32_t nbFE, uint32_t nbCBC, uint32_t uCBC, uint32_t nbBitsHeader, bool bZeroSuppr, bool bCondition, uint32_t nbCondition, ParamSet* pPSet){
 	// Fill the tracker payload 	
 	uint32_t uIdxCbc=0, uOct, idxPayload, bitPayload= DAQ_HEADER_SIZE*8+nbBitsHeader, uFront, uChip;
 	uint32_t nbCbcFe=nbCBC/nbFE;//nb of CBCs per FE
@@ -203,7 +203,7 @@ void TrackerEvent::fillTrackerPayload(Event* pEvt, uint32_t nbFE, uint32_t nbCBC
 //	idxPayload+=uChip/8 + 1;
 }
 
-void TrackerEvent::fillTrackerConditionData(Event* pEvt,  uint32_t idxPayload, uint32_t nbFE, uint32_t nbCBC, uint32_t nbCondition, ParamSet* pPSet)
+void TrackerEvent::fillTrackerConditionData(const Event* pEvt,  uint32_t idxPayload, uint32_t nbFE, uint32_t nbCBC, uint32_t nbCondition, ParamSet* pPSet)
 {//Condition data
 //	cout<<"idxNbCondition="<<idxPayload<<endl;
 	uint32_t uOct, uCond, uVal=0, uFront, uChip;
@@ -253,7 +253,7 @@ void TrackerEvent::fillTrackerConditionData(Event* pEvt,  uint32_t idxPayload, u
 	}//for
 }
 
-uint32_t TrackerEvent::calcBitsForFE(Event* pEvt, uint32_t uFront, char* dest, uint32_t bitDest, uint32_t nbCBC){
+uint32_t TrackerEvent::calcBitsForFE( const Event* pEvt, uint32_t uFront, char* dest, uint32_t bitDest, uint32_t nbCBC){
 	uint32_t uChip, uBit, nbCluster=0, uClusterSize, nbMax=63, uPos;
 	uint32_t nbBits=7;//FE header size for 2S modules
 	bool bCluster;
@@ -338,7 +338,7 @@ void TrackerEvent::reverseByte(char & b) {
    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
 }
 
-void TrackerEvent::fillDaqHeaderAndTrailer(Event *pEvt){
+void TrackerEvent::fillDaqHeaderAndTrailer(const Event *pEvt){
 //DAQ header	
 //	globalDaqHeader_ = boe_ | eventType_ | l1aCounter_ | bxCounter_ | sourceFedID_ | fov_;
 	data_[IDX_DAQ_HEADER_TYPE]		= (BOE_1<<4) | EVENT_TYPE;

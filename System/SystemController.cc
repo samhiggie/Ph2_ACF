@@ -98,6 +98,7 @@ namespace Ph2_System {
             void visit ( BeBoard& pBoard )
             {
                 fBeBoardInterface->ConfigureBoard ( &pBoard );
+                fBeBoardInterface->CbcHardReset( &pBoard );
 
                 if ( fCheck && pBoard.getBoardType() == "GLIB")
                 {

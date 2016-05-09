@@ -258,6 +258,10 @@ namespace Ph2_HwInterface {
         {
             return fpgaConfig;
         }
+	/*! \brief Reboot the board */
+	void RebootBoard(){}
+	/*! \brief Set or reset the start signal */
+	void SetForceStart( bool bStart){}
 
     };
 }
