@@ -52,7 +52,6 @@ namespace Ph2_HwInterface {
     {
 
       public:
-        unsigned int fNTotalAcq;
 
         FpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;

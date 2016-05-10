@@ -61,8 +61,6 @@ namespace Ph2_HwInterface {
     {
         //first, identify the correct BeBoardFWInterface
         setBoard ( pCbc->getBeBoardIdentifier() );
-        // then send a CBC Hard Reset
-        this->CbcHardReset ( pCbc );
 
         //vector to encode all the registers into
         std::vector<uint32_t> cVec;
@@ -345,19 +343,4 @@ namespace Ph2_HwInterface {
                     cCbc->setReg ( cReg.first, cReg.second );
                 }
     }
-
-    void CbcInterface::CbcHardReset ( const Cbc* pCbc )
-    {
-        setBoard ( pCbc->getBeBoardIdentifier() );
-
-        fBoardFW->CbcHardReset();
-    }
-
-    void CbcInterface::CbcFastReset ( const Cbc* pCbc )
-    {
-        setBoard ( pCbc->getBeBoardIdentifier() );
-
-        fBoardFW->CbcFastReset();
-    }
-
 }

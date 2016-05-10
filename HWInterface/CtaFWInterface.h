@@ -47,8 +47,8 @@ namespace Ph2_HwInterface {
         std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
         CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
-        uint32_t fNthAcq, fNpackets, uEvtSize, uEvtReadSize;
-	bool bJustPaused;
+        uint32_t fNthAcq, fNpackets;
+        bool fJustPaused;
 
       private:
         /*!
@@ -107,7 +107,7 @@ namespace Ph2_HwInterface {
          * \brief Get the FW info
          */
         void getBoardInfo();
-	
+
         BoardType getBoardType() const
         {
             return BoardType::CTA;
@@ -129,6 +129,7 @@ namespace Ph2_HwInterface {
          * \brief Stop a DAQ
          */
         void Stop() override;
+        void SafeStop (BeBoard* pBoard);
         /*!
          * \brief Pause a DAQ
          */
@@ -297,10 +298,10 @@ namespace Ph2_HwInterface {
         /*! \brief Delete one Fpga configuration (or firmware image)*/
         void DeleteFpgaConfig ( const std::string& strId);
 
-	/*! \brief Reboot the board */
-	void RebootBoard();
-	/*! \brief Set or reset the start signal */
-	void SetForceStart( bool bStart);
+        /*! \brief Reboot the board */
+        void RebootBoard();
+        /*! \brief Set or reset the start signal */
+        void SetForceStart ( bool bStart);
     };
 }
 
