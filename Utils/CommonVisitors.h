@@ -166,5 +166,31 @@ struct CbcRegReader : public HwDescriptionVisitor
     }
 };
 
+ struct CbcRegIncrementer : public HwDescriptionVisitor
+  {
+    CbcInterface* fInterface;
+    std::string fRegName;
+    int fRegIncrement;
+
+    CbcRegIncrementer( CbcInterface* pInterface, std::string pRegName, int pRegIncrement ): fInterface( pInterface ), fRegName( pRegName ), fRegIncrement( pRegIncrement ) {}
+    CbcRegIncrementer( const CbcRegIncrementer& incrementer ) : fInterface( incrementer.fInterface ), fRegName( incrementer.fRegName ), fRegIncrement( incrementer.fRegIncrement ) {}
+
+    void setRegister( std::string pRegName, int pRegIncrement )
+    {
+        fRegName = pRegName;
+        fRegIncrement = pRegIncrement;
+    }
+
+    void visit( Ph2_HwDescription::Cbc& pCbc )
+    {
+      uint8_t currentValue = pCbc.getReg(fRegName);
+      int targetValue = int(currentValue)+fRegIncrement;
+      if (targetValue > 255) std::cerr << "Error: cannot increment register above 255" << std::endl , targetValue = 255;
+      else if (targetValue < 0) std::cerr << "Error: cannot increment register below 0 " << std::endl , targetValue = 0;
+      fInterface->WriteCbcReg( &pCbc, fRegName, uint8_t(targetValue) );
+    }
+};
+
+
 
 #endif

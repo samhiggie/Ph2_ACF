@@ -40,6 +40,8 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "noise", "scan the CBC noise per strip", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "noise", "n" );
 
+	cmd.defineOption( "signal", "Scan the threshold using physics triggers", ArgvParser::OptionRequiresValue );
+	cmd.defineOptionAlternative( "signal", "S" );
 
 	cmd.defineOption( "minimum", "minimum value for latency scan", ArgvParser::OptionRequiresValue );
 	cmd.defineOptionAlternative( "minimum", "m" );
@@ -64,6 +66,7 @@ int main( int argc, char* argv[] )
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Commissioning.xml";
 	bool cLatency = ( cmd.foundOption( "latency" ) ) ? true : false;
 	bool cStubLatency = ( cmd.foundOption( "stublatency" ) ) ? true : false;
+	bool cSignal = ( cmd.foundOption( "signal" ) ) ? true : false;
 	bool cNoise = ( cmd.foundOption( "noise" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 	if ( !cNoise )cDirectory += "Commissioning";
@@ -71,7 +74,8 @@ int main( int argc, char* argv[] )
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 
 	uint8_t cStartLatency = ( cmd.foundOption( "minimum" ) ) ? convertAnyInt( cmd.optionValue( "minimum" ).c_str() ) :  0;
-	uint8_t cLatencyRange = ( cmd.foundOption( "range" ) ) ?  convertAnyInt( cmd.optionValue( "range" ).c_str() ) :  10;
+	uint8_t cLatencyRange = ( cmd.foundOption( "range" ) )   ?  convertAnyInt( cmd.optionValue( "range" ).c_str() ) :  10;
+	int     cSignalRange  = ( cmd.foundOption( "signal" ) )  ?  convertAnyInt( cmd.optionValue( "signal" ).c_str() ) :  30;
 
 
 	TApplication cApp( "Root Application", &argc, argv );
@@ -81,6 +85,7 @@ int main( int argc, char* argv[] )
 
 		std::string cResultfile;
 		if ( cLatency || cStubLatency ) cResultfile = "Latency";
+    		else if ( cSignal ) cResultfile = "SignalScan";
 		else cResultfile = "Commissioning";
 
     Tool cTool;
@@ -95,22 +100,31 @@ int main( int argc, char* argv[] )
 	{
 		Commissioning cCommissioning;
         cCommissioning.Inherit(&cTool);
-		cCommissioning.Initialize(cStartLatency, cLatencyRange );
 
-		// Here comes our Part:
-		if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
-		if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
+
+    if ( cLatency || cStubLatency )
+    {
+      cCommissioning.Initialize(cStartLatency, cLatencyRange );
+      // Here comes our Part:
+      if ( cLatency ) cCommissioning.ScanLatency( cStartLatency, cLatencyRange );
+      if ( cStubLatency ) cCommissioning.ScanStubLatency( cStartLatency, cLatencyRange );
+    }
+    if ( cSignal ) {
+      cCommissioning.Initialize(cStartLatency, cLatencyRange );
+      cCommissioning.SignalScan( cSignalRange );
+    }
 	}
 
 	if ( cNoise )
 	{
 		PedeNoise cPedeNoise;
-        cPedeNoise.Inherit(&cTool);
+        	cPedeNoise.Inherit(&cTool);
+    		cPedeNoise.ConfigureHw();
 		cPedeNoise.Initialise(); // canvases etc. for fast calibration
 		cPedeNoise.measureNoise();
 		cPedeNoise.Validate();
 		cPedeNoise.SaveResults( );
-        cPedeNoise.dumpConfigFiles();
+        	cPedeNoise.dumpConfigFiles();
 	}
 
     cTool.SaveResults();

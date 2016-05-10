@@ -188,7 +188,6 @@ namespace Ph2_HwInterface {
         while ( cVal == 1 );
 	*/
         WriteReg ( fStrReadout, 0 );
-        fNTotalAcq++;
     }
 
 
