@@ -19,7 +19,6 @@ namespace Ph2_HwInterface {
     //Constructor, makes the board map
     BeBoardFWInterface::BeBoardFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId ) :
         RegManager ( puHalConfigFileName, pBoardId ),
-        fNTotalAcq ( 0 ),
         //runningAcquisition ( false ),
         numAcq ( 0 ),
         fSaveToFile ( false ),
@@ -30,7 +29,6 @@ namespace Ph2_HwInterface {
     //Constructor, makes the board map
     BeBoardFWInterface::BeBoardFWInterface ( const char* pId, const char* pUri, const char* pAddressTable ) :
         RegManager ( pId, pUri, pAddressTable ),
-        fNTotalAcq ( 0 ),
         //runningAcquisition ( false ),
         numAcq ( 0 ),
         fSaveToFile ( false ),
