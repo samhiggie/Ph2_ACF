@@ -26,16 +26,16 @@ void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
             //modify the axis labels
             uint32_t pLabel = pStartLatency;
 
-            for (uint32_t cBin = 0; cBin < cLatHist->GetNbinsX(); cBin++)
+            for (uint32_t cLatency = pStartLatency; cLatency < pStartLatency + pLatencyRange; ++cLatency)
             {
-                if ( cBin % fTDCBins == 1)
+                for (uint32_t cPhase = 0; cPhase < fTDCBins; ++cPhase)
                 {
-                    cLatHist->GetXaxis()->SetBinLabel (cBin, std::to_string (pLabel).c_str() );
-                    pLabel++;
+                    int cBin = convertLatencyPhase (pStartLatency, cLatency, cPhase);
+                    cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
                 }
             }
 
-            cLatHist->GetXaxis()->SetTitle ("Trigger Latency [cc]");
+            cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency*%d+TDC]", fTDCBins) );
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -87,21 +87,15 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
         for ( BeBoard* pBoard : fBoardVector )
         {
             // I need this to normalize the TDC values I get from the Strasbourg FW
-            bool pStrasbourgFW = false;
 
-            if (pBoard->getBoardType() == "GLIB" || pBoard->getBoardType() == "CTA") pStrasbourgFW = true;
 
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
 
             // Loop over Events from this Acquisition
-            for ( auto cFe : pBoard->fModuleVector )
-            {
-                int cNHits = 0;
-                cNHits += countHitsLat ( cFe, events, "module_latency", cLat, cIterationCount, pStrasbourgFW);
+            countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency );
 
-                std::cout << "FE: " << +cFe->getFeId() << " Latency " << +cLat << " Hits " << cNHits  << " Events " << fNevents << std::endl;
-            }
+
         }
 
         // done counting hits for all FE's, now update the Histograms
@@ -153,8 +147,7 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
 
     for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
     {
-        uint32_t cN = 1;
-        uint32_t cNthAcq = 0;
+        uint32_t cN = 0;
         int cNStubs = 0;
 
         // Take Data for all Modules
@@ -171,8 +164,11 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
                 cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
                 cStrasbourgFW = true;
             }
-            else if(cBoardType == "CTA")
-                cRegVec.push_back({"STUBDATA_LATENCY_ADJUST", cLat});
+            else if (cBoardType == "CTA")
+            {
+                cRegVec.push_back ({"cbc.STUBDATA_LATENCY_ADJUST", cLat});
+                cStrasbourgFW = true;
+            }
             else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7")
             {
                 cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});
@@ -190,12 +186,11 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
             for ( auto& cEvent : events )
             {
                 for ( auto cFe : pBoard->fModuleVector )
-                    cNStubs += countStubs ( cFe, cEvent, "module_stub_latency", cLat,cStrasbourgFW );
+                    cNStubs += countStubs ( cFe, cEvent, "module_stub_latency", cLat, cStrasbourgFW );
 
                 cN++;
             }
 
-            cNthAcq++;
             std::cout << "Stub Latency " << +cLat << " Stubs " << cNStubs  << " Events " << cN << std::endl;
 
         }
@@ -232,48 +227,59 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
-int Commissioning::countHitsLat ( Module* pFe,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pIterationCount, bool pStrasbourgFW)
+int Commissioning::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency)
 {
-    int cHitSum = 0;
-    //  get histogram to fill
-    TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( pFe, pHistName ) );
+    std::string cBoardType = pBoard->getBoardType();
+    uint32_t cTotalHits = 0;
 
-    for (auto& cEvent : pEventVec)
+    for ( auto cFe : pBoard->fModuleVector )
     {
-        //first, reset the hit counter - I need separate counters for each event
-        int cHitCounter = 0;
-        //get TDC value for this particular event
-        uint8_t cTDCVal = cEvent->GetTDC();
+        uint32_t cHitSum = 0;
+        //  get histogram to fill
+        TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( cFe, pHistName ) );
 
-        //std::cout << "TDC Val: " << +cTDCVal << std::endl;
-        if (cTDCVal != 0 && pStrasbourgFW) cTDCVal -= 5;
-
-        if (cTDCVal > 8 ) std::cout << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
-
-        else
+        for (auto& cEvent : pEventVec)
         {
-            for ( auto cCbc : pFe->fCbcVector )
+            //first, reset the hit counter - I need separate counters for each event
+            int cHitCounter = 0;
+            //get TDC value for this particular event
+            uint8_t cTDCVal = cEvent->GetTDC();
+
+            if (cTDCVal != 0 && cBoardType == "GLIB") cTDCVal -= 5;
+            else if (cTDCVal != 0 && cBoardType == "CTA") cTDCVal -= 3;
+
+            if (cTDCVal > 8 ) std::cout << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
+
+            else
             {
-                //now loop the channels for this particular event and increment a counter
-                for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                for ( auto cCbc : cFe->fCbcVector )
                 {
-                    if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                        cHitCounter++;
+                    //now loop the channels for this particular event and increment a counter
+                    for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                    {
+                        if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                            cHitCounter++;
+                    }
                 }
+
+                //now I have the number of hits in this particular event for all CBCs and the TDC value
+                //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 5 from the TDC value to have it normalized between 0 and 7
+
+                //uint32_t iBin = pParameter + pIterationCount * (fTDCBins - 1) + cTDCVal;
+                uint32_t cBin = convertLatencyPhase (pStartLatency, pParameter, cTDCVal);
+                cTmpHist->Fill ( cBin, cHitCounter);
+                //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
+
+                cHitSum += cHitCounter;
             }
 
-            //now I have the number of hits in this particular event for all CBCs and the TDC value
-            //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 5 from the TDC value to have it normalized between 0 and 7
-
-            uint32_t iBin = pParameter + pIterationCount * (fTDCBins - 1) + cTDCVal;
-            cTmpHist->Fill ( iBin , cHitCounter);
-            //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
-
-            cHitSum += cHitCounter;
         }
+
+        std::cout << "FE: " << +cFe->getFeId() << " Latency " << +pParameter << " Hits " << cHitSum  << " Events " << fNevents << std::endl;
+        cTotalHits += cHitSum;
     }
 
-    return cHitSum;
+    return cTotalHits;
 }
 
 int Commissioning::countHits ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter )
@@ -355,11 +361,103 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
             cTmpHist->DrawCopy ( );
             cCanvas.second->Update();
         }
+        else if ( pHistName == "module_signal" )
+        {
+            cCanvas.second->cd();
+            TH2F* cTmpHist = dynamic_cast<TH2F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
+            cTmpHist->DrawCopy ( "colz" );
+            cCanvas.second->Update();
+        }
 
 #ifdef __HTTP__
         fHttpServer->ProcessRequests();
 #endif
     }
+}
+
+void Commissioning::SignalScan (int SignalScanLength)
+{
+    for ( auto& cBoard : fBoardVector )
+    {
+        uint32_t cBoardId = cBoard->getBeId();
+
+        for ( auto& cFe : cBoard->fModuleVector )
+        {
+            uint32_t cFeId = cFe->getFeId();
+            fNCbc = cFe->getNCbc();
+
+            // 1D Hist forlatency scan
+            TString cName =  Form ( "h_module_thresholdScan_Fe%d", cFeId );
+            TObject* cObj = gROOT->FindObject ( cName );
+
+            if ( cObj ) delete cObj;
+
+            TH2F* cSignalHist = new TH2F ( cName, Form ( "Signal threshold vs channel FE%d; Channel # ; Threshold; # of Hits", cFeId ), fNCbc * NCHANNELS, -0.5, fNCbc * NCHANNELS - 0.5, 255, -.5,  255 - .5 );
+            bookHistogram ( cFe, "module_signal", cSignalHist );
+        }
+    }
+
+    // To read the blah-specific stuff
+    parseSettings();
+    std::cout << "Histograms initialised." << std::endl;
+
+    // The step scan is +1 for hole mode
+    int cVcthDirection = ( fHoleMode == 1 ) ? +1 : -1;
+
+    // CBC VCth reader and writer
+    CbcRegIncrementer cIncrementer ( fCbcInterface, "VCth", -1 * cVcthDirection * fNoiseToSignalVCTH);
+    std::cout << "Stepping back " << fNoiseToSignalVCTH << " from the configuration threshold" << std::endl;
+    this->accept ( cIncrementer );
+    cIncrementer.setRegister ("VCth", cVcthDirection * fSignalScanStep );
+
+    for (int i = 0; i < SignalScanLength; i += fSignalScanStep )
+    {
+        std::cout << "Threshold setting " << i + 1 << " / " << SignalScanLength << std::endl;
+        this->accept ( cIncrementer );
+
+        // Take Data for all Modules
+        for ( BeBoard* pBoard : fBoardVector )
+        {
+            // I need this to normalize the TDC values I get from the Strasbourg FW
+            bool pStrasbourgFW = false;
+
+            if (pBoard->getBoardType() == "GLIB" || pBoard->getBoardType() == "CTA") pStrasbourgFW = true;
+
+            fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
+            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+
+            // Loop over Events from this Acquisition
+            for ( auto& cEvent : events )
+            {
+                for ( auto cFe : pBoard->fModuleVector )
+                {
+                    TH2F* cSignalHist = static_cast<TH2F*> (getHist ( cFe, "module_signal") );
+                    int cEventHits = 0;
+
+                    for ( auto cCbc : cFe->fCbcVector )
+                    {
+                        //now loop the channels for this particular event and increment a counter
+                        for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                        {
+                            if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                            {
+                                cSignalHist->Fill (cCbc->getCbcId() *NCHANNELS + cId, cCbc->getReg ("VCth") );
+                                cEventHits++;
+                            }
+                        }
+
+                        std::cout << "EVENT TDC Value " << cEvent->GetTDC() << " cEventHits " << cEventHits << " vcth_delta " << i* fSignalScanStep << std::endl;
+                    }
+                }
+            }
+
+        }
+
+        // done counting hits for all FE's, now update the Histograms
+        updateHists ( "module_signal", false );
+    }
+
+
 }
 
 
@@ -376,8 +474,19 @@ void Commissioning::parseSettings()
     if ( cSetting != std::end ( fSettingsMap ) )  fHoleMode = cSetting->second;
     else fHoleMode = 1;
 
+    cSetting = fSettingsMap.find ( "NoiseToSignalVCTH" );
+
+    if ( cSetting != std::end ( fSettingsMap ) )  fNoiseToSignalVCTH = cSetting->second;
+    else fNoiseToSignalVCTH = 1;
+
+    cSetting = fSettingsMap.find ( "SignalScanStep" );
+
+    if ( cSetting != std::end ( fSettingsMap ) )  fSignalScanStep = cSetting->second;
+    else fSignalScanStep = 1;
 
     std::cout << "Parsed the following settings:" << std::endl;
     std::cout << "	Nevents = " << fNevents << std::endl;
     std::cout << "	HoleMode = " << int ( fHoleMode ) << std::endl;
+    std::cout << "	NoiseToSignalVCTH = " << fNoiseToSignalVCTH << std::endl;
+    std::cout << "	SignalScanStep = " << fSignalScanStep << std::endl;
 }

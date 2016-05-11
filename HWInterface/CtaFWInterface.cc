@@ -166,6 +166,7 @@ namespace Ph2_HwInterface {
         //Select SRAM
         SelectDaqSRAM();
         //Stop the DAQ
+        //sure this should not be 1? Like GlibFWInterface
         cVecReg.push_back ( {"break_trigger", 0} );
         cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
         cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
@@ -175,7 +176,7 @@ namespace Ph2_HwInterface {
 
         std::chrono::milliseconds cWait ( 100 );
 
-        //Wait for the selected SRAM to be full then empty it
+        /*//Wait for the selected SRAM to be full then empty it
         do
         {
             cVal = ReadReg ( fStrFull );
@@ -184,17 +185,90 @@ namespace Ph2_HwInterface {
                 std::this_thread::sleep_for ( cWait );
         }
         while ( cVal == 1 );
+        */
+        //WriteReg ( fStrReadout, 0 );
+        WriteReg ("pc_commands.SRAM1_end_readout", 0);
+        WriteReg ("pc_commands.SRAM2_end_readout", 0);
+    }
+
+    void CtaFWInterface::SafeStop (BeBoard* pBoard)
+    {
+        std::vector< std::pair<std::string, uint32_t> > cVecReg;
+
+        uhal::ValWord<uint32_t> cVal;
+
+        //Select SRAM
+        SelectDaqSRAM();
+        //Stop the DAQ
+        cVecReg.push_back ( {"break_trigger", 1} );
+        cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
+
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
+
+        std::chrono::milliseconds cWait ( 100 );
+
+        //FIFO goes to write_data state
+        //Select SRAM
+        SelectDaqSRAM();
+
+        if ( pBoard )
+            fBlockSize = computeBlockSize ( pBoard );
+
+        do  //Wait for the SRAM full condition.
+        {
+            cVal = ReadReg ( fStrFull );
+
+            if ( cVal == 0 )
+                std::this_thread::sleep_for ( cWait );
+        }
+        while ( cVal == 0 );
+
+        uint32_t nbEvtPacket = fNpackets;
+        uint32_t nbBlockSize = fBlockSize;
+        std::vector<uint32_t> cData;
+
+        nbEvtPacket = fNpackets - ReadReg (fStrEvtCounter);
+        nbBlockSize = fBlockSize / fNpackets * nbEvtPacket;
+
+        //Read SRAM
+        if (nbBlockSize > 0)
+            cData =  ReadBlockRegValue ( fStrSram, nbBlockSize );
+
+        std::this_thread::sleep_for ( 10 * cWait );
+        WriteReg ( fStrReadout, 1 );
+        std::this_thread::sleep_for ( 10 * cWait );
+        WriteReg ("pc_commands.PC_config_ok", 0 );
+
+        //now I did an acquistion, so I need to increment the counter
+        fNthAcq++;
+
+        // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
+        if ( fData ) delete fData;
+
+        fData = new Data();
+
+        if (nbEvtPacket > 0)       // set the vector<uint32_t> as event buffer and let him know how many packets it contains
+        {
+            fData->Set ( pBoard, cData , nbEvtPacket, false );
+
+            if ( fSaveToFile )
+            {
+                fFileHandler->set ( cData );
+                fFileHandler->writeFile();
+            }
+        }
 
         //WriteReg ( fStrReadout, 0 );
         WriteReg ("pc_commands.SRAM1_end_readout", 0);
         WriteReg ("pc_commands.SRAM2_end_readout", 0);
-        fNTotalAcq++;
+
     }
 
 
     void CtaFWInterface::Pause()
     {
-        bJustPaused = true;
+        fJustPaused = true;
         WriteReg ( "break_trigger", 1 );
         //std::this_thread::sleep_for ( std::chrono::milliseconds(10) );
 
@@ -241,9 +315,9 @@ namespace Ph2_HwInterface {
         uint32_t nbBlockSize = fBlockSize;
         std::vector<uint32_t> cData;
 
-        if (bJustPaused)
+        if (fJustPaused)
         {
-            bJustPaused = false;
+            fJustPaused = false;
             nbEvtPacket = fNpackets - ReadReg (fStrEvtCounter);
             nbBlockSize = fBlockSize / fNpackets * nbEvtPacket;
         }
@@ -346,7 +420,7 @@ namespace Ph2_HwInterface {
         while ( cVal == 0 );
 
         //break trigger
-        cVecReg.push_back ({ "break_trigger", 1 } );
+        cVecReg.push_back ({ "break_trigger", 0 } );
         cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
         cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
 
@@ -407,6 +481,7 @@ namespace Ph2_HwInterface {
 
 
         uint32_t cEvtSize = 0;
+
         if ( pBoard->getNCbcDataSize() != 0 )
             cEvtSize = std::max (pBoard->getNCbcDataSize(), (uint16_t) 4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ;
         else
@@ -485,11 +560,12 @@ namespace Ph2_HwInterface {
                                      bool pRead,
                                      bool pWrite )
     {
+        uint8_t uValue = pRegItem.fAddress == 0 ? pRegItem.fValue & 0x7F : pRegItem.fValue;
         // temporary for 16CBC readout FW  (Beamtest NOV 15)
         // will have to be corrected if we want to read two modules from the same GLIB
         // (pCbcId >> 3) becomes FE ID and is encoded starting from bit21 (not used so far)
         // (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
-        pVecReq.push_back ( ( pCbcId + 0x41 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+        pVecReq.push_back ( ( pCbcId + 0x41 ) << 21 | ( pCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | uValue );
     }
 
     void CtaFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
@@ -500,7 +576,8 @@ namespace Ph2_HwInterface {
                                      bool pWrite )
     {
         // (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
-        pVecReq.push_back ( pFeId  << 21 | pCbcId << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+        uint8_t uValue = pRegItem.fAddress == 0 ? pRegItem.fValue & 0x7F : pRegItem.fValue;
+        pVecReq.push_back ( ( pCbcId + 0x41 ) << 21 | pCbcId << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | uValue );
     }
 
     void CtaFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
@@ -509,9 +586,11 @@ namespace Ph2_HwInterface {
                                        bool pRead,
                                        bool pWrite )
     {
+        uint8_t uValue = pRegItem.fAddress == 0 ? pRegItem.fValue & 0x7F : pRegItem.fValue;
+
         // here I need to loop over all CBCs somehow...
         for (uint8_t cCbcId = 0; cCbcId < pNCbc; cCbcId++)
-            pVecReq.push_back ( ( cCbcId + 0x41 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | pRegItem.fValue );
+            pVecReq.push_back ( ( cCbcId + 0x41 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | uValue );
     }
 
     void CtaFWInterface::DecodeReg ( CbcRegItem& pRegItem,

@@ -6,8 +6,8 @@
     <connection id="board" uri="ipbusudp-2.0://192.168.0.162:50001" address_table="file://settings/IC_address_table.xml" />
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
-        <Global_CBC_Register name="TriggerLatency"> 0x09 </Global_CBC_Register>
-        <Global_CBC_Register name="VCth"> 0x80 </Global_CBC_Register>
+        <!--<Global_CBC_Register name="TriggerLatency"> 0x09 </Global_CBC_Register>-->
+        <!--<Global_CBC_Register name="VCth"> 0x80 </Global_CBC_Register>-->
         <!--this has to be E1 for TP in hole mode-->
       <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>
       <!--<Global_CBC_Register name="TestPulsePot">0xE0</Global_CBC_Register>-->
@@ -54,7 +54,6 @@
     <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.vtrig"> 0 </Register>
     <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.xclk"> 1 </Register>
     <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.tsigo"> 0 </Register>
-
   </BeBoard>
 </HwDescription>
 

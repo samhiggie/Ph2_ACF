@@ -48,7 +48,7 @@ namespace Ph2_HwInterface {
         CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fNthAcq, fNpackets;
-        bool bJustPaused;
+        bool fJustPaused;
 
       private:
         /*!
@@ -129,6 +129,7 @@ namespace Ph2_HwInterface {
          * \brief Stop a DAQ
          */
         void Stop() override;
+        void SafeStop (BeBoard* pBoard);
         /*!
          * \brief Pause a DAQ
          */
