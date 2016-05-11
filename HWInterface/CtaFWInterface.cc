@@ -201,7 +201,6 @@ namespace Ph2_HwInterface {
         SelectDaqSRAM();
         //Stop the DAQ
         cVecReg.push_back ( {"break_trigger", 1} );
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
         cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
 
         WriteStackReg ( cVecReg );
@@ -232,17 +231,14 @@ namespace Ph2_HwInterface {
         nbEvtPacket = fNpackets - ReadReg (fStrEvtCounter);
         nbBlockSize = fBlockSize / fNpackets * nbEvtPacket;
 
-        //Set read mode to SRAM
-        //WriteReg ( fStrSramUserLogic, 0 );
-
         //Read SRAM
         if (nbBlockSize > 0)
             cData =  ReadBlockRegValue ( fStrSram, nbBlockSize );
 
         std::this_thread::sleep_for ( 10 * cWait );
-        //WriteReg ( fStrSramUserLogic, 1 );
         WriteReg ( fStrReadout, 1 );
         std::this_thread::sleep_for ( 10 * cWait );
+        WriteReg ("pc_commands.PC_config_ok", 0 );
 
         //now I did an acquistion, so I need to increment the counter
         fNthAcq++;
@@ -424,7 +420,7 @@ namespace Ph2_HwInterface {
         while ( cVal == 0 );
 
         //break trigger
-        cVecReg.push_back ({ "break_trigger", 1 } );
+        cVecReg.push_back ({ "break_trigger", 0 } );
         cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
         cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
 
