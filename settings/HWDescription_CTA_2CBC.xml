@@ -15,8 +15,8 @@
       <!--<CBC Id="0" configfile="FE0CBC0.txt"/>-->
       <!--<CBC Id="1" configfile="FE0CBC1.txt"/>-->
       <CBC_Files path="./settings/"/>
-      <CBC Id="0" configfile="Cbc_default_hole.txt"/>
-      <CBC Id="1" configfile="Cbc_default_hole.txt"/>
+      <CBC Id="0" configfile="Cbc_default_electron.txt"/>
+      <CBC Id="1" configfile="Cbc_default_electron.txt"/>
     </Module>
     
     <!-- Commissioning Mode -->
@@ -40,12 +40,12 @@
     
     <!-- Trigger -->
     <!-- set to 2 to use external triggers, set to 1 to use external triggers with backpressure -->
-    <Register name="pc_commands.TRIGGER_SEL">0</Register>
+    <Register name="pc_commands.TRIGGER_SEL">1</Register>
     <Register name="pc_commands.INT_TRIGGER_FREQ">10</Register>
     
     <!-- Clock -->
     <!-- set to 1 for external clocking -->
-    <Register name="dio5.clk_mux_sel">0</Register>
+    <Register name="dio5.clk_mux_sel">1</Register>
     
     <!-- DIO5 Config -->
     <!-- set to 0 for rising edge, 1 for falling -->
@@ -67,6 +67,7 @@
     
     <!-- I2C -->
     <Register name="cbc_i2c_clk_prescaler"> 79 </Register>
+    <Register name="readoutReleaseDelay"> 0 </Register>
   </BeBoard>
 </HwDescription>
 

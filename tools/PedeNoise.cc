@@ -270,7 +270,7 @@ void PedeNoise::Validate( uint32_t pNoiseStripThreshold )
                 //get the histogram for the occupancy
                 TH1F* cHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_occupancy" ) );
                 cHist->Scale(1/(fEventsPerPoint * 200.));
-                TLine* line = new TLine(0, pNoiseStripThreshold*0.01, NCHANNELS, pNoiseStripThreshold*0.01);
+                TLine* line = new TLine(0, pNoiseStripThreshold*0.001, NCHANNELS, pNoiseStripThreshold*0.001);
 
                 //as we are at it, draw the plot
                 fNoiseCanvas->cd ( cCbc->getCbcId() + 1 );
@@ -284,7 +284,7 @@ void PedeNoise::Validate( uint32_t pNoiseStripThreshold )
 
                 for (uint32_t iChan = 0; iChan < NCHANNELS; iChan++)
                 {
-                    if (cHist->GetBinContent (iChan) > double ( pNoiseStripThreshold * 0.01 ) ) // consider it noisy
+                    if (cHist->GetBinContent (iChan) > double ( pNoiseStripThreshold * 0.001 ) ) // consider it noisy
                     {
                         TString cRegName = Form ( "Channel%03d", iChan+1 );
                         uint8_t cValue = fHoleMode ? 0x00 : 0xFF;
