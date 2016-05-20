@@ -130,8 +130,8 @@ namespace Ph2_HwInterface {
          * \return Event buffer
          */
         void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) const;
-	/*! \brief Get event data as a byte vector */
-	void GetEventBytes ( std::vector< uint8_t >& cbcData ) const;
+        /*! \brief Get event data as a byte vector */
+        void GetEventBytes ( std::vector< uint8_t >& cbcData ) const;
         /*!
          * \brief Get the bunch value
          * \return Bunch value

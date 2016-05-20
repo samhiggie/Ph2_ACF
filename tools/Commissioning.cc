@@ -381,7 +381,7 @@ void Commissioning::SignalScan (int SignalScanLength)
     std::ofstream output;
     std::string cFilename = fDirectoryName + "/SignalScanData.txt";
     output.open(cFilename, std::ios::out | std::ios::app);
-    output << "TDC/I:nHits/I:thresh/I" << std::endl;
+    output << "TDC/I:nHits/I:thresh/I:dataBitString/C" << std::endl;
     for ( auto& cBoard : fBoardVector )
     {
         uint32_t cBoardId = cBoard->getBeId();
@@ -456,6 +456,7 @@ void Commissioning::SignalScan (int SignalScanLength)
                         TH2F* cSignalHist = static_cast<TH2F*> (getHist ( cFe, "module_signal") );
                         int cEventHits = 0;
 
+                        std::string cDataString;
                         for ( auto cCbc : cFe->fCbcVector )
                         {
                             //now loop the channels for this particular event and increment a counter
@@ -468,9 +469,13 @@ void Commissioning::SignalScan (int SignalScanLength)
                                 }
                             }
 
+                            //append HexDataString to cDataString
+                            cDataString += cEvent->DataHexString(cCbc->getFeId(), cCbc->getCbcId());
+                            cDataString += "-";
+
                         }
 	        	//this becomes an ofstream
-                        output << +cEvent->GetTDC() << " " << cEventHits << " " << +cVCth << std::endl;
+                        output << +cEvent->GetTDC() << " " << cEventHits << " " << +cVCth << " " << cDataString << std::endl;
                     }
                }
                std::cout << "Recorded " << cTotalEvents << " Events" << std::endl;
