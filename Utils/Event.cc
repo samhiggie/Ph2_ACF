@@ -210,15 +210,17 @@ namespace Ph2_HwInterface {
             std::cout << "Event: FE " << +pFeId << " is not found." << std::endl;
     }
 
-    void Event::GetEventBytes ( std::vector< uint8_t >& cbcData ) const{
-	    cbcData.clear();
-	    for (auto& cWord : GetEventData())
-	    {
-		    cbcData.push_back ( ( cWord >> 24 ) & 0xFF);
-		    cbcData.push_back ( ( cWord >> 16 ) & 0xFF);
-		    cbcData.push_back ( ( cWord >> 8 ) & 0xFF);
-		    cbcData.push_back ( ( cWord ) & 0xFF);
-	    }
+    void Event::GetEventBytes ( std::vector< uint8_t >& cbcData ) const
+    {
+        cbcData.clear();
+
+        for (auto& cWord : GetEventData() )
+        {
+            cbcData.push_back ( ( cWord >> 24 ) & 0xFF);
+            cbcData.push_back ( ( cWord >> 16 ) & 0xFF);
+            cbcData.push_back ( ( cWord >> 8 ) & 0xFF);
+            cbcData.push_back ( ( cWord ) & 0xFF);
+        }
     }
 
     std::string Event::HexString() const
@@ -231,7 +233,7 @@ namespace Ph2_HwInterface {
         for ( uint32_t i = 0; i < fEventSize; i++ )
             os << std::uppercase << std::setw ( 2 ) << std::setfill ( '0' ) << ( fEventData.at (i) & 0xFF000000 ) << " " << ( fEventData.at (i) & 0x00FF0000 ) << " " << ( fEventData.at (i) & 0x0000FF00 ) << " " << ( fEventData.at (i) & 0x000000FF );
 
-        os << std::endl;
+        //os << std::endl;
 
         return tmp.str();
     }
@@ -376,62 +378,76 @@ namespace Ph2_HwInterface {
 
 
 
-#if 0
+    //#if 0
     std::string Event::DataHexString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         std::stringbuf tmp;
         std::ostream os ( &tmp );
+        os << std::hex << std::setfill ('0');
 
-        os << std::hex;
+        //get the CBC event for pFeId and pCbcId into vector<32bit> cbcData
+        std::vector< uint32_t > cbcData;
+        GetCbcEvent (pFeId, pCbcId, cbcData);
+        //for the first 32-bit word, use only the 22 LSBs
+        //this unfortunately means that i have two leading bits that are always 0
+        os << std::setw (6) << (cbcData.at (0) & 0x003FFFFF);
 
-        uint32_t cFirstByteP = OFFSET_CBCDATA / 8;
-        uint32_t cFirstBitP = OFFSET_CBCDATA % 8;
-        uint32_t cLastByteP = ( cFirstByteP + WIDTH_CBCDATA - 1 ) / 8;
-        uint32_t cLastBitP = ( cFirstByteP + WIDTH_CBCDATA - 1 ) % 8;
+        //this is the body of 7 words that are full of data
+        for ( uint32_t i = 1; i < 8; i++ )
+            os << std::setw (8) << cbcData.at (i);
 
-        uint32_t cMask ( 0 );
-        uint32_t cMaskLastBit ( 0 );
-        uint32_t cMaskWidth ( 0 );
+        //the last word with only 8 bits
+        os << std::setw (2) << (cbcData.at (8) & 0xFF000000);
 
-        //First byte
-        cMaskLastBit = cFirstByteP < cLastByteP ? 7 : cLastBitP;
-        cMaskWidth = cMaskLastBit - cFirstBitP + 1;
-        cMask = ( 1 << ( 7 - cMaskLastBit ) );
 
-        for ( uint32_t i = 0; i < cMaskWidth; i++ )
-        {
-            cMask <<= 1;
-            cMask |= 1;
-        }
+        //uint32_t cFirstByteP = OFFSET_CBCDATA / 8;
+        //uint32_t cFirstBitP = OFFSET_CBCDATA % 8;
+        //uint32_t cLastByteP = ( cFirstByteP + WIDTH_CBCDATA - 1 ) / 8;
+        //uint32_t cLastBitP = ( cFirstByteP + WIDTH_CBCDATA - 1 ) % 8;
 
-        os << std::uppercase << std::setw ( 2 ) << std::setfill ( '0' ) << ( GetCbcEvent ( pFeId, pCbcId ) [cFirstByteP]&cMask );
+        //uint32_t cMask ( 0 );
+        //uint32_t cMaskLastBit ( 0 );
+        //uint32_t cMaskWidth ( 0 );
 
-        if ( cFirstByteP == cLastByteP )
-            return tmp.str();
+        ////First byte
+        //cMaskLastBit = cFirstByteP < cLastByteP ? 7 : cLastBitP;
+        //cMaskWidth = cMaskLastBit - cFirstBitP + 1;
+        //cMask = ( 1 << ( 7 - cMaskLastBit ) );
 
-        //Second to the second last byte
-        if ( cFirstByteP != cLastByteP - 1 )
-        {
-            for ( uint32_t j = cFirstByteP + 1; j < cLastByteP; j++ )
-                os << std::uppercase << std::setw ( 2 ) << std::setfill ( '0' ) << ( GetCbcEvent ( pFeId, pCbcId ) [j] & 0xFF );
-        }
+        //for ( uint32_t i = 0; i < cMaskWidth; i++ )
+        //{
+        //cMask <<= 1;
+        //cMask |= 1;
+        //}
 
-        //Last byte
-        cMaskLastBit = cLastBitP;
-        cMaskWidth = cMaskLastBit + 1;
-        cMask = ( 1 << ( 7 - cMaskLastBit ) );
+        //os << std::uppercase << std::setw ( 2 ) << std::setfill ( '0' ) << ( GetCbcEvent ( pFeId, pCbcId, cbcData ) [cFirstByteP]&cMask );
 
-        for ( uint32_t i = 0; i < cMaskWidth; i++ )
-        {
-            cMask <<= 1;
-            cMask |= 1;
-        }
+        //if ( cFirstByteP == cLastByteP )
+        //return tmp.str();
 
-        os << std::uppercase << std::setw ( 2 ) << std::setfill ( '0' ) << ( GetCbcEvent ( pFeId, pCbcId ) [cFirstByteP]&cMask );
+        ////Second to the second last byte
+        //if ( cFirstByteP != cLastByteP - 1 )
+        //{
+        //for ( uint32_t j = cFirstByteP + 1; j < cLastByteP; j++ )
+        //os << std::uppercase << std::setw ( 2 ) << std::setfill ( '0' ) << ( GetCbcEvent ( pFeId, pCbcId, cbcData ) [j] & 0xFF );
+        //}
+
+        ////Last byte
+        //cMaskLastBit = cLastBitP;
+        //cMaskWidth = cMaskLastBit + 1;
+        //cMask = ( 1 << ( 7 - cMaskLastBit ) );
+
+        //for ( uint32_t i = 0; i < cMaskWidth; i++ )
+        //{
+        //cMask <<= 1;
+        //cMask |= 1;
+        //}
+
+        //os << std::uppercase << std::setw ( 2 ) << std::setfill ( '0' ) << ( GetCbcEvent ( pFeId, pCbcId, cbcData ) [cFirstByteP]&cMask );
 
         return tmp.str();
     }
-#endif
+    //#endif
 
 
     std::string Event::GlibFlagString ( uint8_t pFeId, uint8_t pCbcId ) const
