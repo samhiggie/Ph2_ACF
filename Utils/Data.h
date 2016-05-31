@@ -36,6 +36,10 @@ namespace Ph2_HwInterface {
         uint32_t fNCbc;                 /*! Number of CBCs in the setup <*/
         uint32_t fEventSize;            /*! Size of 1 Event <*/
 
+        //to look up if an index is first or last word
+        const std::set<uint32_t> fChannelFirstRows {5, 14, 23, 32, 41, 50, 59, 68};
+        const std::set<uint32_t> fChannelLastRows {13, 22, 31, 40, 49, 58, 67, 76};
+
         std::vector<Event*> fEventList;
 
       private:
@@ -56,26 +60,16 @@ namespace Ph2_HwInterface {
             else return false;
         }
 
-        bool is_channel_first_row (uint32_t pIndex, uint32_t pNCbc)
+        bool is_channel_first_row (uint32_t pIndex)
         {
-            bool cfirst_row = false;
-
             //return true if it is the first word of any CBC block containing channel data
-            for (uint32_t cCbcIndex = 0; cCbcIndex < pNCbc; cCbcIndex++)
-                if ( pIndex > 0 && (pIndex - cCbcIndex * 9 ) % 5 == 0 ) cfirst_row = true;
-
-            return cfirst_row;
+            return fChannelFirstRows.find(pIndex) != std::end(fChannelFirstRows);    
         }
 
-        bool is_channel_last_row (uint32_t pIndex, uint32_t pNCbc)
+        bool is_channel_last_row (uint32_t pIndex)
         {
             //return true if it is the last word of any CBC block containing channel data
-            bool clast_row = false;
-
-            for (uint32_t cCbcIndex = 0; cCbcIndex < pNCbc; cCbcIndex++)
-                if ( pIndex > 0 && (pIndex - cCbcIndex * 9 ) % 13 == 0 ) clast_row = true;
-
-            return clast_row;
+            return fChannelLastRows.find(pIndex) != std::end(fChannelLastRows);
         }
 
       public:

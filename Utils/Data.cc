@@ -53,7 +53,7 @@ namespace Ph2_HwInterface {
             //new version
             if (swapBits)
             {
-                if (is_channel_first_row (cSwapIndex, fNCbc) )
+                if (is_channel_first_row (cSwapIndex) )
                 {
                     // here I need to shift out the Error bits and PipelineAddress
                     uint8_t cErrors = word & 0x00000003;
@@ -63,7 +63,7 @@ namespace Ph2_HwInterface {
                     //now just need to shift the Errors & Pipe address back in
                     word |= ( (cErrors << 30) | (cPipeAddress << 22 ) );
                 }
-                else if (is_channel_last_row (cSwapIndex, fNCbc) )
+                else if (is_channel_last_row (cSwapIndex) )
                 {
                     // here i need to shift out the GlibFlags which are supposed to be 0 and the Stub word
                     uint16_t cStubWord = (word & 0xFFF00000) >> 20;
