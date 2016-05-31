@@ -57,7 +57,7 @@ namespace Ph2_HwInterface {
                 {
                     // here I need to shift out the Error bits and PipelineAddress
                     uint8_t cErrors = word & 0x00000003;
-                    uint8_t cPipeAddress = word & 0x00003FC0;
+                    uint8_t cPipeAddress = (word & 0x00003FC0) >> 2;
                     //next I need to reverse the bit order and mask out the corresponding bits for errors & pipe address
                     word = reverse_bits (word) & 0x003FFFFF;;
                     //now just need to shift the Errors & Pipe address back in
@@ -66,8 +66,8 @@ namespace Ph2_HwInterface {
                 else if (is_channel_last_row (cSwapIndex, fNCbc) )
                 {
                     // here i need to shift out the GlibFlags which are supposed to be 0 and the Stub word
-                    uint16_t cStubWord = word & 0xFFF00000;
-                    uint16_t cGlibFlag = word & 0x000FFF00;
+                    uint16_t cStubWord = (word & 0xFFF00000) >> 20;
+                    uint16_t cGlibFlag = (word & 0x000FFF00) >> 8;
                     //reverse the bit order and mask stuff out
                     word = reverse_bits (word) & 0x000000FF;
                     //now shift the GlibFlag and the StubWord back in
