@@ -22,8 +22,7 @@
 
 
 using namespace Ph2_HwDescription;
-namespace Ph2_HwInterface
-{
+namespace Ph2_HwInterface {
 
     /*!
      * \class Data
@@ -52,9 +51,31 @@ namespace Ph2_HwInterface
 
         bool is_channel_data (uint32_t pIndex, uint32_t pNCbc)
         {
-            // return true if the word is channel data, false if not!
+            // return true if the word is channel data and not the first or last row of a CBC block, false if not!
             if (pIndex > 4 && pIndex < (5 + 9 * pNCbc) ) return true;
             else return false;
+        }
+
+        bool is_channel_first_row (uint32_t pIndex, uint32_t pNCbc)
+        {
+            bool cfirst_row = false;
+
+            //return true if it is the first word of any CBC block containing channel data
+            for (uint32_t cCbcIndex = 0; cCbcIndex < pNCbc; cCbcIndex++)
+                if ( pIndex > 0 && (pIndex - cCbcIndex * 9 ) % 5 == 0 ) cfirst_row = true;
+
+            return cfirst_row;
+        }
+
+        bool is_channel_last_row (uint32_t pIndex, uint32_t pNCbc)
+        {
+            //return true if it is the last word of any CBC block containing channel data
+            bool clast_row = false;
+
+            for (uint32_t cCbcIndex = 0; cCbcIndex < pNCbc; cCbcIndex++)
+                if ( pIndex > 0 && (pIndex - cCbcIndex * 9 ) % 13 == 0 ) clast_row = true;
+
+            return clast_row;
         }
 
       public:
@@ -102,7 +123,7 @@ namespace Ph2_HwInterface
         }
         const Event* GetEvent ( const BeBoard* pBoard, int i ) const
         {
-            return ( ( i >= (int)fEventList.size() ) ? nullptr : fEventList.at ( i ) );
+            return ( ( i >= (int) fEventList.size() ) ? nullptr : fEventList.at ( i ) );
         }
         const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const
         {

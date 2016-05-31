@@ -497,8 +497,7 @@ namespace Ph2_HwInterface {
 
                 os << std::endl;
 
-                os << BLUE << "Stubs Strasbourg: " << ev.StubBitString ( feId, cbcId ).c_str() << RESET << std::endl;
-                os << BLUE << "Stubs IC: " << ev.Bit ( feId, cbcId,  IC_OFFSET_CBCSTUBDATA ) << RESET << std::endl << std::endl;
+                os << BLUE << "Stubs: " << ev.StubBitString ( feId, cbcId ).c_str() << RESET << std::endl;
             }
 
             os << std::endl;
