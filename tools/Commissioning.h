@@ -52,7 +52,7 @@ class Commissioning : public Tool
   private:
 	int countHitsLat( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency );
 	int countHits( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
-	int countStubs( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter, bool pStrasbourgFW = true );
+	int countStubs( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
 	void updateHists( std::string pHistName, bool pFinal );
 	void parseSettings();
 

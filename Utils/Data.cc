@@ -57,11 +57,11 @@ namespace Ph2_HwInterface {
                 {
                     // here I need to shift out the Error bits and PipelineAddress
                     uint8_t cErrors = word & 0x00000003;
-                    uint8_t cPipeAddress = (word & 0x00003FC0) >> 2;
+                    uint8_t cPipeAddress = (word & 0x000003FC) >> 2;
                     //next I need to reverse the bit order and mask out the corresponding bits for errors & pipe address
                     word = reverse_bits (word) & 0x003FFFFF;;
                     //now just need to shift the Errors & Pipe address back in
-                    word |= ( (cErrors << 30) | (cPipeAddress << 22 ) );
+                    word |= ( ((cErrors & 0x03 ) << 30) | ((cPipeAddress & 0xFF ) << 22 ) );
                 }
                 else if (is_channel_last_row (cSwapIndex) )
                 {
@@ -69,16 +69,17 @@ namespace Ph2_HwInterface {
                     uint16_t cStubWord = (word & 0xFFF00000) >> 20;
                     uint16_t cGlibFlag = (word & 0x000FFF00) >> 8;
                     //reverse the bit order and mask stuff out
-                    word = reverse_bits (word) & 0x000000FF;
+                    word = reverse_bits (word) & 0xFF000000;
                     //now shift the GlibFlag and the StubWord back in
-                    word |= ( (cGlibFlag << 12) | cStubWord);
+                    word |= ( ((cGlibFlag & 0x0FFF ) << 12) | (cStubWord & 0x0FFF));
                 }
                 //is_channel_data will also be true for first and last word but since it's an else if, it should be ok
-                else if ( is_channel_data (cSwapIndex, fNCbc) ) word = reverse_bits (word);
+                else if ( is_channel_data (cSwapIndex) ) word = reverse_bits (word);
             }
 
 #ifdef __CBCDAQ_DEV__
             std::cout << std::setw (3) <<  cWordIndex << " ### " << std::bitset<32> (pData.at (cWordIndex) ) << std::endl;
+            std::cout << std::setw (3) <<  cWordIndex << " ### " << std::bitset<32> (word) << std::endl;
 
             if ( (cWordIndex + 1) % fEventSize == 0 && cWordIndex > 0 ) std::cout << std::endl << std::endl;
 
