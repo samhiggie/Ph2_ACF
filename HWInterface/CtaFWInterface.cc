@@ -421,7 +421,6 @@ namespace Ph2_HwInterface {
 
         //break trigger
         cVecReg.push_back ({ "break_trigger", 0 } );
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
         cVecReg.push_back ( {"pc_commands.force_BG0_start", 0} );
 
         WriteStackReg ( cVecReg );
@@ -451,6 +450,7 @@ namespace Ph2_HwInterface {
             fFileHandler->set ( cData );
             fFileHandler->writeFile();
         }
+        WriteReg ( "pc_commands.PC_config_ok", 0 );
     }
 
 
