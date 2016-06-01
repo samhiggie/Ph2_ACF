@@ -154,24 +154,25 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
         for ( BeBoard* pBoard : fBoardVector )
         {
             //here set the stub latency
-            std::string cBoardType = pBoard->getBoardType();
-            std::vector<std::pair<std::string, uint32_t>> cRegVec;
+            //std::string cBoardType = pBoard->getBoardType();
+            //std::vector<std::pair<std::string, uint32_t>> cRegVec;
 
-            if (cBoardType == "GLIB" )
-            {
-                cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe1", cLat});
-                cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
-            }
-            else if (cBoardType == "CTA")
-            {
-                cRegVec.push_back ({"cbc.STUBDATA_LATENCY_ADJUST", cLat});
-            }
-            else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7")
-            {
-                cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});
-            }
+            //if (cBoardType == "GLIB" )
+            //{
+                //cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe1", cLat});
+                //cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
+            //}
+            //else if (cBoardType == "CTA")
+            //{
+                //cRegVec.push_back ({"cbc.STUBDATA_LATENCY_ADJUST", cLat});
+            //}
+            //else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7")
+            //{
+                //cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});
+            //}
 
-            fBeBoardInterface->WriteBoardMultReg (pBoard, cRegVec);
+            //fBeBoardInterface->WriteBoardMultReg (pBoard, cRegVec);
+            fBeBoardInterface->WriteBoardReg(pBoard, getStubLatencyName(pBoard->getBoardType()), cLat);
 
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
@@ -399,11 +400,6 @@ void Commissioning::SignalScan (int SignalScanLength)
         // Take Data for all Modules
         for ( BeBoard* pBoard : fBoardVector )
         {
-            // I need this to normalize the TDC values I get from the Strasbourg FW
-            bool pStrasbourgFW = false;
-
-            if (pBoard->getBoardType() == "GLIB" || pBoard->getBoardType() == "CTA") pStrasbourgFW = true;
-
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
 

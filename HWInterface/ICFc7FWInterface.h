@@ -52,38 +52,38 @@ namespace Ph2_HwInterface {
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
         //  const uint32_t SINGLE_I2C_WAIT = 700; //usec for 100 kHz I2C
-        static const int RESET_ALL=0x1;
-        static const int START=0x2;
-        static const int STOP= 0x4;
-        static const int CTR_RESET=0x800;
-        static const int HARD_RESET=0x1;
-        static const int FAST_RESET=0x2;
-        static const int I2C_REFRESH=0x4;
-        static const int TEST_PULSE=0x8;
-        static const int L1A=       0x010;
+        static const int RESET_ALL = 0x1;
+        static const int START = 0x2;
+        static const int STOP = 0x4;
+        static const int CTR_RESET = 0x800;
+        static const int HARD_RESET = 0x1;
+        static const int FAST_RESET = 0x2;
+        static const int I2C_REFRESH = 0x4;
+        static const int TEST_PULSE = 0x8;
+        static const int L1A =       0x010;
 
 
-        public:
-            /*!
-             * \brief Constructor of the ICFc7FWInterface class
-             * \param puHalConfigFileName : path of the uHal Config File
-             * \param pBoardId
-             */
-            ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
-            ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
-            /*!
-            * \brief Constructor of the ICFc7FWInterface class
-            * \param pId : ID string
-            * \param pUri: URI string
-            * \param pAddressTable: address tabel string
-            */
-            ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
-            ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
+      public:
+        /*!
+         * \brief Constructor of the ICFc7FWInterface class
+         * \param puHalConfigFileName : path of the uHal Config File
+         * \param pBoardId
+         */
+        ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
+        ICFc7FWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+        /*!
+        * \brief Constructor of the ICFc7FWInterface class
+        * \param pId : ID string
+        * \param pUri: URI string
+        * \param pAddressTable: address tabel string
+        */
+        ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
+        ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
 
-            /*!
-             * \brief Destructor of the ICFc7FWInterface class
-             */
-            ~ICFc7FWInterface()
+        /*!
+         * \brief Destructor of the ICFc7FWInterface class
+         */
+        ~ICFc7FWInterface()
         {
             if (fData) delete fData;
         }
@@ -265,11 +265,10 @@ namespace Ph2_HwInterface {
         std::vector<std::string> getFpgaConfigList( );
         /*! \brief Delete one Fpga configuration (or firmware image)*/
         void DeleteFpgaConfig ( const std::string& strId);
-	/*! \brief Reboot the board */
-	void RebootBoard(){}
-	/*! \brief Set or reset the start signal */
-	void SetForceStart( bool bStart){}
-
+        /*! \brief Reboot the board */
+        void RebootBoard() {}
+        /*! \brief Set or reset the start signal */
+        void SetForceStart ( bool bStart) {}
     };
 }
 

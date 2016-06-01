@@ -11,10 +11,7 @@ void PulseShape::Initialize()
     {
         uint32_t cBoardId = cBoard->getBeId();
         std::cerr << "cBoardId = " << cBoardId << std::endl;
-        std::string cBoardType = cBoard->getBoardType();
-
-        if (cBoardType == "GLIB" || cBoardType == "CTA") fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE");
-        else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7") fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, "cbc_daq_ctrl.commissioning_cycle.test_pulse_count");
+        fDelayAfterPulse = fBeBoardInterface->ReadBoardReg (cBoard, getDelAfterTPString ( cBoard->getBoardType() ) );
 
         for ( auto& cFe : cBoard->fModuleVector )
         {
@@ -69,7 +66,7 @@ void PulseShape::ScanTestPulseDelay ( uint8_t pStepSize )
     // setSystemTestPulse(fTPAmplitude, fChannelId);
     // enableChannel(fChannelId);
     setSystemTestPulse ( fTPAmplitude/*, 0 */ );
-    toggleTestGroup(true);
+    toggleTestGroup (true);
     // initialize the historgram for the channel map
     //should set the histogram boardes frames sane (from config file)!
     int cCoarseDefault = fDelayAfterPulse;
@@ -84,7 +81,7 @@ void PulseShape::ScanTestPulseDelay ( uint8_t pStepSize )
 
     this->fitGraph ( cLow );
     updateHists ( "cbc_pulseshape", true );
-    toggleTestGroup(false);
+    toggleTestGroup (false);
 
 }
 
@@ -273,11 +270,11 @@ std::vector<uint32_t> PulseShape::findChannelsInTestGroup ( uint32_t pTestGroup 
     return cChannelVector;
 }
 
-void PulseShape::toggleTestGroup(bool pEnable )
+void PulseShape::toggleTestGroup (bool pEnable )
 {
     std::vector<std::pair<std::string, uint8_t> > cRegVec;
     uint8_t cDisableValue = fHoleMode ? 0x00 : 0xFF;
-        uint8_t cValue = pEnable ? fOffset : cDisableValue;
+    uint8_t cValue = pEnable ? fOffset : cDisableValue;
 
     for ( auto& cChannel : fChannelVector )
     {
@@ -287,10 +284,10 @@ void PulseShape::toggleTestGroup(bool pEnable )
 
     //CbcMultiRegWriter cWriter ( fCbcInterface, cRegVec );
     //this->accept ( cWriter );
-    for(BeBoard* cBoard : fBoardVector)
+    for (BeBoard* cBoard : fBoardVector)
     {
-         for(Module* cFe : cBoard->fModuleVector)
-             fCbcInterface->WriteBroadcastMultReg(cFe, cRegVec);
+        for (Module* cFe : cBoard->fModuleVector)
+            fCbcInterface->WriteBroadcastMultReg (cFe, cRegVec);
     }
 }
 
@@ -303,18 +300,10 @@ void PulseShape::setDelayAndTesGroup ( uint32_t pDelay )
     std::cout << "cCoarseDelay: " << +cCoarseDelay << std::endl;
     std::cout << "Current Time: " << +pDelay << std::endl;
 
-    //since Strasbourg FW and IC FW work slightly differently, have to use the board type attribute of BeBoard to to decide which registers to write!
-    std::string cTPDelayRegisterName;
-
     for (auto& cBoard : fBoardVector)
     {
-        std::string cBoardType = cBoard->getBoardType();
-
-        if (cBoardType == "GLIB" || cBoardType == "CTA") cTPDelayRegisterName = "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE";
-        else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7") cTPDelayRegisterName = "cbc_daq_ctrl.commissioning_cycle.test_pulse_count";
-
         //potentially have to reset the IC FW commissioning cycle state machine?
-        fBeBoardInterface->WriteBoardReg (cBoard, cTPDelayRegisterName, cCoarseDelay);
+        fBeBoardInterface->WriteBoardReg (cBoard, getDelAfterTPString (cBoard->getBoardType() ) , cCoarseDelay);
     }
 
     CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", to_reg ( cFineDelay, fTestGroup ) );
@@ -541,9 +530,9 @@ void PulseShape::updateHists ( std::string pHistName, bool pFinal )
         cCanvas.second->Update();
     }
 
-//#ifdef __HTTP__
+    //#ifdef __HTTP__
     //fHttpServer->ProcessRequests();
-//#endif
+    //#endif
 }
 
 double pulseshape ( double* x, double* par )
