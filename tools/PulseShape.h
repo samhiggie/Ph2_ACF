@@ -148,6 +148,13 @@ private:
         0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf,
     }; /*!< Lookup table for reverce the endianness */
 
+    const std::string getDelAfterTPString(const std::string pBoardIdentifier){
+         
+        if (pBoardIdentifier == "GLIB" || pBoardIdentifier == "CTA") return "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE";
+        else if (pBoardIdentifier == "ICGLIB" || pBoardIdentifier == "ICFC7") return "cbc_daq_ctrl.commissioning_cycle.test_pulse_count";
+        else return "not recognized";
+    }
+
 };
 
 /*!

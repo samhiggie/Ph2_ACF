@@ -42,36 +42,44 @@ class Commissioning : public Tool
 {
 
   public:
-	void Initialize(uint32_t pStartLatency, uint32_t pLatencyRange);
-	std::map<Module*, uint8_t> ScanLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
-	std::map<Module*, uint8_t> ScanStubLatency( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
-	// void ScanLatencyThreshold();
-	// void SaveResults();
-	void SignalScan(int SignalScanLength);
+    void Initialize (uint32_t pStartLatency, uint32_t pLatencyRange);
+    std::map<Module*, uint8_t> ScanLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
+    std::map<Module*, uint8_t> ScanStubLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
+    // void ScanLatencyThreshold();
+    // void SaveResults();
+    void SignalScan (int SignalScanLength);
 
   private:
-	int countHitsLat( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency );
-	int countHits( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
-	int countStubs( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter, bool pStrasbourgFW = true );
-	void updateHists( std::string pHistName, bool pFinal );
-	void parseSettings();
+    int countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency );
+    int countHits ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
+    int countStubs ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
+    void updateHists ( std::string pHistName, bool pFinal );
+    void parseSettings();
 
-	//  Members
-	uint32_t fNevents;
-	uint32_t fInitialThreshold;
-	uint32_t fHoleMode;
-	uint32_t fNoiseToSignalVCTH;
-	uint32_t fNCbc;
-	uint32_t fSignalScanStep;
+    //  Members
+    uint32_t fNevents;
+    uint32_t fInitialThreshold;
+    uint32_t fHoleMode;
+    uint32_t fNoiseToSignalVCTH;
+    uint32_t fNCbc;
+    uint32_t fSignalScanStep;
 
-   	const uint32_t fTDCBins = 8;
+    const uint32_t fTDCBins = 8;
 
-    int convertLatencyPhase(uint32_t pStartLatency, uint32_t cLatency, uint32_t cPhase)
+    int convertLatencyPhase (uint32_t pStartLatency, uint32_t cLatency, uint32_t cPhase)
     {
-         int result = int(cLatency) - int(pStartLatency);
-         result *= fTDCBins;
-         result += fTDCBins - 1 - cPhase;
-         return result+1;
+        int result = int (cLatency) - int (pStartLatency);
+        result *= fTDCBins;
+        result += fTDCBins - 1 - cPhase;
+        return result + 1;
+    }
+
+    const std::string getStubLatencyName(const std::string pBoardIdentifier)
+    {
+        if (pBoardIdentifier == "GLIB" ) return "cbc_stubdata_latency_adjust_fe1";
+        else if ( pBoardIdentifier == "CTA") return "cbc.STUBDATA_LATENCY_MODE";
+        else if (pBoardIdentifier == "ICGLIB" || pBoardIdentifier == "ICFC7") return "cbc_daq_ctrl.latencies.stub_latency";
+        else return "not recognized";
     }
 };
 

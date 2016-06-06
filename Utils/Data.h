@@ -22,8 +22,7 @@
 
 
 using namespace Ph2_HwDescription;
-namespace Ph2_HwInterface
-{
+namespace Ph2_HwInterface {
 
     /*!
      * \class Data
@@ -37,6 +36,10 @@ namespace Ph2_HwInterface
         uint32_t fNCbc;                 /*! Number of CBCs in the setup <*/
         uint32_t fEventSize;            /*! Size of 1 Event <*/
 
+        //to look up if an index is first or last word valid for up to 8 CBCs per AMC
+        const std::set<uint32_t> fChannelFirstRows {5, 14, 23, 32, 41, 50, 59, 68};
+        const std::set<uint32_t> fChannelLastRows {13, 22, 31, 40, 49, 58, 67, 76};
+        
         std::vector<Event*> fEventList;
 
       private:
@@ -50,11 +53,23 @@ namespace Ph2_HwInterface
             return n;
         }
 
-        bool is_channel_data (uint32_t pIndex, uint32_t pNCbc)
+        bool is_channel_data (uint32_t pIndex)
         {
-            // return true if the word is channel data, false if not!
-            if (pIndex > 4 && pIndex < (5 + 9 * pNCbc) ) return true;
+            // return true if the word is channel data and not the first or last row of a CBC block, false if not!
+            if (pIndex > 4 && pIndex < (EVENT_HEADER_SIZE_32 + CBC_EVENT_SIZE_32 * fNCbc) ) return true;
             else return false;
+        }
+
+        bool is_channel_first_row (uint32_t pIndex)
+        {
+            //return true if it is the first word of any CBC block containing channel data
+            return (fChannelFirstRows.find(pIndex) != std::end(fChannelFirstRows) && pIndex < fEventSize -1);    
+        }
+
+        bool is_channel_last_row (uint32_t pIndex)
+        {
+            //return true if it is the last word of any CBC block containing channel data
+            return fChannelLastRows.find(pIndex) != std::end(fChannelLastRows);
         }
 
       public:
@@ -102,7 +117,7 @@ namespace Ph2_HwInterface
         }
         const Event* GetEvent ( const BeBoard* pBoard, int i ) const
         {
-            return ( ( i >= (int)fEventList.size() ) ? nullptr : fEventList.at ( i ) );
+            return ( ( i >= (int) fEventList.size() ) ? nullptr : fEventList.at ( i ) );
         }
         const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const
         {

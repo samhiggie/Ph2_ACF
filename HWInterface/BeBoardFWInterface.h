@@ -227,11 +227,11 @@ namespace Ph2_HwInterface {
 
         virtual std::vector<uint32_t> ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 
-	virtual BoardType getBoardType() const=0;
-    /*! \brief Reboot the board */
-	virtual void RebootBoard() = 0;
-    /*! \brief Set or reset the start signal */
-	virtual void SetForceStart( bool bStart) = 0;
+        virtual BoardType getBoardType() const = 0;
+        /*! \brief Reboot the board */
+        virtual void RebootBoard() = 0;
+        /*! \brief Set or reset the start signal */
+        virtual void SetForceStart ( bool bStart) = 0;
 
       protected:
 
@@ -251,9 +251,8 @@ namespace Ph2_HwInterface {
                     (cPair = std::mismatch (cPair.first, pWriteVector_end, cPair.second , p) ).first != pWriteVector_end;
                     ++cPair.first, ++cPair.second
                 )
-            {
                 pMismatchedWriteVector.push_back (*cPair.first);
-            }
+
             return pMismatchedWriteVector;
         }
     };

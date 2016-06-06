@@ -102,7 +102,8 @@ namespace Ph2_HwInterface {
         std::chrono::milliseconds cPause ( 200 );
 
         //Primary Configuration
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
+        //TODO: the PC_config_ok toggle was reverted here originally (first to 1 and then to 0)
+        cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
         cVecReg.push_back ( {"pc_commands.SRAM1_end_readout", 0} );
         cVecReg.push_back ( {"pc_commands.SRAM2_end_readout", 0} );
         cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
@@ -122,10 +123,10 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
+        //cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
 
-        WriteStackReg ( cVecReg );
-        cVecReg.clear();
+        //WriteStackReg ( cVecReg );
+        //cVecReg.clear();
     }
 
 
@@ -324,7 +325,6 @@ namespace Ph2_HwInterface {
 
         //break trigger
         cVecReg.push_back ({ "break_trigger", 1 } );
-        cVecReg.push_back ( {"pc_commands.PC_config_ok", 0} );
         cVecReg.push_back ( {"pc_commands2.force_BG0_start", 0} );
 
         WriteStackReg ( cVecReg );
@@ -354,6 +354,7 @@ namespace Ph2_HwInterface {
             fFileHandler->set ( cData );
             fFileHandler->writeFile();
         }
+        WriteReg( "pc_commands.PC_config_ok", 0 );
     }
 
 
