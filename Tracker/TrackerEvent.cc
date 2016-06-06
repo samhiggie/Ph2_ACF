@@ -243,6 +243,15 @@ void TrackerEvent::fillTrackerConditionData(const Event* pEvt,  uint32_t idxPayl
 						uVal = pEvt->PipelineAddress(uFront, uChip);
 					}
 					break;
+				case 10://Bunch counter
+					uVal=pEvt->GetBunch();
+					break;
+				case 11://Orbit counter
+					uVal=pEvt->GetOrbit();
+					break;
+				case 12://Lumisection
+					uVal=pEvt->GetLumi();
+					break;
 				default://Configuration parameter (I2C), Angle, High Voltage, Other Value
 					uVal=pPSet->getValue((boost::format(CONDITION_DATA_VALUE)%uCond).str());
 					break;
