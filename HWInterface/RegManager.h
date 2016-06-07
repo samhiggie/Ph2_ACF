@@ -39,6 +39,7 @@ protected:
     std::thread fThread;         /*!< Thread for timeout stack writing*/
     bool fDeactiveThread;         /*!< Bool to terminate the thread in the destructor*/
     std::mutex fBoardMutex;         /*!< Mutex to avoid conflict btw threads on shared resources*/
+    static std::string strDummyXml;
 
 public:
     /*!
@@ -131,6 +132,8 @@ public:
      * \brief get the uHAL node
      */
     const uhal::Node& getUhalNode( const std::string& pStrPath );
+
+    static void setDummyXml( const std::string strDummy);
 
 };
 }

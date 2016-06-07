@@ -17,6 +17,7 @@
 
 namespace Ph2_HwInterface
 {
+std::string RegManager::strDummyXml="file://HWInterface/dummy.xml";
 
 RegManager::RegManager( const char* puHalConfigFileName, uint32_t pBoardId ) :
     fThread( [ = ]
@@ -52,7 +53,7 @@ fDeactiveThread( false )
     uhal::disableLogging();
     //uhal::setLogLevelTo(uhal::Error()); //Raise the log level
 
-    uhal::ConnectionManager cm( "file://HWInterface/dummy.xml" ); // Get connection
+    uhal::ConnectionManager cm( strDummyXml ); // Get connection
 
     fBoard = new uhal::HwInterface( cm.getDevice( pId, pUri, pAddressTable ) );
 
@@ -67,6 +68,9 @@ RegManager::~RegManager()
     if ( fBoard ) delete fBoard;
 }
 
+void RegManager::setDummyXml( const std::string strDummy){
+    strDummyXml=strDummy;
+} 
 
 bool RegManager::WriteReg( const std::string& pRegNode, const uint32_t& pVal )
 {
