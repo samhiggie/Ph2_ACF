@@ -84,43 +84,71 @@ namespace Ph2_System {
         }
         else cCheck = false;
 
-        class Configurator : public HwDescriptionVisitor
+        for (auto& cBoard : fBoardVector)
         {
-          private:
-            bool fHoleMode, fCheck, fIgnoreI2c;
-            BeBoardInterface* fBeBoardInterface;
-            CbcInterface* fCbcInterface;
-            std::ostream& los_;
-          public:
-            Configurator ( BeBoardInterface* pBeBoardInterface, CbcInterface* pCbcInterface, bool pHoleMode, bool pCheck, bool pIgnoreI2c, std::ostream& los )
-                : fBeBoardInterface ( pBeBoardInterface ), fCbcInterface ( pCbcInterface ), fHoleMode ( pHoleMode ), fCheck ( pCheck ), fIgnoreI2c ( pIgnoreI2c ), los_ ( los ) {}
+            fBeBoardInterface->ConfigureBoard ( cBoard );
+            fBeBoardInterface->CbcHardReset ( cBoard );
 
-            void visit ( BeBoard& pBoard )
+            if ( cCheck && cBoard->getBoardType() == "GLIB")
             {
-                fBeBoardInterface->ConfigureBoard ( &pBoard );
-                fBeBoardInterface->CbcHardReset( &pBoard );
-
-                if ( fCheck && pBoard.getBoardType() == "GLIB")
-                {
-                    fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
-                    los_ << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
-                }
-
-                los_ << GREEN << "Successfully configured Board " << int ( pBoard.getBeId() ) << RESET << std::endl;
+                fBeBoardInterface->WriteBoardReg ( cBoard, "pc_commands2.negative_logic_CBC", ( ( cHoleMode ) ? 0 : 1 ) );
+                os << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
             }
 
-            void visit ( Cbc& pCbc )
+            os << GREEN << "Successfully configured Board " << int ( cBoard->getBeId() ) << RESET << std::endl;
+
+            for (auto& cFe : cBoard->fModuleVector)
             {
-                if ( !fIgnoreI2c )
+                for (auto& cCbc : cFe->fCbcVector)
                 {
-                    fCbcInterface->ConfigureCbc ( &pCbc );
-                    los_ << GREEN <<  "Successfully configured Cbc " << int ( pCbc.getCbcId() ) << RESET << std::endl;
+                    if ( !bIgnoreI2c )
+                    {
+                        fCbcInterface->ConfigureCbc ( cCbc );
+                        os << GREEN <<  "Successfully configured Cbc " << int ( cCbc->getCbcId() ) << RESET << std::endl;
+                    }
                 }
             }
-        };
+            //CbcFastReset as per recommendation of Mark Raymond
+            fBeBoardInterface->CbcFastReset( cBoard );
+        }
 
-        Configurator cConfigurator ( fBeBoardInterface, fCbcInterface, cHoleMode, cCheck, bIgnoreI2c, os );
-        accept ( cConfigurator );
+        //class Configurator : public HwDescriptionVisitor
+        //{
+        //private:
+        //bool fHoleMode, fCheck, fIgnoreI2c;
+        //BeBoardInterface* fBeBoardInterface;
+        //CbcInterface* fCbcInterface;
+        //std::ostream& los_;
+        //public:
+        //Configurator ( BeBoardInterface* pBeBoardInterface, CbcInterface* pCbcInterface, bool pHoleMode, bool pCheck, bool pIgnoreI2c, std::ostream& los )
+        //: fBeBoardInterface ( pBeBoardInterface ), fCbcInterface ( pCbcInterface ), fHoleMode ( pHoleMode ), fCheck ( pCheck ), fIgnoreI2c ( pIgnoreI2c ), los_ ( los ) {}
+
+        //void visit ( BeBoard& pBoard )
+        //{
+        //fBeBoardInterface->ConfigureBoard ( &pBoard );
+        //fBeBoardInterface->CbcHardReset( &pBoard );
+
+        //if ( fCheck && pBoard.getBoardType() == "GLIB")
+        //{
+        //fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
+        //los_ << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
+        //}
+
+        //los_ << GREEN << "Successfully configured Board " << int ( pBoard.getBeId() ) << RESET << std::endl;
+        //}
+
+        //void visit ( Cbc& pCbc )
+        //{
+        //if ( !fIgnoreI2c )
+        //{
+        //fCbcInterface->ConfigureCbc ( &pCbc );
+        //los_ << GREEN <<  "Successfully configured Cbc " << int ( pCbc.getCbcId() ) << RESET << std::endl;
+        //}
+        //}
+        //};
+
+        //Configurator cConfigurator ( fBeBoardInterface, fCbcInterface, cHoleMode, cCheck, bIgnoreI2c, os );
+        //accept ( cConfigurator );
     }
 
     void SystemController::Run ( BeBoard* pBeBoard )

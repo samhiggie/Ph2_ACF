@@ -22,7 +22,7 @@
     </Module>
     <!-- Commissioning Mode -->
     <!-- set to 1 to enable commissioning mode -->
-    <Register name="COMMISSIONNING_MODE_RQ">1</Register>
+    <Register name="COMMISSIONNING_MODE_RQ">0</Register>
     <!-- set to 1 to enable test pulse in commissioning mode -->
     <Register name="COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID">1</Register>
     <Register name="COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET">50</Register>
@@ -35,11 +35,11 @@
     <Register name="pc_commands.ACQ_MODE">1</Register>
     <!-- Trigger -->
     <!-- set to 1 to use external triggers -->
-    <Register name="pc_commands.TRIGGER_SEL">0</Register>
+    <Register name="pc_commands.TRIGGER_SEL">1</Register>
     <Register name="pc_commands.INT_TRIGGER_FREQ">10</Register>
     <!-- Clock -->
     <!-- set to 1 for external clocking -->
-    <Register name="dio5.clk_mux_sel">0</Register>
+    <Register name="dio5.clk_mux_sel">1</Register>
     <!-- DIO5 Config -->
     <!-- set to 0 for rising edge, 1 for falling -->
     <Register name="dio5.fmcdio5_trig_in_edge">0</Register>
@@ -49,7 +49,7 @@
     <Register name="dio5.fmcdio5_backpressure_out_polar">0</Register>
     <!-- DIO5 threshold: [v]/3.3*256 -->
     <Register name="dio5.fmcdio5_threshold_trig_in">40</Register>
-    <Register name="dio5.fmcdio5_threshold_clk_in">40</Register>
+    <Register name="dio5.fmcdio5_threshold_clk_in">78</Register>
     <!-- DIO5 Termination -->
     <Register name="dio5.fmcdio5_clk_in_50ohms">1</Register>
     <Register name="dio5.fmcdio5_clk_out_50ohms">0</Register>

@@ -20,7 +20,7 @@
       <!--<CBC Id="1" configfile="FE0CBC1.txt" />-->
     </Module>
 
-    <!--TRIGGER-->
+    <!--TRIGGER & CLOCK-->
     <Register name="cbc_daq_ctrl.ext_sig_enable.trig"> 0 </Register>
     <Register name="cbc_daq_ctrl.ext_sig_enable.clk"> 0 </Register>
     <Register name="cbc_daq_ctrl.trigger_cnfg.ext_veto_en"> 0 </Register>
@@ -50,11 +50,12 @@
     <Register name="cbc_daq_ctrl.latencies.stub_latency"> 4 </Register>
 
     <!-- DIO5 Config -->
-    <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.xtrig"> 1 </Register>
-    <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.vtrig"> 0 </Register>
-    <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.xclk"> 1 </Register>
-    <Register name="cbc_daq_ctrl.fmcdio5ch_50ohm_en.tsigo"> 0 </Register>
-
+    <Register name="cbc_daq_ctrl.fmcdio5ch_in_50ohm_en.xtrig"> 1 </Register>
+    <Register name="cbc_daq_ctrl.fmcdio5ch_in_50ohm_en.xclk"> 1 </Register>
+    <Register name="cbc_daq_ctrl.fmcdio5ch_in_thr.xtrig"> 40 </Register>
+    <Register name="cbc_daq_ctrl.fmcdio5ch_in_thr.xclk"> 78 </Register>
+    <!--<Register name="cbc_daq_ctrl.fmcdio5ch_in_50ohm_en.vtrig"> 0 </Register>-->
+    <!--<Register name="cbc_daq_ctrl.fmcdio5ch_in_50ohm_en.tsigo"> 0 </Register>-->
   </BeBoard>
 </HwDescription>
 

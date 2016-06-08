@@ -106,8 +106,10 @@ namespace Ph2_HwInterface {
         fDataSizeperEvent32 = ReadReg ("user_stat.fw_cnfg.data_size32.evt_total");
         bool cfmc1_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc1_cbc_en");
         bool cfmc2_en = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.fmc2_cbc_en");
+        bool cDIO5_en = ReadReg ("user_stat.fw_cnfg.dio5ch_xtrig_en");
         fBroadcastCbcId = ReadReg ("user_stat.fw_cnfg.fmc_cnfg.ncbc_per_fmc");
         std::cout << "FMC1 en: " << cfmc1_en << std::endl << "FMC2 en: " << cfmc2_en << std::endl << "Number of CBCs: " << fBroadcastCbcId << std::endl;
+        std::cout << "DIO5 en: " << cDIO5_en << std::endl;
         std::cout << "Number of 32-bit words/Event in this configuration: " << fDataSizeperEvent32 << std::endl;
         //this does not work because BeBoard* is const
         //pBoard->setNCbcDataSize(uint16_t(cNCbcperFMC));
@@ -157,6 +159,7 @@ namespace Ph2_HwInterface {
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
         cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET_ALL });
+        cVecReg.push_back ({"cbc_daq_ctrl.fmcdio5ch_thr_dac_ctrl", 0x1 });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
         std::vector<uint32_t> pReplies;
@@ -270,6 +273,7 @@ namespace Ph2_HwInterface {
                 cNEvents = pNEvents % 2000;
                 cNCycles = ceil (pNEvents / double (cNEvents) );
             }
+
             std::cout << "Packet Size larger than 2000, splitting in Acquisitions of " << cNEvents << " in " << cNCycles << " cycles!" << std::endl;
         }
 
