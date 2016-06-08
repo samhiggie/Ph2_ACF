@@ -88,6 +88,62 @@ namespace Ph2_HwInterface {
     }
 
 
+    void CbcInterface::ReadCbc ( Cbc* pCbc )
+    {
+        //first, identify the correct BeBoardFWInterface
+        setBoard ( pCbc->getBeBoardIdentifier() );
+
+        //vector to encode all the registers into
+        std::vector<uint32_t> cVec;
+        //helper vector to store the register names in the same order as the RegItems
+        std::vector<std::string> cNameVec;
+
+        //Deal with the CbcRegItems and encode them
+
+        CbcRegMap cCbcRegMap = pCbc->getRegMap();
+
+        for ( auto& cRegItem : cCbcRegMap )
+        {
+            cRegItem.second.fValue = 0x00;
+            fBoardFW->EncodeReg (cRegItem.second, pCbc->getCbcId(), cVec, true, false);
+            //push back the names in cNameVec for latercReg
+            cNameVec.push_back (cRegItem.first);
+#ifdef COUNT_FLAG
+            fRegisterCount++;
+#endif
+        }
+
+        // write the registers, the answer will be in the same cVec
+        //bool cSuccess = fBoardFW->WriteCbcBlockReg ( cVec, pVerifLoop);
+
+        // write the registers, the answer will be in the same cVec
+        fBoardFW->ReadCbcBlockReg ( cVec);
+
+#ifdef COUNT_FLAG
+        fTransactionCount++;
+#endif
+
+        bool cFailed = false;
+        bool cRead;
+        uint8_t cCbcId;
+        //update the HWDescription object with the value I just read
+        uint32_t idxReadWord = 0;
+
+        //for ( const auto& cReg : cVec )
+        for ( const auto& cReadWord : cVec )
+        {
+            CbcRegItem cRegItem;
+            std::string cName = cNameVec[idxReadWord++];
+            fBoardFW->DecodeReg ( cRegItem, cCbcId, cReadWord, cRead, cFailed );
+
+            // here I need to find the string matching to the reg item!
+            if (!cFailed)
+                pCbc->setReg ( cName, cRegItem.fValue );
+
+            std::cout << "CBC " << +pCbc->getCbcId() << " " << cName << ": 0x" << std::hex << +cRegItem.fValue << std::dec << std::endl;
+        }
+
+    }
 
 
     bool CbcInterface::WriteCbcReg ( Cbc* pCbc, const std::string& pRegNode, uint8_t pValue, bool pVerifLoop )

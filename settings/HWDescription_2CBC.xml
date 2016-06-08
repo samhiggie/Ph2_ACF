@@ -40,7 +40,7 @@
     <Register name="pc_commands.INT_TRIGGER_FREQ">10</Register>
     <!-- Clock -->
     <!-- set to 1 for external clocking -->
-    <Register name="dio5.clk_mux_sel">0</Register>
+    <Register name="dio5.clk_mux_sel">1</Register>
     <!-- DIO5 Config -->
     <!-- set to 0 for rising edge, 1 for falling -->
     <Register name="dio5.fmcdio5_trig_in_edge">0</Register>
