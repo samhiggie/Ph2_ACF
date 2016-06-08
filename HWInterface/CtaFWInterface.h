@@ -44,7 +44,7 @@ namespace Ph2_HwInterface {
 
         struct timeval fStartVeto;
         std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic, fStrEvtCounter;
-        std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
+        //std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
         CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fNthAcq, fNpackets;
