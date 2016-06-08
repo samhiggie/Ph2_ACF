@@ -13,75 +13,97 @@ using namespace CommandLineProcessing;
 //Class used to process events acquired by a parallel acquisition
 
 
-void syntax( int argc )
+void syntax ( int argc )
 {
-	if ( argc > 4 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
-	else if ( argc < 3 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
-	else return;
+    if ( argc > 4 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
+    else if ( argc < 3 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
+    else return;
 }
 
-int main( int argc, char* argv[] )
+int main ( int argc, char* argv[] )
 {
 
-	int cVcth;
+    int cVcth;
+    bool cRead;
 
-	SystemController cSystemController;
-	ArgvParser cmd;
+    SystemController cSystemController;
+    ArgvParser cmd;
 
-	// init
-	cmd.setIntroductoryDescription( "CMS Ph2_ACF  configuration binary" );
-	// error codes
-	cmd.addErrorCode( 0, "Success" );
-	cmd.addErrorCode( 1, "Error" );
-	// options
-	cmd.setHelpOption( "h", "help", "Print this help page" );
-
-
-
-	cmd.defineOption( "file", "Hw Description File . Default value: settings/Beamtest_Nov15.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "file", "f" );
-
-	cmd.defineOption( "vcth", "Threshold in VCth units (hex (including 0x) or decimal) . Default values from HW description .XML file", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
-	cmd.defineOptionAlternative( "vcth", "v" );
-
-
-	int result = cmd.parse( argc, argv );
-	if ( result != ArgvParser::NoParserError )
-	{
-		std::cout << cmd.parseErrorDescription( result );
-		exit( 1 );
-	}
-
-	// now query the parsing results
-	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/Beamtest_Nov15.xml";
+    // init
+    cmd.setIntroductoryDescription ( "CMS Ph2_ACF  configuration binary" );
+    // error codes
+    cmd.addErrorCode ( 0, "Success" );
+    cmd.addErrorCode ( 1, "Error" );
+    // options
+    cmd.setHelpOption ( "h", "help", "Print this help page" );
 
 
 
-	// std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
-	cVcth = ( cmd.foundOption( "vcth" ) ) ? convertAnyInt( cmd.optionValue( "vcth" ).c_str() ) : 0;
+    cmd.defineOption ( "file", "Hw Description File . Default value: settings/Beamtest_Nov15.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "file", "f" );
 
-	Timer t;
-	t.start();
+    cmd.defineOption ( "vcth", "Threshold in VCth units (hex (including 0x) or decimal) . Default values from HW description .XML file", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "vcth", "v" );
 
-	cSystemController.InitializeHw( cHWFile );
-	cSystemController.ConfigureHw( std::cout );
+    cmd.defineOption ( "read", "triggers an I2C read of all CBC register values without attempting to write anything", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "read", "r" );
 
-	t.stop();
-	t.show( "Time to Initialize/configure the system: " );
+    int result = cmd.parse ( argc, argv );
 
-	if ( cVcth != 0 )
-	{
-		t.start();
+    if ( result != ArgvParser::NoParserError )
+    {
+        std::cout << cmd.parseErrorDescription ( result );
+        exit ( 1 );
+    }
+
+    // now query the parsing results
+    std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/Beamtest_Nov15.xml";
 
 
-		CbcRegWriter cWriter( cSystemController.fCbcInterface, "VCth", uint8_t( cVcth ) );
-		cSystemController.accept( cWriter );
 
-		t.stop();
-		t.show( "Time for changing VCth on all CBCs:" );
-		CbcRegReader cReader( cSystemController.fCbcInterface, "VCth" );
-		cSystemController.accept( cReader );
-	}
+    // std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
+    cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 0;
+    cRead = ( cmd.foundOption ( "read" ) ) ? convertAnyInt ( cmd.optionValue ( "read" ).c_str() ) : 0;
+
+    Timer t;
+    t.start();
+
+    cSystemController.InitializeHw ( cHWFile );
+
+    if (!cRead) cSystemController.ConfigureHw ( std::cout );
+    else std::cout << "Called with -r option, HW will not be configured!" << std::endl;
+
+    t.stop();
+    t.show ( "Time to Initialize/configure the system: " );
+
+    if (cRead)
+    {
+        for (auto& cBoard : cSystemController.fBoardVector)
+        {
+            for (auto& cFe : cBoard->fModuleVector)
+            {
+                for (auto cCbc : cFe->fCbcVector)
+                    cSystemController.fCbcInterface->ReadCbc (cCbc);
+            }
+        }
+    }
+
+    else
+    {
+        if ( cVcth != 0 )
+        {
+            t.start();
+
+
+            CbcRegWriter cWriter ( cSystemController.fCbcInterface, "VCth", uint8_t ( cVcth ) );
+            cSystemController.accept ( cWriter );
+
+            t.stop();
+            t.show ( "Time for changing VCth on all CBCs:" );
+            CbcRegReader cReader ( cSystemController.fCbcInterface, "VCth" );
+            cSystemController.accept ( cReader );
+        }
+    }
 
     cSystemController.Destroy();
 }

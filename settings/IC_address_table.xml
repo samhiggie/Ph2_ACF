@@ -72,6 +72,7 @@
 				<node id="ncbc_per_fmc" mask="0xFF000000" />
 				<node id="fmc1_cbc_en" mask="0x00FF0000" />
 				<node id="fmc2_cbc_en" mask="0x0000FF00" />
+				<node id="dio5ch_xtrig_en" mask="0x000000FF" />
 			</node>
 			<node id="data_size32" address ="0x1" >
 				<node id="evt_total" mask="0xFFFF0000" />
@@ -166,15 +167,23 @@
 		<node id = "event_data_buf_nevents_lost" address = "0x33" permission="r"/>
 		<node id = "ext_sig_enable" address ="0x34" permission="rw">
 			<node id="trig" mask="0x00000001" />
-			<node id="clk" mask="0x00000002" />  <!-- not implemented -->
+			<node id="clk" mask="0x00000002" />  
 		</node>
-		<node id = "fmcdio5ch_50ohm_en" address ="0x35" permission="rw">
+		<node id = "fmcdio5ch_in_50ohm_en" address ="0x35" permission="rw">
 			<node id="xtrig" mask="0x00000001" />
 			<node id="vtrig" mask="0x00000002" />
-			<node id="xclk" mask="0x00000004" />  <!-- not used -->
+			<node id="xclk" mask="0x00000004" />  
 			<node id="tsigo" mask="0x00000008" /> <!-- test signal out. prescaled cbc_clk -->
 		</node>
-		<node id = "test_sig_prescale" address="0x36" mask="0x0000ffff" permission="rw" /> <!-- prescale for the test signal out on dio5ch -->
+		<node id ="fmcdio5ch_in_thr" address ="0x36" permission="rw">
+			<node id="xtrig" mask = "0x000000FF" />
+			<node id="xclk" mask = "0x0000FF00" />
+		</node>
+		<node id="fmcdio5ch_in_thr_dac" address="0x37" permission="r">
+			<node id="not_ready" mask = "0x00000001" />
+			<node id="set_err" mask = "0x00000002" />
+		</node>
+		<node id = "test_sig_prescale" address="0x38" mask="0x0000ffff" permission="rw" /> <!-- prescale for the test signal out on dio5ch -->
 		<node id = "cbc_ctrl"			address = "0x40" permission="w"> 
 			<node id = "hard_reset"	        	mask = "0x00000001" />
 			<node id = "fast_reset"						mask = "0x00000002" />
@@ -205,6 +214,7 @@
 			<node id = "trigger_start"		      mask = "0x00002000" />
 			<node id = "trigger_stop"		        mask = "0x00004000" />
 		</node>
+		<node id="fmcdio5ch_thr_dac_ctrl" address="0x44" mask = "0x00000001" permission="w" />
 		<!-- the commissioning cycle reset and start are also done with daq_reset & daq_start. -->
 		<node id = "commissioning_cycle_ctrl" address = "0x42" permission="w">
 			<node id = "reset"									mask = "0x00000001" />

@@ -69,6 +69,11 @@ namespace Ph2_HwInterface {
          */
         bool ConfigureCbc ( const Cbc* pCbc, bool pVerifLoop = true, uint32_t pBlockSize = 310 );
         /*!
+         * \brief Read all the I2C parameters from the CBC
+         * \param pCbc: pointer to CBC object
+         */
+        void ReadCbc ( Cbc* pCbc );
+        /*!
          * \brief Write the designated register in both Cbc and Cbc Config File
          * \param pCbc
          * \param pRegNode : Node of the register to write
