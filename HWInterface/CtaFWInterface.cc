@@ -121,6 +121,8 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
+        this->CbcHardReset();
+        usleep (10);
         //cVecReg.push_back ( {"pc_commands.PC_config_ok", 1} );
         //WriteStackReg ( cVecReg );
         //cVecReg.clear();
