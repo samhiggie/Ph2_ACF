@@ -45,7 +45,7 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "vcth", "Threshold in VCth units (hex (including 0x) or decimal) . Default values from HW description .XML file", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "vcth", "v" );
 
-    cmd.defineOption ( "read", "triggers an I2C read of all CBC register values without attempting to write anything", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOption ( "read", "triggers an I2C read of all CBC register values without attempting to write anything", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "read", "r" );
 
     int result = cmd.parse ( argc, argv );
@@ -63,7 +63,8 @@ int main ( int argc, char* argv[] )
 
     // std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
     cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 0;
-    cRead = ( cmd.foundOption ( "read" ) ) ? convertAnyInt ( cmd.optionValue ( "read" ).c_str() ) : 0;
+    cRead = ( cmd.foundOption ( "read" ) ) ? true : false;
+    std::cout << cRead << std::endl;
 
     Timer t;
     t.start();
