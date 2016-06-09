@@ -154,7 +154,7 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
         for ( BeBoard* pBoard : fBoardVector )
         {
             //here set the stub latency
-            fBeBoardInterface->WriteBoardReg(pBoard, getStubLatencyName(pBoard->getBoardType()), cLat);
+            fBeBoardInterface->WriteBoardReg (pBoard, getStubLatencyName (pBoard->getBoardType() ), cLat);
 
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
@@ -224,6 +224,15 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
             //get TDC value for this particular event
             uint8_t cTDCVal = cEvent->GetTDC();
 
+            //if the TDC value for the GLIB is 4 it belongs to the next clock cycle bin 12
+            //this should ensure that TDC value of 4 never happens
+            //TODO: check this
+            if (cTDCVal == 4 && cBoardType == "GLIB")
+            {
+                pParameter += 1;
+                cTDCVal = 12;
+            }
+
             if (cTDCVal != 0 && cBoardType == "GLIB") cTDCVal -= 5;
             else if (cTDCVal != 0 && cBoardType == "CTA") cTDCVal -= 3;
 
@@ -273,10 +282,10 @@ int LatencyScan::countStubs ( Module* pFe,  const Event* pEvent, std::string pHi
     {
         if ( pEvent->StubBit ( cCbc->getFeId(), cCbc->getCbcId() ) )
 
-            {
-                cTmpHist->Fill ( pParameter );
-                cStubCounter++;
-            }
+        {
+            cTmpHist->Fill ( pParameter );
+            cStubCounter++;
+        }
     }
 
     return cStubCounter;
