@@ -118,4 +118,16 @@
     - updated CtaFWInterface (Strasbourg FW)
     - much cleaner CbcInterface
     - calibration can now automatically perform a noise scan and a noise strip mask procedure!
-
+- 09.06.2016:
+	- added a threshold scan to commissioning procedures
+	- split commissioning in two classes for Signal and (Stub)Latency
+	- updated FileHandler to read files in chunks, or just the end
+	- added a FileHeader class that can optionally be set on the FileHandler
+	and then it is written to the file (fixed lenght 12x32 bit)
+	- added a -r flag to configure executable to read the FE i2c parameters
+	without writing anything
+	- fixed the PC_CONFIG_OK in Strasbourg FW
+	- cleaned up commissioning and PulseShape related code to get the correct
+	FW register names from a private method
+	- updated and debugged IC data format
+	- Noise Scan available from calibration binary
