@@ -44,9 +44,10 @@ namespace Ph2_System {
         fFileHandler = new FileHandler ( pFilename, pOption );
     }
 
-    void SystemController::readFile ( std::vector<uint32_t>& pVec )
+    void SystemController::readFile ( std::vector<uint32_t>& pVec, uint32_t pNWords32 )
     {
-        pVec = fFileHandler->readFile( );
+        if (pNWords32 == 0) pVec = fFileHandler->readFile( );
+        else pVec = fFileHandler->readFileChunks (pNWords32);
     }
 
     void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os )
@@ -108,8 +109,9 @@ namespace Ph2_System {
                     }
                 }
             }
+
             //CbcFastReset as per recommendation of Mark Raymond
-            fBeBoardInterface->CbcFastReset( cBoard );
+            fBeBoardInterface->CbcFastReset ( cBoard );
         }
 
         //class Configurator : public HwDescriptionVisitor

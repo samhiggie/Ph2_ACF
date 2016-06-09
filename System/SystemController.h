@@ -96,7 +96,7 @@ namespace Ph2_System {
         * \brief read file in the a FileHandler object
          * \param pVec : the data vector
         */
-        void readFile ( std::vector<uint32_t>& pVec );
+        void readFile ( std::vector<uint32_t>& pVec, uint32_t pNWords32 = 0 );
         /*!
          * \brief acceptor method for HwDescriptionVisitor
          * \param pVisitor
