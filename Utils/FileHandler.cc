@@ -12,6 +12,17 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption ) :
     if ( fOption == 'w' ) fThread = std::thread ( &FileHandler::writeFile, this );
 }
 
+//dedicated write constructor that takes a fileHeader as argument
+FileHandler::FileHandler ( const std::string& pBinaryFileName, const FileHeader& pHeader) :
+    fBinaryFileName ( pBinaryFileName ),
+    fOption ( 'w' ),
+    fFileIsOpened ( false ),
+    is_set ( false ),
+    fHeader ( pHeader )
+{
+    openFile();
+    fThread = std::thread ( &FileHandler::writeFile, this );
+}
 //destructor
 FileHandler::~FileHandler()
 {
@@ -35,8 +46,10 @@ bool FileHandler::openFile( )
     {
         fMutex.lock();
 
+
         if ( fOption == 'w' ) fBinaryFile.open ( ( getFilename() ).c_str(), std::fstream::trunc | std::fstream::out | std::fstream::binary );
         else if ( fOption == 'r' ) fBinaryFile.open ( getFilename().c_str(),  std::fstream::in |  std::fstream::binary );
+        //TODO: I should serialize a FileHeader struct into this File at the bginning that I write or read upon open
 
         fMutex.unlock();
         fFileIsOpened = true;
@@ -78,26 +91,45 @@ std::vector<uint32_t> FileHandler::readFileChunks ( uint32_t pNWords32 )
     uint32_t cWordCounter = 0;
 
     //open file for reading
-    if ( !fBinaryFile.eof() )
+    while (!fBinaryFile.eof() && cWordCounter < pNWords32)
     {
-        while (cWordCounter < pNWords32)
-        {
-            if (fBinaryFile.eof() ) break;
-            else
-            {
-                char buffer[4];
-                fBinaryFile.read ( buffer, 4 );
-                uint32_t word;
-                std::memcpy ( &word, buffer, 4 );
-                cVector.push_back ( word );
-                cWordCounter++;
-            }
-        }
+        char buffer[4];
+        fBinaryFile.read ( buffer, 4 );
+        uint32_t word;
+        std::memcpy ( &word, buffer, 4 );
+        cVector.push_back ( word );
+        cWordCounter++;
     }
-    else fBinaryFile.close();
+
+    if (fBinaryFile.eof() ) fBinaryFile.close();
 
     if (cWordCounter < pNWords32) std::cout << "Attention, input file " << fBinaryFileName << " ended before reading " << pNWords32 << " 32-bit words!" << std::endl;
 
+    return cVector;
+}
+
+std::vector<uint32_t> FileHandler::readFileTail ( long pNbytes )
+{
+    // if pNbytes > -1 read only the last pNbytes words
+    if (pNbytes > -1)
+    {
+        fBinaryFile.seekp (0, std::ios::end); // go to the end of the file
+        fBinaryFile.seekp (-pNbytes, std::ios::cur); // back up n bytes
+    }
+
+    std::vector<uint32_t> cVector;
+
+    //open file for reading
+    while ( !fBinaryFile.eof() )
+    {
+        char buffer[4];
+        fBinaryFile.read ( buffer, 4 );
+        uint32_t word;
+        std::memcpy ( &word, buffer, 4 );
+        cVector.push_back ( word );
+    }
+
+    fBinaryFile.close();
     return cVector;
 }
 
