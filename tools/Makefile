@@ -42,7 +42,7 @@ else
 	AMC13INSTALLED = no
 endif
 
-Objs            = Tool.o SCurve.o Calibration.o OldCalibration.o Channel.o HybridTester.o CMTester.o  Commissioning.o PulseShape.o PedeNoise.o
+Objs            = Tool.o SCurve.o Calibration.o Channel.o HybridTester.o CMTester.o  LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` 

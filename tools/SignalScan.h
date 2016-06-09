@@ -1,16 +1,16 @@
 /*!
 
-        \file                   Commissioning.h
+        \file                   SignalScan.h
         \brief                 class to do latency and threshold scans
-        \author              Georg AUZINGER
+        \author              Stefano Mersi, Georg AUZINGER
         \version                1.0
-        \date                   20/01/15
+        \date                   09/06/16
         Support :               mail to : georg.auzinger@cern.ch
 
  */
 
-#ifndef COMMISSIONING_H__
-#define COMMISSIONING_H__
+#ifndef SIGNALSCAN_H__
+#define SIGNALSCAN_H__
 
 #include "Tool.h"
 #include "../Utils/Visitor.h"
@@ -31,38 +31,30 @@ using namespace Ph2_HwDescription;
 
 typedef std::map<Cbc*, std::map<std::string, TObject*> >  CbcHistogramMap;
 typedef std::map<Module*, std::map<std::string, TObject*> > ModuleHistogramMap;
-// typedef std::map<Module*, TCanvas*> CanvasMap;
 
 /*!
- * \class Commissioning
- * \brief Class to perform latency and threshold scans
+ * \class SignalScan
+ * \brief Class to perform threshold scans
  */
 
-class Commissioning : public Tool
+class SignalScan : public Tool
 {
 
   public:
-    void Initialize (uint32_t pStartLatency, uint32_t pLatencyRange);
-    std::map<Module*, uint8_t> ScanLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
-    std::map<Module*, uint8_t> ScanStubLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
-    // void ScanLatencyThreshold();
-    // void SaveResults();
-    void SignalScan (int SignalScanLength);
+    void Initialize ();
+    void ScanSignal (int pSignalScanLength);
 
   private:
-    int countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency );
-    int countHits ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
-    int countStubs ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
     void updateHists ( std::string pHistName, bool pFinal );
     void parseSettings();
 
-	//  Members
-	uint32_t fNevents;
-	uint32_t fInitialThreshold;
-	uint32_t fHoleMode;
-	uint32_t fStepback;
-	uint32_t fNCbc;
-	uint32_t fSignalScanStep;
+    //  Members
+    uint32_t fNevents;
+    //uint32_t fInitialThreshold;
+    uint32_t fHoleMode;
+    uint32_t fStepback;
+    uint32_t fNCbc;
+    uint32_t fSignalScanStep;
 
     const uint32_t fTDCBins = 8;
 
@@ -74,7 +66,7 @@ class Commissioning : public Tool
         return result + 1;
     }
 
-    const std::string getStubLatencyName(const std::string pBoardIdentifier)
+    const std::string getStubLatencyName (const std::string pBoardIdentifier)
     {
         if (pBoardIdentifier == "GLIB" ) return "cbc_stubdata_latency_adjust_fe1";
         else if ( pBoardIdentifier == "CTA") return "cbc.STUBDATA_LATENCY_MODE";

@@ -1,6 +1,6 @@
-#include "Commissioning.h"
+#include "LatencyScan.h"
 
-void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
+void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
 {
     for ( auto& cBoard : fBoardVector )
     {
@@ -55,7 +55,7 @@ void Commissioning::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
     std::cout << "Histograms and Settings initialised." << std::endl;
 }
 
-std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, uint8_t pLatencyRange )
+std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uint8_t pLatencyRange )
 {
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
@@ -125,7 +125,7 @@ std::map<Module*, uint8_t> Commissioning::ScanLatency ( uint8_t pStartLatency, u
     return cLatencyMap;
 }
 
-std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatency, uint8_t pLatencyRange )
+std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency, uint8_t pLatencyRange )
 {
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
@@ -154,24 +154,6 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
         for ( BeBoard* pBoard : fBoardVector )
         {
             //here set the stub latency
-            //std::string cBoardType = pBoard->getBoardType();
-            //std::vector<std::pair<std::string, uint32_t>> cRegVec;
-
-            //if (cBoardType == "GLIB" )
-            //{
-                //cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe1", cLat});
-                //cRegVec.push_back ({"cbc_stubdata_latency_adjust_fe2", cLat});
-            //}
-            //else if (cBoardType == "CTA")
-            //{
-                //cRegVec.push_back ({"cbc.STUBDATA_LATENCY_ADJUST", cLat});
-            //}
-            //else if (cBoardType == "ICGLIB" || cBoardType == "ICFC7")
-            //{
-                //cRegVec.push_back ({"cbc_daq_ctrl.latencies.stub_latency", cLat});
-            //}
-
-            //fBeBoardInterface->WriteBoardMultReg (pBoard, cRegVec);
             fBeBoardInterface->WriteBoardReg(pBoard, getStubLatencyName(pBoard->getBoardType()), cLat);
 
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
@@ -224,7 +206,7 @@ std::map<Module*, uint8_t> Commissioning::ScanStubLatency ( uint8_t pStartLatenc
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
-int Commissioning::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency)
+int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency)
 {
     std::string cBoardType = pBoard->getBoardType();
     uint32_t cTotalHits = 0;
@@ -279,30 +261,7 @@ int Commissioning::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pE
     return cTotalHits;
 }
 
-int Commissioning::countHits ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter )
-{
-    // loop over Modules & Cbcs and count hits separately
-    int cHitCounter = 0;
-
-    //  get histogram to fill
-    TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( pFe, pHistName ) );
-
-    for ( auto cCbc : pFe->fCbcVector )
-    {
-        for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
-        {
-            if ( pEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-            {
-                cTmpHist->Fill ( pParameter );
-                cHitCounter++;
-            }
-        }
-    }
-
-    return cHitCounter;
-}
-
-int Commissioning::countStubs ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter )
+int LatencyScan::countStubs ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter )
 {
     // loop over Modules & Cbcs and count hits separately
     int cStubCounter = 0;
@@ -323,7 +282,7 @@ int Commissioning::countStubs ( Module* pFe,  const Event* pEvent, std::string p
     return cStubCounter;
 }
 
-void Commissioning::updateHists ( std::string pHistName, bool pFinal )
+void LatencyScan::updateHists ( std::string pHistName, bool pFinal )
 {
     for ( auto& cCanvas : fCanvasMap )
     {
@@ -343,13 +302,6 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
             cTmpHist->DrawCopy ( );
             cCanvas.second->Update();
         }
-        else if ( pHistName == "module_signal" )
-        {
-            cCanvas.second->cd();
-            TH2F* cTmpHist = dynamic_cast<TH2F*> ( getHist ( static_cast<Ph2_HwDescription::Module*> ( cCanvas.first ), pHistName ) );
-            cTmpHist->DrawCopy ( "colz" );
-            cCanvas.second->Update();
-        }
 
 #ifdef __HTTP__
         fHttpServer->ProcessRequests();
@@ -357,149 +309,8 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
     }
 }
 
-void Commissioning::SignalScan (int SignalScanLength)
-{
-    //add an std::ofstream here to hold the values of TDC, #hits, VCth
-    std::ofstream output;
-    std::string cFilename = fDirectoryName + "/SignalScanData.txt";
-    output.open(cFilename, std::ios::out | std::ios::app);
-    output << "TDC/I:nHits/I:nClusters/I:thresh/I:dataBitString/C:clusterString/C" << std::endl;
-    for ( auto& cBoard : fBoardVector )
-    {
-        uint32_t cBoardId = cBoard->getBeId();
 
-        for ( auto& cFe : cBoard->fModuleVector )
-        {
-            uint32_t cFeId = cFe->getFeId();
-            fNCbc = cFe->getNCbc();
-
-            // 1D Hist forlatency scan
-            TString cName =  Form ( "h_module_thresholdScan_Fe%d", cFeId );
-            TObject* cObj = gROOT->FindObject ( cName );
-
-            if ( cObj ) delete cObj;
-
-            TH2F* cSignalHist = new TH2F ( cName, Form ( "Signal threshold vs channel FE%d; Channel # ; Threshold; # of Hits", cFeId ), fNCbc * NCHANNELS, -0.5, fNCbc * NCHANNELS - 0.5, 255, -.5,  255 - .5 );
-            bookHistogram ( cFe, "module_signal", cSignalHist );
-        }
-    }
-
-    // To read the blah-specific stuff
-    parseSettings();
-    std::cout << "Histograms initialised." << std::endl;
-
-    // The step scan is +1 for hole mode
-    int cVcthDirection = ( fHoleMode == 1 ) ? +1 : -1;
-
-    // I need to read the current threshold here, save it in a variable, step back by fStepback, update the variable and then increment n times by fSignalScanStep
-    // CBC VCth reader and writer
-
-    // This is a bit ugly but since I program the same global value to both chips I guess it is ok...
-    CbcRegReader cReader (fCbcInterface, "VCth");
-    this->accept(cReader);
-    uint8_t cVCth = cReader.fRegValue;
-
-    std::cout << "Programmed VCth value = " << +cVCth << " - falling back by " << fStepback << " to " << uint32_t(cVCth-cVcthDirection * fStepback) << std::endl;
-    
-    cVCth = uint8_t(cVCth-cVcthDirection * fStepback);
-    CbcRegWriter cWriter(fCbcInterface, "VCth", cVCth);
-    this->accept(cWriter);
-    
-    // Example of incrementer
-    // CbcRegIncrementer cIncrementer ( fCbcInterface, "VCth", -1 * cVcthDirection * fStepback);
-    // std::cout << "Stepping back " << fStepback << " from the configuration threshold" << std::endl;
-    // this->accept ( cIncrementer );
-    // cIncrementer.setRegister ("VCth", cVcthDirection * fSignalScanStep );
-
-    for (int i = 0; i < SignalScanLength; i += fSignalScanStep )
-    {
-        std::cout << "Threshold: " << +cVCth << " - Iteration " << i << " - Taking " << fNevents << std::endl;
-
-        // Take Data for all Modules
-        for ( BeBoard* pBoard : fBoardVector )
-        {
-            // I need this to normalize the TDC values I get from the Strasbourg FW
-            bool pStrasbourgFW = false;
-
-            if (pBoard->getBoardType() == "GLIB" || pBoard->getBoardType() == "CTA") pStrasbourgFW = true;
-            uint32_t cTotalEvents = 0;
-
-            fBeBoardInterface->Start(pBoard);
-            while(cTotalEvents < fNevents)
-            {
-                fBeBoardInterface->ReadData ( pBoard, fNevents );
-            
-                const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
-                cTotalEvents += events.size();
-		// Loop over Events from this Acquisition
-                for ( auto& cEvent : events )
-                {
-                    for ( auto cFe : pBoard->fModuleVector )
-                    {
-                        TH2F* cSignalHist = static_cast<TH2F*> (getHist ( cFe, "module_signal") );
-                        int cEventHits = 0;
-                        int cEventClusters = 0;
-
-                        std::string cDataString;
-                        std::string cClusterDataString;
-
-                        for ( auto cCbc : cFe->fCbcVector )
-                        {
-                            //now loop the channels for this particular event and increment a counter
-                            for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
-                            {
-                                if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                                {
-                                    cSignalHist->Fill (cCbc->getCbcId() *NCHANNELS + cId, cCbc->getReg ("VCth") );
-                                    cEventHits++;
-                                }
-                            }
-
-                            //append HexDataString to cDataString
-                            cDataString += cEvent->DataHexString(cCbc->getFeId(), cCbc->getCbcId());
-                            cDataString += "-";
-                        
-			    std::vector<Cluster> cClusters = cEvent->getClusters(cCbc->getFeId(), cCbc->getCbcId());
-			    cEventClusters += cClusters.size();
-
-			    cClusterDataString += "-";			    
-			    for(int i = 0; i < cClusters.size(); i++){
-			      cClusterDataString += std::to_string(cClusters[i].fFirstStrip) + "."
-				+ std::to_string(cClusters[i].fClusterWidth)+ "^"
-				+ std::to_string(cClusters[i].fSensor) + "-";
-			    }
-			    
-			}
-			// This becomes an ofstream
-			output << +cEvent->GetTDC() << " "
-			       << cEventHits << " "
-			       << cEventClusters << " "
-			       << +cVCth << " "
-			       << cDataString << " "
-			       << cClusterDataString << std::endl;
-                    }
-               }
-               std::cout << "Recorded " << cTotalEvents << " Events" << std::endl;
-          }
-          
-          fBeBoardInterface->Stop(pBoard);
-
-        }
-
-        // done counting hits for all FE's, now update the Histograms
-        updateHists ( "module_signal", false );
-        // now I need to increment the threshold by cVCth+fVcthDirecton*fSignalScanStep
-        cVCth +=cVcthDirection*fSignalScanStep;
-        cWriter.setRegister("VCth", cVCth);
-        this->accept(cWriter);
-
-    }
-    output.close();
-
-}
-
-
-void Commissioning::parseSettings()
+void LatencyScan::parseSettings()
 {
     // now read the settings from the map
     auto cSetting = fSettingsMap.find ( "Nevents" );
@@ -512,19 +323,8 @@ void Commissioning::parseSettings()
     if ( cSetting != std::end ( fSettingsMap ) )  fHoleMode = cSetting->second;
     else fHoleMode = 1;
 
-    cSetting = fSettingsMap.find ( "PedestalStepBack" );
-
-    if ( cSetting != std::end ( fSettingsMap ) )  fStepback = cSetting->second;
-    else fStepback = 1;
-
-    cSetting = fSettingsMap.find ( "SignalScanStep" );
-
-    if ( cSetting != std::end ( fSettingsMap ) )  fSignalScanStep = cSetting->second;
-    else fSignalScanStep = 1;
 
     std::cout << "Parsed the following settings:" << std::endl;
     std::cout << "	Nevents = " << fNevents << std::endl;
     std::cout << "	HoleMode = " << int ( fHoleMode ) << std::endl;
-    std::cout << "	Step back from Pedestal = " << fStepback << std::endl;
-    std::cout << "	SignalScanStep = " << fSignalScanStep << std::endl;
 }
