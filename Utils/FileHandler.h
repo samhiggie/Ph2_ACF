@@ -18,6 +18,7 @@
 class FileHeader
 {
   public:
+    bool fValid;
     // FW type
     char fType[8];
     uint32_t fVersionMajor;
@@ -81,8 +82,13 @@ class FileHeader
             fNCbc = pVec.at (8);
 
             fEventSize32 = pVec.at (10);
+            fValid = true;
         }
-        else std::cout << "Error, Vector does not contain a Header" << std::endl;
+        else
+        {
+            std::cout << "Error, Vector does not contain a Header" << std::endl;
+            fValid = false;
+        }
     }
 };
 

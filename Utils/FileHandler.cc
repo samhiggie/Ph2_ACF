@@ -46,10 +46,37 @@ bool FileHandler::openFile( )
     {
         fMutex.lock();
 
+        if ( fOption == 'w' )
+        {
+            fBinaryFile.open ( ( getFilename() ).c_str(), std::fstream::trunc | std::fstream::out | std::fstream::binary );
 
-        if ( fOption == 'w' ) fBinaryFile.open ( ( getFilename() ).c_str(), std::fstream::trunc | std::fstream::out | std::fstream::binary );
-        else if ( fOption == 'r' ) fBinaryFile.open ( getFilename().c_str(),  std::fstream::in |  std::fstream::binary );
-        //TODO: I should serialize a FileHeader struct into this File at the bginning that I write or read upon open
+            //if the header object is valid i serialize it in the file
+            if (fHeader.fValid)
+            {
+                std::vector<uint32_t> cHeaderVec = fHeader.encodeHeader();
+                uint32_t cBuffer[cHeaderVec.size()];
+                std::copy ( cHeaderVec.begin(), cHeaderVec.end(), cBuffer );
+                fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
+            }
+            else std::cout << "FileHandler: Warning, no valid Header set!" << std::endl;
+        }
+
+        else if ( fOption == 'r' )
+        {
+
+            fBinaryFile.open ( getFilename().c_str(),  std::fstream::in |  std::fstream::binary );
+            // read the first 12 words and check if it is header
+            // if yes, everything cool
+            fHeader.decodeHeader ( this->readFileChunks (fHeader.fHeaderSize32) );
+
+            // if the header is not valid, return to the beginning of the fiel
+            // and treat it as normal data
+            if (!fHeader.fValid)
+            {
+                fBinaryFile.clear( );
+                fBinaryFile.seekg ( 0, std::ios::beg );
+            }
+        }
 
         fMutex.unlock();
         fFileIsOpened = true;
@@ -103,7 +130,7 @@ std::vector<uint32_t> FileHandler::readFileChunks ( uint32_t pNWords32 )
 
     if (fBinaryFile.eof() ) fBinaryFile.close();
 
-    if (cWordCounter < pNWords32) std::cout << "Attention, input file " << fBinaryFileName << " ended before reading " << pNWords32 << " 32-bit words!" << std::endl;
+    if (cWordCounter < pNWords32) std::cout << "FileHandler: Attention, input file " << fBinaryFileName << " ended before reading " << pNWords32 << " 32-bit words!" << std::endl;
 
     return cVector;
 }
