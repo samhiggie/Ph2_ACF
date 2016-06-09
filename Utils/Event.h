@@ -30,6 +30,20 @@ namespace Ph2_HwInterface {
     using EventMap = std::map<uint32_t, FeEventMap>;                      /*!< Event Map of FE */
 
     /*!
+     * \class Cluster
+     * \brief Cluster object for the Event
+     */
+    class Cluster
+    {
+    public:
+      uint8_t fSensor;
+      uint8_t fFirstStrip;
+      uint8_t fClusterWidth;
+      double getBaricentre();
+    };
+
+
+    /*!
      * \class Event
      * \brief Event container to manipulate event flux from the Cbc
      */
@@ -130,8 +144,8 @@ namespace Ph2_HwInterface {
          * \return Event buffer
          */
         void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) const;
-	/*! \brief Get event data as a byte vector */
-	void GetEventBytes ( std::vector< uint8_t >& cbcData ) const;
+        /*! \brief Get event data as a byte vector */
+        void GetEventBytes ( std::vector< uint8_t >& cbcData ) const;
         /*!
          * \brief Get the bunch value
          * \return Bunch value
@@ -299,6 +313,9 @@ namespace Ph2_HwInterface {
             return fEventMap;
         }
         friend std::ostream& operator<< ( std::ostream& out, const Event& ev );
+
+	std::vector<Cluster> getClusters( uint8_t pFeId, uint8_t pCbcId);
+
     };
 }
 #endif

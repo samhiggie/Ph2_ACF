@@ -20,7 +20,7 @@
       <!--<CBC Id="1" configfile="FE0CBC1.txt" />-->
     </Module>
 
-    <!--TRIGGER & CLOCK-->
+    <!--TRIGGER-->
     <Register name="cbc_daq_ctrl.ext_sig_enable.trig"> 0 </Register>
     <Register name="cbc_daq_ctrl.ext_sig_enable.clk"> 0 </Register>
     <Register name="cbc_daq_ctrl.trigger_cnfg.ext_veto_en"> 0 </Register>

@@ -56,13 +56,13 @@ class Commissioning : public Tool
     void updateHists ( std::string pHistName, bool pFinal );
     void parseSettings();
 
-    //  Members
-    uint32_t fNevents;
-    uint32_t fInitialThreshold;
-    uint32_t fHoleMode;
-    uint32_t fNoiseToSignalVCTH;
-    uint32_t fNCbc;
-    uint32_t fSignalScanStep;
+	//  Members
+	uint32_t fNevents;
+	uint32_t fInitialThreshold;
+	uint32_t fHoleMode;
+	uint32_t fStepback;
+	uint32_t fNCbc;
+	uint32_t fSignalScanStep;
 
     const uint32_t fTDCBins = 8;
 

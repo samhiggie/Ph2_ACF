@@ -313,7 +313,7 @@ int Commissioning::countStubs ( Module* pFe,  const Event* pEvent, std::string p
     for ( auto cCbc : pFe->fCbcVector )
     {
         if ( pEvent->StubBit ( cCbc->getFeId(), cCbc->getCbcId() ) )
-            if ( pEvent->StubBit ( cCbc->getFeId(), cCbc->getCbcId() ) )
+
             {
                 cTmpHist->Fill ( pParameter );
                 cStubCounter++;
@@ -359,6 +359,11 @@ void Commissioning::updateHists ( std::string pHistName, bool pFinal )
 
 void Commissioning::SignalScan (int SignalScanLength)
 {
+    //add an std::ofstream here to hold the values of TDC, #hits, VCth
+    std::ofstream output;
+    std::string cFilename = fDirectoryName + "/SignalScanData.txt";
+    output.open(cFilename, std::ios::out | std::ios::app);
+    output << "TDC/I:nHits/I:nClusters/I:thresh/I:dataBitString/C:clusterString/C" << std::endl;
     for ( auto& cBoard : fBoardVector )
     {
         uint32_t cBoardId = cBoard->getBeId();
@@ -386,54 +391,110 @@ void Commissioning::SignalScan (int SignalScanLength)
     // The step scan is +1 for hole mode
     int cVcthDirection = ( fHoleMode == 1 ) ? +1 : -1;
 
+    // I need to read the current threshold here, save it in a variable, step back by fStepback, update the variable and then increment n times by fSignalScanStep
     // CBC VCth reader and writer
-    CbcRegIncrementer cIncrementer ( fCbcInterface, "VCth", -1 * cVcthDirection * fNoiseToSignalVCTH);
-    std::cout << "Stepping back " << fNoiseToSignalVCTH << " from the configuration threshold" << std::endl;
-    this->accept ( cIncrementer );
-    cIncrementer.setRegister ("VCth", cVcthDirection * fSignalScanStep );
+
+    // This is a bit ugly but since I program the same global value to both chips I guess it is ok...
+    CbcRegReader cReader (fCbcInterface, "VCth");
+    this->accept(cReader);
+    uint8_t cVCth = cReader.fRegValue;
+
+    std::cout << "Programmed VCth value = " << +cVCth << " - falling back by " << fStepback << " to " << uint32_t(cVCth-cVcthDirection * fStepback) << std::endl;
+    
+    cVCth = uint8_t(cVCth-cVcthDirection * fStepback);
+    CbcRegWriter cWriter(fCbcInterface, "VCth", cVCth);
+    this->accept(cWriter);
+    
+    // Example of incrementer
+    // CbcRegIncrementer cIncrementer ( fCbcInterface, "VCth", -1 * cVcthDirection * fStepback);
+    // std::cout << "Stepping back " << fStepback << " from the configuration threshold" << std::endl;
+    // this->accept ( cIncrementer );
+    // cIncrementer.setRegister ("VCth", cVcthDirection * fSignalScanStep );
 
     for (int i = 0; i < SignalScanLength; i += fSignalScanStep )
     {
-        std::cout << "Threshold setting " << i + 1 << " / " << SignalScanLength << std::endl;
-        this->accept ( cIncrementer );
+        std::cout << "Threshold: " << +cVCth << " - Iteration " << i << " - Taking " << fNevents << std::endl;
 
         // Take Data for all Modules
         for ( BeBoard* pBoard : fBoardVector )
         {
-            fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
-            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+            // I need this to normalize the TDC values I get from the Strasbourg FW
+            bool pStrasbourgFW = false;
 
-            // Loop over Events from this Acquisition
-            for ( auto& cEvent : events )
+            if (pBoard->getBoardType() == "GLIB" || pBoard->getBoardType() == "CTA") pStrasbourgFW = true;
+            uint32_t cTotalEvents = 0;
+
+            fBeBoardInterface->Start(pBoard);
+            while(cTotalEvents < fNevents)
             {
-                for ( auto cFe : pBoard->fModuleVector )
+                fBeBoardInterface->ReadData ( pBoard, fNevents );
+            
+                const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+                cTotalEvents += events.size();
+		// Loop over Events from this Acquisition
+                for ( auto& cEvent : events )
                 {
-                    TH2F* cSignalHist = static_cast<TH2F*> (getHist ( cFe, "module_signal") );
-                    int cEventHits = 0;
-
-                    for ( auto cCbc : cFe->fCbcVector )
+                    for ( auto cFe : pBoard->fModuleVector )
                     {
-                        //now loop the channels for this particular event and increment a counter
-                        for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
-                        {
-                            if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                            {
-                                cSignalHist->Fill (cCbc->getCbcId() *NCHANNELS + cId, cCbc->getReg ("VCth") );
-                                cEventHits++;
-                            }
-                        }
+                        TH2F* cSignalHist = static_cast<TH2F*> (getHist ( cFe, "module_signal") );
+                        int cEventHits = 0;
+                        int cEventClusters = 0;
 
-                        std::cout << "EVENT TDC Value " << cEvent->GetTDC() << " cEventHits " << cEventHits << " vcth_delta " << i* fSignalScanStep << std::endl;
+                        std::string cDataString;
+                        std::string cClusterDataString;
+
+                        for ( auto cCbc : cFe->fCbcVector )
+                        {
+                            //now loop the channels for this particular event and increment a counter
+                            for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                            {
+                                if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                                {
+                                    cSignalHist->Fill (cCbc->getCbcId() *NCHANNELS + cId, cCbc->getReg ("VCth") );
+                                    cEventHits++;
+                                }
+                            }
+
+                            //append HexDataString to cDataString
+                            cDataString += cEvent->DataHexString(cCbc->getFeId(), cCbc->getCbcId());
+                            cDataString += "-";
+                        
+			    std::vector<Cluster> cClusters = cEvent->getClusters(cCbc->getFeId(), cCbc->getCbcId());
+			    cEventClusters += cClusters.size();
+
+			    cClusterDataString += "-";			    
+			    for(int i = 0; i < cClusters.size(); i++){
+			      cClusterDataString += std::to_string(cClusters[i].fFirstStrip) + "."
+				+ std::to_string(cClusters[i].fClusterWidth)+ "^"
+				+ std::to_string(cClusters[i].fSensor) + "-";
+			    }
+			    
+			}
+			// This becomes an ofstream
+			output << +cEvent->GetTDC() << " "
+			       << cEventHits << " "
+			       << cEventClusters << " "
+			       << +cVCth << " "
+			       << cDataString << " "
+			       << cClusterDataString << std::endl;
                     }
-                }
-            }
+               }
+               std::cout << "Recorded " << cTotalEvents << " Events" << std::endl;
+          }
+          
+          fBeBoardInterface->Stop(pBoard);
 
         }
 
         // done counting hits for all FE's, now update the Histograms
         updateHists ( "module_signal", false );
-    }
+        // now I need to increment the threshold by cVCth+fVcthDirecton*fSignalScanStep
+        cVCth +=cVcthDirection*fSignalScanStep;
+        cWriter.setRegister("VCth", cVCth);
+        this->accept(cWriter);
 
+    }
+    output.close();
 
 }
 
@@ -451,10 +512,10 @@ void Commissioning::parseSettings()
     if ( cSetting != std::end ( fSettingsMap ) )  fHoleMode = cSetting->second;
     else fHoleMode = 1;
 
-    cSetting = fSettingsMap.find ( "NoiseToSignalVCTH" );
+    cSetting = fSettingsMap.find ( "PedestalStepBack" );
 
-    if ( cSetting != std::end ( fSettingsMap ) )  fNoiseToSignalVCTH = cSetting->second;
-    else fNoiseToSignalVCTH = 1;
+    if ( cSetting != std::end ( fSettingsMap ) )  fStepback = cSetting->second;
+    else fStepback = 1;
 
     cSetting = fSettingsMap.find ( "SignalScanStep" );
 
@@ -464,6 +525,6 @@ void Commissioning::parseSettings()
     std::cout << "Parsed the following settings:" << std::endl;
     std::cout << "	Nevents = " << fNevents << std::endl;
     std::cout << "	HoleMode = " << int ( fHoleMode ) << std::endl;
-    std::cout << "	NoiseToSignalVCTH = " << fNoiseToSignalVCTH << std::endl;
+    std::cout << "	Step back from Pedestal = " << fStepback << std::endl;
     std::cout << "	SignalScanStep = " << fSignalScanStep << std::endl;
 }

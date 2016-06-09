@@ -201,6 +201,8 @@
 		<node id="clk_mux_sel" mask="0x00400000" />
 		<node id="fmcdio5_backpressure_out_polar" mask="0x00800000" />
 		<node id="fmcdio5_lemo2_sig_sel" mask="0x01000000" />
+      <node id="stubRxClkPhase" mask="0x02000000" tags="checkbox" description="latch on Stub Rx clock falling edge"/>
+      <node id="trigDataRxClkPhase" mask="0x04000000" tags="checkbox" description="latch on Trig Data Rx clock falling edge"/>
 	</node>	
 	<node id="cbc_reg_i2c_settings" address="0x80000198" permission="rw" mode="single" />
 	<node id="cbc_reg_i2c_command" address="0x80000199" permission="rw" mode="single" />
