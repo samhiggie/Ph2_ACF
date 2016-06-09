@@ -522,4 +522,50 @@ namespace Ph2_HwInterface {
 
         return os;
     }
+
+  std::vector<Cluster> Event::getClusters( uint8_t pFeId, uint8_t pCbcId)
+  {
+    std::vector<Cluster> result;
+
+    // Use the bool vector method (SLOW!) TODO: improve this
+    std::vector<bool> stripBits = BitVector ( pFeId, pCbcId, OFFSET_CBCDATA, WIDTH_CBCDATA );
+    
+    // Cluster finding
+    Cluster aCluster;
+    
+    for (int iSensor = 0; iSensor<2; ++iSensor) {
+      aCluster.fSensor = iSensor;      
+      bool inCluster = false;
+      for (int iStrip = iSensor; iStrip<stripBits.size(); iStrip+=2) {
+	if (stripBits.at(iStrip)) {
+	  // The strip is on
+	  if (!inCluster) {
+	    // New cluster
+	    aCluster.fFirstStrip = iStrip/2;
+	    aCluster.fClusterWidth = 1;
+	    inCluster = true;
+	  } else {
+	    // Increase cluster
+	    aCluster.fClusterWidth++;
+	  }
+	} else {
+	  // The strip is off
+	  if (inCluster) {
+	    inCluster = false;
+	    result.push_back(aCluster);
+	  }
+	}
+      }
+      // Fix clusters at the end of the sensor
+      if (inCluster) result.push_back(aCluster);
+    }
+
+    return result;
+  }
+
+
+  double Cluster::getBaricentre() {
+    return fFirstStrip+double(fClusterWidth)/2.-0.5;
+  }
+
 }

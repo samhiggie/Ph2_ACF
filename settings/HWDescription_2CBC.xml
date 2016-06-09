@@ -5,16 +5,16 @@
     <connection id="board" uri="chtcp-2.0://cmsuptracker008:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" />
     <FW_Version NCbcDataSize="4" />
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-        <Global_CBC_Register name="VCth"> 0x72 </Global_CBC_Register>
+        <Global_CBC_Register name="VCth"> 0x76 </Global_CBC_Register>
         <!--<Global_CBC_Register name="TriggerLatency"> 0x0F </Global_CBC_Register>-->
       <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>
       <!--<Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0xE1</Global_CBC_Register>-->
       <!--<Global_CBC_Register name="TestPulsePot">0xE0</Global_CBC_Register>-->
       <!--<Global_CBC_Register name="SelTestPulseDel&ChanGroup">0x00</Global_CBC_Register>-->
 
-      <CBC_Files path="./settings/" />
-      <CBC Id="0" configfile="Cbc_default_electron.txt" />
-      <CBC Id="1" configfile="Cbc_default_electron.txt" />
+      <CBC_Files path="./Results/Calibration_Electron_23-05-16_17:45/" />
+      <CBC Id="0" configfile="FE0CBC0.txt" />
+      <CBC Id="1" configfile="FE0CBC1.txt" />
 
       <!--<CBC_Files path="./Results/Calibration_Hole_27-04-16_17:55/" />-->
       <!--<CBC Id="0" configfile="FE0CBC0.txt" />-->
@@ -59,7 +59,7 @@
   </BeBoard>
 </HwDescription>
 <Settings>
-    <Setting name="Nevents"> 10 </Setting>
+    <Setting name="Nevents">10</Setting>
     <Setting name="RunNumber">1</Setting>
     <Setting name="HoleMode">0</Setting>
 </Settings>

@@ -381,7 +381,7 @@ void Commissioning::SignalScan (int SignalScanLength)
     std::ofstream output;
     std::string cFilename = fDirectoryName + "/SignalScanData.txt";
     output.open(cFilename, std::ios::out | std::ios::app);
-    output << "TDC/I:nHits/I:thresh/I:dataBitString/C" << std::endl;
+    output << "TDC/I:nHits/I:nClusters/I:thresh/I:dataBitString/C:clusterString/C" << std::endl;
     for ( auto& cBoard : fBoardVector )
     {
         uint32_t cBoardId = cBoard->getBeId();
@@ -409,10 +409,10 @@ void Commissioning::SignalScan (int SignalScanLength)
     // The step scan is +1 for hole mode
     int cVcthDirection = ( fHoleMode == 1 ) ? +1 : -1;
 
-    //i need to read the current threshold here, save it in a variable, step back by fStepback, update the variable and then increment n times by fSignalScanStep
+    // I need to read the current threshold here, save it in a variable, step back by fStepback, update the variable and then increment n times by fSignalScanStep
     // CBC VCth reader and writer
 
-    //this is a bit ugly but since I program the same global value to both chips I guess it is ok...
+    // This is a bit ugly but since I program the same global value to both chips I guess it is ok...
     CbcRegReader cReader (fCbcInterface, "VCth");
     this->accept(cReader);
     uint8_t cVCth = cReader.fRegValue;
@@ -423,10 +423,11 @@ void Commissioning::SignalScan (int SignalScanLength)
     CbcRegWriter cWriter(fCbcInterface, "VCth", cVCth);
     this->accept(cWriter);
     
-//   CbcRegIncrementer cIncrementer ( fCbcInterface, "VCth", -1 * cVcthDirection * fStepback);
-//    std::cout << "Stepping back " << fStepback << " from the configuration threshold" << std::endl;
-//    this->accept ( cIncrementer );
-//    cIncrementer.setRegister ("VCth", cVcthDirection * fSignalScanStep );
+    // Example of incrementer
+    // CbcRegIncrementer cIncrementer ( fCbcInterface, "VCth", -1 * cVcthDirection * fStepback);
+    // std::cout << "Stepping back " << fStepback << " from the configuration threshold" << std::endl;
+    // this->accept ( cIncrementer );
+    // cIncrementer.setRegister ("VCth", cVcthDirection * fSignalScanStep );
 
     for (int i = 0; i < SignalScanLength; i += fSignalScanStep )
     {
@@ -448,15 +449,18 @@ void Commissioning::SignalScan (int SignalScanLength)
             
                 const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
                 cTotalEvents += events.size();
-               // Loop over Events from this Acquisition
+		// Loop over Events from this Acquisition
                 for ( auto& cEvent : events )
                 {
                     for ( auto cFe : pBoard->fModuleVector )
                     {
                         TH2F* cSignalHist = static_cast<TH2F*> (getHist ( cFe, "module_signal") );
                         int cEventHits = 0;
+                        int cEventClusters = 0;
 
                         std::string cDataString;
+                        std::string cClusterDataString;
+
                         for ( auto cCbc : cFe->fCbcVector )
                         {
                             //now loop the channels for this particular event and increment a counter
@@ -472,10 +476,25 @@ void Commissioning::SignalScan (int SignalScanLength)
                             //append HexDataString to cDataString
                             cDataString += cEvent->DataHexString(cCbc->getFeId(), cCbc->getCbcId());
                             cDataString += "-";
+                        
+			    std::vector<Cluster> cClusters = cEvent->getClusters(cCbc->getFeId(), cCbc->getCbcId());
+			    cEventClusters += cClusters.size();
 
-                        }
-	        	//this becomes an ofstream
-                        output << +cEvent->GetTDC() << " " << cEventHits << " " << +cVCth << " " << cDataString << std::endl;
+			    cClusterDataString += "-";			    
+			    for(int i = 0; i < cClusters.size(); i++){
+			      cClusterDataString += std::to_string(cClusters[i].fFirstStrip) + "."
+				+ std::to_string(cClusters[i].fClusterWidth)+ "^"
+				+ std::to_string(cClusters[i].fSensor) + "-";
+			    }
+			    
+			}
+			// This becomes an ofstream
+			output << +cEvent->GetTDC() << " "
+			       << cEventHits << " "
+			       << cEventClusters << " "
+			       << +cVCth << " "
+			       << cDataString << " "
+			       << cClusterDataString << std::endl;
                     }
                }
                std::cout << "Recorded " << cTotalEvents << " Events" << std::endl;
@@ -487,7 +506,7 @@ void Commissioning::SignalScan (int SignalScanLength)
 
         // done counting hits for all FE's, now update the Histograms
         updateHists ( "module_signal", false );
-        //now I need to increment the threshold by cVCth+fVcthDirecton*fSignalScanStep
+        // now I need to increment the threshold by cVCth+fVcthDirecton*fSignalScanStep
         cVCth +=cVcthDirection*fSignalScanStep;
         cWriter.setRegister("VCth", cVCth);
         this->accept(cWriter);
