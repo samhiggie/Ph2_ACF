@@ -11,6 +11,9 @@ void SignalScan::Initialize ()
         {
             uint32_t cFeId = cFe->getFeId();
             fNCbc = cFe->getNCbc();
+            TCanvas* ctmpCanvas = new TCanvas ( Form ( "c_online_canvas_fe%d", cFeId ), Form ( "FE%d  Online Canvas", cFeId ) );
+            // ctmpCanvas->Divide( 2, 2 );
+            fCanvasMap[cFe] = ctmpCanvas;
 
             // 1D Hist forlatency scan
             TString cName =  Form ( "h_module_thresholdScan_Fe%d", cFeId );
@@ -135,6 +138,7 @@ void SignalScan::ScanSignal (int pSignalScanLength)
                 }
 
                 std::cout << "Recorded " << cTotalEvents << " Events" << std::endl;
+                updateHists ( "module_signal", false );
             }
 
             fBeBoardInterface->Stop (pBoard);

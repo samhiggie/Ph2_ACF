@@ -117,6 +117,7 @@ int main ( int argc, char* argv[] )
     else if ( cSignal )
     {
         SignalScan cSignalScan;
+        cSignalScan.Inherit (&cTool);
         cSignalScan.Initialize();
         cSignalScan.ScanSignal ( cSignalRange );
     }

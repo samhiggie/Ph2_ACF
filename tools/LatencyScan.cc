@@ -87,15 +87,11 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
         for ( BeBoard* pBoard : fBoardVector )
         {
             // I need this to normalize the TDC values I get from the Strasbourg FW
-
-
             fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
 
             // Loop over Events from this Acquisition
             countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency );
-
-
         }
 
         // done counting hits for all FE's, now update the Histograms
@@ -226,13 +222,15 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
 
             //if the TDC value for the GLIB is 4 it belongs to the next clock cycle bin 12
             //this should ensure that TDC value of 4 never happens
-            //TODO: check this
+            uint8_t cFillVal = pParameter;
+
             if (cTDCVal == 4 && cBoardType == "GLIB")
             {
-                pParameter += 1;
+                cFillVal += 1;
                 cTDCVal = 12;
             }
 
+            //for Strasbourg FW normalize to sane 3 bit values
             if (cTDCVal != 0 && cBoardType == "GLIB") cTDCVal -= 5;
             else if (cTDCVal != 0 && cBoardType == "CTA") cTDCVal -= 3;
 
@@ -251,19 +249,13 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
                 }
 
                 //now I have the number of hits in this particular event for all CBCs and the TDC value
-                //if this is a GLIB with Strasbourg FW, the TDC values are always between 5 and 12 which means that I have to subtract 5 from the TDC value to have it normalized between 0 and 7
-
-                //uint32_t iBin = pParameter + pIterationCount * (fTDCBins - 1) + cTDCVal;
-                uint32_t cBin = convertLatencyPhase (pStartLatency, pParameter, cTDCVal);
+                uint32_t cBin = convertLatencyPhase (pStartLatency, cFillVal, cTDCVal);
                 cTmpHist->Fill ( cBin, cHitCounter);
-                //std::cout << "Latency " << +pParameter << " TDC Value " << +cTDCVal << " NHits: " << cHitCounter << " iteration count " << pIterationCount << " Value " << iBin << " iBin " << cTmpHist->FindBin(iBin) << std::endl;
-
                 cHitSum += cHitCounter;
             }
-
         }
 
-        std::cout << "FE: " << +cFe->getFeId() << " Latency " << +pParameter << " Hits " << cHitSum  << " Events " << fNevents << std::endl;
+        std::cout << "FE: " << +cFe->getFeId() << "; Latency " << +pParameter << " clock cycles; Hits " << cHitSum  << "; Events " << fNevents << std::endl;
         cTotalHits += cHitSum;
     }
 
