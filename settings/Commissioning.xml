@@ -8,7 +8,7 @@
     <FW_Version NCbcDataSize="4"/>
     
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-       <!--<Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register> -->
+       <Global_CBC_Register name="VCth"> 0x6A </Global_CBC_Register> 
        <Global_CBC_Register name="MiscStubLogic"> 0x5E </Global_CBC_Register> 
        <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register>
      <!-- Decoupling capacitance to VPLUS -->

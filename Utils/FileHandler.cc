@@ -73,9 +73,11 @@ bool FileHandler::openFile( )
             // and treat it as normal data
             if (!fHeader.fValid)
             {
+                std::cout << "FileHandler: No valid header found in file " << fBinaryFileName << " - resetting to 0 and treating as normal data!" << std::endl;
                 fBinaryFile.clear( );
                 fBinaryFile.seekg ( 0, std::ios::beg );
             }
+            else std::cout << "FileHandler: Found a valid header in file " << fBinaryFileName << std::endl;
         }
 
         fMutex.unlock();
