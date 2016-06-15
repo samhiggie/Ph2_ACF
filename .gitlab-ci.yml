@@ -1,0 +1,10 @@
+# This is the YAML file for Continuous Integration of the Ph2_ACF Middleware
+# This is a prototype version!!
+# Author: Nikkie Deelen (CERN/KIT)
+
+build_Ph2_ACF:
+   stage:
+      - build
+
+   script: 
+      - make
