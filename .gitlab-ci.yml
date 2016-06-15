@@ -2,9 +2,17 @@
 # Author: Nikkie Deelen (CERN/KIT)
 
 before_script:
+ - wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
+ - sudo yum install devtoolset-2
+ - sudo ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
+ - hash -r
+ - wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc6.x86_64.repo
+ - sudo cp cactus.slc6.x86_64.repo /etc/yum.repos.d/cactus.repo
+ - sudo yum clean all
+ - sudo yum groupinstall uhal
+ - sudo yum install root
  - source setup.sh
   
 build_Ph2_ACF:
  script: 
   - make
-
