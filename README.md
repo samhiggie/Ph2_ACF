@@ -51,8 +51,7 @@ then
 
 3. Install CERN ROOT version 5.34.32: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation" when building yourself. If root is installed on a CERN computer of virtual machine you can use:
 
-        $> sudo yum install root-net-http
-        $> sudo yum install root-graf3d-gl root-physics libusb-devel
+        $> sudo yum install root-net-http install root-graf3d-gl root-physics libusb-devel
 
 4. If you are working on a remote machine, you need these packages for the Canvases to show
 
