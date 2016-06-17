@@ -33,6 +33,7 @@ after_script:
  - source setup.sh
 
  - calibrate --help
+ - echo "test123"
  - cmtest --help
  - commission --help
  - configure --help
