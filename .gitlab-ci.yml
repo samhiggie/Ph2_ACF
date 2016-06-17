@@ -1,8 +1,8 @@
 # This is a Dev version of a YAML script for CI of Ph2_ACF Middleware
 # Author: Nikkie Deelen (CERN/KIT)
 
-#CERN's shared runner is used which is configured for Docker with SL6
-#sudo is not necessary in docker, every application used needs to be installed first
+# CERN's shared runner is used which is configured for Docker with SL6
+# sudo is not necessary in docker, every application used needs to be installed first
 
 before_script:
 
@@ -35,6 +35,7 @@ after_script:
  - calibrate --help
  - echo "test123"
  - cmtest --help
+ - echo "testerrrr"
  - commission --help
  - configure --help
  - datatest --help
