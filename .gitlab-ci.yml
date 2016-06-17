@@ -33,11 +33,8 @@ after_script:
  - source setup.sh
 
  - calibrate --help
- - echo "test123"
  - cmtest --help
- - echo "testerrrr"
  - commission --help
- - echo "testssdfsdf"
  - configure --help
  - datatest --help
  - fpgaconfig --help
