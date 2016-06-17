@@ -28,13 +28,23 @@ after_script:
  - source setup.sh
 
  - calibrate --help
+ 
  - cmtest --help
+ 
  - commission --help
+ 
  - configure --help
+ 
  - datatest --help
+ 
  - fpgaconfig --help
+ 
  - hybridtest --help
+ 
  - miniDAQ --help
+ 
  - miniDQM --help
+ 
  - pulseshape --help
+ 
  - systemtest -- help
