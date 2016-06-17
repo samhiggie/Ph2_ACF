@@ -5,9 +5,6 @@
 # sudo is not necessary in docker, every application used needs to be installed first
 
 before_script:
- - # is this a linux command?
- - # Installing all dependencies
-
  - yum -y -q install wget
  - wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
  - yum -y -q install devtoolset-2
@@ -28,8 +25,6 @@ build_Ph2_ACF:
 
 after_script:
 
- - # ***** 'Testing' the Middleware *****
-
  - source setup.sh
 
  - calibrate --help
@@ -43,5 +38,3 @@ after_script:
  - miniDQM --help
  - pulseshape --help
  - systemtest -- help
-
- - # ***** Succes! ***** 
