@@ -12,6 +12,7 @@ before_script:
  - yum -y clean all
  - yum -y groupinstall uhal
  - yum -y install root
+ - yum install root-net-http
 
  - source setup.sh
   
