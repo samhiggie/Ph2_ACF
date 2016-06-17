@@ -24,4 +24,5 @@ build_Ph2_ACF:
   - make
 
 after_script:
+ - ls
  - miniDAQ --help
