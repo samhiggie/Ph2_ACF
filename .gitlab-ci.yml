@@ -1,6 +1,9 @@
 # This is a Dev version of a YAML script for CI of Ph2_ACF Middleware
 # Author: Nikkie Deelen (CERN/KIT)
 
+#CERN's shared runner is used which is configured for Docker with SL6
+#sudo is not necessary in docker, every application used needs to be installed first
+
 before_script:
  - yum -y install wget
  - wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
@@ -12,7 +15,7 @@ before_script:
  - yum -y clean all
  - yum -y groupinstall uhal
  - yum -y install root
- - yum install root-net-http
+ - yum -y install root-net-http
 
  - source setup.sh
   
