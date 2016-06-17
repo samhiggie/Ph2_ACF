@@ -20,10 +20,7 @@ before_script:
  - source setup.sh
   
 after_script:
- - source setup.sh
- - calibrate --help
- - cmtest --help
-# ["calibrate --help", "cmtest --help", "commission --help", "configure --help", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
+ ["source setup.sh", "calibrate --help", "source setup.sh", "cmtest --help", "source setup.sh", "commission --help", "source setup.sh", "configure --help", "source setup.sh", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
 
 build_Ph2_ACF:
  script: 
