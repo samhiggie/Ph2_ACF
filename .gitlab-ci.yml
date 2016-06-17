@@ -37,6 +37,7 @@ after_script:
  - cmtest --help
  - echo "testerrrr"
  - commission --help
+ - echo "testssdfsdf"
  - configure --help
  - datatest --help
  - fpgaconfig --help
