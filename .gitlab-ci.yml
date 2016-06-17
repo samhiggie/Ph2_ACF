@@ -6,9 +6,7 @@
 
 before_script:
 
- - echo " "
- - echo "***** Installing all dependencies *****"
- - echo " "
+ - # Installing all dependencies
 
  - yum -y -q install wget
  - wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
@@ -30,9 +28,7 @@ build_Ph2_ACF:
 
 after_script:
 
- - echo " "
- - echo "***** 'Testing' the Middleware *****"
- - echo " " 
+ - # ***** 'Testing' the Middleware *****
 
  - source setup.sh
 
@@ -48,6 +44,4 @@ after_script:
  - pulseshape --help
  - systemtest -- help
 
- - echo " "
- - echo "***** Succes! ***** "
- - echo " "
+ - # ***** Succes! ***** 
