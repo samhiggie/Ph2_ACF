@@ -24,4 +24,4 @@ build_Ph2_ACF:
   - make
 
 after_script:
- - ["calibrate --help", "cmtest --help", "commission --help", "configure --help", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
+ ["calibrate --help", "cmtest --help", "commission --help", "configure --help", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
