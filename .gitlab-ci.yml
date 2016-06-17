@@ -3,6 +3,7 @@
 
 before_script:
  - yum install wget
+ - y
  - wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
  - yum install devtoolset-2
  - ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
