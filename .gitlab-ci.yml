@@ -5,20 +5,23 @@
 #sudo is not necessary in docker, every application used needs to be installed first
 
 before_script:
- - yum -y install wget
+ - yum -y -q install wget
  - wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
- - yum -y install devtoolset-2
+ - yum -y -q install devtoolset-2
  - ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
  - hash -r
  - wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc6.x86_64.repo
  - cp cactus.slc6.x86_64.repo /etc/yum.repos.d/cactus.repo
- - yum -y clean all
- - yum -y groupinstall uhal
- - yum -y install root
- - yum -y install root-net-http
+ - yum -y -q clean all
+ - yum -y -q groupinstall uhal
+ - yum -y -q install root
+ - yum -y -q install root-net-http root-montecarlo-eg root-graf3d-eve root-geom root-physics root-graf3d-gl
 
  - source setup.sh
   
 build_Ph2_ACF:
  script: 
   - make
+
+after_script:
+ - miniDAQ --help
