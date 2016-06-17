@@ -5,7 +5,7 @@
 # sudo is not necessary in docker, every application used needs to be installed first
 
 before_script:
-
+ - # is this a linux command?
  - # Installing all dependencies
 
  - yum -y -q install wget
