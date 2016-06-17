@@ -2,7 +2,7 @@
 # Author: Nikkie Deelen (CERN/KIT)
 
 before_script:
- - wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
+ - curl -L /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
  - sudo yum install devtoolset-2
  - sudo ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
  - hash -r
