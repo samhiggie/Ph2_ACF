@@ -22,4 +22,14 @@ before_script:
 
 test_Ph2_ACF:
  script:
+  - calibrate --help
+  - cmtst --help
+  - commission --help
+  - config --help
+  - datatest --help
+  - fpgaconfig --help
+  - hybridtest --help
   - miniDAQ --help
+  - miniDQM --help
+  - pulseshape --help
+  - systemtest --help
