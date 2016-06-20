@@ -17,9 +17,11 @@ before_script:
  - yum -y -q groupinstall uhal
  - yum -y -q install root
  - yum -y -q install root-net-http root-montecarlo-eg root-graf3d-eve root-geom root-physics root-graf3d-gl
- - source setup.sh
- - make
 
-test_Ph2_ACF:
+build_Ph2_ACF:
  script:
-  - systemtest --help
+  - source setup.sh
+  - make
+
+after_script:
+  - miniDAQ --help
