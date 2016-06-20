@@ -22,27 +22,4 @@ before_script:
 
 test_Ph2_ACF:
  script:
-  - calibrate --help
-  - cmtest --help
-  - commission --help
-  - configure --help
-  - datatest --help
-  - fpgaconfig --help
-  - hybridtest --help
   - miniDAQ --help
-  - miniDQM --help
-  - pulseshape --help
-  - systemtest --help
-
-#test:app:
-# script:
-#  - source setup.sh
-#  - miniDAQ -h
-#  - cmtest -h
-#  - hybridtest -h
-
-#after_script:
-# - source setup.sh
-# - miniDAQ --help
-# - cmtest --help
-# ["source setup.sh", "calibrate -h", "source setup.sh", "cmtest -h", "source setup.sh", "commission --help", "source setup.sh", "configure --help", "source setup.sh", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
