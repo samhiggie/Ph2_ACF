@@ -22,18 +22,4 @@ before_script:
 
 test_Ph2_ACF:
  script:
-  - source setup.sh
-  - touch output.txt
-  - miniDAQ --help | cat >> output.txt
-  - cat output.txt
-  - calibrate --help | cat >> output.txt
-  - cmtst --help
-  - commission --help
-  - config --help
-  - datatest --help
-  - fpgaconfig --help
-  - hybridtest --help
-  - miniDAQ --help
-  - miniDQM --help
-  - pulseshape --help
   - systemtest --help
