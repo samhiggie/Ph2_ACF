@@ -24,7 +24,8 @@ build_Ph2_ACF:
   - make
 
 testing_Binaries:
- - source setup.sh
- - miniDAQ --help
- - cmtest --help
- #["source setup.sh", "calibrate --help", "source setup.sh", "cmtest --help", "source setup.sh", "commission --help", "source setup.sh", "configure --help", "source setup.sh", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
+ script:
+  - source setup.sh
+  - miniDAQ --help
+  - cmtest --help
+  #["source setup.sh", "calibrate --help", "source setup.sh", "cmtest --help", "source setup.sh", "commission --help", "source setup.sh", "configure --help", "source setup.sh", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
