@@ -50,7 +50,8 @@ then
         $> sudo yum groupinstall uhal
 
 3. Install CERN ROOT version 5.34.32: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation" when building yourself. If root is installed on a CERN computer of virtual machine you can use:
-
+       
+		  $> sudo yum install root
         $> sudo yum install root-net-http install root-graf3d-gl root-physics libusb-devel
 
 4. If you are working on a remote machine, you need these packages for the Canvases to show
@@ -69,7 +70,7 @@ Follow these instructions to install and compile the libraries:
 
 1. Clone the GitHub repo and run setup.sh
   
-        $> git clone https://gitlab.cern.ch/cmstkph2/Ph2_ACF.git
+        $> git clone https://:@gitlab.cern.ch:8443/cms_tk_ph2/Ph2_ACF.git
         $> source setup.sh
 
 2. Do a make in the root of the repo (make sure you have all µHal, root libraries on your computer).
