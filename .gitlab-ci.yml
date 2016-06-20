@@ -27,4 +27,5 @@ after_script:
   - source setup.sh
   - touch output.txt
   - miniDAQ --help | cat >> output.txt
+  - cat output.txt
   - calibrate --help | cat >>output.txt
