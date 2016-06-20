@@ -15,7 +15,7 @@ before_script:
  - cp cactus.slc6.x86_64.repo /etc/yum.repos.d/cactus.repo
  - yum -y -q clean all
  - yum -y -q groupinstall uhal
- - yum -y -q xorg-x11-xauth.x86_64
+ - yum -y -q install xorg-x11-xauth.x86_64
  - yum -y -q install root
  - yum -y -q install root-net-http root-montecarlo-eg root-graf3d-eve root-geom root-physics root-graf3d-gl
 
