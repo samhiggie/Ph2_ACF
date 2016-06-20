@@ -25,5 +25,6 @@ build_Ph2_ACF:
 
 after_script:
   - source setup.sh
-  - miniDAQ --help
-  - source setup.sh
+  - touch output.txt
+  - miniDAQ --help | cat >> output.txt
+  - calibrate --help | cat >>output.txt
