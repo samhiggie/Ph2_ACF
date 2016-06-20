@@ -22,9 +22,7 @@ build_Ph2_ACF:
  script:
   - source setup.sh
   - make
-  - miniDAQ --help
-  - calibrate --help
 
 after_script:
-  - source setup.sh
-  - miniDAQ --help 
+ - source setup.sh
+ - miniDAQ --help
