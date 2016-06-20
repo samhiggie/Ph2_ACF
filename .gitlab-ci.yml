@@ -18,13 +18,13 @@ before_script:
  - yum -y -q install root
  - yum -y -q install root-net-http root-montecarlo-eg root-graf3d-eve root-geom root-physics root-graf3d-gl
 
-after_script:
- - source setup.sh
- - miniDAQ --help
- - cmtest --help
- #["source setup.sh", "calibrate --help", "source setup.sh", "cmtest --help", "source setup.sh", "commission --help", "source setup.sh", "configure --help", "source setup.sh", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
-
 build_Ph2_ACF:
  script:
   - source setup.sh
   - make
+
+testing_Binaries:
+ - source setup.sh
+ - miniDAQ --help
+ - cmtest --help
+ #["source setup.sh", "calibrate --help", "source setup.sh", "cmtest --help", "source setup.sh", "commission --help", "source setup.sh", "configure --help", "source setup.sh", "datatest --help", "fpgaconfig --help", "hybridtest --help", "miniDAQ --help", "miniDQM --help", "pulseshape --help", "systemtest --help"]
