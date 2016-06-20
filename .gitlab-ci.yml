@@ -24,4 +24,6 @@ build_Ph2_ACF:
   - make
 
 after_script:
+  - source setup.sh
   - miniDAQ --help
+  - source setup.sh
