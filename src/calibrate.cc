@@ -27,7 +27,7 @@ int main ( int argc, char* argv[] )
     ArgvParser cmd;
 
     // init
-    cmd.setIntroductoryDescription ( "CMS Ph2_ACF  calibration routine using K. Uchida's algorithm or a fast algoriithm" );
+    cmd.setIntroductoryDescription ( "CMS Ph2_ACF  calibration routine using K. Uchida's algorithm or a fast algorithm" );
     // error codes
     cmd.addErrorCode ( 0, "Success" );
     cmd.addErrorCode ( 1, "Error" );
@@ -41,14 +41,16 @@ int main ( int argc, char* argv[] )
     cmd.defineOptionAlternative ( "output", "o" );
 
     cmd.defineOption ( "skip", "skip scaning VCth vs Vplus", ArgvParser::NoOptionAttribute );
-
-    //cmd.defineOption( "old", "Use old calibration algorithm", ArgvParser::NoOptionAttribute );
+	 cmd.defineOptionAlternative ( "skip", "s" );
+    
+	 //cmd.defineOption( "old", "Use old calibration algorithm", ArgvParser::NoOptionAttribute );
+    //cms.defineOptionAlternative ("old", "v" );
 
     cmd.defineOption ( "noise", "Perform noise scan after Offset tuning", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "noise", "n" );
 
     //cmd.defineOption ( "allChan", "Do calibration using all channels? Default: false", ArgvParser::NoOptionAttribute );
-    cmd.defineOptionAlternative ( "allChan", "a" );
+    //cmd.defineOptionAlternative ( "allChan", "a" );
 
     cmd.defineOption ( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "batch", "b" );
