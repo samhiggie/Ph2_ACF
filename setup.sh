@@ -10,7 +10,7 @@ export BOOST_LIB=/opt/cactus/lib
 export BOOST_INCLUDE=/opt/cactus/include
 
 #ROOT
-#source /usr/local/bin/thisroot.sh
+source /usr/local/bin/thisroot.sh
 
 #Ph2_ACF
 export BASE_DIR=$(pwd)
