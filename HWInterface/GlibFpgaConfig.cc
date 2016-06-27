@@ -141,7 +141,7 @@ void GlibFpgaConfig::dumpFromFileIntoFlash(bool bGolden, const char* strFile) th
 
 			if (first_ela_in_block == 0){	
 				//                        Logger.getLogger(GlibFpgaConfig.class.getName()).log(Level.INFO, String.format("-> Writing block %s..." ,flash_block));
-				strProgressPref=(boost::format("Writing block flash_block %d")%block_number).str();
+				strProgressPref=(boost::format(bGolden ? "Writing Golden block flash_block %d": "Writing User block flash_block %d")%block_number).str();
 				cout<<strProgressPref<<endl;
 				if (first_block == 0){
 					blockLockOrUnlock( prev_block_number, 'l');
