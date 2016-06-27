@@ -457,7 +457,7 @@ bool ArgvParser::defineOption( const string & _name,
     // no digits as short options allowed
     if (_name.length() == 1 && isDigit(_name[0]))
     {
-        cerr << "ArgvParser::defineOption(): Digits as short option labels are not allowd." << endl;
+        cerr << "ArgvParser::defineOption(): Digits as short option labels are not allowed." << endl;
         return(false);
     }
 
@@ -483,7 +483,7 @@ bool ArgvParser::defineOptionAlternative( const string & _original,
     if (!isDefinedOption(_original))
     {
         cerr << "ArgvParser::defineOptionAlternative(): Original option label is not a defined option." << endl;
-        return(false);
+ return(false);
     }
 
     // AND no digits as short options allowed
