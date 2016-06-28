@@ -28,6 +28,7 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
 
 1. Install the latest gcc compiler:
 
+        $> wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
         $> sudo yum install devtoolset-2
         $> scl enable devtoolset-2 bash  (add to .bashrc)      
         $> hash -r

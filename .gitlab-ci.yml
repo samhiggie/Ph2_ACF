@@ -23,8 +23,8 @@ build_Ph2_ACF:
   - source setup.sh
   - make
  only:
-  - Dev
+  - Dev, master
 
 after_script:
  - source setup.sh
- - miniDAQ --help
+ - miniDAQ --help && datatest --help && systemtest
