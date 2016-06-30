@@ -71,7 +71,7 @@ publisher.o: publisher.cc publisher.h
 DQMHistogrammer.o: DQMHistogrammer.cc DQMHistogrammer.h
 	$(CXX) -std=c++11  $(DevFlags) $(CCFlags) $(CCFlagsRoot) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
 
-miniDQM: datatestFromfile.cc publisher.h publisher.o DQMHistogrammer.h DQMHistogrammer.o
+miniDQM: miniDQM.cc publisher.h publisher.o DQMHistogrammer.h DQMHistogrammer.o
 	$(CXX) -std=c++11 $(CCFlags) -o $@ $< $(IncludePaths) publisher.o DQMHistogrammer.o $(ExternalObjects) 
 	cp $@ ../bin
 

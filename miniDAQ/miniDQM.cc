@@ -79,13 +79,21 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "reverse", "reverse bit order for CBC data in Data::set. Default = false (needs to be used for Imperial FW);", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "reverse", "r" );
 
-    cmd.defineOption ( "swap", "Swap endianness in Data::set. Default = true (Ph2_ACF); should be true only for GlibStreamer Data", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOption ( "swap", "Swap endianness in Data::set. Default = true (Ph2_ACF); should be true only for legacy GlibStreamer Data", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "swap", "s" );
 
     cmd.defineOption ( "tree", "Create a ROOT tree also. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
 
-    cmd.defineOption ( "cbcType", "Specify the CBC type(2,8 or 16).", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOption ( "ncolumn", "Specify no. of columns.", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "ncolumn", "u" );
+
+    cmd.defineOption ( "filter", "Select Event Filtering. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+
+    cmd.defineOption ( "cbcType", "Specify the CBC type(2,4,8 or 16).", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "cbcType", "c" );
+
+    cmd.defineOption ( "nevt", "Specify number of events to be processed", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "nevt", "n" );
 
     std::map<std::string, pair<int, std::string>>  cbcTypeEvtSizeMap;
     cbcTypeEvtSizeMap["2"] = { 2, XML_DESCRIPTION_FILE_2CBC };
@@ -106,7 +114,14 @@ int main ( int argc, char* argv[] )
     if ( rawFilename.empty() )
     {
         std::cerr << "Error, no binary file provided. Quitting" << std::endl;
-        exit ( 1 );
+        exit ( 2 );
+    }
+
+    // Check if the file can be found
+    if ( ! boost::filesystem::exists ( rawFilename ) )
+    {
+        std::cerr << "Error!! binary file " << rawFilename << " not found, exiting!" << std::endl;
+        exit ( 3 );
     }
 
     std::string cbcType = ( cmd.foundOption ( "cbcType" ) ) ? cmd.optionValue ( "cbcType" ) : "";
@@ -114,20 +129,28 @@ int main ( int argc, char* argv[] )
     if ( cbcTypeEvtSizeMap.find ( cbcType ) == cbcTypeEvtSizeMap.end()  )
     {
         std::cerr << "Wrong CBC type specified!!!!" << std::endl;
-        exit ( 1 );
+        exit ( 4 );
     }
 
     bool cReverse = ( cmd.foundOption ( "reverse" ) ) ? true : false;
     bool cSwap = ( cmd.foundOption ( "swap" ) ) ? true : false;
     bool cDQMPage = ( cmd.foundOption ( "dqm" ) ) ? true : false;
     bool addTree = ( cmd.foundOption ( "tree" ) ) ? true : false;
+    int ncol       = ( cmd.foundOption ( "ncolumn" ) ) ? stoi (cmd.optionValue ( "ncolumn" ) ) : 2;
+    bool evtFilter = ( cmd.foundOption ( "filter" ) ) ? true : false;
+    int maxevt     = ( cmd.foundOption ( "nevt" ) ) ? stoi (cmd.optionValue ( "nevt" ) ) : -1;
+
+    // Create the Histogrammer object
+    DQMHistogrammer* dqmh = new DQMHistogrammer (addTree, ncol, evtFilter);
+
+    // Add File handler
+    dqmh->addFileHandler ( rawFilename, 'r' );
 
     // Read the raw data file
-    SystemController cSystemController;
-    cSystemController.addFileHandler ( rawFilename, 'r' );
-
     std::vector<uint32_t> dataVec;
-    cSystemController.readFile (dataVec);
+    int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32 * cbcTypeEvtSizeMap[cbcType].first;
+    //long nbytes = (maxevt > -1) ? maxevt * eventSize * 4 : -1;
+    dqmh->readFile (dataVec);
 
     //alternatively in packets and pseudocode
     //for(uint32_t cCounter = 0; cCounter ...)
@@ -143,23 +166,25 @@ int main ( int argc, char* argv[] )
     cHWFile += cbcTypeEvtSizeMap[cbcType].second;
 
     std::cout << "HWfile=" << cHWFile << std::endl;
-    cSystemController.parseHWxml ( cHWFile );
-    //const BeBoard* pBoard = cSystemController.fBoardVector.at( 0 );
-    const BeBoard* pBoard = cSystemController.getBoard ( 0 );
+    dqmh->parseHWxml ( cHWFile );
+    const BeBoard* pBoard = dqmh->getBoard ( 0 );
 
     // Now split the data buffer in events
     Data d;
-    int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32 * cbcTypeEvtSizeMap[cbcType].first;
     int nEvents = dataVec.size() / eventSize;
+    std::cout << "eventSize = "  << eventSize
+              << ", nEvents = " << nEvents
+              << ", maxEvents = " << maxevt
+              << std::endl;
+
+    //call the Data::set() method - here is where i have to know the swap opitions
     d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
     const std::vector<Event*>& elist = d.GetEvents ( pBoard );
 
     if ( cDQMPage && elist.size() > 0 )
     {
         gROOT->SetBatch ( true );
-
-        DQMHistogrammer* dqmh = new DQMHistogrammer (addTree);
-        dqmh->bookHistos (elist[0]->GetEventMap() );
+        dqmh->bookHistos (elist[0]->GetEventMap(), elist.size() );
         dqmh->fillHistos (elist);
 
         // Create the DQM plots and generate the root file
@@ -189,12 +214,9 @@ int main ( int argc, char* argv[] )
         // now read back the Root file and publish the histograms on the DQM page
         RootWeb::makeDQMmonitor ( dqmFilename, cDirBasePath, runLabel );
         std::cout << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath << std::endl;
-
-        delete dqmh;
     }
     else dumpEvents ( elist );
 
-    cSystemController.Destroy();
-
+    delete dqmh;
     return 0;
 }
