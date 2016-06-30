@@ -90,7 +90,9 @@ bool FileHandler::openFile( )
 void FileHandler::closeFile()
 {
     fMutex.lock();
-    fBinaryFile.close();
+
+    if (fFileIsOpened)  closeFile();
+
     fMutex.unlock();
 }
 

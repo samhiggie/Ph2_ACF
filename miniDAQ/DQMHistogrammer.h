@@ -18,6 +18,7 @@
 #include <map>
 
 class TH1I;
+class TH1D;
 class TH2I;
 class TProfile;
 class TTree;
@@ -31,41 +32,59 @@ class DQMHistogrammer : public Tool {
   /*! 
    * constructor 
    */
-  DQMHistogrammer(bool addTree = false);
+  DQMHistogrammer(bool addTree = false, int ncol = 2, bool eventFilter = true);
   
   /*! 
    * destructor 
    */
   virtual ~DQMHistogrammer();
-
   /*!
    * Book histograms
    */
-  void bookHistos(const Ph2_HwInterface::EventMap& evmap);
+  void bookHistos(const Ph2_HwInterface::EventMap& evmap, int evtsize);
   /*!
    * Fill histogram
    */
   void fillHistos(const std::vector<Event*>& event_list);
   void saveHistos(const std::string& out_file);
   void resetHistos();
+  void fillSensorHistos(int ncbc, const std::vector<int> & even_values, const std::vector<int>& odd_values);
+  void fillCBCHistos(long unsigned ievt, std::string cbc_hid, uint32_t error,uint32_t address, int nstub, 
+		     const std::vector<uint32_t>& channles);  
+  bool getEventFlag(const long unsigned int & ievt);
 
  private:
 
   bool addTree_;
+  int nColumn_;
+  bool filterEvent_;
+
+  uint32_t dataBuffer_;        // (32 bit words line)
+  long int pCounter_;              // (get rid of first 47 events)
+  uint32_t periodicity_;
+  uint32_t periodicityOffset_;
+  uint32_t eventBlock_;
+  uint32_t skipEvents_;
 
   TTree* tree_;
-  //Following same convention as HitProfile histo naming
-  std::vector<int>* dut0C0chData_;
-  std::vector<int>* dut0C1chData_;
-  std::vector<int>* dut1C0chData_;
-  std::vector<int>* dut1C1chData_;
-  int l1Accept_;
-  int tdcCounter_;
-  int totalHits_;  
-  int totalStubs_;  
-
+  // Following same convention as HitProfile histo naming
+  uint32_t l1Accept_;
+  uint32_t tdcCounter_;
+  uint32_t totalHits_;  
+  uint32_t totalStubs_;  
+  bool eventFlag_;
+  uint32_t eventCountCBC_;
+  std::vector<unsigned int>* cbcErrorVal_;
+  std::vector<unsigned int>* cbcPLAddressVal_;
+  std::vector<unsigned int>* dut0C0chData_;
+  std::vector<unsigned int>* dut0C1chData_;
+  std::vector<unsigned int>* dut1C0chData_;
+  std::vector<unsigned int>* dut1C1chData_;
   struct CBCHistos {
     TH1I* errBitH;
+    TH1I* errBitVsEvtH;
+    TH1I* plAddH;
+    TH1I* plAddVsEvtH;
     TH1I* nStubsH;
     TH1I* evenChnOccuH;
     TH1I* oddChnOccuH;
@@ -76,6 +95,8 @@ class DQMHistogrammer : public Tool {
   
   TH2I* hitCorrC0H_;
   TH2I* hitCorrC1H_;
+  TH1D* hitDelCorrC0H;
+  TH1D* hitDelCorrC1H;
 
   TH2I* dut0HitProfH_;
   TH2I* dut1HitProfH_;
@@ -93,5 +114,17 @@ class DQMHistogrammer : public Tool {
   TH1I* tdcCounterH_;
   TH1I* totalNumberHitsH_;
   TH1I* totalNumberStubsH_;
+  TH1I* periodicityFlagvsEvtH_;
+
+  TH1I* plAddPhaseDiffH_; 
+  TH2I* plAddPhaseCorrH_; 
+  TH2I* cbcErrorCorrH_; 
+  TH1I* plAddPhaseDiffVsEvtH_; 
+  TH1I* bunchCounterVsEvtH_; 
+  TH1I* orbitCounterVsEvtH_; 
+  TH1I* lumiCounterVsEvtH_; 
+  TH1I* l1AcceptVsEvtH_; 
+  TH1I* cbcCounterVsEvtH_;
+  TH1I* tdcCounterVsEvtH_;
 };
 #endif
