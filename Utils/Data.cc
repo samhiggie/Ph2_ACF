@@ -27,7 +27,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    void Data::Set ( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBits )
+    void Data::Set ( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBits, bool swapBytes )
     {
         Reset();
 
@@ -61,7 +61,7 @@ namespace Ph2_HwInterface {
                     //next I need to reverse the bit order and mask out the corresponding bits for errors & pipe address
                     word = reverse_bits (word) & 0x003FFFFF;;
                     //now just need to shift the Errors & Pipe address back in
-                    word |= ( ((cErrors & 0x03 ) << 30) | ((cPipeAddress & 0xFF ) << 22 ) );
+                    word |= ( ( (cErrors & 0x03 ) << 30) | ( (cPipeAddress & 0xFF ) << 22 ) );
                 }
                 else if (is_channel_last_row (cSwapIndex) )
                 {
@@ -71,15 +71,17 @@ namespace Ph2_HwInterface {
                     //reverse the bit order and mask stuff out
                     word = reverse_bits (word) & 0xFF000000;
                     //now shift the GlibFlag and the StubWord back in
-                    word |= ( ((cGlibFlag & 0x0FFF ) << 12) | (cStubWord & 0x0FFF));
+                    word |= ( ( (cGlibFlag & 0x0FFF ) << 12) | (cStubWord & 0x0FFF) );
                 }
                 //is_channel_data will also be true for first and last word but since it's an else if, it should be ok
                 else if ( is_channel_data (cSwapIndex) ) word = reverse_bits (word);
             }
+            else if (swapBytes)
+                word = swap_bytes (word);
 
 #ifdef __CBCDAQ_DEV__
-            std::cout << std::setw (3) <<  cWordIndex << " ### " << std::bitset<32> (pData.at (cWordIndex) ) << std::endl;
-            std::cout << std::setw (3) <<  cWordIndex << " ### " << std::bitset<32> (word) << std::endl;
+            std::cout << std::setw (3) << "Original " << cWordIndex << " ### " << std::bitset<32> (pData.at (cWordIndex) ) << std::endl;
+            std::cout << std::setw (3) << "Treated  " << cWordIndex << " ### " << std::bitset<32> (word) << std::endl;
 
             if ( (cWordIndex + 1) % fEventSize == 0 && cWordIndex > 0 ) std::cout << std::endl << std::endl;
 

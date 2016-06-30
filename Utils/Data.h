@@ -39,11 +39,17 @@ namespace Ph2_HwInterface {
         //to look up if an index is first or last word valid for up to 8 CBCs per AMC
         const std::set<uint32_t> fChannelFirstRows {5, 14, 23, 32, 41, 50, 59, 68};
         const std::set<uint32_t> fChannelLastRows {13, 22, 31, 40, 49, 58, 67, 76};
-        
+
         std::vector<Event*> fEventList;
 
       private:
-        uint32_t reverse_bits (uint32_t& n)
+
+        uint32_t swap_bytes ( uint32_t& n)
+        {
+            return __builtin_bswap32 (n);
+        }
+
+        uint32_t reverse_bits ( uint32_t& n)
         {
             n = ( (n >> 1) & 0x55555555) | ( (n << 1) & 0xaaaaaaaa) ;
             n = ( (n >> 2) & 0x33333333) | ( (n << 2) & 0xcccccccc) ;
@@ -63,13 +69,13 @@ namespace Ph2_HwInterface {
         bool is_channel_first_row (uint32_t pIndex)
         {
             //return true if it is the first word of any CBC block containing channel data
-            return (fChannelFirstRows.find(pIndex) != std::end(fChannelFirstRows) && pIndex < fEventSize -1);    
+            return (fChannelFirstRows.find (pIndex) != std::end (fChannelFirstRows) && pIndex < fEventSize - 1);
         }
 
         bool is_channel_last_row (uint32_t pIndex)
         {
             //return true if it is the last word of any CBC block containing channel data
-            return fChannelLastRows.find(pIndex) != std::end(fChannelLastRows);
+            return fChannelLastRows.find (pIndex) != std::end (fChannelLastRows);
         }
 
       public:
@@ -100,7 +106,7 @@ namespace Ph2_HwInterface {
          * \param *pData : Data from the Cbc
          * \param pNevents : The number of events in this acquisiton
          */
-        void Set ( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBits = false );
+        void Set ( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBits = false, bool swapBytes = false );
         /*!
          * \brief Reset the data structure
          */

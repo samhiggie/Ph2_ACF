@@ -76,7 +76,10 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "dqm", "Build DQM webpage. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "dqm", "d" );
 
-    cmd.defineOption ( "swap", "Swap endianness in Data::set. Default = true (Ph2_ACF); should be false for GlibStreamer Data", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOption ( "reverse", "reverse bit order for CBC data in Data::set. Default = false (needs to be used for Imperial FW);", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "reverse", "r" );
+
+    cmd.defineOption ( "swap", "Swap endianness in Data::set. Default = true (Ph2_ACF); should be true only for GlibStreamer Data", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "swap", "s" );
 
     cmd.defineOption ( "tree", "Create a ROOT tree also. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
@@ -114,10 +117,10 @@ int main ( int argc, char* argv[] )
         exit ( 1 );
     }
 
-    bool cSwap = ( cmd.foundOption ( "swap" ) ) ? false : true;
+    bool cReverse = ( cmd.foundOption ( "reverse" ) ) ? true : false;
+    bool cSwap = ( cmd.foundOption ( "swap" ) ) ? true : false;
     bool cDQMPage = ( cmd.foundOption ( "dqm" ) ) ? true : false;
     bool addTree = ( cmd.foundOption ( "tree" ) ) ? true : false;
-
 
     // Read the raw data file
     SystemController cSystemController;
@@ -129,9 +132,9 @@ int main ( int argc, char* argv[] )
     //alternatively in packets and pseudocode
     //for(uint32_t cCounter = 0; cCounter ...)
     //{
-       //cSystemController.readFile(dataVec, pEventSize32 * 10);  
-       //.
-        //.
+    //cSystemController.readFile(dataVec, pEventSize32 * 10);
+    //.
+    //.
     //}
 
     // Build the hardware setup
@@ -148,7 +151,7 @@ int main ( int argc, char* argv[] )
     Data d;
     int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32 * cbcTypeEvtSizeMap[cbcType].first;
     int nEvents = dataVec.size() / eventSize;
-    d.Set ( pBoard, dataVec, nEvents, !cSwap );
+    d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
     const std::vector<Event*>& elist = d.GetEvents ( pBoard );
 
     if ( cDQMPage && elist.size() > 0 )
