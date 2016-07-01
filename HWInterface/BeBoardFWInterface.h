@@ -69,10 +69,13 @@ namespace Ph2_HwInterface {
 
         /*!
         * \brief Constructor of the BeBoardFWInterface class
-        * \param puHalConfigFileName : path of the uHal Config File
-        * \param pFileHandler : pointer to file handler for saving Raw Data*/
+        * \param puHalConfigFileName : path of the uHal Config File*/
         BeBoardFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
         BeBoardFWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
+        /*!
+        * \brief set a FileHandler Object and enable saving to file!
+        * \param pFileHandler : pointer to file handler for saving Raw Data*/
+        void setFileHandler (FileHandler* pHandler);
         /*!
         * \brief Destructor of the BeBoardFWInterface class
         */
@@ -84,7 +87,7 @@ namespace Ph2_HwInterface {
         /*!
         * \brief Get the board infos
         */
-        virtual void getBoardInfo() = 0;
+        virtual uint32_t getBoardInfo() = 0;
 
         /*! \brief Upload a configuration in a board FPGA */
         virtual void FlashProm ( const std::string& strConfig, const char* pstrFile ) {}

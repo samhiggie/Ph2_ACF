@@ -36,6 +36,16 @@ namespace Ph2_HwInterface {
     {
     }
 
+    void BeBoardFWInterface::setFileHandler (FileHandler* pHandler)
+    {
+        if (pHandler != nullptr )
+        {
+            fFileHandler = pHandler;
+            fSaveToFile = true;
+        }
+        else std::cout << "Error, can not set NULL FileHandler" << std::endl;
+    }
+
     std::string BeBoardFWInterface::readBoardType()
     {
         std::string cBoardTypeString;
@@ -89,28 +99,28 @@ namespace Ph2_HwInterface {
 
     //void BeBoardFWInterface::StopThread()
     //{
-        //if ( runningAcquisition )
-        //{
-            //runningAcquisition = false;
+    //if ( runningAcquisition )
+    //{
+    //runningAcquisition = false;
 
-            //try
-            //{
-                //thrAcq.join();
-            //}
-            //catch ( std::exception& e )
-            //{
-                //std::cerr << "Death to Stop in BeBoardFWInterface::StopThread()" << e.what() << std::endl;
-            //}
-            //catch ( ... )
-            //{
-                //std::cerr << "Death to Stop in BeBoardFWInterface::StopThread(). failed to perform thrAcq.join()" << std::endl;
-            //}
-        //}
+    //try
+    //{
+    //thrAcq.join();
+    //}
+    //catch ( std::exception& e )
+    //{
+    //std::cerr << "Death to Stop in BeBoardFWInterface::StopThread()" << e.what() << std::endl;
+    //}
+    //catch ( ... )
+    //{
+    //std::cerr << "Death to Stop in BeBoardFWInterface::StopThread(). failed to perform thrAcq.join()" << std::endl;
+    //}
+    //}
 
     //}
 
     //int BeBoardFWInterface::getNumAcqThread()
     //{
-        //return ( int ) numAcq;
+    //return ( int ) numAcq;
     //}
 }

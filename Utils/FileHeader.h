@@ -28,7 +28,7 @@ class FileHeader
     uint32_t fVersionMajor;
     uint32_t fVersionMinor;
     // Info about HW
-    uint32_t fNBoard;
+    uint32_t fBeId;
     uint32_t fNCbc;
     //EventSize
     uint32_t fEventSize32;
@@ -40,9 +40,19 @@ class FileHeader
         fValid (false),
         fVersionMajor (0),
         fVersionMinor (0),
-        fNBoard (0),
+        fBeId (0),
         fNCbc (0),
-        fEventSize32 (1)
+        fEventSize32 (0)
+    {
+    }
+
+    FileHeader (const char* pType, const uint32_t& pFWMajor, const uint32_t& pFWMinor, const uint32_t& pBeId, const uint32_t& pNCbc, const uint32_t& pEventSize32) :
+        fVersionMajor (pFWMajor),
+        fVersionMinor (pFWMinor),
+        fBeId (pBeId),
+        fNCbc (pNCbc),
+        fEventSize32 (pEventSize32),
+        fValid (true)
     {
     }
 
@@ -64,14 +74,16 @@ class FileHeader
         cVec.push_back (fVersionMinor);
 
         cVec.push_back (0xAAAAAAAA);
-        // 2 words nObjecs
-        cVec.push_back (fNBoard);
+        // 1 word w. BeBoardInfo: 10 LSBs: fBeId, ... to be filled as needed
+        cVec.push_back (fBeId & 0x000003FF);
+        // the number of CBCs
         cVec.push_back (fNCbc);
 
         cVec.push_back (0xAAAAAAAA);
         //1 word event size
         cVec.push_back (fEventSize32);
         cVec.push_back (0xAAAAAAAA);
+
 
         return cVec;
     }
@@ -95,7 +107,7 @@ class FileHeader
             fVersionMajor = pVec.at (4);
             fVersionMinor = pVec.at (5);
 
-            fNBoard = pVec.at (7);
+            fBeId = pVec.at (7) & 0x000003FF;
             fNCbc = pVec.at (8);
 
             fEventSize32 = pVec.at (10);

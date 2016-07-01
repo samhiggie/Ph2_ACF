@@ -12,23 +12,25 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption ) :
     if ( fOption == 'w' ) fThread = std::thread ( &FileHandler::writeFile, this );
 }
 
-//dedicated write constructor that takes a fileHeader as argument
-FileHandler::FileHandler ( const std::string& pBinaryFileName, const FileHeader& pHeader) :
+FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, FileHeader pHeader ) :
     fBinaryFileName ( pBinaryFileName ),
-    fOption ( 'w' ),
-    fFileIsOpened ( false ),
+    fOption ( pOption ),
+    fFileIsOpened ( false ) ,
     is_set ( false ),
     fHeader ( pHeader )
 {
     openFile();
-    fThread = std::thread ( &FileHandler::writeFile, this );
+
+    if ( fOption == 'w' ) fThread = std::thread ( &FileHandler::writeFile, this );
 }
+
 //destructor
 FileHandler::~FileHandler()
 {
     fThread.join();
     closeFile();
 }
+
 void FileHandler::set ( std::vector<uint32_t> pVector )
 {
     fMutex.lock();
@@ -50,23 +52,28 @@ bool FileHandler::openFile( )
         {
             fBinaryFile.open ( ( getFilename() ).c_str(), std::fstream::trunc | std::fstream::out | std::fstream::binary );
 
+            // if the header is null or not valid, continue without and delete the header
+            if ( fHeader.fValid == false )
+                std::cout << "FileHandler: Warningn - No valid file Header provided, writing file without ... " << std::endl;
             //if the header object is valid i serialize it in the file
-            if (fHeader.fValid)
+            else if ( fHeader.fValid)
             {
                 std::vector<uint32_t> cHeaderVec = fHeader.encodeHeader();
                 uint32_t cBuffer[cHeaderVec.size()];
                 std::copy ( cHeaderVec.begin(), cHeaderVec.end(), cBuffer );
                 fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
             }
-            else std::cout << "FileHandler: Warning, no valid Header set!" << std::endl;
         }
 
         else if ( fOption == 'r' )
         {
 
             fBinaryFile.open ( getFilename().c_str(),  std::fstream::in |  std::fstream::binary );
+
             // read the first 12 words and check if it is header
             // if yes, everything cool
+
+            //now I can try to decode the header and check if it is valid
             fHeader.decodeHeader ( this->readFileChunks (fHeader.fHeaderSize32) );
 
             // if the header is not valid, return to the beginning of the fiel
@@ -76,6 +83,7 @@ bool FileHandler::openFile( )
                 std::cout << "FileHandler: No valid header found in file " << fBinaryFileName << " - resetting to 0 and treating as normal data!" << std::endl;
                 fBinaryFile.clear( );
                 fBinaryFile.seekg ( 0, std::ios::beg );
+                // if the file Header is nullptr I do not get info from it!
             }
             else std::cout << "FileHandler: Found a valid header in file " << fBinaryFileName << std::endl;
         }

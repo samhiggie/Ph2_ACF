@@ -21,11 +21,11 @@ class FileHandler
 {
   public:
     FileHeader fHeader;
+    char fOption;/*!< option for read or write */
 
   private:
 
     std::string fBinaryFileName;
-    char fOption;/*!< option for read or write */
     std::thread fThread;/*!< a thread for the multitrading */
     std::mutex fMutex;/*!< Mutex */
     bool fFileIsOpened ;/*!< to check if the file is opened */
@@ -48,7 +48,7 @@ class FileHandler
     * \param pBinaryFileName: set the fbinaryFileName to pbinaryFileName
     * \param  pHeader: a const reference to a FileHeader object
     */
-    FileHandler ( const std::string& pBinaryFileName, const FileHeader& pHeader );
+    FileHandler ( const std::string& pBinaryFileName, char pOption, FileHeader pHeader );
 
     /*!
     * \brief destructor
@@ -59,7 +59,7 @@ class FileHandler
      * \brief set the header
      * \param pHeader: reference to a FileHeaderObject
      */
-    void setHeader ( const FileHeader& pHeader )
+    void setHeader ( FileHeader pHeader )
     {
         fHeader = pHeader;
     }

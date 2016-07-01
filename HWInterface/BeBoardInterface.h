@@ -88,6 +88,13 @@ namespace Ph2_HwInterface {
         ~BeBoardInterface();
 
         /*!
+         * \brief set a FileHandlerObject for the corresponding Interface
+         * \param pBoard
+         * \param pHandler : pointer to FileHandler object
+         */
+        void SetFileHandler (BeBoard* pBoard, FileHandler* pHandler);
+
+        /*!
          * \brief Update both Board register and Config File
          * \param pBoard
          * \param pRegNode : Node of the register to update
@@ -130,7 +137,7 @@ namespace Ph2_HwInterface {
          * \brief Get the board infos
          * \param pBoard
          */
-        void getBoardInfo ( const BeBoard* pBoard );
+        uint32_t getBoardInfo ( const BeBoard* pBoard );
 
         /*!
          * \brief Configure the board with its Config File

@@ -20,7 +20,7 @@
 namespace Ph2_HwInterface {
 
     ICFc7FWInterface::ICFc7FWInterface ( const char* puHalConfigFileName,
-                                           uint32_t pBoardId ) :
+                                         uint32_t pBoardId ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
         fData ( nullptr ),
@@ -31,8 +31,8 @@ namespace Ph2_HwInterface {
 
 
     ICFc7FWInterface::ICFc7FWInterface ( const char* puHalConfigFileName,
-                                           uint32_t pBoardId,
-                                           FileHandler* pFileHandler ) :
+                                         uint32_t pBoardId,
+                                         FileHandler* pFileHandler ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
         fData ( nullptr ),
@@ -46,8 +46,8 @@ namespace Ph2_HwInterface {
     }
 
     ICFc7FWInterface::ICFc7FWInterface ( const char* pId,
-                                           const char* pUri,
-                                           const char* pAddressTable ) :
+                                         const char* pUri,
+                                         const char* pAddressTable ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
@@ -58,9 +58,9 @@ namespace Ph2_HwInterface {
 
 
     ICFc7FWInterface::ICFc7FWInterface ( const char* pId,
-                                           const char* pUri,
-                                           const char* pAddressTable,
-                                           FileHandler* pFileHandler ) :
+                                         const char* pUri,
+                                         const char* pAddressTable,
+                                         FileHandler* pFileHandler ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
@@ -73,11 +73,14 @@ namespace Ph2_HwInterface {
         else fSaveToFile = true;
     }
 
-    void ICFc7FWInterface::getBoardInfo()
+    uint32_t ICFc7FWInterface::getBoardInfo()
     {
         //std::cout << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) << std::endl;
         //std::cout << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) << std::endl;
-        std::cout << "FW version : " << ReadReg ( "user_stat.version.ver_major" ) << "." << ReadReg ( "user_stat.version.ver_minor" ) << "." << ReadReg ( "user_stat.version.ver_build" ) << std::endl;
+        uint32_t cVersionMajor, cVersionMinor;
+        cVersionMajor = ReadReg ( "user_stat.version.ver_major" );
+        cVersionMinor = ReadReg ( "user_stat.version.ver_minor" );
+        std::cout << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << ReadReg ( "user_stat.version.ver_build" ) << std::endl;
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "sys_regs.board_id" );
 
@@ -94,6 +97,9 @@ namespace Ph2_HwInterface {
 
         cChar = ( cBoardType & cMask1 );
         std::cout << cChar << std::endl;
+
+        uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 || (cVersionMinor & 0x0000FFFF) );
+        return cVersionWord;
     }
 
     void ICFc7FWInterface::ConfigureBoard ( const BeBoard* pBoard )
@@ -275,6 +281,7 @@ namespace Ph2_HwInterface {
                 cNEvents = pNEvents % 2000;
                 cNCycles = ceil (pNEvents / double (cNEvents) );
             }
+
             std::cout << "Packet Size larger than 2000, splitting in Acquisitions of " << cNEvents << " in " << cNCycles << " cycles!" << std::endl;
         }
 
@@ -367,40 +374,40 @@ namespace Ph2_HwInterface {
 
     // this is clearly for addressing individual CBCs, have to see how to deal with broadcast commands
     void ICFc7FWInterface::EncodeReg ( const CbcRegItem& pRegItem,
-                                        uint8_t pCbcId,
-                                        std::vector<uint32_t>& pVecReq,
-                                        bool pRead,
-                                        bool pWrite )
+                                       uint8_t pCbcId,
+                                       std::vector<uint32_t>& pVecReq,
+                                       bool pRead,
+                                       bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
         pVecReq.push_back ( ( fFMCId << 28 ) | ( pCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
     void ICFc7FWInterface::EncodeReg ( const CbcRegItem& pRegItem,
-                                        uint8_t pFeId,
-                                        uint8_t pCbcId,
-                                        std::vector<uint32_t>& pVecReq,
-                                        bool pRead,
-                                        bool pWrite )
+                                       uint8_t pFeId,
+                                       uint8_t pCbcId,
+                                       std::vector<uint32_t>& pVecReq,
+                                       bool pRead,
+                                       bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
         pVecReq.push_back ( ( pFeId << 28 ) | ( pCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void ICFc7FWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
-                                          uint8_t pNCbc,
-                                          std::vector<uint32_t>& pVecReq,
-                                          bool pRead,
-                                          bool pWrite )
+                                         uint8_t pNCbc,
+                                         std::vector<uint32_t>& pVecReq,
+                                         bool pRead,
+                                         bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
         pVecReq.push_back ( ( fFMCId << 28 ) | ( fBroadcastCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 )  | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void ICFc7FWInterface::DecodeReg ( CbcRegItem& pRegItem,
-                                        uint8_t& pCbcId,
-                                        uint32_t pWord,
-                                        bool& pRead,
-                                        bool& pFailed )
+                                       uint8_t& pCbcId,
+                                       uint32_t pWord,
+                                       bool& pRead,
+                                       bool& pFailed )
     {
         pCbcId   =  ( pWord & 0x07000000 ) >> 24;
         pFailed  =  ( pWord & 0x00100000 ) >> 20;
@@ -595,9 +602,8 @@ namespace Ph2_HwInterface {
                     else cSuccess == false;
                 }
                 else
-                {
                     cSuccess = false;
-                }
+
                 //std::cout << std::bitset<32>(cWord) << std::endl;
             }
 
@@ -689,7 +695,7 @@ namespace Ph2_HwInterface {
     {
         //TODO: cleanup
         //if ( (cWord1 & 0x0F00FFFF) != (cWord2 & 0x0F00FFFF) )
-            //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
+        //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
 
         //if the Register is FrontEndControl at p0 addr0, page is not defined and therefore I ignore it!
         if ( ( (cWord1 >> 16) & 0x1) == 0 && ( (cWord1 >> 8 ) & 0xFF) == 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
@@ -697,7 +703,7 @@ namespace Ph2_HwInterface {
     }
 
     bool ICFc7FWInterface::cmd_reply_ack (const uint32_t& cWord1, const
-                                           uint32_t& cWord2)
+                                          uint32_t& cWord2)
     {
         // if Info (>>20) is 0 and  it was a write transaction (>>17 == 0) and
         // the CBC id matches it is false
@@ -709,4 +715,3 @@ namespace Ph2_HwInterface {
 
 
 }
-

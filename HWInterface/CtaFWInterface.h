@@ -88,6 +88,8 @@ namespace Ph2_HwInterface {
         ~CtaFWInterface()
         {
             if (fData) delete fData;
+
+            if (fFileHandler) delete fFileHandler;
         }
 
         ///////////////////////////////////////////////////////
@@ -106,7 +108,7 @@ namespace Ph2_HwInterface {
         /*!
          * \brief Get the FW info
          */
-        void getBoardInfo();
+        uint32_t getBoardInfo();
 
         BoardType getBoardType() const
         {

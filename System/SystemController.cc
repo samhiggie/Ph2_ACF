@@ -26,7 +26,8 @@ namespace Ph2_System {
     }
     void SystemController::Destroy()
     {
-        delete fFileHandler;
+        if (fFileHandler) delete fFileHandler;
+
         delete fBeBoardInterface;
         delete fCbcInterface;
         fBeBoardFWMap.clear();
@@ -40,8 +41,17 @@ namespace Ph2_System {
 
     void SystemController::addFileHandler ( const std::string& pFilename , char pOption )
     {
-
-        fFileHandler = new FileHandler ( pFilename, pOption );
+        //if the opion is read, create a handler object and use it to read the
+        //file in the method below!
+        if (pOption = 'r')
+            fFileHandler = new FileHandler ( pFilename, pOption );
+        //if the option is w, remember the filename and construct a new
+        //fileHandler for every Interface
+        else if (pOption = 'w')
+        {
+            fRawFileName = pFilename;
+            fWriteHandlerEnabled = true;
+        }
     }
 
     void SystemController::readFile ( std::vector<uint32_t>& pVec, uint32_t pNWords32 )
@@ -57,7 +67,7 @@ namespace Ph2_System {
         else
             std::cerr << "Could not parse settings file " << pFilename << " - it is neither .xml nor .json format!" << std::endl;
 
-        if ( fFileHandler != NULL ) std::cout << BOLDBLUE << "Saving binary raw data to: " << fFileHandler->getFilename() << RESET << std::endl;
+        this->initializeFileHandler();
     }
 
     void SystemController::InitializeSettings ( const std::string& pFilename, std::ostream& os )
@@ -113,52 +123,14 @@ namespace Ph2_System {
             //CbcFastReset as per recommendation of Mark Raymond
             fBeBoardInterface->CbcFastReset ( cBoard );
         }
-
-        //class Configurator : public HwDescriptionVisitor
-        //{
-        //private:
-        //bool fHoleMode, fCheck, fIgnoreI2c;
-        //BeBoardInterface* fBeBoardInterface;
-        //CbcInterface* fCbcInterface;
-        //std::ostream& los_;
-        //public:
-        //Configurator ( BeBoardInterface* pBeBoardInterface, CbcInterface* pCbcInterface, bool pHoleMode, bool pCheck, bool pIgnoreI2c, std::ostream& los )
-        //: fBeBoardInterface ( pBeBoardInterface ), fCbcInterface ( pCbcInterface ), fHoleMode ( pHoleMode ), fCheck ( pCheck ), fIgnoreI2c ( pIgnoreI2c ), los_ ( los ) {}
-
-        //void visit ( BeBoard& pBoard )
-        //{
-        //fBeBoardInterface->ConfigureBoard ( &pBoard );
-        //fBeBoardInterface->CbcHardReset( &pBoard );
-
-        //if ( fCheck && pBoard.getBoardType() == "GLIB")
-        //{
-        //fBeBoardInterface->WriteBoardReg ( &pBoard, "pc_commands2.negative_logic_CBC", ( ( fHoleMode ) ? 0 : 1 ) );
-        //los_ << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
-        //}
-
-        //los_ << GREEN << "Successfully configured Board " << int ( pBoard.getBeId() ) << RESET << std::endl;
-        //}
-
-        //void visit ( Cbc& pCbc )
-        //{
-        //if ( !fIgnoreI2c )
-        //{
-        //fCbcInterface->ConfigureCbc ( &pCbc );
-        //los_ << GREEN <<  "Successfully configured Cbc " << int ( pCbc.getCbcId() ) << RESET << std::endl;
-        //}
-        //}
-        //};
-
-        //Configurator cConfigurator ( fBeBoardInterface, fCbcInterface, cHoleMode, cCheck, bIgnoreI2c, os );
-        //accept ( cConfigurator );
     }
 
-    void SystemController::Run ( BeBoard* pBeBoard )
-    {
-        fBeBoardInterface->Start ( pBeBoard );
-        fBeBoardInterface->ReadData ( pBeBoard, true );
-        fBeBoardInterface->Stop ( pBeBoard );
-    }
+    //void SystemController::Run ( BeBoard* pBeBoard )
+    //{
+    //fBeBoardInterface->Start ( pBeBoard );
+    //fBeBoardInterface->ReadData ( pBeBoard, true );
+    //fBeBoardInterface->Stop ( pBeBoard );
+    //}
 
     void SystemController::parseHWxml ( const std::string& pFilename, std::ostream& os )
     {
@@ -208,12 +180,12 @@ namespace Ph2_System {
             std::string cAddressTable = expandEnvironmentVariables (cBeBoardConnectionNode.attribute ( "address_table" ).value() );
 
             if (!strUhalConfig.empty() )
-		RegManager::setDummyXml(strUhalConfig);
+                RegManager::setDummyXml (strUhalConfig);
 
             std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " URI: " << BOLDYELLOW << cUri << BOLDBLUE << " Address Table: " << BOLDYELLOW << cAddressTable;
-	    std::cout << BOLDBLUE << " Type: " << BOLDYELLOW << cBoardType << RESET << std::endl;
+            std::cout << BOLDBLUE << " Type: " << BOLDYELLOW << cBoardType << RESET << std::endl;
 
-            //else std::cout << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " Type: " << BOLDYELLOW << cBoardType << RESET << std::endl;
+            //else std::cout << BOLDBLUE << "   " <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " Type: " << BOLDYELLOW << cBoardType << RESET << std::endl;
 
             // Iterate over the BeBoardRegister Nodes
             for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode/* != cBeBoardNode.child( "Module" )*/; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
@@ -223,29 +195,13 @@ namespace Ph2_System {
             }
 
             if ( !cBoardType.compare ( std::string ( "GLIB" ) ) )
-            {
-                //if (strUhalConfig.empty() )
-                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
-                //else fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
-            }
+                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
             else if ( !cBoardType.compare ( std::string ( "ICGLIB" ) ) )
-            {
-                //if (strUhalConfig.empty() )
-                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
-                //else fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
-            }
+                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
             else if ( !cBoardType.compare ( std::string ( "CTA" ) ) )
-            {
-                //if (strUhalConfig.empty() )
-                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
-                //else fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
-            }
+                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
             else if ( !cBoardType.compare ( std::string ( "ICFC7" ) ) )
-            {
-                //if (strUhalConfig.empty() )
-                    fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str(), fFileHandler );
-                //else fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( strUhalConfig.c_str(), cBeBoardNode.attribute ( "Id" ).as_int(), fFileHandler );
-            }
+                fBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
 
             /*else
               cBeBoardFWInterface = new OtherFWInterface();*/
@@ -393,6 +349,46 @@ namespace Ph2_System {
         }
     }
 
+    void SystemController::initializeFileHandler()
+    {
+        if ( fWriteHandlerEnabled )
+        {
+            std::cout << BOLDBLUE << "Saving binary raw data to: " << fRawFileName << ".fedId" << RESET << std::endl;
+
+            // here would be the ideal position to fill the file Header and call openFile when in read mode
+            for (const auto& cBoard : fBoardVector)
+            {
+                char cBoardType[8];
+                std::string cBoardTypeString = cBoard->getBoardType();
+                std::copy (cBoardTypeString.begin(), cBoardTypeString.end(), cBoardType );
+                uint32_t cBeId = cBoard->getBeId();
+                uint32_t cNCbc = 0;
+
+                for (const auto& cFe : cBoard->fModuleVector)
+                    cNCbc += cFe->getNCbc();
+
+                //nCbcDataSize is set to 0 if not explicitly set
+                uint32_t cNEventSize32 = (cBoard->getNCbcDataSize() == 0 ) ? EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32 : EVENT_HEADER_TDC_SIZE_32 + cBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32;
+
+                uint32_t cFWWord = fBeBoardInterface->getBoardInfo (cBoard);
+                uint32_t cFWMajor = (cFWWord & 0xFFFF0000) >> 16;
+                uint32_t cFWMinor = (cFWWord & 0x0000FFFF);
+
+                //with the above info fill the header
+                FileHeader cHeader (cBoardType, cFWMajor, cFWMinor, cBeId, cNCbc, cNEventSize32);
+                //construct a Handler
+                std::stringstream cBeBoardString;
+                cBeBoardString << "_fed" << std::setw (3) << cBeId;
+                std::string cFilename = fRawFileName;
+                cFilename.insert (fRawFileName.find (".raw"), cBeBoardString.str() );
+
+                FileHandler* cHandler = new FileHandler (cFilename, 'w', cHeader);
+
+                //finally set the handler
+                fBeBoardInterface->SetFileHandler (cBoard, cHandler);
+            }
+        }
+    }
 
     std::string SystemController::expandEnvironmentVariables ( std::string s )
     {

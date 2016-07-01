@@ -58,7 +58,11 @@ namespace Ph2_System {
         BeBoardVec              fBoardVector;                          /*!< Vector of Board pointers */
         BeBoardFWMap            fBeBoardFWMap;
         SettingsMap             fSettingsMap;                          /*!< Maps the settings */
+        //for reading single files
         FileHandler*            fFileHandler;
+        //for writing 1 file for each FED
+        std::string             fRawFileName;
+        bool                    fWriteHandlerEnabled;
 
       public:
         /*!
@@ -73,14 +77,14 @@ namespace Ph2_System {
          * \brief Method to construct a system controller object from another one while re-using the same members
          */
         //here all my members are set to the objects contained already in pController, I can then safely delete pController (because the destructor does not delete any of the objects)
-        void Inherit(SystemController* pController)
+        void Inherit (SystemController* pController)
         {
-             fBeBoardInterface = pController->fBeBoardInterface;
-             fCbcInterface = pController->fCbcInterface;
-             fBoardVector = pController->fBoardVector;
-             fBeBoardFWMap = pController->fBeBoardFWMap;
-             fSettingsMap = pController->fSettingsMap;
-             fFileHandler = pController->fFileHandler;
+            fBeBoardInterface = pController->fBeBoardInterface;
+            fCbcInterface = pController->fCbcInterface;
+            fBoardVector = pController->fBoardVector;
+            fBeBoardFWMap = pController->fBeBoardFWMap;
+            fSettingsMap = pController->fSettingsMap;
+            fFileHandler = pController->fFileHandler;
         }
         /*!
          * \brief Destroy the SystemController object: clear the HWDescription Objects, FWInterface etc.
@@ -91,7 +95,13 @@ namespace Ph2_System {
          * \param pFilename : the filename of the binary file
         */
         void addFileHandler ( const std::string& pFilename, char pOption );
+      private:
+        /*!
+        * \brief issues a FileHandler for writing files to every BeBoardFWInterface if addFileHandler was called
+        */
+        void initializeFileHandler ();
 
+      public:
         /*!
         * \brief read file in the a FileHandler object
          * \param pVec : the data vector
@@ -145,7 +155,7 @@ namespace Ph2_System {
 
         const BeBoard* getBoard (int index) const
         {
-            return (index < (int)fBoardVector.size() ) ? fBoardVector.at (index) : nullptr;
+            return (index < (int) fBoardVector.size() ) ? fBoardVector.at (index) : nullptr;
         }
         /*!
          * \brief Get next event from data buffer

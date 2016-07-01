@@ -73,11 +73,14 @@ namespace Ph2_HwInterface {
         else fSaveToFile = true;
     }
 
-    void ICGlibFWInterface::getBoardInfo()
+    uint32_t ICGlibFWInterface::getBoardInfo()
     {
         //std::cout << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) << std::endl;
         //std::cout << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) << std::endl;
-        std::cout << "FW version : " << ReadReg ( "user_stat.version.ver_major" ) << "." << ReadReg ( "user_stat.version.ver_minor" ) << "." << ReadReg ( "user_stat.version.ver_build" ) << std::endl;
+        uint32_t cVersionMajor, cVersionMinor;
+        cVersionMajor = ReadReg ( "user_stat.version.ver_major" );
+        cVersionMinor = ReadReg ( "user_stat.version.ver_minor" );
+        std::cout << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << ReadReg ( "user_stat.version.ver_build" ) << std::endl;
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "sys_regs.board_id" );
 
@@ -94,6 +97,9 @@ namespace Ph2_HwInterface {
 
         cChar = ( cBoardType & cMask1 );
         std::cout << cChar << std::endl;
+
+        uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 || (cVersionMinor & 0x0000FFFF) );
+        return cVersionWord;
     }
 
     void ICGlibFWInterface::ConfigureBoard ( const BeBoard* pBoard )

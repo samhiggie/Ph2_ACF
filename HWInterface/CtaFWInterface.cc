@@ -71,11 +71,13 @@ namespace Ph2_HwInterface {
     }
 
 
-    void CtaFWInterface::getBoardInfo()
+    uint32_t CtaFWInterface::getBoardInfo()
     {
         std::cout << "FMC1 present : " << ReadReg ( "status.fmc1_present" ) << std::endl;
         std::cout << "FMC2 present : " << ReadReg ( "status.fmc2_present" ) << std::endl;
-        std::cout << "FW version : " << ReadReg ( "firm_id.firmware_major" ) << "." << ReadReg ( "firm_id.firmware_minor" ) << "." << ReadReg ( "firm_id.firmware_build" ) << std::endl;
+        uint32_t cVersionMajor = ReadReg ( "firm_id.firmware_major" );
+        uint32_t cVersionMinor = ReadReg ( "firm_id.firmware_minor" );
+        std::cout << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << ReadReg ( "firm_id.firmware_build" ) << std::endl;
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "board_id" );
 
@@ -97,6 +99,8 @@ namespace Ph2_HwInterface {
         std::cout << "FMC User System ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_sys_id" ) << std::endl;
         std::cout << "FMC User Version : " << ReadReg ( "user_wb_ttc_fmc_regs.user_version" ) << std::endl;
 
+        uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 || (cVersionMinor & 0x0000FFFF) );
+        return cVersionWord;
     }
 
 
@@ -452,6 +456,7 @@ namespace Ph2_HwInterface {
             fFileHandler->set ( cData );
             fFileHandler->writeFile();
         }
+
         WriteReg ( "pc_commands.PC_config_ok", 0 );
     }
 

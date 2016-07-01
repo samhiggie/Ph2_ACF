@@ -66,11 +66,13 @@ namespace Ph2_HwInterface {
     }
 
 
-    void GlibFWInterface::getBoardInfo()
+    uint32_t GlibFWInterface::getBoardInfo()
     {
         std::cout << "FMC1 present : " << ReadReg ( "status.fmc1_present" ) << std::endl;
         std::cout << "FMC2 present : " << ReadReg ( "status.fmc2_present" ) << std::endl;
-        std::cout << "FW version : " << ReadReg ( "firm_id.firmware_major" ) << "." << ReadReg ( "firm_id.firmware_minor" ) << "." << ReadReg ( "firm_id.firmware_build" ) << std::endl;
+        uint32_t cVersionMajor = ReadReg ( "firm_id.firmware_major" );
+        uint32_t cVersionMinor = ReadReg ( "firm_id.firmware_minor" );
+        std::cout << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << ReadReg ( "firm_id.firmware_build" ) << std::endl;
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "board_id" );
 
@@ -91,7 +93,8 @@ namespace Ph2_HwInterface {
         std::cout << "FMC User Board ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_board_id" ) << std::endl;
         std::cout << "FMC User System ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_sys_id" ) << std::endl;
         std::cout << "FMC User Version : " << ReadReg ( "user_wb_ttc_fmc_regs.user_version" ) << std::endl;
-
+        uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 || (cVersionMinor & 0x0000FFFF) );
+        return cVersionWord;
     }
 
 
@@ -144,7 +147,7 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        fNthAcq=0;
+        fNthAcq = 0;
         // Since the Number of  Packets is a FW register, it should be read from the Settings Table which is one less than is actually read
         fNpackets = ReadReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ) + 1 ;
 
@@ -189,7 +192,7 @@ namespace Ph2_HwInterface {
                 std::this_thread::sleep_for ( cWait );
         }
         while ( cVal == 1 );
-	*/
+        */
         WriteReg ( fStrReadout, 0 );
     }
 
@@ -356,7 +359,8 @@ namespace Ph2_HwInterface {
             fFileHandler->set ( cData );
             fFileHandler->writeFile();
         }
-        WriteReg( "pc_commands.PC_config_ok", 0 );
+
+        WriteReg ( "pc_commands.PC_config_ok", 0 );
     }
 
 
@@ -470,7 +474,7 @@ namespace Ph2_HwInterface {
                                       bool pRead,
                                       bool pWrite )
     {
-	uint8_t uValue = pRegItem.fAddress==0 ? pRegItem.fValue&0x7F : pRegItem.fValue;
+        uint8_t uValue = pRegItem.fAddress == 0 ? pRegItem.fValue & 0x7F : pRegItem.fValue;
         // temporary for 16CBC readout FW  (Beamtest NOV 15)
         // will have to be corrected if we want to read two modules from the same GLIB
         // (pCbcId >> 3) becomes FE ID and is encoded starting from bit21 (not used so far)
@@ -485,7 +489,7 @@ namespace Ph2_HwInterface {
                                       bool pRead,
                                       bool pWrite )
     {
-	uint8_t uValue = pRegItem.fAddress==0 ? pRegItem.fValue&0x7F : pRegItem.fValue;
+        uint8_t uValue = pRegItem.fAddress == 0 ? pRegItem.fValue & 0x7F : pRegItem.fValue;
         // (pCbcId & 7) restarts CbcIDs from 0 for FE 1 (if CbcID > 7)
         pVecReq.push_back ( pFeId  << 21 | pCbcId << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | uValue );
     }
@@ -496,7 +500,8 @@ namespace Ph2_HwInterface {
                                         bool pRead,
                                         bool pWrite )
     {
-	uint8_t uValue = pRegItem.fAddress==0 ? pRegItem.fValue&0x7F : pRegItem.fValue;
+        uint8_t uValue = pRegItem.fAddress == 0 ? pRegItem.fValue & 0x7F : pRegItem.fValue;
+
         // here I need to loop over all CBCs somehow...
         for (uint8_t cCbcId = 0; cCbcId < pNCbc; cCbcId++)
             pVecReq.push_back ( ( cCbcId >> 3 ) << 21 | ( cCbcId & 7 ) << 17 | pRegItem.fPage << 16 | pRegItem.fAddress << 8 | uValue );
@@ -580,13 +585,15 @@ namespace Ph2_HwInterface {
 
     void GlibFWInterface::ReadI2C ( std::vector<uint32_t>& pVecReq )
     {
-        //Read Size + 1 to have the ffffffff word 
-        uint32_t pVecReqSize = pVecReq.size()+1;
+        //Read Size + 1 to have the ffffffff word
+        uint32_t pVecReqSize = pVecReq.size() + 1;
         pVecReq.clear();
         WriteReg ( "ctrl_sram.sram1_user_logic", 0 );
         pVecReq = ReadBlockRegValue ( "sram1", pVecReqSize );
-        if(pVecReq.back() != 0xFFFFFFFF) std::cout << "ERROR, the last word read was not 0xFFFFFFFF - not sure if I read all required words!" << std::endl;
+
+        if (pVecReq.back() != 0xFFFFFFFF) std::cout << "ERROR, the last word read was not 0xFFFFFFFF - not sure if I read all required words!" << std::endl;
         else pVecReq.pop_back();
+
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         cVecReg.push_back ( {"ctrl_sram.sram1_user_logic", 1} );
         cVecReg.push_back ( {"cbc_i2c_cmd_rq", 0} );
@@ -729,23 +736,25 @@ namespace Ph2_HwInterface {
     bool GlibFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
         //if (cWord1 != cWord2)
-            //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ( (cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
-            //std::cout << "Readback error" << std::endl;
+        //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ( (cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
+        //std::cout << "Readback error" << std::endl;
 
         return ( cWord1  == cWord2 );
     }
     /*! \brief Reboot the board */
-    void GlibFWInterface::RebootBoard(){
+    void GlibFWInterface::RebootBoard()
+    {
         if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
             throw Exception ( "This board is uploading an FPGA configuration" );
 
         if ( !fpgaConfig )
             fpgaConfig = new GlibFpgaConfig ( this );
 
-	fpgaConfig->resetBoard();
+        fpgaConfig->resetBoard();
     }
     /*! \brief Set or reset the start signal */
-    void GlibFWInterface::SetForceStart( bool bStart){
-	    WriteReg ( "pc_commands2.force_BG0_start", bStart ? 1 : 0);
+    void GlibFWInterface::SetForceStart ( bool bStart)
+    {
+        WriteReg ( "pc_commands2.force_BG0_start", bStart ? 1 : 0);
     }
 }

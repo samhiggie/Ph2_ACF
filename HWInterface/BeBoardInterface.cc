@@ -44,6 +44,12 @@ namespace Ph2_HwInterface {
         }
     }
 
+    void BeBoardInterface::SetFileHandler (BeBoard* pBoard, FileHandler* pHandler)
+    {
+        setBoard (pBoard->getBeBoardIdentifier() );
+        fBoardFW->setFileHandler (pHandler);
+    }
+
     void BeBoardInterface::WriteBoardReg ( BeBoard* pBoard, const std::string& pRegNode, const uint32_t& pVal )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
@@ -104,10 +110,10 @@ namespace Ph2_HwInterface {
         return fBoardFW->ReadBlockRegValue ( pRegNode, pSize );
     }
 
-    void BeBoardInterface::getBoardInfo ( const BeBoard* pBoard )
+    uint32_t BeBoardInterface::getBoardInfo ( const BeBoard* pBoard )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
-        fBoardFW->getBoardInfo();
+        return fBoardFW->getBoardInfo();
     }
 
     void BeBoardInterface::ConfigureBoard ( const BeBoard* pBoard )

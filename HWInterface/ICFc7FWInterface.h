@@ -86,6 +86,8 @@ namespace Ph2_HwInterface {
         ~ICFc7FWInterface()
         {
             if (fData) delete fData;
+
+            if (fFileHandler) delete fFileHandler;
         }
 
         ///////////////////////////////////////////////////////
@@ -103,7 +105,7 @@ namespace Ph2_HwInterface {
         /*!
          * \brief Get the FW info
          */
-        void getBoardInfo();
+        uint32_t getBoardInfo();
 
         BoardType getBoardType() const
         {
