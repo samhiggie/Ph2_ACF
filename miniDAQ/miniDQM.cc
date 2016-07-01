@@ -166,7 +166,9 @@ int main ( int argc, char* argv[] )
     cHWFile += cbcTypeEvtSizeMap[cbcType].second;
 
     std::cout << "HWfile=" << cHWFile << std::endl;
-    dqmh->parseHWxml ( cHWFile );
+    //dqmh->parseHWxml ( cHWFile );
+    dqmh->InitializeHw ( cHWFile );
+    //dqmh->fParser.parseHW (cHWFile, fBeBoardFWMap, fBoardVector, os);
     const BeBoard* pBoard = dqmh->getBoard ( 0 );
 
     // Now split the data buffer in events

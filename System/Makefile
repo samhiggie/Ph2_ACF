@@ -1,4 +1,4 @@
-Objs            = SystemController.o
+Objs            = FileParser.o SystemController.o
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC 

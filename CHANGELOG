@@ -131,3 +131,11 @@
 	FW register names from a private method
 	- updated and debugged IC data format
 	- Noise Scan available from calibration binary
+- 01.07.2016:
+    - Data::set() has an additonal Flag that allows playback of GlibStreamer Data
+    - FileHeader Updated
+    - FileHandler Updated
+    - FileHandler can now be instantiated for reading of a single File in SystemController
+    - for writing 1 FileHandler Instance per BeBoard is created
+    - file Headers are now included in all raw files and are marked with the BeId
+    - moved all HW Parsing features from System Controller to System/FileParser class for easier extension

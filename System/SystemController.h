@@ -13,6 +13,7 @@
 #ifndef __SYSTEMCONTROLLER_H__
 #define __SYSTEMCONTROLLER_H__
 
+#include "FileParser.h"
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWInterface/BeBoardFWInterface.h"
@@ -23,9 +24,7 @@
 #include "../HWDescription/Definition.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
-#include "../Utils/picojson.h"
 #include "../Utils/FileHandler.h"
-#include "../Utils/pugixml.hpp"
 #include "../Utils/ConsoleColor.h"
 #include <iostream>
 #include <vector>
@@ -63,6 +62,9 @@ namespace Ph2_System {
         //for writing 1 file for each FED
         std::string             fRawFileName;
         bool                    fWriteHandlerEnabled;
+
+      private:
+        FileParser fParser;
 
       public:
         /*!
@@ -141,18 +143,6 @@ namespace Ph2_System {
          */
         void Run ( BeBoard* pBeBoard );
 
-        /*!
-         * \brief converts any char array to int by automatically detecting if it is hex or dec
-         * \param pRegValue: parsed xml parmaeter char*
-         * \return converted integer
-         */
-        uint32_t convertAnyInt ( const char* pRegValue )
-        {
-            if ( std::string ( pRegValue ).find ( "0x" ) != std::string::npos ) return static_cast<uint32_t> ( strtoul ( pRegValue , 0, 16 ) );
-            else return static_cast<uint32_t> ( strtoul ( pRegValue , 0, 10 ) );
-
-        }
-
         const BeBoard* getBoard (int index) const
         {
             return (index < (int) fBoardVector.size() ) ? fBoardVector.at (index) : nullptr;
@@ -174,40 +164,6 @@ namespace Ph2_System {
         {
             return fBeBoardInterface->GetEvents ( pBoard );
         }
-
-        /*!
-         * \brief Initialize the hardware via  XML config file
-         * \param pFilename : HW Description file
-         *\param os : ostream to dump output
-         */
-        void parseHWxml ( const std::string& pFilename, std::ostream& os = std::cout );
-
-      protected:
-        /*!
-         * \convert a voltage level to it's 8bit DAC value
-         * \param pVoltage: the Voltage level
-         * \return corresponding 8-bit DAC value
-         */
-        uint32_t Vto8Bit ( float pVoltage )
-        {
-            return static_cast<uint32_t> ( pVoltage / 3.3 * 256 + 0.5 );
-        }
-
-      private:
-        /*!
-         * \brief Initialize the hardware via JSON config file
-         * \param pFilename : HW Description file
-         *\param os : ostream to dump output
-         */
-        void parseSettingsxml ( const std::string& pFilename, std::ostream& os = std::cout);
-
-        BeBoard* parseBeBoard (pugi::xml_node pNode, std::ostream& os = std::cout);
-        void parseRegister (pugi::xml_node pNode, BeBoard* pBoard, std::ostream& os = std::cout);
-        void parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os = std::cout);
-        /*! \brief Expand environment variables in string
-         * \param s input string
-         * \return Result with variables expanded */
-        std::string expandEnvironmentVariables ( std::string s ) ;
     };
 }
 
