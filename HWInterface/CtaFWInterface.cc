@@ -737,7 +737,8 @@ namespace Ph2_HwInterface {
                     std::cout << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" << std::endl;
                     this->WriteCbcBlockReg ( cWriteAgain, true);
                 }
-                else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
+                //else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
+                else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
             }
         }
         else cSuccess = true;
