@@ -13,8 +13,8 @@
        <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register>
      <!-- Decoupling capacitance to VPLUS -->
       <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>
-      <!--<CBC_Files path="./settings/"/>-->
-      <CBC_Files path="./Results/Calibration_Electron_10-06-16_13:47/"/>
+      <CBC_Files path="./settings/"/>
+      <!--<CBC_Files path="./Results/Calibration_Electron_10-06-16_13:47/"/>-->
       <CBC Id="0" configfile="FE0CBC0.txt"/>
       <CBC Id="1" configfile="FE0CBC1.txt"/>
      <!--  <CBC Id="2" configfile="FE0CBC2.txt"/>

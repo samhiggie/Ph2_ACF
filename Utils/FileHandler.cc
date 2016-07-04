@@ -9,7 +9,11 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption ) :
 {
     openFile();
 
-    if ( fOption == 'w' ) fThread = std::thread ( &FileHandler::writeFile, this );
+    if ( fOption == 'w' )
+    {
+        fThread = std::thread ( &FileHandler::writeFile, this );
+        fThread.detach();
+    }
 }
 
 FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, FileHeader pHeader ) :
@@ -21,7 +25,11 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, Fil
 {
     openFile();
 
-    if ( fOption == 'w' ) fThread = std::thread ( &FileHandler::writeFile, this );
+    if ( fOption == 'w' )
+    {
+        fThread = std::thread ( &FileHandler::writeFile, this );
+        fThread.detach();
+    }
 }
 
 //destructor
@@ -44,6 +52,7 @@ void FileHandler::set ( std::vector<uint32_t> pVector )
 
 bool FileHandler::openFile( )
 {
+
     if ( !file_open() )
     {
         fMutex.lock();

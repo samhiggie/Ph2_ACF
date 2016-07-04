@@ -43,11 +43,11 @@ namespace Ph2_System {
     {
         //if the opion is read, create a handler object and use it to read the
         //file in the method below!
-        if (pOption = 'r')
+        if (pOption == 'r')
             fFileHandler = new FileHandler ( pFilename, pOption );
         //if the option is w, remember the filename and construct a new
         //fileHandler for every Interface
-        else if (pOption = 'w')
+        else if (pOption == 'w')
         {
             fRawFileName = pFilename;
             fWriteHandlerEnabled = true;
@@ -130,9 +130,7 @@ namespace Ph2_System {
         // here would be the ideal position to fill the file Header and call openFile when in read mode
         for (const auto& cBoard : fBoardVector)
         {
-            char cBoardType[8];
             std::string cBoardTypeString = cBoard->getBoardType();
-            std::copy (cBoardTypeString.begin(), cBoardTypeString.end(), cBoardType );
             uint32_t cBeId = cBoard->getBeId();
             uint32_t cNCbc = 0;
 
@@ -147,12 +145,15 @@ namespace Ph2_System {
             uint32_t cFWMinor = (cFWWord & 0x0000FFFF);
 
             //with the above info fill the header
-            FileHeader cHeader (cBoardType, cFWMajor, cFWMinor, cBeId, cNCbc, cNEventSize32);
+            FileHeader cHeader (cBoardTypeString, cFWMajor, cFWMinor, cBeId, cNCbc, cNEventSize32);
+
             //construct a Handler
             std::stringstream cBeBoardString;
-            cBeBoardString << "_fed" << std::setw (3) << cBeId;
+            cBeBoardString << "_fed" << std::setw (3) << std::setfill ('0') << cBeId;
             std::string cFilename = fRawFileName;
-            cFilename.insert (fRawFileName.find (".raw"), cBeBoardString.str() );
+
+            if (fRawFileName.find (".raw") != std::string::npos)
+                cFilename.insert (fRawFileName.find (".raw"), cBeBoardString.str() );
 
             FileHandler* cHandler = new FileHandler (cFilename, 'w', cHeader);
 

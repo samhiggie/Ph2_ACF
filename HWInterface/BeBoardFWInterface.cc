@@ -36,15 +36,6 @@ namespace Ph2_HwInterface {
     {
     }
 
-    void BeBoardFWInterface::setFileHandler (FileHandler* pHandler)
-    {
-        if (pHandler != nullptr )
-        {
-            fFileHandler = pHandler;
-            fSaveToFile = true;
-        }
-        else std::cout << "Error, can not set NULL FileHandler" << std::endl;
-    }
 
     std::string BeBoardFWInterface::readBoardType()
     {

@@ -46,7 +46,7 @@ class FileHeader
     {
     }
 
-    FileHeader (const char* pType, const uint32_t& pFWMajor, const uint32_t& pFWMinor, const uint32_t& pBeId, const uint32_t& pNCbc, const uint32_t& pEventSize32) :
+    FileHeader (const std::string pType, const uint32_t& pFWMajor, const uint32_t& pFWMinor, const uint32_t& pBeId, const uint32_t& pNCbc, const uint32_t& pEventSize32) :
         fVersionMajor (pFWMajor),
         fVersionMinor (pFWMinor),
         fBeId (pBeId),
@@ -54,6 +54,7 @@ class FileHeader
         fEventSize32 (pEventSize32),
         fValid (true)
     {
+        strcpy (fType, pType.c_str() );
     }
 
 
@@ -84,7 +85,11 @@ class FileHeader
         cVec.push_back (fEventSize32);
         cVec.push_back (0xAAAAAAAA);
 
+        std::cout << "Board Type: ";
 
+        for (int i = 0; i < 8; i++) std::cout << fType[i] << " ";
+
+        std::cout << " FWMajor " << fVersionMajor << " FWMinor " << fVersionMinor << " BeId " << fBeId << " fNCbc " << fNCbc << " EventSize32  " << fEventSize32 << " valid: " << fValid << std::endl;
         return cVec;
     }
 
@@ -113,6 +118,7 @@ class FileHeader
             fEventSize32 = pVec.at (10);
             fValid = true;
             std::cout << "Sucess, this is a valid header!" << std::endl;
+            std::cout << "Board Type: " << fType << " FWMajor " << fVersionMajor << " FWMinor " << fVersionMinor << " BeId " << fBeId << " fNCbc " << fNCbc << " EventSize32  " << fEventSize32 << " valid: " << fValid << std::endl;
         }
         else
         {

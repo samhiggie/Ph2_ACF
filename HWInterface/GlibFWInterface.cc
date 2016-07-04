@@ -66,6 +66,16 @@ namespace Ph2_HwInterface {
     }
 
 
+    void GlibFWInterface::setFileHandler (FileHandler* pHandler)
+    {
+        if (pHandler != nullptr )
+        {
+            fFileHandler = pHandler;
+            fSaveToFile = true;
+        }
+        else std::cout << "Error, can not set NULL FileHandler" << std::endl;
+    }
+
     uint32_t GlibFWInterface::getBoardInfo()
     {
         std::cout << "FMC1 present : " << ReadReg ( "status.fmc1_present" ) << std::endl;
@@ -90,10 +100,10 @@ namespace Ph2_HwInterface {
         cChar = ( cBoardType & cMask1 );
         std::cout << cChar << std::endl;
 
-        std::cout << "FMC User Board ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_board_id" ) << std::endl;
-        std::cout << "FMC User System ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_sys_id" ) << std::endl;
-        std::cout << "FMC User Version : " << ReadReg ( "user_wb_ttc_fmc_regs.user_version" ) << std::endl;
-        uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 || (cVersionMinor & 0x0000FFFF) );
+        //std::cout << "FMC User Board ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_board_id" ) << std::endl;
+        //std::cout << "FMC User System ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_sys_id" ) << std::endl;
+        //std::cout << "FMC User Version : " << ReadReg ( "user_wb_ttc_fmc_regs.user_version" ) << std::endl;
+        uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 | (cVersionMinor & 0x0000FFFF) );
         return cVersionWord;
     }
 
