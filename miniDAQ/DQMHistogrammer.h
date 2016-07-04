@@ -32,7 +32,7 @@ class DQMHistogrammer : public Tool {
   /*! 
    * constructor 
    */
-  DQMHistogrammer(bool addTree = false, int ncol = 2, bool eventFilter = true);
+  DQMHistogrammer(bool addTree = false, int ncol = 2, bool eventFilter = true, bool addDebugHisto = true);
   
   /*! 
    * destructor 
@@ -41,26 +41,30 @@ class DQMHistogrammer : public Tool {
   /*!
    * Book histograms
    */
-  void bookHistos(const Ph2_HwInterface::EventMap& evmap, int evtsize);
+  void bookHistos(const Ph2_HwInterface::EventMap& evmap);
+  void bookEventTrendHisto(TH1I*& th, const TString& name, const TString& title, int size);
+
   /*!
    * Fill histogram
    */
-  void fillHistos(const std::vector<Event*>& event_list);
+  void fillHistos(const std::vector<Event*>& event_list, int nevtp);
   void saveHistos(const std::string& out_file);
   void resetHistos();
   void fillSensorHistos(int ncbc, const std::vector<int> & even_values, const std::vector<int>& odd_values);
-  void fillCBCHistos(long unsigned ievt, std::string cbc_hid, uint32_t error,uint32_t address, int nstub, 
+  void fillCBCHistos(unsigned long ievt, std::string cbc_hid, uint32_t error, uint32_t address, int nstub, 
 		     const std::vector<uint32_t>& channles);  
-  bool getEventFlag(const long unsigned int & ievt);
+  void fillEventTrendHisto(TH1I* th, unsigned long ival, unsigned int val);
+  bool getEventFlag(const unsigned long& ievt);
 
  private:
 
   bool addTree_;
   int nColumn_;
   bool filterEvent_;
+  bool skipDebugHist_; 
 
   uint32_t dataBuffer_;        // (32 bit words line)
-  long int pCounter_;              // (get rid of first 47 events)
+  long pCounter_;              // (get rid of first 47 events)
   uint32_t periodicity_;
   uint32_t periodicityOffset_;
   uint32_t eventBlock_;
@@ -114,10 +118,11 @@ class DQMHistogrammer : public Tool {
   TH1I* tdcCounterH_;
   TH1I* totalNumberHitsH_;
   TH1I* totalNumberStubsH_;
-  TH1I* periodicityFlagvsEvtH_;
+  TH1I* periodicityFlagVsEvtH_;
 
   TH1I* plAddPhaseDiffH_; 
   TH2I* plAddPhaseCorrH_; 
+
   TH2I* cbcErrorCorrH_; 
   TH1I* plAddPhaseDiffVsEvtH_; 
   TH1I* bunchCounterVsEvtH_; 

@@ -95,6 +95,12 @@ class FileHandler
     {
         return fFileIsOpened;
     }
+
+    void rewind()
+    {
+        if (file_open() ) fBinaryFile.seekg ( 0, std::ios::beg );
+    }
+
     /*!
      * \brief read from raw file
      * \return a vector with the data read from file

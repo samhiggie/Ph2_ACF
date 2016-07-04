@@ -88,12 +88,16 @@ int main ( int argc, char* argv[] )
     cmd.defineOptionAlternative ( "ncolumn", "u" );
 
     cmd.defineOption ( "filter", "Select Event Filtering. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "filter", "l" );
 
     cmd.defineOption ( "cbcType", "Specify the CBC type(2,4,8 or 16).", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "cbcType", "c" );
 
-    cmd.defineOption ( "nevt", "Specify number of events to be processed", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOption ( "nevt", "Specify number of events to be read from file at a time", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "nevt", "n" );
+
+    cmd.defineOption ( "skipDebugHist", "Switch off debug histograms. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "skipDebugHist", "g" );
 
     std::map<std::string, pair<int, std::string>>  cbcTypeEvtSizeMap;
     cbcTypeEvtSizeMap["2"] = { 2, XML_DESCRIPTION_FILE_2CBC };
@@ -132,34 +136,19 @@ int main ( int argc, char* argv[] )
         exit ( 4 );
     }
 
-    bool cReverse = ( cmd.foundOption ( "reverse" ) ) ? true : false;
-    bool cSwap = ( cmd.foundOption ( "swap" ) ) ? true : false;
-    bool cDQMPage = ( cmd.foundOption ( "dqm" ) ) ? true : false;
-    bool addTree = ( cmd.foundOption ( "tree" ) ) ? true : false;
+    bool cReverse  = ( cmd.foundOption ( "reverse" ) ) ? true : false;
+    bool cSwap     = ( cmd.foundOption ( "swap" ) ) ? true : false;
+    bool cDQMPage  = ( cmd.foundOption ( "dqm" ) ) ? true : false;
+    bool addTree   = ( cmd.foundOption ( "tree" ) ) ? true : false;
     int ncol       = ( cmd.foundOption ( "ncolumn" ) ) ? stoi (cmd.optionValue ( "ncolumn" ) ) : 2;
     bool evtFilter = ( cmd.foundOption ( "filter" ) ) ? true : false;
-    int maxevt     = ( cmd.foundOption ( "nevt" ) ) ? stoi (cmd.optionValue ( "nevt" ) ) : -1;
+    int maxevt     = ( cmd.foundOption ( "nevt" ) ) ? stoi (cmd.optionValue ( "nevt" ) ) : 100000;
+    bool skipHist  = ( cmd.foundOption ( "skipDebugHist" ) ) ? true : false;
 
     // Create the Histogrammer object
-    DQMHistogrammer* dqmh = new DQMHistogrammer (addTree, ncol, evtFilter);
-
+    DQMHistogrammer* dqmh = new DQMHistogrammer (addTree, ncol, evtFilter, skipHist);
     // Add File handler
     dqmh->addFileHandler ( rawFilename, 'r' );
-
-    // Read the raw data file
-    std::vector<uint32_t> dataVec;
-    int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32 * cbcTypeEvtSizeMap[cbcType].first;
-    //long nbytes = (maxevt > -1) ? maxevt * eventSize * 4 : -1;
-    dqmh->readFile (dataVec);
-
-    //alternatively in packets and pseudocode
-    //for(uint32_t cCounter = 0; cCounter ...)
-    //{
-    //cSystemController.readFile(dataVec, pEventSize32 * 10);
-    //.
-    //.
-    //}
-
     // Build the hardware setup
     std::string cHWFile = getenv ( "BASE_DIR" );
     cHWFile += "/";
@@ -171,26 +160,50 @@ int main ( int argc, char* argv[] )
     //dqmh->fParser.parseHW (cHWFile, fBeBoardFWMap, fBoardVector, os);
     const BeBoard* pBoard = dqmh->getBoard ( 0 );
 
-    // Now split the data buffer in events
-    Data d;
-    int nEvents = dataVec.size() / eventSize;
-    std::cout << "eventSize = "  << eventSize
-              << ", nEvents = " << nEvents
-              << ", maxEvents = " << maxevt
-              << std::endl;
+    // Read the first event from the raw data file, needed to retrieve the event map
+    std::vector<uint32_t> dataVec;
+    int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32 * cbcTypeEvtSizeMap[cbcType].first;
+    dqmh->readFile (dataVec, (cDQMPage) ? eventSize : 0);
 
+    // Now split the data buffer in events
+    int nEvents = dataVec.size() / eventSize;
+
+    Data d;
     //call the Data::set() method - here is where i have to know the swap opitions
     d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
     const std::vector<Event*>& elist = d.GetEvents ( pBoard );
 
-    if ( cDQMPage && elist.size() > 0 )
+    if ( cDQMPage )
     {
         gROOT->SetBatch ( true );
-        dqmh->bookHistos (elist[0]->GetEventMap(), elist.size() );
-        dqmh->fillHistos (elist);
+        dqmh->bookHistos (elist.at (0)->GetEventMap() );
+
+        // now read the whole file in chunks of maxevt
+        dqmh->getFileHandler()->rewind();
+        long ntotevt = 0;
+
+        while ( 1 )
+        {
+            dataVec.clear();
+            dqmh->readFile (dataVec, maxevt * eventSize);
+            nEvents = dataVec.size() / eventSize;
+
+            if (!nEvents) break;
+
+            d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
+            const std::vector<Event*>& evlist = d.GetEvents ( pBoard );
+            dqmh->fillHistos (evlist, ntotevt);
+            ntotevt += nEvents;
+            std::cout << "eventSize = "  << eventSize
+                      << ", eventsRead = " << nEvents
+                      << ", totalEventsRead = " << ntotevt
+                      << std::endl;
+
+            if ( !dqmh->getFileHandler()->file_open() ) break;
+        }
 
         // Create the DQM plots and generate the root file
-        // first of all strip the folder name
+        // first of all, strip the folder name
         std::vector<std::string> tokens;
         tokenize ( rawFilename, tokens, "/" );
         std::string fname = tokens.back();
@@ -201,8 +214,9 @@ int main ( int argc, char* argv[] )
         std::string runLabel = tokens[0];
         std::string dqmFilename =  runLabel + "_dqm.root";
 
-        dqmh->saveHistos (dqmFilename);
+        dqmh->saveHistos (dqmFilename); // save histograms to file
 
+        // find the folder (i.e DQM page) where the histograms will be published
         std::string cDirBasePath;
 
         if ( cmd.foundOption ( "output" ) )
@@ -217,6 +231,7 @@ int main ( int argc, char* argv[] )
         RootWeb::makeDQMmonitor ( dqmFilename, cDirBasePath, runLabel );
         std::cout << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath << std::endl;
     }
+
     else dumpEvents ( elist );
 
     delete dqmh;

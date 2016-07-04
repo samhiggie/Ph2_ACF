@@ -18,66 +18,35 @@
 #include "TTree.h"
 #include "TPaveStats.h"
 #include "TStyle.h"
+#include "TIterator.h"
 #include "../Utils/Event.h"
 
 #include "DQMHistogrammer.h"
 
-DQMHistogrammer::DQMHistogrammer(bool addTree, int ncol, bool eventFilter) 
-  : addTree_(addTree), nColumn_(ncol), filterEvent_(eventFilter) 
+DQMHistogrammer::DQMHistogrammer(bool addTree, int ncol, bool eventFilter, bool skipHist) : 
+  addTree_(addTree), 
+  nColumn_(ncol), 
+  filterEvent_(eventFilter), 
+  skipDebugHist_(skipHist) 
 {   
   dataBuffer_        = 42;         // (32 bit words line)
-  pCounter_          = 1976;          // (get rid of first 47 events)
+  pCounter_          = 1976;       // (get rid of first 47 events)
   periodicity_       = 344;
   periodicityOffset_ = 600;    
   eventBlock_        = 10000;    
   skipEvents_        = 47;    
 }
 
-DQMHistogrammer::~DQMHistogrammer() {
-  if (hitCorrC0H_) delete hitCorrC0H_;
-  if (hitCorrC1H_) delete hitCorrC1H_;
-  if (dut0HitProfH_) delete dut0HitProfH_;
-  if (dut1HitProfH_) delete dut1HitProfH_;
-  if (dut0HitProfUnfoldedH_) delete dut0HitProfUnfoldedH_;
-  if (dut1HitProfUnfoldedH_) delete dut1HitProfUnfoldedH_;
-  if (dut0C0HitProfH_) delete dut0C0HitProfH_;
-  if (dut0C1HitProfH_) delete dut0C1HitProfH_;
-  if (dut1C0HitProfH_) delete dut1C0HitProfH_;
-  if (dut1C1HitProfH_) delete dut1C1HitProfH_;
-  if (sensCorrH_) delete sensCorrH_;
-  if (l1AcceptH_) delete l1AcceptH_;
-  if (tdcCounterH_) delete tdcCounterH_;
-  if (totalNumberHitsH_) delete totalNumberHitsH_;
-  if (totalNumberStubsH_) delete totalNumberStubsH_;
-  if (plAddPhaseDiffH_)   delete plAddPhaseDiffH_; 
-  if (plAddPhaseCorrH_) delete plAddPhaseCorrH_; 
-  if (plAddPhaseDiffVsEvtH_) delete plAddPhaseDiffVsEvtH_;
-  if (cbcErrorCorrH_) delete cbcErrorCorrH_; 
-  if (bunchCounterVsEvtH_) delete bunchCounterVsEvtH_; 
-  if (orbitCounterVsEvtH_) delete orbitCounterVsEvtH_; 
-  if (lumiCounterVsEvtH_) delete lumiCounterVsEvtH_; 
-  if (l1AcceptVsEvtH_) delete l1AcceptVsEvtH_; 
-  if (cbcCounterVsEvtH_) delete cbcCounterVsEvtH_;
-  if (tdcCounterVsEvtH_) delete tdcCounterVsEvtH_;
-  if(periodicityFlagvsEvtH_) delete periodicityFlagvsEvtH_;
-
-  for ( auto& imap : cbcHMap_ ) {
-    CBCHistos& cbc_h = imap.second;
-    delete cbc_h.errBitH;
-    delete cbc_h.errBitVsEvtH;
-    delete cbc_h.plAddH;
-    delete cbc_h.plAddVsEvtH;
-
-    delete cbc_h.nStubsH;
-    delete cbc_h.evenChnOccuH;
-    delete cbc_h.oddChnOccuH;
-    delete cbc_h.tdcVsEvenChnOccuH;
-    delete cbc_h.tdcVsOddChnOccuH;    
+DQMHistogrammer::~DQMHistogrammer() 
+{
+  TIter next(gROOT->GetList());
+  TObject *obj;
+  while ((obj = next())) {
+    if (obj->InheritsFrom("TH1") || obj->InheritsFrom("TTree")) delete obj;
   }
-  if (addTree_ && tree_) delete tree_;
 }
-void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evtsize) {
-
+void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap) 
+{
   sensCorrH_ = new TH1I( "sensorHitcorr", "Sensor Hit Correlation", 4, 0.5, 4.5 );
   sensCorrH_->GetXaxis()->SetBinLabel(1, "No hits");
   sensCorrH_->GetXaxis()->SetBinLabel(2, "Even & !Odd");
@@ -88,6 +57,8 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evt
   tdcCounterH_= new TH1I( "tdc", "TDC counter", 17, -0.5, 16.5 );
 
   uint16_t nCbc = 0;
+  int evtsize = 100000;
+
   for ( auto const& it : evmap ) {
     uint32_t feId = it.first;
 
@@ -102,15 +73,17 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evt
       std::string key = ss.str();
       CBCHistos cbc_h;
       cbc_h.errBitH = new TH1I( TString( "errbit-"+key ), TString("Error bit ("+key+")"), 6, -0.5, 5.5 );
-      cbc_h.errBitVsEvtH = new TH1I( TString( "errbit_vs_evt-"+key ), TString("Error bit vs Event Number ("+key+")"), evtsize, 0.5, evtsize+0.5);
       cbc_h.plAddH = new TH1I( TString( "PLAddress-"+key ), TString("Pipeline Address ("+key+")"), 256, -0.5, 255.5 );
-      cbc_h.plAddVsEvtH = new TH1I( TString( "PLAddress_vs_evt-"+key ), TString("Pipeline Address vs Event Number ("+key+")"), evtsize, 0.5, evtsize+0.5);
       cbc_h.nStubsH = new TH1I( TString( "nstubs-"+key ), TString("No. Of Stubs ("+key+")"), 21, -0.5, 20.5 );
       cbc_h.evenChnOccuH = new TH1I( TString( "chOccupancy_even-"+key ), TString("Even Channel Occupancy ("+key+")"), 127, 0.5, 127.5 );
       cbc_h.oddChnOccuH = new TH1I( TString( "chOccupancy_odd-"+key ), TString("Odd Channel Occupancy ("+key+")"), 127, 0.5, 127.5 );
-      cbc_h.tdcVsEvenChnOccuH  = new TProfile( TString( "tdcVsOccupancy_even-"+key ), TString("TDC vs Even Channel Occupancy ("+key+")"), 256, -0.5, 255.5, 0, 127.);
-      cbc_h.tdcVsOddChnOccuH  = new TProfile( TString( "tdcVsOccupancy_odd-"+key ), TString("TDC vs Odd Channel Occupancy ("+key+")"), 256, -0.5, 255.5, 0, 127.);
+      cbc_h.tdcVsEvenChnOccuH = new TProfile( TString( "tdcVsOccupancy_even-"+key ), TString("TDC vs Even Channel Occupancy ("+key+")"), 256, -0.5, 255.5, 0, 127.);
+      cbc_h.tdcVsOddChnOccuH = new TProfile( TString( "tdcVsOccupancy_odd-"+key ), TString("TDC vs Odd Channel Occupancy ("+key+")"), 256, -0.5, 255.5, 0, 127.);
 
+      if (!skipDebugHist_) {
+        bookEventTrendHisto(cbc_h.errBitVsEvtH, TString( "errbit_vs_evt-"+key ), TString("Error bit vs Event Number ("+key+")"), evtsize);
+	bookEventTrendHisto(cbc_h.plAddVsEvtH, TString( "PLAddress_vs_evt-"+key ), TString("Pipeline Address vs Event Number ("+key+")"), evtsize);
+      }
       cbcHMap_.insert({key, cbc_h});
     }
   }
@@ -120,9 +93,8 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evt
 
   std::cout << " nCbc " << nCbc << " nbin " << nbin << std::endl;
 
-
-  dut0HitProfH_   = new TH2I( "evenSensor_hitprofile", "Even Sensor Hitmap", nbin, 0.5, nbin+0.5, nColumn_, -0.5, nColumn_-0.5);
-  dut1HitProfH_   = new TH2I( "oddSensor_hitprofile", "Odd Sensor Hitmap",   nbin, 0.5, nbin+0.5, nColumn_, -0.5, nColumn_-0.5);
+  dut0HitProfH_ = new TH2I( "evenSensor_hitprofile", "Even Sensor Hitmap", nbin, 0.5, nbin+0.5, nColumn_, -0.5, nColumn_-0.5);
+  dut1HitProfH_ = new TH2I( "oddSensor_hitprofile", "Odd Sensor Hitmap",   nbin, 0.5, nbin+0.5, nColumn_, -0.5, nColumn_-0.5);
 
   if (nColumn_ == 2) {
     hitCorrC0H_ = new TH2I( "topBottomHitCorrC0", "Hit Correlation between Top Bottom Sensors in Column 0", nbin, 0.5, nbin+0.5, nbin, 0.5, nbin+0.5);
@@ -132,12 +104,12 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evt
     hitDelCorrC0H = new TH1D("topBottomHitDeltaCorrC0","Delta Hit Position between Top and Bottom Sensors in Column0",1+2*nbin,-0.5-nbin,0.5+nbin);
     hitDelCorrC1H = new TH1D("topBottomHitDeltaCorrC1", "Delta Hit Position between Top and Bottom Sensors in Column1",1+2*nbin,-0.5-nbin,0.5+nbin);
 
-    dut0HitProfUnfoldedH_   = new TH1I( "evenSensor_hitprofile_unfold", "Even Sensor Unfolded Hitmap", nbin*2, 0.5, nbin*2+0.5);
-    dut1HitProfUnfoldedH_   = new TH1I( "oddSensor_hitprofile_unfold", "Odd Sensor Unfolded Hitmap",   nbin*2, 0.5, nbin*2+0.5);
+    dut0HitProfUnfoldedH_ = new TH1I( "evenSensor_hitprofile_unfold", "Even Sensor Unfolded Hitmap", nbin*2, 0.5, nbin*2+0.5);
+    dut1HitProfUnfoldedH_ = new TH1I( "oddSensor_hitprofile_unfold", "Odd Sensor Unfolded Hitmap",   nbin*2, 0.5, nbin*2+0.5);
     dut0C0HitProfH_ = new TH1I( "evenSensor_hitprofile_col0", "Even Sensor Hitmap(col 0)", nbin, 0.5, nbin+0.5);
     dut0C1HitProfH_ = new TH1I( "evenSensor_hitprofile_col1", "Even Sensor Hitmap(col 1)", nbin, 0.5, nbin+0.5);
-    dut1C0HitProfH_   = new TH1I( "oddSensor_hitprofile_col0", "Odd Sensor Hitmap(col 0)",   nbin, 0.5, nbin+0.5);
-    dut1C1HitProfH_   = new TH1I( "oddSensor_hitprofile_col1", "Odd Sensor Hitmap (col 1)",  nbin, 0.5, nbin+0.5);
+    dut1C0HitProfH_ = new TH1I( "oddSensor_hitprofile_col0", "Odd Sensor Hitmap(col 0)",   nbin, 0.5, nbin+0.5);
+    dut1C1HitProfH_ = new TH1I( "oddSensor_hitprofile_col1", "Odd Sensor Hitmap (col 1)",  nbin, 0.5, nbin+0.5);
   } else {
     hitCorrC0H_ = new TH2I( "topBottomHitCorrC0", "Hit Correlation between Top Bottom Sensors in Column 0", nbin, 0.5, nbin+0.5, nbin, 0.5, nbin+0.5);
     hitCorrC0H_->SetStats(false);
@@ -148,9 +120,9 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evt
     dut0HitProfUnfoldedH_ = 0;
     dut1HitProfUnfoldedH_ = 0;
     dut0C0HitProfH_ = new TH1I( "evenSensor_hitprofile_col0", "Even Sensor Hitmap(col 0)", nbin, 0.5, nbin+0.5);
-    dut1C0HitProfH_   = new TH1I( "oddSensor_hitprofile_col0", "Odd Sensor Hitmap(col 0)",   nbin, 0.5, nbin+0.5);
-    dut0C1HitProfH_  = 0;
-    dut0C1HitProfH_  = 0;
+    dut1C0HitProfH_ = new TH1I( "oddSensor_hitprofile_col0", "Odd Sensor Hitmap(col 0)",   nbin, 0.5, nbin+0.5);
+    dut0C1HitProfH_ = 0;
+    dut0C1HitProfH_ = 0;
   }
 
   totalNumberHitsH_ = new TH1I("tot_hits", "Total Number of Hits", 101, -0.5, 100.5);
@@ -158,18 +130,21 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evt
   
   plAddPhaseDiffH_ = new TH1I("plAddressPhasedDiff", "Pipeline Address Phase difference ", 256, -0.5, 255.5);
   plAddPhaseCorrH_ = new TH2I("plAddressPhasedCorr", "Pipeline Address Phase : CBC0 vs CBC1 ", 256, -0.5, 255.5, 256, -0.5, 255.5);
-  plAddPhaseDiffVsEvtH_ = new TH1I("plAddressPhasedDiffVsEvt", "Pipeline Address Phase difference vs Event ", evtsize, 0.5, evtsize+0.5);
-  cbcErrorCorrH_      = new TH2I("cbcErrorCorr", "CBC Error Cooreation : CBC0 vs CBC1 ", 5, -0.5, 4.5, 5, -0.5, 4.5);
-  bunchCounterVsEvtH_ = new TH1I("bunchCounterVsEvt", "Bunch Counter vs Event ", evtsize, 0.5, evtsize+0.5); 
-  orbitCounterVsEvtH_ = new TH1I("orbitCounterVsEvt", "Orbit Counter vs Event ", evtsize, 0.5, evtsize+0.5); 
-  lumiCounterVsEvtH_  = new TH1I("lumiCounterVsEvt", "Lumi Counter vs Event ", evtsize, 0.5, evtsize+0.5);  
-  l1AcceptVsEvtH_     = new TH1I("l1AcceptCounterVsEvt", "L1 Accept Counter vs Event ", evtsize, 0.5, evtsize+0.5);  
-  cbcCounterVsEvtH_   = new TH1I("cbcCounterVsEvt", "CBC Counter vs Event ", evtsize, 0.5, evtsize+0.5); 
-  tdcCounterVsEvtH_   = new TH1I("tdcCounterVsEvt", "TDC Counter vs Event ", evtsize, 0.5, evtsize+0.5); 
-  periodicityFlagvsEvtH_ = new TH1I("pflagVsEvt", "PeriodicityError Flag vs Event ", evtsize, 0.5, evtsize+0.5);
+  cbcErrorCorrH_   = new TH2I("cbcErrorCorr", "CBC Error Cooreation : CBC0 vs CBC1 ", 5, -0.5, 4.5, 5, -0.5, 4.5);
 
-  cbcErrorVal_  = new std::vector<unsigned int>();
-  cbcPLAddressVal_  = new std::vector<unsigned int>();
+  if (!skipDebugHist_) {
+    bookEventTrendHisto(plAddPhaseDiffVsEvtH_, TString("plAddressPhasedDiffVsEvt"), TString("Pipeline Address Phase difference vs Event "), evtsize);
+    bookEventTrendHisto(bunchCounterVsEvtH_, TString("bunchCounterVsEvt"), TString("Bunch Counter vs Event "), evtsize); 
+    bookEventTrendHisto(orbitCounterVsEvtH_, TString("orbitCounterVsEvt"), TString("Orbit Counter vs Event "), evtsize);
+    bookEventTrendHisto(lumiCounterVsEvtH_, TString("lumiCounterVsEvt"), TString("Lumi Counter vs Event "), evtsize);  
+    bookEventTrendHisto(l1AcceptVsEvtH_, TString("l1AcceptCounterVsEvt"), TString("L1 Accept Counter vs Event "), evtsize);
+    bookEventTrendHisto(cbcCounterVsEvtH_, TString("cbcCounterVsEvt"), TString("CBC Counter vs Event "), evtsize); 
+    bookEventTrendHisto(tdcCounterVsEvtH_, TString("tdcCounterVsEvt"), TString("TDC Counter vs Event "), evtsize); 
+    bookEventTrendHisto(periodicityFlagVsEvtH_, TString("pflagVsEvt"), TString("PeriodicityError Flag vs Event "), evtsize);
+  }
+
+  cbcErrorVal_ = new std::vector<unsigned int>();
+  cbcPLAddressVal_ = new std::vector<unsigned int>();
 
   dut0C0chData_ = new std::vector<unsigned int>();
   dut0C1chData_ = new std::vector<unsigned int>();
@@ -179,10 +154,10 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evt
   // optionally add a Tree 
   if (addTree_) {
     tree_ = new TTree("sensorHitTree", "sensorHitTree from RAW files");
-    tree_->Branch("l1Accept",  &l1Accept_);
-    tree_->Branch("tdcCounter",  &tdcCounter_);
-    tree_->Branch("totalHits",  &totalHits_);
-    tree_->Branch("totalStubs",  &totalStubs_);
+    tree_->Branch("l1Accept", &l1Accept_);
+    tree_->Branch("tdcCounter", &tdcCounter_);
+    tree_->Branch("totalHits", &totalHits_);
+    tree_->Branch("totalStubs", &totalStubs_);
     tree_->Branch("eventFlag", &eventFlag_);
     tree_->Branch("eventCbc", &eventCountCBC_);
     tree_->Branch("cbcError", "std::vector<unsigned int>", &cbcErrorVal_);
@@ -193,11 +168,10 @@ void DQMHistogrammer::bookHistos(const Ph2_HwInterface::EventMap& evmap, int evt
     tree_->Branch("dut1Ch1data", "std::vector<unsigned int>", &dut1C1chData_);
   }
 }  
-void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
-  long unsigned int ival = 0;
+void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list, int nevtp) {
+  unsigned long ival = nevtp; // as the files is read in chunks
   eventFlag_ = true;  
   for ( const auto& ev : event_list ) {
-    
     dut0C0chData_->clear();
     dut0C1chData_->clear();
     dut1C0chData_->clear();
@@ -207,12 +181,11 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
 
     if (filterEvent_) {
       eventFlag_ = getEventFlag(ival);
-      if (!eventFlag_) periodicityFlagvsEvtH_->Fill(ival);
+      if (!eventFlag_) fillEventTrendHisto(periodicityFlagVsEvtH_, ival, 1);
     } 
 
     tdcCounter_ = ev->GetTDC();
     l1Accept_ =  ev->GetEventCount();
-    
     eventCountCBC_ = ev->GetEventCountCBC();
     
     totalHits_ = 0;
@@ -222,13 +195,12 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
     cbcErrorVal_->clear();
     cbcPLAddressVal_->clear();
     const EventMap& evmap = ev->GetEventMap();
-    for ( auto const& it : evmap ) {
-      
+    for ( auto const& it: evmap ) {
       uint32_t feId = it.first;
       uint32_t ncbc = 0;
       std::vector<int> oddChVec;
       std::vector<int> evenChVec;
-      for ( auto const& jt : it.second ) {
+      for ( auto const& jt: it.second ) {
         ncbc++;
         if (ncbc > cbcHMap_.size()) continue;
 	uint32_t cbcId = jt.first;
@@ -263,12 +235,12 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
 	    }
 	    if ( ch % 2 == 0 ){
 	      evenChVec.push_back(hitposX);
-	      if (hitposY==0) dut0C0chData_->push_back(hitposX);
-	      else if (hitposY==1) dut0C1chData_->push_back(hitposX);
+	      if (hitposY == 0) dut0C0chData_->push_back(hitposX);
+	      else if (hitposY == 1) dut0C1chData_->push_back(hitposX);
 	    } else {
 	      oddChVec.push_back(hitposX);
-	      if (hitposY==0)  dut1C0chData_->push_back(hitposX); 
-	      else if (hitposY==1) dut1C1chData_->push_back(hitposX);
+	      if (hitposY == 0)  dut1C0chData_->push_back(hitposX); 
+	      else if (hitposY == 1) dut1C1chData_->push_back(hitposX);
 	    }
 	  }
 	} // end of loop on channel data of a CBC
@@ -283,64 +255,64 @@ void DQMHistogrammer::fillHistos(const std::vector<Event*>& event_list) {
 	  uint32_t phase = (cbcPLAddressVal_->at(1) - cbcPLAddressVal_->at(0) + 256) % 256;
 	  if (plAddPhaseDiffH_) plAddPhaseDiffH_->Fill(phase);
 	  if (plAddPhaseCorrH_) plAddPhaseCorrH_->Fill(cbcPLAddressVal_->at(0), cbcPLAddressVal_->at(1));
-	  if (plAddPhaseDiffVsEvtH_) plAddPhaseDiffVsEvtH_->SetBinContent(ival, static_cast<double>(phase));
 	  if (cbcErrorCorrH_) cbcErrorCorrH_->Fill(cbcErrorVal_->at(0), cbcErrorVal_->at(1));
+	  fillEventTrendHisto(plAddPhaseDiffVsEvtH_, ival, phase);
 	}
-	totalNumberHitsH_->Fill(totalHits_);    
-	totalNumberStubsH_->Fill(totalStubs_);  
+	totalNumberHitsH_->Fill(totalHits_);
+	totalNumberStubsH_->Fill(totalStubs_);
       }
     }
     if (eventFlag_) {
       tdcCounterH_->Fill( tdcCounter_ );
       l1AcceptH_->Fill( l1Accept_ );
       
-      bunchCounterVsEvtH_->SetBinContent(ival,ev->GetBunch());
-      orbitCounterVsEvtH_->SetBinContent(ival,ev->GetOrbit());
-      lumiCounterVsEvtH_->SetBinContent(ival, ev->GetLumi());
-      l1AcceptVsEvtH_->SetBinContent(ival, l1Accept_);
-      cbcCounterVsEvtH_->SetBinContent(ival, ev->GetEventCountCBC());
-      tdcCounterVsEvtH_->SetBinContent(ival, tdcCounter_);
+      fillEventTrendHisto(bunchCounterVsEvtH_, ival, ev->GetBunch());
+      fillEventTrendHisto(orbitCounterVsEvtH_, ival, ev->GetOrbit());
+      fillEventTrendHisto(lumiCounterVsEvtH_, ival, ev->GetLumi());
+      fillEventTrendHisto(l1AcceptVsEvtH_, ival, l1Accept_);
+      fillEventTrendHisto(cbcCounterVsEvtH_, ival, ev->GetEventCountCBC());
+      fillEventTrendHisto(tdcCounterVsEvtH_, ival, tdcCounter_);
     }
     if (addTree_) tree_->Fill();
   }//end of loop over events
-  std::cout << "Nevents Processed = " << ival << "Pcounter=" << pCounter_-1 << std::endl;
+  //std::cout << "Nevents Processed = " << ival << " Pcounter = " << pCounter_ - 1 << std::endl;
 }
-void DQMHistogrammer::fillCBCHistos(long unsigned ievt, std::string cbc_hid, uint32_t error,uint32_t address, 
+void DQMHistogrammer::fillCBCHistos(unsigned long ievt, std::string cbc_hid, uint32_t error, uint32_t address, 
 				    int nstub, const std::vector<uint32_t>& channels) {  
   
   std::map<std::string, CBCHistos>::iterator iCBCH = cbcHMap_.find(cbc_hid);
   if (iCBCH != cbcHMap_.end()) {
     CBCHistos& cbc_h = iCBCH->second;
     cbc_h.errBitH->Fill( error);
-    cbc_h.errBitVsEvtH->SetBinContent(ievt, error);
+    fillEventTrendHisto(cbc_h.errBitVsEvtH, ievt, error);
     cbc_h.plAddH->Fill(address);
-    cbc_h.plAddVsEvtH->SetBinContent(ievt, address );
+    fillEventTrendHisto(cbc_h.plAddVsEvtH, ievt, address);
     cbc_h.nStubsH->Fill(nstub);
     
-    for (auto ch : channels) {
+    for (auto ch: channels) {
       uint32_t ichan = ch / 2 + 1;
       if ((ch % 2) == 0)  cbc_h.evenChnOccuH->Fill(ichan );
       else cbc_h.oddChnOccuH->Fill(ichan );
     }
   }
 }
-void DQMHistogrammer::fillSensorHistos(int ncbc, const std::vector<int> & even_values, const std::vector<int>& odd_values){
+void DQMHistogrammer::fillSensorHistos(int ncbc, const std::vector<int>& even_values, const std::vector<int>& odd_values) {
   int xmax;
-  if (nColumn_ == 1) xmax = ncbc *127;
-  else xmax = ncbc/2 *127;
+  if (nColumn_ == 1) xmax = ncbc*127;
+  else xmax = ncbc/2*127;
   int yval;
-  for (auto  xval : even_values) {
+  for (auto xval: even_values) {
     if (xval <= xmax) yval = 0;
     dut0HitProfH_->Fill(xval, yval);
-    if (yval==0) dut0C0HitProfH_->Fill(xval);
-    else if (yval==1) dut0C1HitProfH_->Fill(xval);
+    if (yval == 0) dut0C0HitProfH_->Fill(xval);
+    else if (yval == 1) dut0C1HitProfH_->Fill(xval);
     if (dut0HitProfUnfoldedH_) dut0HitProfUnfoldedH_->Fill(yval*127*8 + xval);
   }
-  for (auto  xval : odd_values) {
+  for (auto xval: odd_values) {
     if (xval <= xmax) yval = 0;
     dut1HitProfH_->Fill(xval, yval);
-    if (yval==0)  dut1C0HitProfH_->Fill(xval);
-    else if (yval==1)  dut1C1HitProfH_->Fill(xval);
+    if (yval == 0)  dut1C0HitProfH_->Fill(xval);
+    else if (yval == 1) dut1C1HitProfH_->Fill(xval);
     if (dut1HitProfUnfoldedH_) dut1HitProfUnfoldedH_->Fill(yval*127*8 + xval);
   }  
   if (even_values.size() == odd_values.size()) {
@@ -366,21 +338,6 @@ void DQMHistogrammer::saveHistos(const std::string& out_file){
   fout->mkdir("Sensor");
   fout->cd("Sensor");
 
-  /* gStyle->SetOptFit(111);
-  double delta = 6.; // 6 strips
-  if (hitDelCorrC0H) {
-    hitDelCorrC0H->Fit("gaus", "", "", hitDelCorrC0H->GetMean()-delta, hitDelCorrC0H->GetMean()+delta);
-    TPaveStats* hStat0 = dynamic_cast<TPaveStats*>( hitDelCorrC0H->FindObject("stats"));
-    hStat0->SetX1NDC(.6);
-    hStat0->SetY1NDC(.3);
-  }  
-  if (hitDelCorrC1H) {
-    hitDelCorrC1H->Fit("gaus", "", "", hitDelCorrC1H->GetMean()-delta, hitDelCorrC1H->GetMean()+delta);
-    TPaveStats* hStat1 = dynamic_cast<TPaveStats*>( hitDelCorrC1H->FindObject("stats"));
-    hStat1->SetX1NDC(.6);
-    hStat1->SetY1NDC(.3);
-    } */ 
-
   if (hitCorrC0H_) hitCorrC0H_->Write();
   if (hitCorrC1H_) hitCorrC1H_->Write();
   if (hitDelCorrC0H) hitDelCorrC0H->Write();
@@ -395,16 +352,15 @@ void DQMHistogrammer::saveHistos(const std::string& out_file){
   if (dut1C1HitProfH_) dut1C1HitProfH_->Write();
   if (sensCorrH_) sensCorrH_->Write();
 
-
   // CBC sections
-  for ( auto& imap : cbcHMap_ ) {
+  for ( auto& imap: cbcHMap_ ) {
     CBCHistos& cbc_h = imap.second;
     fout->mkdir( imap.first.c_str() );
     fout->cd( imap.first.c_str() );
     cbc_h.errBitH->Write();
-    cbc_h.errBitVsEvtH->Write();
+    if (!skipDebugHist_ && cbc_h.errBitVsEvtH) cbc_h.errBitVsEvtH->Write();
     cbc_h.plAddH->Write();
-    cbc_h.plAddVsEvtH->Write();
+    if (!skipDebugHist_ && cbc_h.plAddVsEvtH) cbc_h.plAddVsEvtH->Write();
     cbc_h.nStubsH->Write();
     cbc_h.evenChnOccuH->Write();
     cbc_h.oddChnOccuH->Write();
@@ -419,16 +375,19 @@ void DQMHistogrammer::saveHistos(const std::string& out_file){
   if (totalNumberHitsH_) totalNumberHitsH_->Write();
   if (totalNumberStubsH_) totalNumberStubsH_->Write();
   if (plAddPhaseDiffH_) plAddPhaseDiffH_->Write(); 
-  if (plAddPhaseCorrH_) plAddPhaseCorrH_->Write(); 
-  if (plAddPhaseDiffVsEvtH_) plAddPhaseDiffVsEvtH_->Write();
   if (cbcErrorCorrH_) cbcErrorCorrH_->Write(); 
-  if (bunchCounterVsEvtH_) bunchCounterVsEvtH_->Write(); 
-  if (orbitCounterVsEvtH_) orbitCounterVsEvtH_->Write(); 
-  if (lumiCounterVsEvtH_) lumiCounterVsEvtH_->Write(); 
-  if (l1AcceptVsEvtH_) l1AcceptVsEvtH_->Write(); 
-  if (cbcCounterVsEvtH_) cbcCounterVsEvtH_->Write();
-  if (tdcCounterVsEvtH_) tdcCounterVsEvtH_->Write();
-  if(periodicityFlagvsEvtH_)  periodicityFlagvsEvtH_->Write();
+  if (plAddPhaseCorrH_) plAddPhaseCorrH_->Write(); 
+
+  if (!skipDebugHist_) {
+    if (plAddPhaseDiffVsEvtH_) plAddPhaseDiffVsEvtH_->Write();
+    if (bunchCounterVsEvtH_) bunchCounterVsEvtH_->Write(); 
+    if (orbitCounterVsEvtH_) orbitCounterVsEvtH_->Write(); 
+    if (lumiCounterVsEvtH_) lumiCounterVsEvtH_->Write(); 
+    if (l1AcceptVsEvtH_) l1AcceptVsEvtH_->Write(); 
+    if (cbcCounterVsEvtH_) cbcCounterVsEvtH_->Write();
+    if (tdcCounterVsEvtH_) tdcCounterVsEvtH_->Write();
+    if (periodicityFlagVsEvtH_) periodicityFlagVsEvtH_->Write();
+  }  
   fout->Close();
 
   // Optionally save the tree
@@ -439,64 +398,30 @@ void DQMHistogrammer::saveHistos(const std::string& out_file){
     fout2->Close();
   }
 }
-bool DQMHistogrammer::getEventFlag(const long unsigned int & ievt) {
+bool DQMHistogrammer::getEventFlag(const unsigned long& ievt) {
   bool flag = true;
-  if ( (ievt%eventBlock_) == 0) pCounter_ = ievt*dataBuffer_ + periodicityOffset_;
+  if ( (ievt%eventBlock_) == 0) pCounter_ = ievt * dataBuffer_ + periodicityOffset_;
   if (ievt <= skipEvents_) flag = false;
-  else if (pCounter_ <= ievt*dataBuffer_) {
+  else if (pCounter_ <= ievt * dataBuffer_) {
     pCounter_ += periodicity_;
     flag = false;
   }
   return flag;
 }
 void DQMHistogrammer::resetHistos() {
-  if (hitCorrC0H_) hitCorrC0H_->Reset();
-  if (hitCorrC1H_) hitCorrC1H_->Reset();
-
-  if (hitDelCorrC0H) hitDelCorrC0H->Reset();
-  if (hitDelCorrC1H) hitDelCorrC1H->Reset();
-
-  if (dut0HitProfH_) dut0HitProfH_->Reset();
-  if (dut1HitProfH_) dut1HitProfH_->Reset();
-
-  if (dut0HitProfUnfoldedH_) dut0HitProfUnfoldedH_->Reset();
-  if (dut1HitProfUnfoldedH_) dut1HitProfUnfoldedH_->Reset();
-
-  if (dut0C0HitProfH_) dut0C0HitProfH_->Reset();
-  if (dut0C1HitProfH_) dut0C1HitProfH_->Reset();
-  if (dut1C0HitProfH_) dut1C0HitProfH_->Reset();
-  if (dut1C1HitProfH_) dut1C1HitProfH_->Reset();
-
-  if (sensCorrH_) sensCorrH_->Reset();
-  if (l1AcceptH_) l1AcceptH_->Reset();
-  if (tdcCounterH_) tdcCounterH_->Reset();
-  if (totalNumberHitsH_) totalNumberHitsH_->Reset();
-  if (totalNumberStubsH_) totalNumberStubsH_->Reset();
-  
-  if (plAddPhaseDiffH_) plAddPhaseDiffH_->Reset(); 
-  if (plAddPhaseCorrH_) plAddPhaseCorrH_->Reset(); 
-  if (plAddPhaseDiffVsEvtH_) plAddPhaseDiffVsEvtH_->Reset();
-  if (cbcErrorCorrH_) cbcErrorCorrH_->Reset(); 
-  if (bunchCounterVsEvtH_) bunchCounterVsEvtH_->Reset(); 
-  if (orbitCounterVsEvtH_) orbitCounterVsEvtH_->Reset(); 
-  if (lumiCounterVsEvtH_) lumiCounterVsEvtH_->Reset(); 
-  if (l1AcceptVsEvtH_) l1AcceptVsEvtH_->Reset(); 
-  if (cbcCounterVsEvtH_) cbcCounterVsEvtH_->Reset();
-  if (tdcCounterVsEvtH_) tdcCounterVsEvtH_->Reset();
-
-
-  for ( auto& imap : cbcHMap_ ) {
-    CBCHistos& cbc_h = imap.second;
-    cbc_h.errBitH->Reset();
-    cbc_h.errBitVsEvtH->Reset();
-    cbc_h.plAddH->Reset();
-    cbc_h.plAddVsEvtH->Reset();
-    cbc_h.nStubsH->Reset();
-    cbc_h.evenChnOccuH->Reset();
-    cbc_h.oddChnOccuH->Reset();
-    cbc_h.tdcVsEvenChnOccuH->Reset();
-    cbc_h.tdcVsOddChnOccuH->Reset();    
+  TIter next(gROOT->GetList());
+  TObject *obj;
+  while ((obj = next())) {
+    if (obj->InheritsFrom("TH1")) dynamic_cast<TH1*>(obj)->Reset();
+    else if (obj->InheritsFrom("TTree")) dynamic_cast<TTree*>(obj)->Reset();
   }
-  // Optionally reset the tree
-  if (addTree_) tree_->Reset();
+}
+void DQMHistogrammer::bookEventTrendHisto(TH1I*& th, const TString& name, const TString& title, int size) {
+  th = new TH1I(name, title, size, 0.5, size+0.5);
+  th->SetBit(TH1::kCanRebin); // valid for Root 5
+}
+void DQMHistogrammer::fillEventTrendHisto(TH1I* th, unsigned long ival, unsigned int val) {
+  if (!th) return;
+  if (ival > th->GetXaxis()->GetXmax()) th->RebinAxis(ival, th->GetXaxis());
+  th->Fill(ival, val);
 }
