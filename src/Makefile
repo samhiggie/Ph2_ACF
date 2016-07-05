@@ -1,6 +1,6 @@
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O0 -w -Wall -pedantic -std=c++0x -fPIC 
+CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
 CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTVERSION := $(shell root-config --has-http)
 HttpFlag = -D__HTTP__
@@ -57,7 +57,7 @@ LibraryPaths = $(LibraryDirs:%=-L%)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 
-binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure #test
+binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure test
 binariesNoRoot=systemtest datatest fpgaconfig configure
 
 .PHONY: clean $(binaries)
@@ -113,8 +113,8 @@ pulseshape: pulseshape.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
-#test: test.cc
-	#$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	#cp $@ ../bin
+test: test.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
 clean:
 	rm -f $(binaries) *.o

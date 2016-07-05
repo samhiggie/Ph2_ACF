@@ -79,7 +79,7 @@ namespace Ph2_HwInterface {
         */
         ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
         ICFc7FWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
-        void setFileHandler (FileHandler* pHandler);
+        //void setFileHandler (FileHandler* pHandler);
 
         /*!
          * \brief Destructor of the ICFc7FWInterface class

@@ -71,15 +71,15 @@ namespace Ph2_HwInterface {
     }
 
 
-    void CtaFWInterface::setFileHandler (FileHandler* pHandler)
-    {
-        if (pHandler != nullptr )
-        {
-            fFileHandler = pHandler;
-            fSaveToFile = true;
-        }
-        else std::cout << "Error, can not set NULL FileHandler" << std::endl;
-    }
+    //void CtaFWInterface::setFileHandler (FileHandler* pHandler)
+    //{
+    //if (pHandler != nullptr )
+    //{
+    //fFileHandler = pHandler;
+    //fSaveToFile = true;
+    //}
+    //else std::cout << "Error, can not set NULL FileHandler" << std::endl;
+    //}
 
     uint32_t CtaFWInterface::getBoardInfo()
     {

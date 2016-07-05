@@ -73,15 +73,15 @@ namespace Ph2_HwInterface {
         else fSaveToFile = true;
     }
 
-    void ICFc7FWInterface::setFileHandler (FileHandler* pHandler)
-    {
-        if (pHandler != nullptr )
-        {
-            fFileHandler = pHandler;
-            fSaveToFile = true;
-        }
-        else std::cout << "Error, can not set NULL FileHandler" << std::endl;
-    }
+    //void ICFc7FWInterface::setFileHandler (FileHandler* pHandler)
+    //{
+    //if (pHandler != nullptr )
+    //{
+    //fFileHandler = pHandler;
+    //fSaveToFile = true;
+    //}
+    //else std::cout << "Error, can not set NULL FileHandler" << std::endl;
+    //}
 
     uint32_t ICFc7FWInterface::getBoardInfo()
     {

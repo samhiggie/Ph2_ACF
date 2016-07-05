@@ -75,7 +75,7 @@ namespace Ph2_HwInterface {
         /*!
         * \brief set a FileHandler Object and enable saving to file!
         * \param pFileHandler : pointer to file handler for saving Raw Data*/
-        virtual void setFileHandler (FileHandler* pHandler) = 0;
+        void setFileHandler (FileHandler* pHandler);
         /*!
         * \brief Destructor of the BeBoardFWInterface class
         */

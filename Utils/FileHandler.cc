@@ -35,7 +35,9 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, Fil
 //destructor
 FileHandler::~FileHandler()
 {
-    fThread.join();
+    if (fOption == 'w')
+        fThread.join();
+
     closeFile();
 }
 
@@ -106,11 +108,11 @@ bool FileHandler::openFile( )
 
 void FileHandler::closeFile()
 {
-    fMutex.lock();
+    //fMutex.lock();
 
-    if (fFileIsOpened)  closeFile();
+    if (fFileIsOpened) closeFile();
 
-    fMutex.unlock();
+    //fMutex.unlock();
 }
 
 //read from raw file to vector

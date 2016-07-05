@@ -82,7 +82,7 @@ namespace Ph2_HwInterface {
                          const char* pAddressTable,
                          FileHandler* pFileHandler );
 
-        void setFileHandler (FileHandler* pHandler);
+        //void setFileHandler (FileHandler* pHandler);
         /*!
          * \brief Destructor of the CtaFWInterface class
          */
