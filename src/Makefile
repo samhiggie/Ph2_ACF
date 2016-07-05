@@ -57,12 +57,11 @@ LibraryPaths = $(LibraryDirs:%=-L%)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 
-binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure test
+binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure #test
 binariesNoRoot=systemtest datatest fpgaconfig configure
 
 .PHONY: clean $(binaries)
 all: rootflags clean $(binaries) 
-
 rootflags:
 	$(eval CCFlags += $(CCFlagsRoot))
 	$(eval ExternalObjects += $(ExtObjectsRoot))
@@ -113,8 +112,9 @@ pulseshape: pulseshape.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
-test: test.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+#test: test.cc
+	#$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	#cp $@ ../bin
+
 clean:
 	rm -f $(binaries) *.o
