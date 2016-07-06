@@ -112,7 +112,7 @@ void FileHandler::closeFile()
 
     if (fFileIsOpened)
     {
-        closeFile();
+        fBinaryFile.close();
         fFileIsOpened = false;
     }
 
