@@ -108,7 +108,7 @@ bool FileHandler::openFile( )
 
 void FileHandler::closeFile()
 {
-    //fMutex.lock();
+    fMutex.lock();
 
     if (fFileIsOpened)
     {
@@ -116,7 +116,7 @@ void FileHandler::closeFile()
         fFileIsOpened = false;
     }
 
-    //fMutex.unlock();
+    fMutex.unlock();
 }
 
 //read from raw file to vector
@@ -134,7 +134,7 @@ std::vector<uint32_t> FileHandler::readFile( )
         cVector.push_back ( word );
     }
 
-    fBinaryFile.close();
+    closeFile();
     return cVector;
 }
 
@@ -156,10 +156,7 @@ std::vector<uint32_t> FileHandler::readFileChunks ( uint32_t pNWords32 )
     }
 
     if (fBinaryFile.eof() )
-    {
-        fBinaryFile.close();
-        fFileIsOpened = false;
-    }
+        closeFile();
 
     if (cWordCounter < pNWords32) std::cout << "FileHandler: Attention, input file " << fBinaryFileName << " ended before reading " << pNWords32 << " 32-bit words!" << std::endl;
 
@@ -187,7 +184,7 @@ std::vector<uint32_t> FileHandler::readFileTail ( long pNbytes )
         cVector.push_back ( word );
     }
 
-    fBinaryFile.close();
+    closeFile();
     return cVector;
 }
 
