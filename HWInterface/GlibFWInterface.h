@@ -69,7 +69,7 @@ namespace Ph2_HwInterface {
         */
         GlibFWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
         GlibFWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
-        //void setFileHandler (FileHandler* pHandler);
+        void setFileHandler (FileHandler* pHandler);
 
         /*!
          * \brief Destructor of the GlibFWInterface class
