@@ -396,8 +396,8 @@ namespace Ph2_HwInterface {
         {
             cNHits += __builtin_popcount (cData->second.front() & 0x003FFFFF);
 
-            for (size_t cWord = 1; cWord <  cData->second.size() - 1; cWord++)
-                cNHits += __builtin_popcount (cData->second.at (cWord) );
+            for (auto cWord = cData->second.begin() + 1; cWord != cData->second.end() - 1;  cWord++)
+                cNHits += __builtin_popcount (*cWord);
 
             cNHits += __builtin_popcount (cData->second.back() & 0xFF000000);
         }
@@ -411,17 +411,28 @@ namespace Ph2_HwInterface {
     std::vector<uint32_t> Event::GetHits (uint8_t pFeId, uint8_t pCbcId) const
     {
         std::vector<uint32_t> cHits;
-        std::vector<bool> cVec =  this->DataBitVector (pFeId, pCbcId);
+        uint16_t cKey = encodeId (pFeId, pCbcId);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        uint8_t cIndex = 0;
-
-        for (const auto& cChan : cVec)
+        if (cData != std::end (fEventDataMap) )
         {
-            if (cChan) cHits.push_back (cIndex);
+            uint8_t cIndex = 0;
 
-            cIndex++;
+            for ( uint32_t i = 0; i < WIDTH_CBCDATA; ++i )
+            {
+                uint32_t pos = i + OFFSET_CBCDATA;
+                uint32_t cWordP = pos / 32;
+                uint32_t cBitP = pos % 32;
+
+                if ( cWordP >= cData->second.size() ) break;
+
+                if ( ( cData->second[cWordP] >> ( 31 - cBitP ) ) & 0x1) cHits.push_back (cIndex);
+
+                cIndex++;
+            }
         }
-
+        else
+            std::cout << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." << std::endl;
     }
 
     std::ostream& operator<< ( std::ostream& os, const Event& ev )
