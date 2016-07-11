@@ -26,8 +26,9 @@ using namespace Ph2_HwDescription;
 
 namespace Ph2_HwInterface {
 
-    using FeEventMap = std::map<uint32_t, std::pair<uint32_t, uint32_t>>; /*!< Event Map of Cbc */
-    using EventMap = std::map<uint32_t, FeEventMap>;                      /*!< Event Map of FE */
+    //using FeEventMap = std::map<uint32_t, std::pair<uint32_t, uint32_t>>; [>!< Event Map of Cbc <]
+    //using EventMap = std::map<uint32_t, FeEventMap>;                      [>!< Event Map of FE <]
+    using EventDataMap = std::map<uint16_t, std::vector<uint32_t>>;
 
     /*!
      * \class Cluster
@@ -35,11 +36,11 @@ namespace Ph2_HwInterface {
      */
     class Cluster
     {
-    public:
-      uint8_t fSensor;
-      uint8_t fFirstStrip;
-      uint8_t fClusterWidth;
-      double getBaricentre();
+      public:
+        uint8_t fSensor;
+        uint8_t fFirstStrip;
+        uint8_t fClusterWidth;
+        double getBaricentre();
     };
 
 
@@ -55,7 +56,7 @@ namespace Ph2_HwInterface {
            id of CbcEvent also should be the order of CBCEvents in data stream starting from 0
          */
       private:
-        EventMap fEventMap;             /*!< Event map */
+        //EventMap fEventMap;             [>!< Event map <]
         uint32_t fBunch;                /*!< Bunch value */
         uint32_t fOrbit;                /*!< Orbit value */
         uint32_t fLumi;                 /*!< LuminositySection value */
@@ -64,26 +65,27 @@ namespace Ph2_HwInterface {
         uint32_t fTDC;                  /*!< TDC value*/
 
         //std::vector<uint8_t> fEventData;
-        std::vector<uint32_t> fEventData;
+        //std::vector<uint32_t> fEventData;
+        EventDataMap fEventDataMap;
 
       public:
-        uint32_t fEventSize;                     /*!< Size of an Event */
-        uint32_t fOffsetTDC;                     /*!< Offset of TDC */
+        // size of an event
+        uint32_t fEventSize;
 
       private:
-        /*!
-         * \brief Method to set the size of the Event according to the number of CBCs
-         * \param pNbCbc : Number of CBCs connected
-         */
-        void SetSize ( uint32_t pNbCbc );
+
+        uint16_t encodeId (const uint8_t& pFeId, const uint8_t& pCbcId) const
+        {
+            return (pFeId << 8 | pCbcId);
+        }
+
+        void decodeId (const uint16_t& pKey, uint8_t pFeId, uint8_t pCbcId) const
+        {
+            pFeId = (pKey >> 8) & 0x00FF;
+            pCbcId = pKey & 0xFF;
+        }
 
       public:
-        /*!
-         * \brief Constructor of the Event Class
-         * \param pNbCbc
-         * \param list : the pointer to the raw Event buffer of this Event
-         */
-        Event ( uint32_t pNbCbc, const std::vector<uint32_t>& list );
         /*!
          * \brief Constructor of the Event Class
          * \param pBoard : Board to work with
@@ -106,24 +108,20 @@ namespace Ph2_HwInterface {
          */
         void Clear()
         {
-            fEventMap.clear();
+            fEventDataMap.clear();
         }
-        /*!
-         * \brief Add a board structure in the map
-         * \param pBoard : board to work with
-         */
-        void AddBoard ( const BeBoard* pBoard );
         /*!
          * \brief Set an Event to the Event map
          * \param pEvent : Event to set
          * \return Aknowledgement of the Event setting (1/0)
          */
-        int SetEvent ( const std::vector<uint32_t>& list );
+        int SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list );
+
         /*! \brief Get raw data */
-        const std::vector<uint32_t>& GetEventData() const
-        {
-            return fEventData;
-        }
+        //const std::vector<uint32_t>& GetEventData() const
+        //{
+        //return fEventData;
+        //}
         /*! \brief Get the event size in bytes */
         uint32_t GetSize() const
         {
@@ -144,8 +142,6 @@ namespace Ph2_HwInterface {
          * \return Event buffer
          */
         void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) const;
-        /*! \brief Get event data as a byte vector */
-        void GetEventBytes ( std::vector< uint8_t >& cbcData ) const;
         /*!
          * \brief Get the bunch value
          * \return Bunch value
@@ -299,6 +295,22 @@ namespace Ph2_HwInterface {
         * \return stub bit?
         */
         bool StubBit ( uint8_t pFeId, uint8_t pCbcId ) const;
+
+        /*!
+        * \brief Function to count the Hits in this event
+        * \param pFeId : FE Id
+        * \param pCbcId : Cbc Id
+        * \return number of hits
+        */
+        uint32_t GetNHits (uint8_t pFeId, uint8_t pCbcId) const;
+        /*!
+        * \brief Function to get a sparsified hit vector
+        * \param pFeId : FE Id
+        * \param pCbcId : Cbc Id
+        * \return vector with hit channels
+        */
+        std::vector<uint32_t> GetHits (uint8_t pFeId, uint8_t pCbcId) const;
+
         /*!
          * \brief Function to get char at the global data string at position 8*i
          * \param pFeId : FE Id
@@ -308,13 +320,13 @@ namespace Ph2_HwInterface {
          */
         unsigned char Char ( uint8_t pFeId, uint8_t pCbcId, uint32_t pBytePosition );
 
-        const EventMap& GetEventMap() const
-        {
-            return fEventMap;
-        }
+        //const EventMap& GetEventMap() const
+        //{
+        //return fEventMap;
+        //}
         friend std::ostream& operator<< ( std::ostream& out, const Event& ev );
 
-	std::vector<Cluster> getClusters( uint8_t pFeId, uint8_t pCbcId);
+        std::vector<Cluster> getClusters ( uint8_t pFeId, uint8_t pCbcId);
 
     };
 }
