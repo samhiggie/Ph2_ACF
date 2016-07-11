@@ -53,25 +53,28 @@ namespace Ph2_HwInterface {
             //new version
             if (swapBits)
             {
-                if (is_channel_first_row (cSwapIndex) )
+                //if (is_channel_first_row (cSwapIndex) )
+                //{
+                //// here I need to shift out the Error bits and PipelineAddress
+                //uint8_t cErrors = word & 0x00000003;
+                //uint8_t cPipeAddress = (word & 0x000003FC) >> 2;
+                ////next I need to reverse the bit order and mask out the corresponding bits for errors & pipe address
+                //word = reverse_bits (word) & 0x003FFFFF;;
+                ////now just need to shift the Errors & Pipe address back in
+                //word |= ( ( (cErrors & 0x03 ) << 30) | ( (cPipeAddress & 0xFF ) << 22 ) );
+                //}
+                if (is_channel_last_row (cSwapIndex) )
                 {
-                    // here I need to shift out the Error bits and PipelineAddress
-                    uint8_t cErrors = word & 0x00000003;
-                    uint8_t cPipeAddress = (word & 0x000003FC) >> 2;
-                    //next I need to reverse the bit order and mask out the corresponding bits for errors & pipe address
-                    word = reverse_bits (word) & 0x003FFFFF;;
-                    //now just need to shift the Errors & Pipe address back in
-                    word |= ( ( (cErrors & 0x03 ) << 30) | ( (cPipeAddress & 0xFF ) << 22 ) );
-                }
-                else if (is_channel_last_row (cSwapIndex) )
-                {
+                    //OLD METHOD
                     // here i need to shift out the GlibFlags which are supposed to be 0 and the Stub word
                     uint16_t cStubWord = (word & 0xFFF00000) >> 20;
-                    uint16_t cGlibFlag = (word & 0x000FFF00) >> 8;
+                    //uint16_t cGlibFlag = (word & 0x000FFF00) >> 8;
                     //reverse the bit order and mask stuff out
-                    word = reverse_bits (word) & 0xFF000000;
+                    //word = reverse_bits (word) & 0xFF000000;
+                    word = reverse_bits (word) & 0xFFFFF000;
                     //now shift the GlibFlag and the StubWord back in
-                    word |= ( ( (cGlibFlag & 0x0FFF ) << 12) | (cStubWord & 0x0FFF) );
+                    //word |= ( ( (cGlibFlag & 0x0FFF ) << 12) | (cStubWord & 0x0FFF) );
+                    word |= (cStubWord & 0x0FFF);
                 }
                 //is_channel_data will also be true for first and last word but since it's an else if, it should be ok
                 else if ( is_channel_data (cSwapIndex) ) word = reverse_bits (word);
