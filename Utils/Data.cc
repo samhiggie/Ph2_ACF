@@ -53,16 +53,17 @@ namespace Ph2_HwInterface {
             //new version
             if (swapBits)
             {
-                //if (is_channel_first_row (cSwapIndex) )
-                //{
-                //// here I need to shift out the Error bits and PipelineAddress
-                //uint8_t cErrors = word & 0x00000003;
-                //uint8_t cPipeAddress = (word & 0x000003FC) >> 2;
-                ////next I need to reverse the bit order and mask out the corresponding bits for errors & pipe address
-                //word = reverse_bits (word) & 0x003FFFFF;;
-                ////now just need to shift the Errors & Pipe address back in
-                //word |= ( ( (cErrors & 0x03 ) << 30) | ( (cPipeAddress & 0xFF ) << 22 ) );
-                //}
+                if (is_channel_first_row (cSwapIndex) )
+                {
+                    // here I need to shift out the Error bits and PipelineAddress
+                    //uint8_t cErrors = word & 0x00000003;
+                    uint8_t cPipeAddress = (word & 0x000003FC) >> 2;
+                    //next I need to reverse the bit order and mask out the corresponding bits for errors & pipe address
+                    word = reverse_bits (word) & 0xC03FFFFF;;
+                    //now just need to shift the Errors & Pipe address back in
+                    word |=  cPipeAddress << 22;
+                }
+
                 if (is_channel_last_row (cSwapIndex) )
                 {
                     //OLD METHOD

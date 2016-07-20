@@ -66,11 +66,11 @@ namespace Ph2_HwInterface {
             else return false;
         }
 
-        //bool is_channel_first_row (uint32_t pIndex)
-        //{
-        ////return true if it is the first word of any CBC block containing channel data
-        //return (fChannelFirstRows.find (pIndex) != std::end (fChannelFirstRows) && pIndex < fEventSize - 1);
-        //}
+        bool is_channel_first_row (uint32_t pIndex)
+        {
+            //return true if it is the first word of any CBC block containing channel data
+            return (fChannelFirstRows.find (pIndex) != std::end (fChannelFirstRows) && pIndex < fEventSize - 1);
+        }
 
         bool is_channel_last_row (uint32_t pIndex)
         {
