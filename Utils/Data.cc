@@ -103,20 +103,20 @@ namespace Ph2_HwInterface {
             cSwapIndex++;
         }
 
-#ifdef __CBCDAQ_DEV__
-        std::cout << "Initializing list with " << pData.size() << " 32 bit words
-                  << " containing data from "
-                  << fNevents << "  Events with an eventbuffer size of " << fEventSize << " and " << fNCbc
-                  << " CBCs each! " << EVENT_HEADER_TDC_SIZE_32 << " " << CBC_EVENT_SIZE_32 << std::endl;
-#endif
-              }
+        //#ifdef __CBCDAQ_DEV__
+        //std::cout << "Initializing list with " << pData.size() << " 32 bit words
+        //<< " containing data from "
+        //<< fNevents << "  Events with an eventbuffer size of " << fEventSize << " and " << fNCbc
+        //<< " CBCs each! " << EVENT_HEADER_TDC_SIZE_32 << " " << CBC_EVENT_SIZE_32 << std::endl;
+        //#endif
+    }
 
-                  void Data::Reset()
-                  {
-                  for ( auto& pevt : fEventList )
-                  delete pevt;
+    void Data::Reset()
+    {
+        for ( auto& pevt : fEventList )
+            delete pevt;
 
-                  fEventList.clear();
-                  fCurrentEvent = 0;
-              }
-              }
+        fEventList.clear();
+        fCurrentEvent = 0;
+    }
+}
