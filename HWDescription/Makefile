@@ -1,5 +1,5 @@
 Objs                    = FrontEndDescription.o BeBoard.o Cbc.o Module.o 
-CC              = gcc
+CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -Wall -fPIC
 DevFlags               =

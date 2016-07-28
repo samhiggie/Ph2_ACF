@@ -43,7 +43,7 @@ else
 endif
 
 Objs            = Tool.o SCurve.o Calibration.o Channel.o HybridTester.o CMTester.o  LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o
-CC              = gcc
+CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` 
 

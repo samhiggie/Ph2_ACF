@@ -1,5 +1,5 @@
 Objs            = Amc13Description.o Amc13Interface.o Amc13Controller.o
-CC              = gcc
+CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC -Wcpp
 #DevFlags                   = -D__CBCDAQ_DEV__

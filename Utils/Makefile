@@ -1,5 +1,5 @@
 Objs            = Exception.o Utilities.o Event.o Data.o argvparser.o  FileHandler.o
-CC              = gcc
+CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` -Wcpp -L/usr/lib64/
 #DevFlags                   = -D__CBCDAQ_DEV__
