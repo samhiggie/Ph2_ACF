@@ -34,7 +34,7 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
         $> ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
         $> hash -r
 
-This should give you gcc 4.8.1:
+This should give you a more recent gcc (e.g. gcc 4.8.2)
 
         $> gcc --version
 
