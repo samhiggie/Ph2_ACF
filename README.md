@@ -30,7 +30,7 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
 
         $> wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
         $> sudo yum install devtoolset-2
-        $> scl enable devtoolset-2 bash  (add to .bashrc)      
+        $> . /opt/rh/devtoolset-2/enable   # add this to your .bashrc
         $> ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
         $> hash -r
 
