@@ -34,33 +34,33 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
         $> ln -s /opt/rh/devtoolset-2/root/usr/bin/* /usr/local/bin/
         $> hash -r
 
-This should give you a more recent gcc (e.g. gcc 4.8.2)
+    This should give you a more recent gcc (e.g. gcc 4.8.2)
 
         $> gcc --version
 
-2. Install uHAL  version 2.3:
+1. Install uHAL  version 2.3:
 
         $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc6.x86_64.repo 
 
-(You may need the --no-check-certificate)
+    (You may need the --no-check-certificate)
 
         $> sudo cp cactus.slc6.x86_64.repo /etc/yum.repos.d/cactus.repo
 
-then
+    then
 
         $> sudo yum clean all
         $> sudo yum groupinstall uhal
 
-3. Install CERN ROOT version 5.34.32: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation" when building yourself. If root is installed on a CERN computer of virtual machine you can use:
+1. Install CERN ROOT version 5.34.32: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation" when building yourself. If root is installed on a CERN computer of virtual machine you can use:
        
         $> sudo yum install root
         $> sudo yum install root-net-http root-graf3d-gl root-physics libusb-devel
 
-4. If you are working on a remote machine, you need these packages for the Canvases to show
+1. If you are working on a remote machine, you need these packages for the Canvases to show
 
         $> sudo yum install xorg-x11-xauth.x86_64
 
-Note: You may also need to set the environment variables (or source setup.sh):
+    Note: You may also need to set the environment variables (or source setup.sh):
 
         $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
         $> export PATH=/opt/cactus/bin:$PATH
@@ -75,65 +75,65 @@ Follow these instructions to install and compile the libraries:
         $> git clone https://:@gitlab.cern.ch:8443/cms_tk_ph2/Ph2_ACF.git
         $> source setup.sh
 
-2. Do a make in the root of the repo (make sure you have all µHal, root libraries on your computer).
+1. Do a make in the root of the repo (make sure you have all µHal, root libraries on your computer).
 
-3. Launch 
+1. Launch 
 
         $> systemtest --help
 
-command if you want to test the parsing of the HWDescription.xml file.
+    command if you want to test the parsing of the HWDescription.xml file.
 
-4. Launch
+1. Launch
 
         $> datatest --help
 
-command if you want to test if you can correctly read data
+    command if you want to test if you can correctly read data
 
-6. Launch
+1. Launch
 
         $> calibrate --help
 
-to calibrate a hybrid,
+    to calibrate a hybrid,
 
         $> hybridtest --help
 
-to test a hybird's I2C registers and input channel connectivity
+    to test a hybird's I2C registers and input channel connectivity
 
           $> cmtest --help
 
-to run the CM noise study
+    to run the CM noise study
 
           $> pulseshape --help
 
-to measure the analog pulseshape of the cbc
+    to measure the analog pulseshape of the cbc
 
           $> configure --help
 
-to apply a configuration to the CBCs
+    to apply a configuration to the CBCs
 
-7. Launch
+1. Launch
 
           $> commission --help
 
-to do latency & threshold scans
+    to do latency & threshold scans
 
-8. Launch 
+1. Launch 
 
           $> fpgaconfig --help
 
-to upload a new FW image to the GLIB
+    to upload a new FW image to the GLIB
 
-9. Launch
+1. Launch
 
           $> miniDAQ --help
 
-to save binary data from the GLIB to file
+    to save binary data from the GLIB to file
 
-10. Launch
+1. Launch
 
           $> miniDQM --help
 
-to run the DQM code from the June '15 beamtest
+    to run the DQM code from the June '15 beamtest
 
 ##### What can you do with the software ?
 
