@@ -75,7 +75,7 @@ Follow these instructions to install and compile the libraries:
         $> git clone https://:@gitlab.cern.ch:8443/cms_tk_ph2/Ph2_ACF.git
         $> source setup.sh
 
-1. Do a make in the root of the repo (make sure you have all µHal, root libraries on your computer).
+1. Do a `make` in the root of the repo (make sure you have all µHal, root libraries on your computer).
 
 1. Launch 
 
