@@ -86,7 +86,7 @@ namespace Ph2_HwInterface {
         /*!
          * \brief Destructor of the CtaFWInterface class
          */
-        ~CtaFWInterface()
+        virtual ~CtaFWInterface()
         {
             if (fData) delete fData;
 

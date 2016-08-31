@@ -23,13 +23,13 @@ public:
 	/// Remove an integer value
 	void removeIntValue(const std::string& strName);
 	///Set a parameter value (integer)
-	uint32_t setValue(const std::string& strName, uint32_t uVal);
+	virtual uint32_t setValue(const std::string& strName, uint32_t uVal);
 	///Set a parameter value (string)
-	void setValue(const std::string& strName, const std::string& strVal);
+	virtual void setValue(const std::string& strName, const std::string& strVal);
 	/// Return parameter names and their value in a string with format <parameter 1>=<value 1>\n<parameter 2>=<value 2>\n...
 	std::string nameAndValuePairs();
 	/// Read parameter and value pairs from a text file and write them into the board
-	bool loadParamValuePairsFromFile(const std::string& strFile);
+	virtual bool loadParamValuePairsFromFile(const std::string& strFile);
 	/// Remove all values
 	void clearValues();
 protected:
