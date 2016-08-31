@@ -1,16 +1,16 @@
 #include "Amc13Interface.h"
 
-Amc13Interface::Amc13Interface( const std::string& uriT1, const std::string& addressT1, const std::string& uriT2, const std::string& addressT2 )
+Amc13Interface::Amc13Interface ( const std::string& uriT1, const std::string& addressT1, const std::string& uriT2, const std::string& addressT2 )
 {
     // Log level
     //uhal::disableLogging();
-    uhal::setLogLevelTo(uhal::Error());
+    uhal::setLogLevelTo (uhal::Error() );
 
     // this is the way if i want to keep the syntax
-    uhal::ConnectionManager cm( "file://HWInterface/dummy.xml" );
-    uhal::HwInterface T1( cm.getDevice( "T1", uriT1, addressT1 ) );
-    uhal::HwInterface T2( cm.getDevice( "T2", uriT2, addressT2 ) );
-    fAMC13 = new amc13::AMC13(T1, T2);
+    uhal::ConnectionManager cm ( "file://HWInterface/dummy.xml" );
+    uhal::HwInterface T1 ( cm.getDevice ( "T1", uriT1, addressT1 ) );
+    uhal::HwInterface T2 ( cm.getDevice ( "T2", uriT2, addressT2 ) );
+    fAMC13 = new amc13::AMC13 (T1, T2);
 
     //this would be the other way!
     //fAMC13 = new amc13::AMC13(uriT1, addressT1, uriT2, addressT2);
@@ -24,33 +24,37 @@ Amc13Interface::~Amc13Interface()
 
 void Amc13Interface::ConfigureAmc13()
 {
+    fAMC13->initAMC13();
     // first start with enabling AMCs!
     uint32_t cMask = 0;
 
     // first reset the 2 boards
     std::cout << "Resetting T1, T2 & all counters!" << std::endl;
-    fAMC13->reset(amc13::AMC13Simple::T1);
-    fAMC13->reset(amc13::AMC13Simple::T2);
+    fAMC13->reset (amc13::AMC13Simple::T1);
+    fAMC13->reset (amc13::AMC13Simple::T2);
     // now reset the counters
     fAMC13->resetCounters();
     // now enable the AMC inputs as specified in the config File
     std::cout << "Enabling TTC links for the following AMCs: " << std::endl;
+
     for (auto& cAMC : fDescription->fAMCMask)
     {
-        setBit(cMask, cAMC, true);
+        setBit (cMask, cAMC, true);
         std::cout << cAMC << ", ";
     }
+
     std::cout << std::endl;
-    fAMC13->AMCInputEnable( cMask );
+    fAMC13->AMCInputEnable ( cMask );
 
     //now configure the BGOs, loop through the list, get the properties and call the function
     int cIndex = 0;
-    if (!fDescription->fBGOs.empty())
+
+    if (!fDescription->fBGOs.empty() )
     {
         for (auto& cBGO : fDescription->fBGOs )
         {
-            this->configureBGO(cIndex, uint8_t(cBGO->fCommand), uint16_t(cBGO->fBX), uint16_t(cBGO->fPrescale), cBGO->fRepeat);
-            this->enableBGO(cIndex);
+            this->configureBGO (cIndex, uint8_t (cBGO->fCommand), uint16_t (cBGO->fBX), uint16_t (cBGO->fPrescale), cBGO->fRepeat);
+            this->enableBGO (cIndex);
             std::cout << "Configured & enabling BGO Channel " << cIndex << " : Command: " << cBGO->fCommand << " BX: " << cBGO->fBX << " Prescale: " << cBGO->fPrescale << " Repetetive: " << cBGO->fRepeat << std::endl;
             cIndex++;
         }
@@ -59,24 +63,27 @@ void Amc13Interface::ConfigureAmc13()
     // now configure the Trigger
     if (fDescription->fTrigger != nullptr)
     {
-        fAMC13->configureLocalL1A(fDescription->fTrigger->fLocal, fDescription->fTrigger->fMode, uint32_t(fDescription->fTrigger->fBurst), uint32_t(fDescription->fTrigger->fRate), fDescription->fTrigger->fRules );
-	fAMC13->write(amc13::AMC13Simple::T1,"CONF.LOCAL_TRIG.FAKE_DATA_ENABLE", 1);
+        fAMC13->configureLocalL1A (fDescription->fTrigger->fLocal, fDescription->fTrigger->fMode, uint32_t (fDescription->fTrigger->fBurst), uint32_t (fDescription->fTrigger->fRate), fDescription->fTrigger->fRules );
+
+        //Edit GA: not sure if this is actually required
+        fAMC13->write (amc13::AMC13Simple::T1, "CONF.LOCAL_TRIG.FAKE_DATA_ENABLE", 1);
+
         std::cout << "Configuring local L1A: Mode: " << fDescription->fTrigger->fMode << " Rate: " << fDescription->fTrigger->fRate << " Burst: " << fDescription->fTrigger->fBurst << " Rules: " << fDescription->fTrigger->fRules << std::endl;
     }
+
     // if TTC simulator is enabled, the loopback fiber is required and no external TTC stream will be received, the Triggers are local by definition
     if (fDescription->fSimulate)
     {
-        fAMC13->localTtcSignalEnable(fDescription->fSimulate);
-        //fAMC13->enableLocalL1A(true);
+        fAMC13->localTtcSignalEnable (fDescription->fSimulate);
         std::cout << RED << "AMC13 configured to use local TTC simulator - don't forget to plug the loopback fibre!" << RESET << std::endl;
     }
 
     //now need to iterate the two maps of Registers and write them
     for (auto& cReg : fDescription->fT1map)
-        fAMC13->write(amc13::AMC13Simple::T1, cReg.first, cReg.second);
+        fAMC13->write (amc13::AMC13Simple::T1, cReg.first, cReg.second);
 
     for (auto& cReg : fDescription->fT2map)
-        fAMC13->write(amc13::AMC13Simple::T2, cReg.first, cReg.second);
+        fAMC13->write (amc13::AMC13Simple::T2, cReg.first, cReg.second);
 
     std::cout << GREEN << "AMC13 successfully configured!" << RESET << std::endl;
 }
@@ -97,78 +104,80 @@ void Amc13Interface::BurstL1A()
     fAMC13->sendL1ABurst();
 }
 
-void Amc13Interface::EnableBGO(int pChan)
+void Amc13Interface::EnableBGO (int pChan)
 {
-    this->enableBGO( pChan );
+    this->enableBGO ( pChan );
 }
 
-void Amc13Interface::DisableBGO(int pChan)
+void Amc13Interface::DisableBGO (int pChan)
 {
-    this->disableBGO( pChan );
+    this->disableBGO ( pChan );
 }
 
 void Amc13Interface::EnableTTCHistory()
 {
-    fAMC13->setTTCHistoryEna(true);
+    fAMC13->setTTCHistoryEna (true);
 }
 
 void Amc13Interface::DisableTTCHistory()
 {
-    fAMC13->setTTCHistoryEna(false);
+    fAMC13->setTTCHistoryEna (false);
 }
 
-void Amc13Interface::ConfigureTTCHistory(std::vector<std::pair<int, uint32_t>> pFilterConfig)
+void Amc13Interface::ConfigureTTCHistory (std::vector<std::pair<int, uint32_t>> pFilterConfig)
 {
     // n = int in the pair  ... history item
     // filterVal = uint32_t ... filter Value
     for (auto& cPair : pFilterConfig)
-        fAMC13->setTTCHistoryFilter(cPair.first, cPair.second);
+        fAMC13->setTTCHistoryFilter (cPair.first, cPair.second);
 }
 
-//void Amc13Interface::DumpHistory(int pNlastEntries)
-//{
-    //fAMC13->setTTCHistoryEna(true);
-    //std::vector<uint32_t> cVec = fAMC13->getTTCHistory(pNlastEntries);
+void Amc13Interface::DumpHistory (int pNlastEntries)
+{
+    fAMC13->setTTCHistoryEna (true);
+    std::vector<uint32_t> cVec = fAMC13->getTTCHistory (pNlastEntries);
 
-    ////now decode the Info in here!
-    //std::cout << BOLDRED << "TTC History showing the last " << pNlastEntries << " items!" << RESET << std::endl;
-    //for (int index = 0; index < cVec.size() / 4; index++)
-    //{
-        //// 4 32-bit words per command in the history
-        //uint32_t cCommand = cVec.at(index * 4 + 0);
-        //uint32_t cOrbit = cVec.at(index * 4 + 1);
-        //uint32_t cBX    = cVec.at(index * 4 + 2);
-        //uint32_t cEvent = cVec.at(index * 4 + 3);
+    //now decode the Info in here!
+    std::cout << BOLDRED << "TTC History showing the last " << pNlastEntries << " items!" << RESET << std::endl;
 
-        //std::cout << "Command: " << (cCommand & 0xFF) << " - Orbit: " << cOrbit << " - BX: " << (cBX & 0x7FF) << " - Event Nr: " << (cEvent & 0x00FFFFFF) << std::endl;
-    //}
-//}
+    for (int index = 0; index < cVec.size() / 4; index++)
+    {
+        // 4 32-bit words per command in the history
+        uint32_t cCommand = cVec.at (index * 4 + 0);
+        uint32_t cOrbit = cVec.at (index * 4 + 1);
+        uint32_t cBX    = cVec.at (index * 4 + 2);
+        uint32_t cEvent = cVec.at (index * 4 + 3);
 
-//void Amc13Interface::DumpTriggers(int pNlastEntries)
-//{
-    //if ( pNlastEntries > 127 ) std::cerr << "Only last 128 Events available in L1A history buffer!" << std::endl;
+        std::cout << "Command: " << (cCommand & 0xFF) << " - Orbit: " << cOrbit << " - BX: " << (cBX & 0x7FF) << " - Event Nr: " << (cEvent & 0x00FFFFFF) << std::endl;
+    }
+}
 
-    //std::vector<uint32_t> cVec = fAMC13->getL1AHistory(pNlastEntries);
+void Amc13Interface::DumpTriggers (int pNlastEntries)
+{
+    if ( pNlastEntries > 127 ) std::cerr << "Only last 128 Events available in L1A history buffer!" << std::endl;
 
-    ////now decode the Info in here!
-    //std::cout << BOLDRED << "L1A History showing the last " << pNlastEntries << " items!" << RESET << std::endl;
-    //for (int index = 0; index < cVec.size() / 4; index++)
-    //{
-        //// 4 32-bit words per command in the history
-        //uint32_t cOrbit = cVec.at(index * 4 + 0);
-        //uint32_t cBunch = cVec.at(index * 4 + 1);
-        //uint32_t cEventNr = cVec.at(index * 4 + 2);
-        //uint32_t cFlags = cVec.at(index * 4 + 3);
+    std::vector<uint32_t> cVec = fAMC13->getL1AHistory (pNlastEntries);
 
-        //std::cout << "Orbit: " << cOrbit << " - Bunch: " << (cBunch & 0xFFF) << " - Event Nr: " << (cEventNr & 0xFFFFFF) << " - Flags: " << cFlags << std::endl;
-    //}
-//}
+    //now decode the Info in here!
+    std::cout << BOLDRED << "L1A History showing the last " << pNlastEntries << " items!" << RESET << std::endl;
+
+    for (int index = 0; index < cVec.size() / 4; index++)
+    {
+        // 4 32-bit words per command in the history
+        uint32_t cOrbit = cVec.at (index * 4 + 0);
+        uint32_t cBunch = cVec.at (index * 4 + 1);
+        uint32_t cEventNr = cVec.at (index * 4 + 2);
+        uint32_t cFlags = cVec.at (index * 4 + 3);
+
+        std::cout << "Orbit: " << cOrbit << " - Bunch: " << (cBunch & 0xFFF) << " - Event Nr: " << (cEventNr & 0xFFFFFF) << " - Flags: " << cFlags << std::endl;
+    }
+}
 
 void Amc13Interface::HaltAMC13()
 {
     std::cout << "Resetting T1, T2 & all counters!" << std::endl;
-    fAMC13->reset(amc13::AMC13Simple::T1);
-    fAMC13->reset(amc13::AMC13Simple::T2);
+    fAMC13->reset (amc13::AMC13Simple::T1);
+    fAMC13->reset (amc13::AMC13Simple::T2);
     // now reset the counters
     fAMC13->resetCounters();
 }
@@ -176,80 +185,130 @@ void Amc13Interface::HaltAMC13()
 void Amc13Interface::ResetAMC13()
 {
     std::cout << "Resetting T1, T2 & all counters! - Remind Georg to add OC0 and EC0 when you read this!" << std::endl;
-    fAMC13->reset(amc13::AMC13Simple::T1);
-    fAMC13->reset(amc13::AMC13Simple::T2);
+    fAMC13->reset (amc13::AMC13Simple::T1);
+    fAMC13->reset (amc13::AMC13Simple::T2);
     // now reset the counters
     fAMC13->resetCounters();
 }
 
-void Amc13Interface::configureBGO(int pChan, uint8_t pCommand, uint16_t pBX, uint16_t pPrescale, bool pRepeat)
+void Amc13Interface::configureBGO (int pChan, uint8_t pCommand, uint16_t pBX, uint16_t pPrescale, bool pRepeat)
 {
-    char tmp[32];
+    //Edit GA: updated AMC13 core libraries and this should work now!
+    fAMC13->configureBGOShort (pChan, pCommand, pBX, pPrescale, pRepeat);
 
-    if ( pChan < 0 || pChan > 3)
-    {
-        amc13::Exception::UnexpectedRange e;
-        e.Append("AMC13::configureBGOShort() - channel must be in range 0 to 3");
-        throw e;
-    }
+    //this is the old stuff
+    //char tmp[32];
 
-    if ( pBX > 3563)
-    {
-        amc13::Exception::UnexpectedRange e;
-        e.Append("AMC13::configureBGOShort() - bx must be in range 0 to 3563");
-        throw e;
-    }
+    //if ( pChan < 0 || pChan > 3)
+    //{
+    //amc13::Exception::UnexpectedRange e;
+    //e.Append ("AMC13::configureBGOShort() - channel must be in range 0 to 3");
+    //throw e;
+    //}
 
-    snprintf( tmp, sizeof(tmp), "CONF.TTC.BGO%d.%s", pChan, "COMMAND");
-    fAMC13->write( amc13::AMC13Simple::T1, tmp, pCommand);
+    //if ( pBX > 3563)
+    //{
+    //amc13::Exception::UnexpectedRange e;
+    //e.Append ("AMC13::configureBGOShort() - bx must be in range 0 to 3563");
+    //throw e;
+    //}
 
-    snprintf( tmp, sizeof(tmp), "CONF.TTC.BGO%d.%s", pChan, "LONG_CMD");
-    fAMC13->write( amc13::AMC13Simple::T1, tmp, 0);
+    //snprintf ( tmp, sizeof (tmp), "CONF.TTC.BGO%d.%s", pChan, "COMMAND");
+    //fAMC13->write ( amc13::AMC13Simple::T1, tmp, pCommand);
 
-    snprintf( tmp, sizeof(tmp), "CONF.TTC.BGO%d.%s", pChan, "BX");
-    fAMC13->write( amc13::AMC13Simple::T1, tmp, pBX);
+    //snprintf ( tmp, sizeof (tmp), "CONF.TTC.BGO%d.%s", pChan, "LONG_CMD");
+    //fAMC13->write ( amc13::AMC13Simple::T1, tmp, 0);
 
-    snprintf( tmp, sizeof(tmp), "CONF.TTC.BGO%d.%s", pChan, "ORBIT_PRESCALE");
-    fAMC13->write( amc13::AMC13Simple::T1, tmp, pPrescale);
+    //snprintf ( tmp, sizeof (tmp), "CONF.TTC.BGO%d.%s", pChan, "BX");
+    //fAMC13->write ( amc13::AMC13Simple::T1, tmp, pBX);
 
-    snprintf( tmp, sizeof(tmp), "CONF.TTC.BGO%d.%s", pChan, "ENABLE_SINGLE");
-    if ( !pRepeat)
-        fAMC13->write( amc13::AMC13Simple::T1, tmp, 1);
+    //snprintf ( tmp, sizeof (tmp), "CONF.TTC.BGO%d.%s", pChan, "ORBIT_PRESCALE");
+    //fAMC13->write ( amc13::AMC13Simple::T1, tmp, pPrescale);
+
+    //snprintf ( tmp, sizeof (tmp), "CONF.TTC.BGO%d.%s", pChan, "ENABLE_SINGLE");
+
+    //if ( !pRepeat)
+    //fAMC13->write ( amc13::AMC13Simple::T1, tmp, 1);
+    //else
+    //fAMC13->write ( amc13::AMC13Simple::T1, tmp, 0);
+}
+
+std::vector<uint32_t> Amc13Interface::getBGOConfig (int pChan)
+{
+    /*
+    *   [0] - repeat enabled (1=yes, 0=no)
+    *   [1] - command length (1=long, 0=short)
+    *   [2] - command value
+    *   [3] - bunch crossing number
+    *   [4] - orbit prescale value
+    *   [5] - single command (1=single command enabled 0=disabled)
+    */
+    std::vector<uint32_t> pBuf;
+    pBuf = fAMC13->getBGOConfig (pChan);
+
+    if (pBuf.size() > 6) std::cerr << "There is a problem: BGO config vector should not be longer than 6 words!" << std::endl;
+
     else
-        fAMC13->write( amc13::AMC13Simple::T1, tmp, 0);
+    {
+        std::cout << BOLDBLUE << "Channel: " << pChan << std::endl;
+        std::cout << BLUE << "Repetetive: " << pBuf.at (0) << std::endl;
+        std::cout << BLUE << "  Cmd Word: " << std::hex << pBuf.at (2) << std::dec << std::endl;
+        std::cout << BLUE << "     BX nr: " << pBuf.at (3) << std::endl;
+        std::cout << BLUE << "  Prescale: " << pBuf.at (4) << std::endl;
+        std::cout << BLUE << "Repetetive: " << pBuf.at (5) << std::endl;
+        std::cout << RESET << std::endl;
+    }
 }
 
-void Amc13Interface::enableBGO(int pChan)
+void Amc13Interface::SendBGO()
 {
-    char tmp[32];
-
-    if ( pChan < 0 || pChan > 3)
-    {
-        amc13::Exception::UnexpectedRange e;
-        e.Append("AMC13::enableBGO() - channel must be in range 0 to 3");
-        throw e;
-    }
-
-    snprintf( tmp, sizeof(tmp), "CONF.TTC.BGO%d.%s", pChan, "ENABLE");
-    fAMC13->write( amc13::AMC13Simple::T1, tmp, 1);
-
-    // Edit by Georg Auzinger, not in official AMC13 SW package but required
-    fAMC13->write( amc13::AMC13Simple::T1, "CONF.TTC.ENABLE_BGO", 1);
+    fAMC13->sendBGO();
+    //fAMC13->write(amc13::AMC13Simple::T1, "ACTION.TTC.SINGLE_COMMAND", 1);
 }
 
-void Amc13Interface::disableBGO(int pChan)
+void Amc13Interface::enableBGO (int pChan)
 {
-    char tmp[32];
+    //char tmp[32];
 
-    if ( pChan < 0 || pChan > 3)
-    {
-        amc13::Exception::UnexpectedRange e;
-        e.Append("AMC13::enableBGO() - channel must be in range 0 to 3");
-        throw e;
-    }
+    //if ( pChan < 0 || pChan > 3)
+    //{
+    //amc13::Exception::UnexpectedRange e;
+    //e.Append ("AMC13::enableBGO() - channel must be in range 0 to 3");
+    //throw e;
+    //}
 
-    snprintf( tmp, sizeof(tmp), "CONF.TTC.BGO%d.%s", pChan, "ENABLE");
-    fAMC13->write( amc13::AMC13Simple::T1, tmp, 0);
+    //snprintf ( tmp, sizeof (tmp), "CONF.TTC.BGO%d.%s", pChan, "ENABLE");
+    //fAMC13->write ( amc13::AMC13Simple::T1, tmp, 1);
+
+    //Edit GA: updated AMC13 core libraries and this should work now!
+    fAMC13->enableBGO (pChan);
+
     // Edit by Georg Auzinger, not in official AMC13 SW package but required
-    fAMC13->write( amc13::AMC13Simple::T1, "CONF.TTC.ENABLE_BGO", 0);
+    fAMC13->write ( amc13::AMC13Simple::T1, "CONF.TTC.ENABLE_BGO", 1);
+}
+
+void Amc13Interface::disableBGO (int pChan)
+{
+    //char tmp[32];
+
+    //if ( pChan < 0 || pChan > 3)
+    //{
+    //amc13::Exception::UnexpectedRange e;
+    //e.Append ("AMC13::enableBGO() - channel must be in range 0 to 3");
+    //throw e;
+    //}
+
+    //snprintf ( tmp, sizeof (tmp), "CONF.TTC.BGO%d.%s", pChan, "ENABLE");
+    //fAMC13->write ( amc13::AMC13Simple::T1, tmp, 0);
+
+    //Edit GA: updated AMC13 core libraries and this should work now!
+    fAMC13->disableBGO (pChan);
+
+    // Edit by Georg Auzinger, not in official AMC13 SW package but required
+    fAMC13->write ( amc13::AMC13Simple::T1, "CONF.TTC.ENABLE_BGO", 0);
+}
+
+void Amc13Interface::SendEC0()
+{
+    fAMC13->sendLocalEvnOrnReset (1, 0);
 }
