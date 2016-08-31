@@ -320,10 +320,11 @@ namespace Ph2_HwInterface {
          */
         unsigned char Char ( uint8_t pFeId, uint8_t pCbcId, uint32_t pBytePosition );
 
-        //const EventMap& GetEventMap() const
-        //{
-        //return fEventMap;
-        //}
+        const EventDataMap& GetEventDataMap() const
+        {
+            return fEventDataMap;
+        }
+
         friend std::ostream& operator<< ( std::ostream& out, const Event& ev );
 
         std::vector<Cluster> getClusters ( uint8_t pFeId, uint8_t pCbcId);
