@@ -139,7 +139,7 @@
     - for writing 1 FileHandler Instance per BeBoard is created
     - file Headers are now included in all raw files and are marked with the BeId
     - moved all HW Parsing features from System Controller to System/FileParser class for easier extension
-- 31.08.2016: 
+- 31.08.2016: most likely v1-40 
     - updated Event Class with more streamlined and efficient code that uses less accesses when dealing with Events - should make for better performance
     - updated DQM histogramer to work with new Event implementation
     - revised mapping of Events vs CBC and FE
