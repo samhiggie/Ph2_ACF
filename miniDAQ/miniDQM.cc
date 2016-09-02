@@ -176,7 +176,7 @@ int main ( int argc, char* argv[] )
     if ( cDQMPage )
     {
         gROOT->SetBatch ( true );
-        dqmh->bookHistos (elist.at (0)->GetEventMap() );
+        dqmh->bookHistos (elist.at (0)->GetEventDataMap() );
 
         // now read the whole file in chunks of maxevt
         dqmh->getFileHandler()->rewind();

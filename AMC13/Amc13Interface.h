@@ -10,11 +10,11 @@
 
 class Amc13Interface
 {
-public:
-    Amc13Interface( const std::string& uriT1, const std::string& addressT1, const std::string& uriT2, const std::string& addressT2 );
+  public:
+    Amc13Interface ( const std::string& uriT1, const std::string& addressT1, const std::string& uriT2, const std::string& addressT2 );
     ~Amc13Interface();
 
-    void setAmc13Description(Amc13Description* pDescription)
+    void setAmc13Description (Amc13Description* pDescription)
     {
         fDescription = pDescription;
     }
@@ -28,27 +28,29 @@ public:
     void StopL1A();
     void BurstL1A();
 
-    //void SendBGO();
-    void EnableBGO(int pChan);
-    void DisableBGO(int pChan);
+    void SendBGO();
+    void EnableBGO (int pChan);
+    void DisableBGO (int pChan);
+    std::vector<uint32_t> getBGOConfig (int pChan);
+    void SendEC0();
 
     // TTC History methods!
-    void ConfigureTTCHistory(std::vector<std::pair<int, uint32_t>> pFilterConfig);
+    void ConfigureTTCHistory (std::vector<std::pair<int, uint32_t>> pFilterConfig);
     void EnableTTCHistory();
     void DisableTTCHistory();
-    //void DumpHistory(int pNlastEntries);
-    //void DumpTriggers(int pNlastEntries);
-private:
+    void DumpHistory (int pNlastEntries);
+    void DumpTriggers (int pNlastEntries);
+  private:
     amc13::AMC13* fAMC13;
     Amc13Description* fDescription;
 
-    void setBit( uint32_t& pRegValue, uint8_t pPos, bool pValue )
+    void setBit ( uint32_t& pRegValue, uint8_t pPos, bool pValue )
     {
         pRegValue ^= ( -pValue ^ pRegValue ) & ( 1 << pPos - 1 );
     }
-    void enableBGO(int pChan);
-    void disableBGO(int pChan);
-    void configureBGO(int pChan, uint8_t pCommand, uint16_t pBX, uint16_t pPrescale, bool pRepeat);
+    void enableBGO (int pChan);
+    void disableBGO (int pChan);
+    void configureBGO (int pChan, uint8_t pCommand, uint16_t pBX, uint16_t pPrescale, bool pRepeat);
 };
 
 
