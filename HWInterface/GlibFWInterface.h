@@ -74,7 +74,7 @@ namespace Ph2_HwInterface {
         /*!
          * \brief Destructor of the GlibFWInterface class
          */
-        ~GlibFWInterface()
+        virtual ~GlibFWInterface()
         {
             if (fData) delete fData;
 

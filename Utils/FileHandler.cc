@@ -65,7 +65,7 @@ bool FileHandler::openFile( )
 
             // if the header is null or not valid, continue without and delete the header
             if ( fHeader.fValid == false )
-                std::cout << "FileHandler: Warningn - No valid file Header provided, writing file without ... " << std::endl;
+                std::cout << "FileHandler: Warning - No valid file Header provided, writing file without ... " << std::endl;
             //if the header object is valid i serialize it in the file
             else if ( fHeader.fValid)
             {
@@ -197,6 +197,7 @@ void FileHandler::writeFile()
         uint32_t cBuffer[fData.size()];
         std::copy ( fData.begin(), fData.end(), cBuffer );
         fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
+	fBinaryFile.flush();
         fData.clear();
         is_set = false;
         fMutex.unlock();
