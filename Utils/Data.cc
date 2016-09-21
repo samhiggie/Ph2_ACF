@@ -97,6 +97,8 @@ namespace Ph2_HwInterface {
             {
                 fEventList.push_back ( new Event ( pBoard, fNCbc, lvec ) );
                 lvec.clear();
+
+                if (fEventList.size() >= fNevents) break;
             }
 
             cWordIndex++;

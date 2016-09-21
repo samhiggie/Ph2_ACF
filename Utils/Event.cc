@@ -30,9 +30,15 @@ namespace Ph2_HwInterface {
         fEventCount ( pEvent.fEventCount ),
         fEventCountCBC ( pEvent.fEventCountCBC ),
         fTDC ( pEvent.fTDC ),
+        fEventSize (pEvent.fEventSize),
         fEventDataMap ( pEvent.fEventDataMap )
     {
 
+    }
+
+    bool Event::operator== (const Event& pEvent) const
+    {
+        return fEventDataMap == pEvent.fEventDataMap;
     }
 
     int Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
@@ -73,6 +79,7 @@ namespace Ph2_HwInterface {
                 uint16_t cKey = encodeId (cFeId, cCbcId);
 
                 uint32_t begin = EVENT_HEADER_SIZE_32 + cFeId * CBC_EVENT_SIZE_32 * cNCbc + cCbcId * CBC_EVENT_SIZE_32;
+                //TODO: could this be a problem?
                 uint32_t end = begin + CBC_EVENT_SIZE_32 - 1;
 
                 std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
@@ -463,7 +470,7 @@ namespace Ph2_HwInterface {
             uint8_t cCbcId;
             ev.decodeId (cKey.first, cFeId, cCbcId);
             std::string data ( ev.DataBitString ( cFeId, cCbcId ) );
-            os << GREEN << "FEId = " << cFeId << " CBCId = " << cCbcId << RESET << " len(data) = " << data.size() << std::endl;
+            os << GREEN << "FEId = " << +cFeId << " CBCId = " << +cCbcId << RESET << " len(data) = " << data.size() << std::endl;
             os << YELLOW << "PipelineAddress: " << ev.PipelineAddress (cFeId, cCbcId) << RESET << std::endl;
             os << RED << "Error: " << static_cast<std::bitset<2>> ( ev.Error ( cFeId, cCbcId ) ) << RESET << std::endl;
             os << "Ch. Data:      ";

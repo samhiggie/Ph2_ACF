@@ -79,7 +79,7 @@ namespace Ph2_HwInterface {
             return (pFeId << 8 | pCbcId);
         }
 
-        void decodeId (const uint16_t& pKey, uint8_t pFeId, uint8_t pCbcId) const
+        void decodeId (const uint16_t& pKey, uint8_t& pFeId, uint8_t& pCbcId) const
         {
             pFeId = (pKey >> 8) & 0x00FF;
             pCbcId = pKey & 0xFF;
@@ -324,6 +324,8 @@ namespace Ph2_HwInterface {
         {
             return fEventDataMap;
         }
+
+        bool operator== (const Event& pEvent) const;
 
         friend std::ostream& operator<< ( std::ostream& out, const Event& ev );
 
