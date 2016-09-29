@@ -41,9 +41,9 @@ int main ( int argc, char* argv[] )
     cmd.defineOptionAlternative ( "output", "o" );
 
     cmd.defineOption ( "skip", "skip scaning VCth vs Vplus", ArgvParser::NoOptionAttribute );
-	 cmd.defineOptionAlternative ( "skip", "s" );
-    
-	 //cmd.defineOption( "old", "Use old calibration algorithm", ArgvParser::NoOptionAttribute );
+    cmd.defineOptionAlternative ( "skip", "s" );
+
+    //cmd.defineOption( "old", "Use old calibration algorithm", ArgvParser::NoOptionAttribute );
     //cms.defineOptionAlternative ("old", "v" );
 
     cmd.defineOption ( "noise", "Perform noise scan after Offset tuning", ArgvParser::NoOptionAttribute );
@@ -95,7 +95,7 @@ int main ( int argc, char* argv[] )
     //{
     t.start();
 
-    // now create a calibration object 
+    // now create a calibration object
     Calibration cCalibration;
     cCalibration.Inherit (&cTool);
     //cCalibration->ConfigureHw();
@@ -125,6 +125,7 @@ int main ( int argc, char* argv[] )
         t.stop();
         t.show ( "Time to Scan Pedestals and Noise" );
     }
+
     cTool.SaveResults();
     cTool.CloseResultFile();
     cTool.Destroy();
