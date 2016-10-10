@@ -206,7 +206,7 @@ void Tool::StartHttpServer ( const int pPort, bool pReadonly )
     char hostname[HOST_NAME_MAX];
     gethostname (hostname, HOST_NAME_MAX);
 
-    std::cout << "Opening THttpServer on port " << pPort << ". Point your browser to: " << hostname << ":" << pPort << std::endl;
+    std::cout << "Opening THttpServer on port " << pPort << ". Point your browser to: " << BOLDGREEN << hostname << ":" << pPort << RESET << std::endl;
 #else
     std::cout << "Error, ROOT version < 5.34 detected or not compiled with Http Server support!" << std::endl << " No THttpServer available! - The webgui will fail to show plots!" << std::endl;
     std::cout << "ROOT must be built with '--enable-http' flag to use this feature." << std::endl;
