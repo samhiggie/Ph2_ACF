@@ -36,6 +36,9 @@ int main( int argc, char* argv[] )
 	cmd.defineOption( "registers", "test registers", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "registers", "r" );
 
+	cmd.defineOption( "shorts", "look for shorts", ArgvParser::NoOptionAttribute );
+	cmd.defineOptionAlternative( "shorts", "t" );
+
 	cmd.defineOption( "scan", "scan noise occupancy, if not set, the threshold from the .XML will be used", ArgvParser::NoOptionAttribute );
 	cmd.defineOptionAlternative( "scan", "s" );
 
@@ -64,6 +67,7 @@ int main( int argc, char* argv[] )
 	std::string cHybridId = ( cmd.foundOption( "id" ) ) ? cmd.optionValue( "id" ) : "-1";
 	bool batchMode = ( cmd.foundOption( "batch" ) ) ? true : false;
 	bool cRegisters = ( cmd.foundOption( "registers" ) ) ? true : false;
+	bool cShorts = ( cmd.foundOption( "shorts" ) ) ? true : false;
 	bool cScan = ( cmd.foundOption( "scan" ) ) ? true : false;
 	bool cAntenna = ( cmd.foundOption( "antenna" ) ) ? true : false;
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
@@ -75,14 +79,16 @@ int main( int argc, char* argv[] )
 
 
 	HybridTester cHybridTester;
-    cHybridTester.InitializeHw ( cHWFile );
-    cHybridTester.InitializeSettings ( cHWFile );
-    cHybridTester.CreateResultDirectory ( cDirectory );
-    cHybridTester.InitResultFile ( "HybridTest" );
-    cHybridTester.StartHttpServer();
-    cHybridTester.ConfigureHw();
 
+
+	cHybridTester.InitializeHw( cHWFile );
+	cHybridTester.InitializeSettings( cHWFile );		
 	cHybridTester.Initialize( cScan );
+	cHybridTester.CreateResultDirectory( cDirectory );
+	cHybridTester.InitResultFile( "HybridTest" );
+	cHybridTester.StartHttpServer();
+	cHybridTester.ConfigureHw();
+
 
 	// Here comes our Part:
 	
@@ -98,21 +104,25 @@ int main( int argc, char* argv[] )
 std::cout << "This feature is only available if the CMSPh2_AntennaDriver package is installed. It requires a recent version of libusb -devel and can be downloaded from: 'https://github.com/gauzinge/CMSPh2_AntennaDriver.git'" << std::endl;
 #endif
 	}
-	if ( !cAntenna && !cRegisters )
+	if ( !cAntenna && !cRegisters && !cShorts)
 	{
 		//cHybridTester.Initialize( cScan );		
 		//cHybridTester.Initialize( cScan );
 		cHybridTester.Measure();
 	}
-	std::cout << "Test Registers " << cRegisters << " , scan threshold " << cScan << std::endl;
+	
+	//std::cout << "Test Registers " << cRegisters << " , scan threshold " << cScan << std::endl;
 	if ( cRegisters ) cHybridTester.TestRegisters();
+	if ( cShorts ) cHybridTester.FindShorts();
 	if ( cScan )
 	{
-		//cHybridTester.Initialize( cScan );
+		//Scan threshold to find pedestal
 		cHybridTester.ScanThreshold();
+
 		// Wait for user to acknowledge and turn on external Source!
 		std::cout << "Identified the threshold for 0 noise occupancy - Start external Signal source!" << std::endl;
 		mypause();
+		cHybridTester.Measure();
 	}
 	
 	cHybridTester.SaveResults();
