@@ -1,4 +1,4 @@
-Cbc_default_electron# CMS Ph2 ACF (Acquisition & Control Framework) 
+# CMS Ph2 ACF (Acquisition & Control Framework) 
 
 ##### Contains:
 

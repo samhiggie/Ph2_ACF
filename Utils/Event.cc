@@ -79,8 +79,7 @@ namespace Ph2_HwInterface {
                 uint16_t cKey = encodeId (cFeId, cCbcId);
 
                 uint32_t begin = EVENT_HEADER_SIZE_32 + cFeId * CBC_EVENT_SIZE_32 * cNCbc + cCbcId * CBC_EVENT_SIZE_32;
-                //TODO: could this be a problem?
-                uint32_t end = begin + CBC_EVENT_SIZE_32 - 1;
+                uint32_t end = begin + CBC_EVENT_SIZE_32;
 
                 std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
 
@@ -182,7 +181,6 @@ namespace Ph2_HwInterface {
             return 0;
         }
     }
-
 
     uint32_t Event::PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) const
     {
@@ -457,18 +455,15 @@ namespace Ph2_HwInterface {
         const int LINE_WIDTH = 32;
         const int LAST_LINE_WIDTH = 8;
 
-        //for ( auto const& it : evmap )
-        //{
-        //uint32_t cFeId = it.first;
-
-        //for ( auto const& jt : it.second )
-        //{
-        //uint32_t cCbcId = jt.first;
         for (auto const& cKey : ev.fEventDataMap)
         {
             uint8_t cFeId;
             uint8_t cCbcId;
             ev.decodeId (cKey.first, cFeId, cCbcId);
+
+            //for (auto& cWord : cKey.second)
+            //std::cout << std::bitset<32> (cWord) << std::endl;
+
             std::string data ( ev.DataBitString ( cFeId, cCbcId ) );
             os << GREEN << "FEId = " << +cFeId << " CBCId = " << +cCbcId << RESET << " len(data) = " << data.size() << std::endl;
             os << YELLOW << "PipelineAddress: " << ev.PipelineAddress (cFeId, cCbcId) << RESET << std::endl;
