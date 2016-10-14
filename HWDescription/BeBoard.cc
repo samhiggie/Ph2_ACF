@@ -78,7 +78,7 @@ namespace Ph2_HwDescription {
         }
         else
         {
-            LOG (IFNO) << "Error:The BeBoard: " << +fBeId
+            LOG (INFO) << "Error:The BeBoard: " << +fBeId
                        << " doesn't have the module " << +pModuleId ;
             return false;
         }

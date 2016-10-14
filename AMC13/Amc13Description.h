@@ -6,7 +6,7 @@
 #include <vector>
 #include <stdint.h>
 #include <iostream>
-#include "../Utils/easylogging++"
+#include "../Utils/easylogging++.h"
 
 typedef std::map<std::string, uint32_t> RegMap;
 

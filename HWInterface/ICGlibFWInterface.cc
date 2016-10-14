@@ -90,7 +90,7 @@ namespace Ph2_HwInterface {
         uint32_t cVersionMajor, cVersionMinor;
         cVersionMajor = ReadReg ( "user_stat.version.ver_major" );
         cVersionMinor = ReadReg ( "user_stat.version.ver_minor" );
-        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << ReadReg ( "user_stat.version.ver_build" ) ;
+        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "user_stat.version.ver_build" ) ) ;
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "sys_regs.board_id" );
 

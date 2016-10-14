@@ -134,17 +134,17 @@ namespace Ph2_System {
          * \param pFilename : HW Description file
          *\param os : ostream to dump output
          */
-        void InitializeHw ( const std::string& pFilename, std::ostream& os  );
+        void InitializeHw ( const std::string& pFilename, std::ostream& os = std::cout  );
         /*!
          * \brief Initialize the settings
          * \param pFilename :   settings file
          *\param os : ostream to dump output
         */
-        void InitializeSettings ( const std::string& pFilename, std::ostream& os  );
+        void InitializeSettings ( const std::string& pFilename, std::ostream& os = std::cout  );
         /*!
          * \brief Configure the Hardware with XML file indicated values
          */
-        void ConfigureHw ( std::ostream& os , bool bIgnoreI2c = false );
+        void ConfigureHw ( std::ostream& os = std::cout , bool bIgnoreI2c = false );
         /*!
          * \brief Run a DAQ
          * \param pBeBoard

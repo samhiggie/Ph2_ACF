@@ -17,7 +17,8 @@ using namespace Ph2_HwInterface;
 namespace Ph2_System {
 
     SystemController::SystemController()
-        : fFileHandler (nullptr)
+        : fFileHandler (nullptr),
+          fWriteHandlerEnabled (false)
     {
     }
 
@@ -67,7 +68,7 @@ namespace Ph2_System {
 
     void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os )
     {
-        this->fParser.parseHW (pFilename, fBeBoardFWMap, fBoardVector, os);
+        this->fParser.parseHW (pFilename, fBeBoardFWMap, fBoardVector, os );
 
         fBeBoardInterface = new BeBoardInterface ( fBeBoardFWMap );
         fCbcInterface = new CbcInterface ( fBeBoardFWMap );
@@ -78,7 +79,7 @@ namespace Ph2_System {
 
     void SystemController::InitializeSettings ( const std::string& pFilename, std::ostream& os )
     {
-        this->fParser.parseSettings (pFilename, fSettingsMap, os);
+        this->fParser.parseSettings (pFilename, fSettingsMap, os );
     }
 
     void SystemController::ConfigureHw ( std::ostream& os , bool bIgnoreI2c )

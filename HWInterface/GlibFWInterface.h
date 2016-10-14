@@ -20,6 +20,7 @@
 #include "BeBoardFWInterface.h"
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
+#include "../Utils/easylogging++.h"
 
 using namespace Ph2_HwDescription;
 

@@ -606,7 +606,9 @@ void HybridTester::TestRegisters()
     start_time = time (0);
     char* stop = ctime (&start_time);
     LOG (INFO) << "stop: " << stop ;
-    ConfigureHw();
+    std::stringstream ss;
+    ConfigureHw (ss);
+    LOG (INFO) << ss.str();
 }
 
 void HybridTester::DisplayGroupsContent (std::array<std::vector<std::array<int, 5>>, 8> pShortedGroupsArray)

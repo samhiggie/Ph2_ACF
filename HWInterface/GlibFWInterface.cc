@@ -78,11 +78,11 @@ namespace Ph2_HwInterface {
 
     uint32_t GlibFWInterface::getBoardInfo()
     {
-        LOG (INFO) << "FMC1 present : " << ReadReg ( "status.fmc1_present" ) ;
-        LOG (INFO) << "FMC2 present : " << ReadReg ( "status.fmc2_present" ) ;
+        LOG (INFO) << "FMC1 present : " << std::to_string (ReadReg ( "status.fmc1_present" ) ) ;
+        LOG (INFO) << "FMC2 present : " << std::to_string (ReadReg ( "status.fmc2_present" ) ) ;
         uint32_t cVersionMajor = ReadReg ( "firm_id.firmware_major" );
         uint32_t cVersionMinor = ReadReg ( "firm_id.firmware_minor" );
-        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << ReadReg ( "firm_id.firmware_build" ) ;
+        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "firm_id.firmware_build" ) ) ;
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "board_id" );
 
