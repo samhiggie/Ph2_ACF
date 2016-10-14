@@ -130,7 +130,7 @@ namespace Ph2_System {
 
     void SystemController::initializeFileHandler()
     {
-        std::cout << BOLDBLUE << "Saving binary raw data to: " << fRawFileName << ".fedId" << RESET << std::endl;
+        LOG (INFO) << BOLDBLUE << "Saving binary raw data to: " << fRawFileName << ".fedId" << RESET ;
 
         // here would be the ideal position to fill the file Header and call openFile when in read mode
         for (const auto& cBoard : fBoardVector)
