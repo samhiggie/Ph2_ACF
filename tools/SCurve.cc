@@ -40,7 +40,7 @@ void SCurve::MakeTestGroups ( bool pAllChan )
 
 void SCurve::setOffset ( uint8_t pOffset, int  pGroup )
 {
-    // std::cout << "Setting offsets of Test Group " << pGroup << " to 0x" << std::hex << +pOffset << std::dec << std::endl;
+    // LOG(INFO) << "Setting offsets of Test Group " << pGroup << " to 0x" << std::hex << +pOffset << std::dec ;
     for ( auto cBoard : fBoardVector )
     {
         for ( auto cFe : cBoard->fModuleVector )
@@ -71,7 +71,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
 {
     // Adaptive Loop to measure SCurves
 
-    std::cout << BOLDGREEN << "Measuring SCurves sweeping VCth ... " << RESET <<  std::endl;
+    LOG (INFO) << BOLDGREEN << "Measuring SCurves sweeping VCth ... " << RESET <<  std::endl;
 
     // Necessary variables
     bool cNonZero = false;
@@ -98,7 +98,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
     {
         if (cIterationCount > 0 && (cValue == 0xFF || cValue == 0x00) )
         {
-            std::cout << BOLDRED << "ERROR: something wrong with these SCurves"  << RESET << std::endl;
+            LOG (INFO) << BOLDRED << "ERROR: something wrong with these SCurves"  << RESET ;
             break;
         }
 
@@ -143,7 +143,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
             //Counter cCounter;
             //pBoard->accept ( cCounter );
 
-            //std::cout << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
+            //LOG(INFO) << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ;
 
             // check if the hitcounter is all ones
             if ( cNonZero == false && cHitCounter != 0 )
@@ -156,7 +156,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
                 else cValue -= cStep;
 
                 cStep /= 10;
-                std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET << std::endl;
+                LOG (INFO) << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET ;
                 continue;
             }
 
@@ -166,7 +166,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
             if ( cAllOneCounter >= 10 )
             {
                 cAllOne = true;
-                std::cout << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET << std::endl;
+                LOG (INFO) << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET ;
             }
 
             if ( cAllOne ) break;
@@ -183,7 +183,7 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
 {
     // Adaptive Loop to measure SCurves
 
-    std::cout << BOLDGREEN << "Measuring SCurves sweeping Channel Offsets ... " << RESET << std::endl;
+    LOG (INFO) << BOLDGREEN << "Measuring SCurves sweeping Channel Offsets ... " << RESET ;
 
     // Necessary variables
     bool cNonZero = false;
@@ -242,7 +242,7 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
 
             cNthAcq++;
 
-            // std::cout << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() << std::endl;
+            // LOG(INFO) << "DEBUG Vcth " << int( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ;
 
             // check if the hitcounter is all ones
             if ( cNonZero == false && cHitCounter != 0 )
@@ -255,7 +255,7 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
                 else cValue -= 1.5 * cStep;
 
                 cStep /= 10;
-                std::cout << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET << std::endl;
+                LOG (INFO) << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET ;
                 continue;
             }
 
@@ -265,7 +265,7 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
             if ( cAllOneCounter >= 10 )
             {
                 cAllOne = true;
-                std::cout << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET << std::endl;
+                LOG (INFO) << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET ;
             }
 
             if ( cAllOne ) break;
@@ -288,7 +288,7 @@ void SCurve::initializeSCurves ( TString pParameter, uint8_t pValue, int  pTGrpI
             ( cCbc.second.at ( cChanId ) ).initializeHist ( pValue, pParameter );
     }
 
-    std::cout << "SCurve Histograms for " << pParameter << " =  " << int ( pValue ) << " initialized!" << std::endl;
+    LOG (INFO) << "SCurve Histograms for " << pParameter << " =  " << int ( pValue ) << " initialized!" ;
 }
 
 uint32_t SCurve::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint8_t pValue, int  pTGrpId, bool pDraw )
@@ -318,7 +318,7 @@ uint32_t SCurve::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint8_t pV
 
                 }
             }
-            else std::cout << RED << "Error: could not find the channels for CBC " << int ( cCbc->getCbcId() ) << RESET << std::endl;
+            else LOG (INFO) << RED << "Error: could not find the channels for CBC " << int ( cCbc->getCbcId() ) << RESET ;
         }
     }
 
