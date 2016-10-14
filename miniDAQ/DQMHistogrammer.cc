@@ -242,7 +242,7 @@ void DQMHistogrammer::fillHistos (const std::vector<Event*>& event_list, int nev
             uint32_t pladdress_cbc = ev->PipelineAddress (feId, cbcId);
             int nstub_cbc          = std::stoi ( ev->StubBitString ( feId, cbcId ), nullptr, 10);
             std::stringstream ss;
-            ss << "fed" << feId << "cbc" << cbcId;
+            ss << "FeId" << feId << "CbcId" << cbcId;
             std::string key_cbc = ss.str();
 
             totalStubs_ += nstub_cbc;
