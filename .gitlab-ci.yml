@@ -23,7 +23,7 @@ build_Ph2_ACF:
   - source setup.sh
   - make
  only:
-  - Dev, master
+  - Dev
 
 after_script:
  - source setup.sh
