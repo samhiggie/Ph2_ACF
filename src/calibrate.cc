@@ -64,7 +64,7 @@ int main ( int argc, char* argv[] )
 
     if ( result != ArgvParser::NoParserError )
     {
-        LOG (ERROR) << cmd.parseErrorDescription ( result );
+        LOG (INFO) << cmd.parseErrorDescription ( result );
         exit ( 1 );
     }
 
@@ -97,7 +97,7 @@ int main ( int argc, char* argv[] )
     cTool.StartHttpServer();
     cTool.ConfigureHw (outp);
     LOG (INFO) << outp.str();
-    outp.clear();
+    outp.str ("");
     //if ( !cOld )
     //{
     t.start();
@@ -125,7 +125,7 @@ int main ( int argc, char* argv[] )
         cPedeNoise.Inherit (&cTool);
         cPedeNoise.ConfigureHw (outp);
         LOG (INFO) << outp.str();
-        outp.clear();
+        outp.str ("");
         cPedeNoise.Initialise(); // canvases etc. for fast calibration
         cPedeNoise.measureNoise();
         cPedeNoise.Validate();

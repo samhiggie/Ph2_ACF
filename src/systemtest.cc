@@ -35,7 +35,7 @@ int main ( int argc, char** argv )
 
     if ( result != ArgvParser::NoParserError )
     {
-        std::cout << cmd.parseErrorDescription ( result );
+        LOG (INFO) << cmd.parseErrorDescription ( result );
         exit ( 1 );
     }
 
@@ -50,11 +50,12 @@ int main ( int argc, char** argv )
     cSystemController.InitializeSettings ( cHWFile, outp );
 
     LOG (INFO) << outp.str();
-    outp.clear();
+    outp.str ("");
 
     if ( cConfigure ) cSystemController.ConfigureHw (outp);
 
     LOG (INFO) << outp.str();
+
     //Timer t;
     //t.start();
 
