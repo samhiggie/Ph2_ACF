@@ -20,6 +20,7 @@
 #include "../Utils/Utilities.h"
 #include "../Utils/Exception.h"
 #include "../Utils/FileHandler.h"
+#include "../Utils/easylogging++.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWDescription/Definition.h"
 #include "../HWDescription/CbcRegItem.h"
