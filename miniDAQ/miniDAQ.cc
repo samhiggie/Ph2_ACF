@@ -142,6 +142,7 @@ int main ( int argc, char* argv[] )
 
     std::stringstream outp;
     cSystemController.InitializeHw ( cHWFile, outp );
+    LOG(INFO) << outp.str();
     outp.str ("");
     cSystemController.ConfigureHw (outp);
     LOG (INFO) << outp.str();
