@@ -90,8 +90,8 @@ int main ( int argc, char* argv[] )
     std::stringstream outp;
     cHybridTester.InitializeHw ( cHWFile, outp );
     cHybridTester.InitializeSettings ( cHWFile, outp );
-    cHybridTester.Initialize ( cScan );
     LOG (INFO) << outp.str();
+    cHybridTester.Initialize ( cScan );
     outp.str ("");
     cHybridTester.CreateResultDirectory ( cDirectory );
     cHybridTester.InitResultFile ( "HybridTest" );
