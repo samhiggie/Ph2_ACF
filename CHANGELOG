@@ -144,3 +144,4 @@
     - updated DQM histogramer to work with new Event implementation
     - revised mapping of Events vs CBC and FE
     - merged most recent AMC13 code from Pixel Phase 1 developments
+- 24.10.2016: added easylogging++ class for convenient log file creation and different logging levels
