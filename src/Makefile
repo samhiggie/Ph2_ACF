@@ -4,6 +4,7 @@ CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC
 CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTVERSION := $(shell root-config --has-http)
 HttpFlag = -D__HTTP__
+ZmqFlag = -D__ZMQ__
 
 DevFlags        =
 
@@ -11,11 +12,13 @@ ANTENNADIR=../CMSPh2_AntennaDriver
 AntennaFlag = -D__ANTENNA__
 AMC13DIR=/opt/cactus/include/amc13
 Amc13Flag     = -D__AMC13__
-
+HMP4040DIR=../../Ph2_USBInstDriver
+HMP4040Flag     = -D__HMP4040__
+ZMQ_HEADER_PATH = /usr/include/zmq.hpp
 
 LibraryDirs = /opt/cactus/lib ../lib 
 	IncludeDirs     =  /opt/cactus/include ../ 
-	ExternalObjects= $(LibraryPaths) -lpthread  -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Tools 
+	ExternalObjects= $(LibraryPaths) -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Tools 
 
 ##################################################
 ## check if the Root has THttp
@@ -32,7 +35,7 @@ endif
 ifneq ("$(wildcard $(ANTENNADIR))","")
 	IncludeDirs += $(ANTENNADIR)
 	LibraryDirs += $(ANTENNADIR)/lib /usr/lib64/ 
-	ExternalObjects += -lPh2_Antenna $(AntennaFlag) 
+	ExternalObjects += -lboost_thread -lPh2_Antenna $(AntennaFlag) 
 	ANTENNAINSTALLED = yes
 else
 	ANTENNAINSTALLED = no
@@ -48,7 +51,27 @@ else
 	AMC13INSTALLED = no
 endif
 
-
+#################################################
+# check if ZMQ library is available on this machine
+#################################################
+ifneq ("$(wildcard $(ZMQ_HEADER_PATH))","")
+        ExternalObjects += -lzmq $(ZmqFlag)
+        ZMQINSTALLED = yes
+else
+		ZMQINSTALLED = no
+        ZMQINSTRUCTIONS = ZeroMQ library is required to build the lvSupervisor with the server option - get it with \'sudo yum install zeromq-devel\'
+endif
+##################################################
+## check if the HMP4040 drivers are installed
+##################################################
+ifneq ("$(wildcard $(HMP4040DIR))","")
+	LibraryDirs += $(HMP4040DIR)/lib $(HMP4040DIR)/Utils $(HMP4040DIR)/HMP4040
+	IncludeDirs += $(BOOST_INCLUDE) $(HMP4040DIR)/HMP4040 $(HMP4040DIR)/Utils $(HMP4040DIR)/Drivers 
+	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_USBUtils -lPh2_Drivers $(HMP4040Flag)
+	HMP4040INSTALLED = yes
+else
+	HMP4040INSTALLED = no
+endif
 
 IncludePaths            = $(IncludeDirs:%=-I%)
 RootLibraryDirs = /usr/local/lib/root
@@ -57,7 +80,7 @@ LibraryPaths = $(LibraryDirs:%=-L%)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 
-binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure #test
+binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester
 binariesNoRoot=systemtest datatest fpgaconfig configure
 
 .PHONY: clean $(binaries)
@@ -74,7 +97,13 @@ print:
 	@echo 'Root Has Http:' $(ROOTVERSION)
 	@echo 'Amc13 SW installed:' $(AMC13INSTALLED)
 	@echo 'Antenna installed:' $(ANTENNAINSTALLED)
+	@echo 'HMP4040 installed:' $(HMP4040INSTALLED)
+	@echo 'ZXMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
+
+integratedtester: integratedtester.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
 
 systemtest: systemtest.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
@@ -111,10 +140,6 @@ fpgaconfig: fpgaconfig.cc
 pulseshape: pulseshape.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
-
-#test: test.cc
-	#$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	#cp $@ ../bin
 
 clean:
 	rm -f $(binaries) *.o

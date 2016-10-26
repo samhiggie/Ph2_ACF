@@ -128,6 +128,13 @@ namespace Ph2_System {
                 cBoard->accept ( pVisitor );
         }
 
+         /*!
+         * \brief change the hardware description via a config file. 
+         * \Added to allow the reconfiguation of the GLIB during a test procedure.
+         * \param pFilename : HW Description file
+         *\param os : ostream to dump output
+         */
+        void ChangeHWDescription ( const std::string& pFilename, std::ostream& os = std::cout );
         /*!
          * \brief Initialize the Hardware via a config file
          * \param pFilename : HW Description file
@@ -135,7 +142,14 @@ namespace Ph2_System {
          */
         void InitializeHw ( const std::string& pFilename, std::ostream& os = std::cout );
         /*!
+         * \brief change the settings
+         * \param pFilename :   settings file
+         *\param os : ostream to dump output
+        */
+        void ChangeSettings ( const std::string& pFilename, std::ostream& os = std::cout );
+        /*!
          * \brief Initialize the settings
+         * \Added to allow the reconfiguation of the settings during a test procedure.
          * \param pFilename :   settings file
          *\param os : ostream to dump output
         */

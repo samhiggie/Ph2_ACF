@@ -22,7 +22,7 @@ namespace Ph2_HwInterface {
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
-        fNthAcq (0)
+        fNthAcq (0) , fRegWriteAttempts(0)
     {
     }
 
@@ -34,7 +34,7 @@ namespace Ph2_HwInterface {
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
         fFileHandler ( pFileHandler ),
-        fNthAcq (0)
+        fNthAcq (0), fRegWriteAttempts(0)
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
@@ -46,7 +46,7 @@ namespace Ph2_HwInterface {
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
-        fNthAcq (0)
+        fNthAcq (0), fRegWriteAttempts(0)
     {
     }
 
@@ -59,7 +59,7 @@ namespace Ph2_HwInterface {
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
         fFileHandler ( pFileHandler ),
-        fNthAcq (0)
+        fNthAcq (0), fRegWriteAttempts(0)
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
@@ -626,6 +626,7 @@ namespace Ph2_HwInterface {
         }
 
         // now read back
+        int cWriteAttempts = 0 ;
         if (pReadback)
         {
             //to use exactly the same algorithm, I should copy the vector and mask out the last 8 bits
@@ -659,10 +660,16 @@ namespace Ph2_HwInterface {
                 cSuccess = false;
 
                 // if the number of errors is greater than 100, give up
-                if (cWriteAgain.size() < 120)
+                if (cWriteAgain.size() < 120 && fRegWriteAttempts < MAX_WRITE_ATTEMPTS )
                 {
-                    std::cout << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" << std::endl;
+                    std::cout << BOLDRED <<  "\t\t(WRITE#"  << std::to_string(fRegWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" <<  RESET <<  std::endl;
+                    fRegWriteAttempts++;
                     this->WriteCbcBlockReg ( cWriteAgain, true);
+                }
+                else if ( fRegWriteAttempts >= MAX_WRITE_ATTEMPTS )
+                {
+                    cSuccess = false; 
+                    fRegWriteAttempts = 0 ;   
                 }
                 //else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
                 else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );

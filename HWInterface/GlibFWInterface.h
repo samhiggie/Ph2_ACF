@@ -23,6 +23,8 @@
 
 using namespace Ph2_HwDescription;
 
+// maximum number of tries allowed to attempt a write procedure to a CBC register 
+const uint8_t MAX_WRITE_ATTEMPTS = 5 ;
 /*!
  * \namespace Ph2_HwInterface
  * \brief Namespace regrouping all the interfaces to the hardware
@@ -45,6 +47,8 @@ namespace Ph2_HwInterface {
         FpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fNthAcq, fNpackets;
+        // number of tries a CBC register write operation was attempted  
+        uint8_t fRegWriteAttempts; 
 
       private:
         /*!

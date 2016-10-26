@@ -45,6 +45,7 @@ using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
+
 /*!
  * \class HybridTester
  * \brief Class to test x*CBC2 Hybrids
@@ -60,7 +61,7 @@ class HybridTester : public Tool
 	* \brief Initialize the Histograms and Canvasses for CMD line applications
 	* \param pThresholdScan :  bool flag to initialize the additional canvas for the Threshold scan
 	*/
-	void Initialize( bool pThresholdScan );
+	void Initialize( bool pThresholdScan = false );
 	/*!
 	* \brief Test CBC registers by writing complimentary bit patterns (0x55, 0xAA)
 	*/
@@ -82,6 +83,24 @@ class HybridTester : public Tool
 	void ScanLatency();
 	
 	/*!
+	*\brief return mean occupancy for (TOP) pads
+	*/
+	double GetMeanOccupancyTop(){return fHistOccupancyTop->GetMean();};
+	/*!
+	*\brief return mean occupancy for (BOTTOM) pads
+	*/
+	double GetMeanOccupancyBottom(){return fHistOccupancyBottom->GetMean();};
+
+	/*!
+	*\brief return RMS occupancy for (TOP) pads
+	*/
+	double GetRMSOccupancyTop(){return fHistOccupancyTop->GetRMS();};
+	/*!
+	*\brief return RMS occupancy for (BOTTOM) pads
+	*/
+	double GetRMSOccupancyBottom(){return fHistOccupancyBottom->GetRMS();};
+
+	/*!
 	* \brief Measure the single strip efficiency
 	*/
 	void AntennaScan();
@@ -102,11 +121,19 @@ class HybridTester : public Tool
 	*/
 	void SaveResults();
 
+	void ReconfigureCBCRegisters(std::string pDirectoryName = "");
+
+	void DisplayNoisyChannels(std::ostream& os = std::cout );
+	void DisplayDeadChannels(std::ostream& os = std::cout );
+
   private:
 	uint32_t fNCbc;   /*!< Number of CBCs in the Setup */
 	TCanvas* fDataCanvas;   /*!<Canvas to output single-strip efficiency */
+	TCanvas* fSummaryCanvas;   /*!<Canvas to output single-strip efficiency */
 	TH1F* fHistTop;   /*!< Histogram for top pads */
 	TH1F* fHistBottom;   /*!< Histogram for bottom pads */
+	TH1F* fHistOccupancyBottom;   /*!< Distibution of measured occupancies for bottom pads */
+	TH1F* fHistOccupancyTop;   /*!< Distibution of measured occupancies for top pads */
 	TH1F* fHistTopMerged;   /*!< Histogram for top pads used for segmented antenna testing routine*/
 	TH1F* fHistBottomMerged;   /*!< Histogram for bottom pads used for segmented antenna testing routine*/
 	
@@ -115,6 +142,13 @@ class HybridTester : public Tool
 
 	std::map<Cbc*, TH1F*> fSCurveMap;  /*!< Histograms for SCurve */
 	std::map<Cbc*, TF1*> fFitMap;   /*!< fits for SCurve*/
+
+	// noisy and dead channels on top/bottom sensors
+	std::vector<int> fNoisyChannelsTop; 
+	std::vector<int> fNoisyChannelsBottom; 
+	std::vector<int> fDeadChannelsTop; 
+	std::vector<int> fDeadChannelsBottom;  
+
 
 	uint32_t fTotalEvents;
 	bool fHoleMode;
@@ -128,6 +162,12 @@ class HybridTester : public Tool
 	bool CheckShortsConnection(std::vector<std::array<int, 2>> pShortA, std::vector<std::array<int, 2>> pShortB);
 	bool CheckChannelInShortPresence( std::array<int, 2> pShortedChannel, std::vector<std::array<int, 2>> pShort);
 	std::vector<std::array<int, 2>> MergeShorts(std::vector<std::array<int, 2>> pShortA, std::vector<std::array<int, 2>> pShortB);
+
+
+	/*!
+	* \brief private method that classifies the channels on the top/bottom sensors into "Noisy/Dead"
+	*/
+	void ClassifyChannels(double pNoiseLevel = 65 , double pDeadLevel = 25 ); 
 
 	//double fChannelDiagnosisThreshold;
 	/*!
@@ -147,6 +187,13 @@ class HybridTester : public Tool
 		fDataCanvas->cd( 2 );
 		fHistBottom->Draw();
 		fDataCanvas->Update();
+
+		fSummaryCanvas->cd( 1);
+		fHistOccupancyTop->Draw();
+		fSummaryCanvas->cd( 2);
+		fHistOccupancyBottom->Draw();
+		fSummaryCanvas->Update();
+			
 	}
 
 	/*!
@@ -212,6 +259,8 @@ class HybridTester : public Tool
 			output_string += patch::to_string( *it ) + "; ";
 		return output_string;
 	}
+
+	void writeGraphs();
 
 };
 

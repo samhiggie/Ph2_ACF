@@ -2,7 +2,9 @@
 <HwDescription>
   <BeBoard Id="0" boardType="GLIB">
     <!-- <connection id="board" uri="ipbusudp-2.0://192.168.000.163:50001" address_table="file://settings/address_table_2CBC.xml" /> -->
-    <connection id="board" uri="chtcp-2.0://cmsuptracker002:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" />
+    <!-- <connection id="board" uri="chtcp-2.0://cmsuptracker002:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" /> -->
+    <connection id="board" uri="chtcp-2.0://localhost:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" />
+    
     <FW_Version NCbcDataSize="4" />
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         <Global_CBC_Register name="VCth"> 0x76 </Global_CBC_Register>
@@ -12,7 +14,7 @@
       <!--<Global_CBC_Register name="TestPulsePot">0xE0</Global_CBC_Register>-->
       <!--<Global_CBC_Register name="SelTestPulseDel&ChanGroup">0x00</Global_CBC_Register>-->
 
-      <CBC_Files path="./Results/Calibration_Electron_23-05-16_17:45/" />
+      <CBC_Files path="./Results/Calibration_Hole/" />
       <CBC Id="0" configfile="FE0CBC0.txt" />
       <CBC Id="1" configfile="FE0CBC1.txt" />
 
@@ -58,7 +60,7 @@
   </BeBoard>
 </HwDescription>
 <Settings>
-    <Setting name="Nevents">10</Setting>
+    <Setting name="Nevents">1000</Setting>
     <Setting name="RunNumber">1</Setting>
     <Setting name="HoleMode">0</Setting>
 </Settings>

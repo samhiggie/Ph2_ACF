@@ -2,7 +2,6 @@
 #include <ctime>
 
 // fill the Histograms, count the hits and increment Vcth
-
 struct HistogramFiller  : public HwDescriptionVisitor
 {
 	TH1F* fBotHist;
@@ -28,6 +27,57 @@ struct HistogramFiller  : public HwDescriptionVisitor
 	}
 };
 
+void HybridTester::ReconfigureCBCRegisters(std::string pDirectoryName )
+{
+    bool cCheck;
+    bool cHoleMode;
+    auto cSetting = fSettingsMap.find ( "HoleMode" );
+
+    if ( cSetting != std::end ( fSettingsMap ) )
+    {
+        cCheck = true;
+        cHoleMode = ( cSetting->second == 1 ) ? true : false;
+    }
+
+    std::string cMode;
+
+    if ( cCheck )
+    {
+        if ( cHoleMode ) cMode = "hole";
+        else cMode = "electron";
+    }
+
+    
+
+    for (auto& cBoard : fBoardVector)
+    {
+        fBeBoardInterface->CbcHardReset ( cBoard );
+        for (auto& cFe : cBoard->fModuleVector)
+        {
+            for (auto& cCbc : cFe->fCbcVector)
+            {
+                std::string pRegFile ;
+                char buffer[120];
+                if( pDirectoryName.empty() )
+                {
+                    sprintf(buffer, "%s/FE%dCBC%d.txt" , fDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                }
+                else
+                {
+                    sprintf(buffer, "%s/FE%dCBC%d.txt" , pDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                }
+    			
+    			pRegFile = buffer;
+                cCbc->loadfRegMap(pRegFile);
+                fCbcInterface->ConfigureCbc ( cCbc );
+                std::cout << GREEN << "\t\t Successfully reconfigured CBC" << int ( cCbc->getCbcId() ) << "'s regsiters from " << pRegFile << " ." << RESET << std::endl;
+            }
+        }
+
+        //CbcFastReset as per recommendation of Mark Raymond
+        fBeBoardInterface->CbcFastReset ( cBoard );
+    }
+}
 
 void HybridTester::InitializeHists()
 {
@@ -62,6 +112,33 @@ void HybridTester::InitializeHists()
 	fHistBottomMerged = new TH1F( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
 	fHistBottomMerged->SetFillColor( 4 );
 	fHistBottomMerged->SetFillStyle( 3001 );
+
+	TString cOccupancyBottom("fHistOccupancyBottom"); 
+	fHistOccupancyBottom = ( TH1F* )( gROOT->FindObject( cOccupancyBottom ) );
+	if ( fHistOccupancyBottom ) delete fHistOccupancyBottom;
+	fHistOccupancyBottom = new TH1F( cOccupancyBottom, "Back Pad Channels.", (int)( 110/1.0 ) , -0.5 , 110.0 - 0.5 );
+	fHistOccupancyBottom->SetStats(1);
+	fHistOccupancyBottom->SetFillColor( 4 );
+	fHistOccupancyBottom->SetLineColor( 4 );
+	fHistOccupancyBottom->SetFillStyle( 3004 );
+	fHistOccupancyBottom->GetYaxis()->SetTitle("Number of Strips");
+	fHistOccupancyBottom->GetXaxis()->SetTitle("Occupancy (%)");
+	fHistOccupancyBottom->GetXaxis()->SetRangeUser(0.0,101.0);
+
+	TString cOccupancyTop("fHistOccupancyTop"); 
+	fHistOccupancyTop = ( TH1F* )( gROOT->FindObject( cOccupancyTop ) );
+	if ( fHistOccupancyTop ) delete fHistOccupancyTop;
+	fHistOccupancyTop = new TH1F( cOccupancyTop, "Top Pad Channels.", (int)( 110/1.0 ) , -0.5 , 110.0 - 0.5 );
+	fHistOccupancyTop->SetStats(1);
+	fHistOccupancyTop->SetFillColor( 3 );
+	fHistOccupancyTop->SetLineColor( 3 );
+	fHistOccupancyTop->SetFillStyle( 3004 );
+	fHistOccupancyTop->GetYaxis()->SetTitle("Number of Strips");
+	fHistOccupancyTop->GetXaxis()->SetTitle("Occupancy (%)");
+	fHistOccupancyTop->GetXaxis()->SetRangeUser(0.0,101.0);
+	
+
+
 
 	// Now the Histograms for SCurves
 	for ( auto cBoard : fBoardVector )
@@ -121,8 +198,12 @@ void HybridTester::Initialize ( bool pThresholdScan )
 	accept( cCbcCounter );
 	fNCbc = cCbcCounter.getNCbc();
 
-	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
+	fDataCanvas = new TCanvas( "fDataCanvas", "SingleStripEfficiency", 10, 0, 500, 500 );
 	fDataCanvas->Divide( 2 );
+
+	fSummaryCanvas = new TCanvas( "fSummaryCanvas", "Summarizing Module Efficiency", 10, 0, 500, 500 );
+	fSummaryCanvas->Divide( 2 );
+
 
 	if ( fThresholdScan )
 	{
@@ -132,7 +213,10 @@ void HybridTester::Initialize ( bool pThresholdScan )
 	}
 	InitializeHists();
 	InitialiseSettings();
-
+	fNoisyChannelsTop.clear();
+	fNoisyChannelsBottom.clear();
+	fDeadChannelsTop.clear();
+	fDeadChannelsBottom.clear();
 }
 
 uint32_t HybridTester::fillSCurves( BeBoard* pBoard,  const Event* pEvent, uint8_t pValue )
@@ -544,8 +628,10 @@ void HybridTester::TestRegisters()
 		}
 	};
 
+
+	// well I'm going to comment this out because its easier this way
 	// This should probably be done in the top level application but there I do not have access to the settings map
-	time_t start_time = time(0);
+	/*time_t start_time = time(0);
 	char* start = ctime(&start_time);
 	std::cout << "start: "<< start << std::endl;
 	std::cout << std::endl << "Running registers testing tool ... " << std::endl;
@@ -556,7 +642,7 @@ void HybridTester::TestRegisters()
 	start_time = time(0);
 	char* stop = ctime(&start_time);
 	std::cout << "stop: " << stop << std::endl;
-	ConfigureHw();
+	ConfigureHw();*/
 }
 
 void HybridTester::DisplayGroupsContent(std::array<std::vector<std::array<int, 5>>, 8> pShortedGroupsArray)
@@ -875,16 +961,82 @@ void HybridTester::Measure()
 	      }
 	    fBeBoardInterface->Stop( pBoard);
 	  }
+	for( int i = 1 ; i < ( fNCbc/2 * 254 ) ; i++ )
+	{
+		double cOccupancyTop = 100*fHistTop->GetBinContent(i)/(double)(fTotalEvents); 
+		double cOccupancyBottom = 100*fHistBottom->GetBinContent(i)/(double)(fTotalEvents);
+		fHistOccupancyBottom->Fill( cOccupancyBottom );
+		fHistOccupancyTop->Fill( cOccupancyTop );
+	}
+	//fHistOccupancyBottom->Scale(100.0/(fNCbc*127));
+	//fHistOccupancyTop->Scale(100.0/(fNCbc*127));
+	
 	fHistTop->Scale( 100 / double_t( fTotalEvents ) );
 	fHistTop->GetYaxis()->SetRangeUser( 0, 100 );
 	fHistBottom->Scale( 100 / double_t( fTotalEvents ) );
 	fHistBottom->GetYaxis()->SetRangeUser( 0, 100 );
 	UpdateHists();
 
-	std::cout << "Mean occupancy at the Top side: " << fHistTop->Integral()/(double)(fNCbc*127) << std::endl;
-	std::cout << "Mean occupancy at the Bottom side: " << fHistBottom->Integral()/(double)(fNCbc*127) << std::endl;
-}
+	ClassifyChannels();
+    
 
+	std::cout << BOLDGREEN << "\t\tMean occupancy for the Top side: " << fHistOccupancyTop->GetMean() << " ± " << fHistOccupancyTop->GetRMS() << RESET << std::endl ; 
+	std::cout << BOLDGREEN << "\t\tMean occupancy for the Botton side: " << fHistOccupancyBottom->GetMean() << " ± " <<  fHistOccupancyBottom->GetRMS()  << RESET <<  std::endl ; 
+	//std::cout << "Mean occupancy at the Top side: " << fHistTop->Integral()/(double)(fNCbc*127) << std::endl;
+	//std::cout << "Mean occupancy at the Bottom side: " << fHistBottom->Integral()/(double)(fNCbc*127) << std::endl;
+}
+void HybridTester::ClassifyChannels(double pNoiseLevel , double pDeadLevel ) 
+{
+	for( int i = 1 ; i < ( fNCbc/2 * 254 ) ; i++ )
+	{
+		if( fHistBottom->GetBinContent(i) >= pNoiseLevel ) fNoisyChannelsBottom.push_back(i) ; 
+		if( fHistTop->GetBinContent(i) >= pNoiseLevel ) fNoisyChannelsTop.push_back(i); 
+
+
+		if( fHistBottom->GetBinContent(i) <= pDeadLevel ) fDeadChannelsBottom.push_back(i) ; 
+		if( fHistTop->GetBinContent(i) <= pDeadLevel ) fDeadChannelsTop.push_back(i); 
+	}	
+}
+void HybridTester::DisplayNoisyChannels(std::ostream& os)
+{
+	std::string line;
+
+	line = "# Noisy channels on Bottom Sensor : "; 
+	for( int i = 0 ; i <  fNoisyChannelsBottom.size() ; i++ ) 
+	{	
+		line += std::to_string( fNoisyChannelsBottom[i] ) ;
+		line +=  ( i < fNoisyChannelsBottom.size()-1 ) ? "," : "" ;
+	}
+	os << line << std::endl;
+
+	line = "# Noisy channels on Top Sensor : "; 
+	for( int i = 0 ; i <  fNoisyChannelsTop.size() ; i++ ) 
+	{	
+		line += std::to_string( fNoisyChannelsTop[i] ) ;
+		line +=  ( i < fNoisyChannelsTop.size()-1 ) ? "," : "" ;
+	}
+	os << line << std::endl;
+}
+void HybridTester::DisplayDeadChannels(std::ostream& os)
+{
+	std::string line;
+
+	line = "# Dead channels on Bottom Sensor : "; 
+	for( int i = 0 ; i <  fDeadChannelsBottom.size() ; i++ ) 
+	{	
+		line += std::to_string( fDeadChannelsBottom[i] ) ;
+		line +=  ( i < fDeadChannelsBottom.size()-1 ) ? "," : "" ;
+	}
+	os << line << std::endl;
+
+	line = "# Dead channels on Top Sensor : "; 
+	for( int i = 0 ; i <  fDeadChannelsTop.size() ; i++ ) 
+	{	
+		line += std::to_string( fDeadChannelsTop[i] ) ;
+		line +=  ( i < fDeadChannelsTop.size()-1 ) ? "," : "" ;
+	}
+	os << line << std::endl;
+}
 void HybridTester::AntennaScan()
 {
 #ifdef __ANTENNA__
@@ -1008,18 +1160,45 @@ void HybridTester::SaveTestingResults(std::string pHybridId)
 
 void HybridTester::SaveResults()
 {
-	fHistTop->Write( fHistTop->GetName(), TObject::kOverwrite );
+	std::cout << BOLDBLUE << "Results of short finder for all CBCs written to " << fDirectoryName + "/Summary.root" << RESET << std::endl; 
+    writeGraphs();
+	// fHistTop->Write( fHistTop->GetName(), TObject::kOverwrite );
+	// fHistBottom->Write( fHistBottom->GetName(), TObject::kOverwrite );
+	// fDataCanvas->Write( fDataCanvas->GetName(), TObject::kOverwrite );
+
+	// fResultFile->Write();
+	// fResultFile->Close();
+
+
+	// std::cout << std::endl << "Resultfile written correctly!" << std::endl;
+
+	// std::string cPdfName = fDirectoryName + "/HybridTestResults.pdf";
+	// fDataCanvas->SaveAs( cPdfName.c_str() );
+	// if ( fThresholdScan )
+	// {
+	// 	cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";
+	// 	fSCurveCanvas->SaveAs( cPdfName.c_str() );
+	// }
+}
+void HybridTester::writeGraphs()
+{
+    fResultFile->cd();
+
+    fHistOccupancyTop->Write( fHistOccupancyTop->GetName(), TObject::kOverwrite );
+	fHistOccupancyBottom->Write( fHistOccupancyBottom->GetName(), TObject::kOverwrite );
+	fSummaryCanvas->Write( fSummaryCanvas->GetName(), TObject::kOverwrite );
+
+    fHistTop->Write( fHistTop->GetName(), TObject::kOverwrite );
 	fHistBottom->Write( fHistBottom->GetName(), TObject::kOverwrite );
 	fDataCanvas->Write( fDataCanvas->GetName(), TObject::kOverwrite );
 
-	fResultFile->Write();
-	fResultFile->Close();
-
-
-	std::cout << std::endl << "Resultfile written correctly!" << std::endl;
-
+	
 	std::string cPdfName = fDirectoryName + "/HybridTestResults.pdf";
 	fDataCanvas->SaveAs( cPdfName.c_str() );
+	cPdfName = fDirectoryName + "/NoiseOccupancySummary.pdf";
+	fSummaryCanvas->SaveAs( cPdfName.c_str() );
+	
+
 	if ( fThresholdScan )
 	{
 		cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";

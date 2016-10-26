@@ -1,5 +1,6 @@
 #include <cstring>
 #include "../Utils/Utilities.h"
+#include "../Utils/easylogging++.h"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
@@ -16,12 +17,22 @@
 #include "../System/SystemController.h"
 
 
+using namespace std;
+#ifdef __HTTP__
+    #include "THttpServer.h"
+#endif
+#ifdef __ZMQ__
+    #include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
+    #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Controller.h"
+    #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Client.h"
+    using namespace Ph2_UsbInst;
+#endif
+
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
-
 using namespace CommandLineProcessing;
-using namespace std;
+INITIALIZE_EASYLOGGINGPP
 
 //Class used to process events acquired by a parallel acquisition
 class AcqVisitor: public HwInterfaceVisitor
@@ -167,8 +178,7 @@ int main( int argc, char* argv[] )
 
 	bool cDone = 0;	
 
-     
-        if (cmd.foundOption("download"))
+    if (cmd.foundOption("download"))
 		cSystemController.fBeBoardInterface->DownloadFpgaConfig(pBoard, strImage, cmd.optionValue("download"));
 	else
 		cSystemController.fBeBoardInterface->FlashProm(pBoard, strImage, cFWFile.c_str());
@@ -192,4 +202,3 @@ int main( int argc, char* argv[] )
 	t.stop();
 	t.show( "Time elapsed:" );
 }
-
