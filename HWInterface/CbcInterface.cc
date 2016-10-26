@@ -25,7 +25,7 @@ namespace Ph2_HwInterface {
         fTransactionCount ( 0 )
     {
 #ifdef COUNT_FLAG
-        std::cout << "Counting number of Transactions!" << std::endl;
+        LOG (DEBUG) << "Counting number of Transactions!" ;
 #endif
     }
 
@@ -36,7 +36,7 @@ namespace Ph2_HwInterface {
     void CbcInterface::output()
     {
 #ifdef COUNT_FLAG
-        std::cout << "This instance of HWInterface::CbcInterface wrote (only write!) " << fRegisterCount << " Registers in " << fTransactionCount << " Transactions (only write!)! " << std::endl;
+        LOG (DEBUG) << "This instance of HWInterface::CbcInterface wrote (only write!) " << fRegisterCount << " Registers in " << fTransactionCount << " Transactions (only write!)! " ;
 #endif
     }
 
@@ -47,7 +47,7 @@ namespace Ph2_HwInterface {
             BeBoardFWMap::iterator i = fBoardMap.find ( pBoardIdentifier );
 
             if ( i == fBoardMap.end() )
-                std::cout << "The Board: " << + ( pBoardIdentifier >> 8 ) << "  doesn't exist" << std::endl;
+                LOG (INFO) << "The Board: " << + ( pBoardIdentifier >> 8 ) << "  doesn't exist" ;
             else
             {
                 fBoardFW = i->second;
@@ -140,7 +140,7 @@ namespace Ph2_HwInterface {
             if (!cFailed)
                 pCbc->setReg ( cName, cRegItem.fValue );
 
-            std::cout << "CBC " << +pCbc->getCbcId() << " " << cName << ": 0x" << std::hex << +cRegItem.fValue << std::dec << std::endl;
+            LOG (INFO) << "CBC " << +pCbc->getCbcId() << " " << cName << ": 0x" << std::hex << +cRegItem.fValue << std::dec ;
         }
 
     }

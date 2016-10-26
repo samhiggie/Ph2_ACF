@@ -1,2 +1,10 @@
-*
-!*.*
+*.o
+systemtest
+calibrate
+hybridtest
+configure
+datatest
+pulseshape
+cmtest
+commission
+fpgaconfig

@@ -78,36 +78,36 @@ namespace Ph2_HwInterface {
             fFileHandler = pHandler;
             fSaveToFile = true;
         }
-        else std::cout << "Error, can not set NULL FileHandler" << std::endl;
+        else LOG (INFO) << "Error, can not set NULL FileHandler" ;
     }
 
     uint32_t CtaFWInterface::getBoardInfo()
     {
-        //std::cout << "FMC1 present : " << ReadReg ( "status.fmc1_present" ) << std::endl;
-        //std::cout << "FMC2 present : " << ReadReg ( "status.fmc2_present" ) << std::endl;
+        //LOG(INFO) << "FMC1 present : " << ReadReg ( "status.fmc1_present" ) ;
+        //LOG(INFO) << "FMC2 present : " << ReadReg ( "status.fmc2_present" ) ;
         uint32_t cVersionMajor = ReadReg ( "firm_id.firmware_major" );
         uint32_t cVersionMinor = ReadReg ( "firm_id.firmware_minor" );
-        std::cout << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << ReadReg ( "firm_id.firmware_build" ) << std::endl;
+        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "firm_id.firmware_build" ) ) ;
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "board_id" );
 
-        std::cout << "BoardType : ";
+        LOG (INFO) << "BoardType : ";
 
         char cChar = ( ( cBoardType & cMask4 ) >> 24 );
-        std::cout << cChar;
+        LOG (INFO) << cChar;
 
         cChar = ( ( cBoardType & cMask3 ) >> 16 );
-        std::cout << cChar;
+        LOG (INFO) << cChar;
 
         cChar = ( ( cBoardType & cMask2 ) >> 8 );
-        std::cout << cChar;
+        LOG (INFO) << cChar;
 
         cChar = ( cBoardType & cMask1 );
-        std::cout << cChar << std::endl;
+        LOG (INFO) << cChar ;
 
-        //std::cout << "FMC User Board ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_board_id" ) << std::endl;
-        //std::cout << "FMC User System ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_sys_id" ) << std::endl;
-        //std::cout << "FMC User Version : " << ReadReg ( "user_wb_ttc_fmc_regs.user_version" ) << std::endl;
+        //LOG(INFO) << "FMC User Board ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_board_id" ) ;
+        //LOG(INFO) << "FMC User System ID : " << ReadReg ( "user_wb_ttc_fmc_regs.user_sys_id" ) ;
+        //LOG(INFO) << "FMC User Version : " << ReadReg ( "user_wb_ttc_fmc_regs.user_version" ) ;
 
         uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 || (cVersionMinor & 0x0000FFFF) );
         return cVersionWord;
@@ -624,7 +624,7 @@ namespace Ph2_HwInterface {
         pRegItem.fPage = ( pWord & cMask6 ) >> 16;
         pRegItem.fAddress = ( pWord & cMask2 ) >> 8;
         pRegItem.fValue = pWord & cMask1;
-        //std::cout << "FEID " << +(cbcAddr) << " pCbcID " << +(pCbcId) << std::endl;
+        //LOG(INFO) << "FEID " << +(cbcAddr) << " pCbcID " << +(pCbcId) ;
     }
 
     bool CtaFWInterface::I2cCmdAckWait (  bool bZero, uint8_t pNcount )
@@ -745,10 +745,10 @@ namespace Ph2_HwInterface {
                 // if the number of errors is greater than 100, give up
                 if (cWriteAgain.size() < 120)
                 {
-                    std::cout << "There were " << cWriteAgain.size() << " Readback Errors while ckecking I2C writing - trying again!" << std::endl;
+                    LOG (INFO) << "There were " << cWriteAgain.size() << " Readback Errors while ckecking I2C writing - trying again!" ;
                     this->WriteCbcBlockReg ( cWriteAgain, true);
                 }
-                //else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
+                //else LOG(INFO) << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" ;
                 else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
             }
         }
@@ -858,8 +858,8 @@ namespace Ph2_HwInterface {
     bool CtaFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
         //if (cWord1 != cWord2)
-        //std::cout << std::endl << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)  << std::endl << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ( (cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  << std::endl;
-        //std::cout << "Readback error" << std::endl;
+        //LOG(INFO)  << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 21) & 0xF) << " CbcId " << + ( (cWord1 >> 17) & 0xF) <<  " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)   << " ## " << std::bitset<32> (cWord2) << " ### FMCId: " << ( (cWord2 >> 21) & 0xF) << " CbcId " << + ( (cWord2 >> 17) & 0xF) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  ;
+        //LOG(INFO) << "Readback error" ;
         return ( cWord1  == cWord2 );
     }
 

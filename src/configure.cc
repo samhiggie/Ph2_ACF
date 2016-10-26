@@ -24,16 +24,20 @@ INITIALIZE_EASYLOGGINGPP
 
 //Class used to process events acquired by a parallel acquisition
 
+INITIALIZE_EASYLOGGINGPP
 
-void syntax ( int argc )
-{
-    if ( argc > 4 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
-    else if ( argc < 3 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
-    else return;
-}
+//void syntax ( int argc )
+//{
+//if ( argc > 4 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
+//else if ( argc < 3 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
+//else return;
+//}
 
 int main ( int argc, char* argv[] )
 {
+    //configure the logger
+    el::Configurations conf ("settings/logger.conf");
+    el::Loggers::reconfigureAllLoggers (conf);
 
     int cVcth;
     bool cRead;
@@ -64,7 +68,7 @@ int main ( int argc, char* argv[] )
 
     if ( result != ArgvParser::NoParserError )
     {
-        std::cout << cmd.parseErrorDescription ( result );
+        LOG (ERROR) << cmd.parseErrorDescription ( result );
         exit ( 1 );
     }
 
@@ -81,10 +85,15 @@ int main ( int argc, char* argv[] )
     Timer t;
     t.start();
 
-    cSystemController.InitializeHw ( cHWFile );
+    std::stringstream outp;
+    cSystemController.InitializeHw ( cHWFile, outp );
 
-    if (!cRead) cSystemController.ConfigureHw ( std::cout );
-    else std::cout << "Called with -r option, HW will not be configured!" << std::endl;
+    if (!cRead)
+    {
+        cSystemController.ConfigureHw (outp);
+        LOG (INFO) << outp.str();
+    }
+    else LOG (INFO) << "Called with -r option, HW will not be configured!" ;
 
     t.stop();
     t.show ( "Time to Initialize/configure the system: " );
