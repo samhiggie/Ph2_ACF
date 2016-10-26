@@ -2,7 +2,7 @@
 #include "../Utils/CommonVisitors.h"
 #include "../Utils/argvparser.h"
 #include "../Utils/Timer.h"
-#include "../Utils/easylogging++.h"
+//#include "../Utils/easylogging++.h"
 
 #ifdef __HTTP__
     #include "THttpServer.h"
@@ -20,7 +20,6 @@ using namespace Ph2_System;
 using namespace CommandLineProcessing;
 INITIALIZE_EASYLOGGINGPP 
 
-INITIALIZE_EASYLOGGINGPP
 
 int main ( int argc, char** argv )
 {

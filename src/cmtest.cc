@@ -8,7 +8,7 @@
 #include "../tools/CMTester.h"
 #include <TApplication.h>
 #include "../Utils/argvparser.h"
-#include "../Utils/easylogging++.h"
+//#include "../Utils/easylogging++.h"
 #include "TROOT.h"
 
 #ifdef __HTTP__
@@ -25,10 +25,6 @@ using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 using namespace CommandLineProcessing;
-INITIALIZE_EASYLOGGINGPP
-
-
-
 INITIALIZE_EASYLOGGINGPP
 
 int main ( int argc, char* argv[] )

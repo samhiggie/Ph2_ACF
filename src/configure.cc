@@ -3,7 +3,7 @@
 #include "../Utils/argvparser.h"
 #include "../System/SystemController.h"
 #include "../Utils/CommonVisitors.h"
-#include "../Utils/easylogging++.h"
+//#include "../Utils/easylogging++.h"
 
 // Ph2_usb_instDriverStuff
 #ifdef __HTTP__
@@ -20,10 +20,6 @@ using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 using namespace CommandLineProcessing;
-INITIALIZE_EASYLOGGINGPP 
-
-//Class used to process events acquired by a parallel acquisition
-
 INITIALIZE_EASYLOGGINGPP
 
 //void syntax ( int argc )

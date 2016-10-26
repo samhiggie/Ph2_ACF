@@ -279,8 +279,6 @@ class HybridTester : public Tool
 
         return output_string;
     }
->>>>>>> 73ee7e12744871cc7af090103c17349ffa4f6025
-
 };
 
 
