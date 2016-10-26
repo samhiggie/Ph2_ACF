@@ -54,6 +54,19 @@ class AntennaTester : public Tool
 	// function to reconfigure the CBC registers 
 	// if pDirectoryName == "" then the values from the CBC calibration found in the Results directory (fDirectoryName) are used
 	void ReconfigureCBCRegisters(std::string pDirectoryName = "");
+	// configure only the Vcth value
+	void ConfigureVcth( uint8_t pVcth = 0x78 ){ CbcRegWriter cWriter ( fCbcInterface, "VCth", pVcth ); accept ( cWriter );};
+
+
+	/*!
+	*\brief return mean occupancy for (TOP) pads
+	*/
+	double GetMeanOccupancyTop(){return fHistTop->Integral()/(double)(fNCbc*127) ;};
+	/*!
+	*\brief return mean occupancy for (BOTTOM) pads
+	*/
+	double GetMeanOccupancyBottom(){return fHistBottom->Integral()/(double)(fNCbc*127) ;};
+
 
 	void SaveResults();
   private : 

@@ -120,9 +120,14 @@ class HybridTester : public Tool
 	*/
 	void SaveResults();
 	void ReconfigureCBCRegisters(std::string pDirectoryName = "");
+    /*!
+    * \brief re-configure only the Vcth value on the CBCs
+    */
+    void ConfigureVcth( uint8_t pVcth = 0x78 ){ CbcRegWriter cWriter ( fCbcInterface, "VCth", pVcth ); accept ( cWriter ); };
 
 	void DisplayNoisyChannels(std::ostream& os = std::cout );
 	void DisplayDeadChannels(std::ostream& os = std::cout );
+
 
   private:
     uint32_t fNCbc;   /*!< Number of CBCs in the Setup */

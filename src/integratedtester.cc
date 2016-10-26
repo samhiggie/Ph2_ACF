@@ -282,7 +282,11 @@ bool check_Shorts(Tool pTool , std::string pHWFile , uint32_t cMaxNumShorts)
     cShortFinder.ChangeHWDescription ( pHWFile );
     cShortFinder.ChangeSettings ( pHWFile );
     cShortFinder.ConfigureHw();
-    
+    //reload the calibration values for the CBCs
+    cShortFinder.ReconfigureRegisters();
+    // I don't think this is neccesary ... but here for now
+    cShortFinder.ConfigureVcth(0x78);
+
     cShortFinder.Initialize();
     cShortFinder.FindShorts();
     cShortFinder.SaveResults();
@@ -310,6 +314,9 @@ void perform_OccupancyMeasurment(Tool pTool ,  std::string pHWFile )
 
     // re-configure CBC regsiters with values from the calibration 
     cHybridTester.ReconfigureCBCRegisters();
+    // I don't think this is neccesary ... but here for now
+    cHybridTester.ConfigureVcth(0x78);
+
     // measure occupancy 
     cHybridTester.Measure();
     // display noisy/dead channels
@@ -331,22 +338,26 @@ void perform_OccupancyMeasurment(Tool pTool ,  std::string pHWFile )
 void perform_AntennaOccupancyMeasurement(Tool pTool ,  std::string pHWFile )
 {
     LOG (INFO) << "Starting occupancy measurement using the antenna." ; 
-                    
+      
+    std::stringstream outp;
+
     AntennaTester cAntennaTester;
     cAntennaTester.Inherit (&pTool);
     cAntennaTester.ChangeHWDescription ( pHWFile );
     cAntennaTester.ChangeSettings ( pHWFile );
-    cAntennaTester.ConfigureHw();
-    //cAntennaTester.Initialize();
+    cAntennaTester.ConfigureHw(outp);
+    LOG (INFO) << outp.str();
+    cAntennaTester.Initialize();
     
     // re-configure CBC regsiters with values from the calibration 
-    //cAntennaTester.ReconfigureCBCRegisters();
-    
+    cAntennaTester.ReconfigureCBCRegisters();
+    cAntennaTester.ConfigureVcth(0x78);
+
     // measure occupancy 
-    //cAntennaTester.Measure();
+    cAntennaTester.Measure();
     
     // save results 
-    // cAntennaTester.SaveResults();
+    cAntennaTester.SaveResults();
     //char line[120];
     //sprintf(line, "# Top Pad Occupancy = %.2f ± %.3f" , cHybridTester.GetMeanOccupancyTop() , cHybridTester.GetRMSOccupancyTop() );
     //cHybridTester.AmmendReport(line);
@@ -497,18 +508,20 @@ int main ( int argc, char* argv[] )
             Timer tGlobal;
             tGlobal.start();
             Timer t;
-            // try and choose the hardware description files for the hybrid testers according to the number of CBCs
+            
             //create a genereic Tool Object, I can then construct all other tools from that using the Inherit() method
             //this tool stays on the stack and lives until main finishes - all other tools will update the HWStructure from cTool
+            std::stringstream outp;
             Tool cTool;
-            cTool.InitializeHw ( cHWFile );
-            cTool.InitializeSettings ( cHWFile );
+            cTool.InitializeHw ( cHWFile , outp );
+            cTool.InitializeSettings ( cHWFile , outp );
             cTool.CreateResultDirectory ( cDirectory );
             cTool.InitResultFile ( "Summary" );
             cTool.StartHttpServer();
-            cTool.ConfigureHw();
+            cTool.ConfigureHw(outp );
             cTool.CreateReport();
-    
+            LOG (INFO) << outp.str();
+
             char line[120];
             // perform current consumption test if --checkCurrents flag set in arguments passed to tester 
             if( cCurrents )
@@ -576,8 +589,8 @@ int main ( int argc, char* argv[] )
             // look for shorts on the DUT if --checkShorts flag set in arguments passed to tester 
             if(  cShorts )
             {
-                // if calibrate flag has not been set then make sure that the calibration is done before the occupancy
-                // measurement is performed!
+                //if calibrate flag has not been set then make sure that the calibration is done before the occupancy
+                //measurement is performed!
                 if( !cCalibrate)
                 {
                     LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT." << rst ;
@@ -591,7 +604,7 @@ int main ( int argc, char* argv[] )
                 }
                
                 LOG (INFO) << "Starting short(s) test." ; 
-                cHWFile =  "settings/HWDescription_" + std::to_string(cNumCBCs) + "CBC.xml"; 
+                cHWFile =  "settings/HybridTest" + std::to_string(cNumCBCs) + "CBC.xml"; 
                 t.start();
                 bool shortFinder_passed = check_Shorts(cTool , cHWFile , cMaxNumShorts);
                 t.stop();
@@ -628,7 +641,7 @@ int main ( int argc, char* argv[] )
                     cTool.AmmendReport( line);
                     t.show ( "Calibration of the DUT" );
                 }
-                cHWFile =  "settings/HWDescription_" + std::to_string(cNumCBCs) + "CBC.xml"; 
+                cHWFile =  "settings/HybridTest" + std::to_string(cNumCBCs) + "CBC.xml"; 
                 t.start();
                 perform_OccupancyMeasurment(cTool , cHWFile);
                 t.stop();
@@ -642,8 +655,8 @@ int main ( int argc, char* argv[] )
             if( cAntennaMeasurement )
             {
 
-                // if calibrate flag has not been set then make sure that the calibration is done before the occupancy
-                // measurement is performed!
+                //if calibrate flag has not been set then make sure that the calibration is done before the occupancy
+                //measurement is performed!
                 if( !cCalibrate)
                 {
                     LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT."  << rst ;
@@ -656,7 +669,7 @@ int main ( int argc, char* argv[] )
                     t.show ( "Calibration of the DUT" );
 
                 }
-                cHWFile =  "settings/HWDescription_" + std::to_string(cNumCBCs) + "CBC.xml"; 
+                cHWFile =  "settings/HybridTest" + std::to_string(cNumCBCs) + "CBC.xml"; 
                 t.start();
                 perform_AntennaOccupancyMeasurement(cTool , cHWFile);
                 t.stop();
@@ -671,7 +684,7 @@ int main ( int argc, char* argv[] )
             cTool.AmmendReport( line);
 
             // have to destroy the tool at the end of the program
-            cTool.SaveResults();
+            //cTool.SaveResults(); // if this is here then you end up with 2 copies of all histograms and canvases in the root file ... so I've removed it
             cTool.CloseResultFile();
             cTool.Destroy();
         }

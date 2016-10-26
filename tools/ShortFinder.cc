@@ -26,6 +26,65 @@ struct HistogramFiller  : public HwDescriptionVisitor
     }
 };
 
+//Reload CBC registers from file found in results (fDirectoryName) directory . 
+//If no directory is found use the default files for the different operational modes found in Ph2_ACF/settings
+void ShortFinder::ReconfigureRegisters()
+{
+    bool cCheck;
+    bool cHoleMode;
+    auto cSetting = fSettingsMap.find ( "HoleMode" );
+
+    if ( cSetting != std::end ( fSettingsMap ) )
+    {
+        cCheck = true;
+        cHoleMode = ( cSetting->second == 1 ) ? true : false;
+    }
+
+    std::string cMode;
+
+    if ( cCheck )
+    {
+        if ( cHoleMode ) cMode = "hole";
+        else cMode = "electron";
+    }
+
+    
+
+    for (auto& cBoard : fBoardVector)
+    {
+        fBeBoardInterface->CbcHardReset ( cBoard );
+        for (auto& cFe : cBoard->fModuleVector)
+        {
+            for (auto& cCbc : cFe->fCbcVector)
+            {
+                 std::string pRegFile ;
+                if( fDirectoryName.empty() )
+                {
+                    pRegFile = "settings/Cbc_default_" +  cMode + ".txt";
+                }
+                else
+                {
+                    char buffer[120];
+                    sprintf(buffer, "%s/FE%dCBC%d.txt" , fDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                    pRegFile = buffer;
+                }
+
+                cCbc->loadfRegMap(pRegFile);
+                fCbcInterface->ConfigureCbc ( cCbc );
+                LOG (INFO) <<GREEN << "\t\t Successfully (re)configured CBC" << int ( cCbc->getCbcId() ) << "'s regsiters from " << pRegFile << " ." << RESET;
+            }
+        }
+
+        //CbcFastReset as per recommendation of Mark Raymond
+        fBeBoardInterface->CbcFastReset ( cBoard );
+    }
+}
+void ShortFinder::ConfigureVcth(uint8_t pVcth)
+{
+    CbcRegWriter cWriter ( fCbcInterface, "VCth", pVcth );
+    accept ( cWriter );
+}
+
 void ShortFinder::writeGraphs()
 {
     fResultFile->cd();

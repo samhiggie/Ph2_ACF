@@ -29,6 +29,9 @@ struct HistogramFiller  : public HwDescriptionVisitor
 void AntennaTester::Initialize()
 {
     gStyle->SetOptStat( 000000 );
+    fDataCanvas = new TCanvas( "fAntennaDataCanvas", "SingleStripEfficiency (w/ Antenna)", 1200, 800 );
+    fDataCanvas->Divide( 2 );
+
  
     InitialiseSettings();
     InitializeHists();
@@ -134,13 +137,17 @@ void AntennaTester::writeGraphs()
 {
     fResultFile->cd();
     UpdateHistsMerged();
-    fDataCanvas->Write ( fDataCanvas->GetName(), TObject::kOverwrite );
 }
 void AntennaTester::SaveResults()
 {
-    LOG (INFO)  << BOLDBLUE << "Results of Antenna scan written to " << fDirectoryName + "/Summary.root" << RESET; 
-    writeGraphs();
+    //writeGraphs();
+    fResultFile->cd();
+    UpdateHistsMerged();
 
+    fHistTop->Write( fHistTop->GetName(), TObject::kOverwrite );
+    fHistBottom->Write( fHistBottom->GetName(), TObject::kOverwrite );
+    fDataCanvas->Write ( fDataCanvas->GetName(), TObject::kOverwrite );
+    LOG (INFO)  << BOLDBLUE << "Results of Antenna scan written to " << fDirectoryName + "/Summary.root" << RESET; 
 }
 
 
@@ -218,16 +225,18 @@ void AntennaTester::Measure()
 
             }
         }
-
-        fHistTopMerged->Scale( 100 / double_t( fTotalEvents ) );
-        fHistTopMerged->GetYaxis()->SetRangeUser( 0, 100 );
-        fHistBottomMerged->Scale( 100 / double_t( fTotalEvents ) );
-        fHistBottomMerged->GetYaxis()->SetRangeUser( 0, 100 );
-        
-        UpdateHistsMerged();
-        
         cAntenna.close();
     #endif
+    fHistTopMerged->Scale( 100 / double_t( fTotalEvents ) );
+    fHistTopMerged->GetYaxis()->SetRangeUser( 0, 100 );
+    fHistBottomMerged->Scale( 100 / double_t( fTotalEvents ) );
+    fHistBottomMerged->GetYaxis()->SetRangeUser( 0, 100 );
+    
+    UpdateHistsMerged();
+    LOG (INFO) << BOLDGREEN << "Mean occupancy (measured w/ antenna) for the Top side: " << GetMeanOccupancyTop() <<  "%." << RESET  ; 
+    LOG (INFO) << BOLDGREEN << "Mean occupancy (measured w/ antenna) for the Botton side: " << GetMeanOccupancyBottom() << "%." << RESET ; 
+
+
     //TestChannels( fDecisionThreshold );
     
 }

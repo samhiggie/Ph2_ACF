@@ -52,6 +52,13 @@ class ShortFinder : public Tool
 
 	// D'tor
 	~ShortFinder() {};
+
+	///Reload CBC registers from file found in results (fDirectoryName) directory . 
+	//If no directory is found use the default files for the different operational modes found in Ph2_ACF/settings
+	void ReconfigureRegisters();
+	// configure only the Vcth value
+	void ConfigureVcth( uint8_t pVcth = 0x78 );
+
 	
 	void Initialize();
 	void FindShorts(std::ostream& os = std::cout );

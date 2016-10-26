@@ -75,7 +75,7 @@ void HybridTester::ReconfigureCBCRegisters(std::string pDirectoryName )
     			pRegFile = buffer;
                 cCbc->loadfRegMap(pRegFile);
                 fCbcInterface->ConfigureCbc ( cCbc );
-                std::cout << GREEN << "\t\t Successfully reconfigured CBC" << int ( cCbc->getCbcId() ) << "'s regsiters from " << pRegFile << " ." << RESET << std::endl;
+                LOG (INFO) << GREEN << "\t\t Successfully reconfigured CBC" << int ( cCbc->getCbcId() ) << "'s regsiters from " << pRegFile << " ." << RESET ;
             }
         }
 
@@ -1246,9 +1246,9 @@ void HybridTester::SaveResults()
 	fHistOccupancyBottom->Write( fHistOccupancyBottom->GetName(), TObject::kOverwrite );
 	fSummaryCanvas->Write( fSummaryCanvas->GetName(), TObject::kOverwrite );
 
-	fResultFile->Write();
-    fResultFile->Close();
-	LOG (INFO) << std::endl << "Resultfile written correctly!" ;
+	//fResultFile->Write();
+    //fResultFile->Close();
+    LOG (INFO) << BOLDBLUE << "Results of occupancy measured written to " << fDirectoryName + "/Summary.root" << RESET ;
 
 	std::string cPdfName = fDirectoryName + "/HybridTestResults.pdf";
 	fDataCanvas->SaveAs( cPdfName.c_str() );

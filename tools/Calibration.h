@@ -52,6 +52,7 @@ class Calibration : public Tool
 
 	void Initialise( bool pAllChan = false );
 	void FindVplus();
+	// offsets are found by taking pMultiple*fEvents triggers
 	void FindOffsets();
 	void SaveResults() {
 		writeGraphs();
@@ -83,6 +84,10 @@ class Calibration : public Tool
 	void setRegValues();
 
 	void updateHists( std::string pHistname );
+
+	// normalize occupancy histograms  : offsets were found by taking pMultiple*fEvents triggers
+	// therefore the normalization factor is 100./(pMultiple*fEventsPerPoint)
+	void normalizeHists();
 
 	void writeGraphs();
 

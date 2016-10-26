@@ -15,12 +15,12 @@
       <!--<Global_CBC_Register name="SelTestPulseDel&ChanGroup">0x00</Global_CBC_Register>-->
 
      <CBC_Files path="./settings/" />
-      <CBC Id="0" configfile="Cbc_default_hole.txt" />
-      <CBC Id="1" configfile="Cbc_default_hole.txt" />
+      <!-- <CBC Id="0" configfile="Cbc_default_hole.txt" />
+      <CBC Id="1" configfile="Cbc_default_hole.txt" /> -->
 
-      <!--<CBC_Files path="./Results/Calibration_Hole_27-04-16_17:55/" />-->
-      <!--<CBC Id="0" configfile="FE0CBC0.txt" />-->
-      <!--<CBC Id="1" configfile="FE0CBC1.txt" />-->
+      <CBC_Files path="./Results/IntegratedTester_Hole_26-10-16_18:00/" />
+      <CBC Id="0" configfile="FE0CBC0.txt" />
+      <CBC Id="1" configfile="FE0CBC1.txt" />
     </Module>
     <!-- Commissioning Mode -->
     <!-- set to 1 to enable commissioning mode -->

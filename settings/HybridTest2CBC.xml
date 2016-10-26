@@ -12,7 +12,7 @@
       <Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register>
       <!--Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
       
-      <CBC_Files path="./settings/"/>
+      <CBC_Files path="./Results/IntegratedTester_Hole_26-10-16_18:00/" />
       
       <CBC Id="0" configfile="FE0CBC0.txt"/>
       <CBC Id="1" configfile="FE0CBC1.txt"/>
