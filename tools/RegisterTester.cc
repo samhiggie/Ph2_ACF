@@ -23,7 +23,7 @@ void RegisterTester::TestRegisters()
                     if ( !fCbcInterface->WriteCbcReg( cCbc, cReg.first, cFirstBitPattern, true ) )
                     { 
                         sprintf(line,"# Writing 0x%.2x to CBC Register %s FAILED.\n" , cFirstBitPattern ,(cReg.first).c_str()  );
-                        std::cout << BOLDRED << line << RESET ;
+                        LOG (INFO) <<BOLDRED << line << RESET ;
                         report << line ;
                         fBadRegisters[cCbc->getCbcId()] .insert( cReg.first );
                         fNBadRegisters++;
@@ -34,7 +34,7 @@ void RegisterTester::TestRegisters()
                     if ( !fCbcInterface->WriteCbcReg( cCbc, cReg.first, cSecondBitPattern, true ) )
                     { 
                         sprintf(line,"# Writing 0x%.2x to CBC Register %s FAILED.\n" , cSecondBitPattern , (cReg.first).c_str()  );
-                        std::cout << BOLDRED << line << RESET ;
+                        LOG (INFO) <<BOLDRED << line << RESET ;
                         report << line ;
                         fBadRegisters[cCbc->getCbcId()] .insert( cReg.first );
                         fNBadRegisters++;
@@ -96,7 +96,7 @@ void RegisterTester::ReconfigureRegisters(std::string pDirectoryName )
 
                 cCbc->loadfRegMap(pRegFile);
                 fCbcInterface->ConfigureCbc ( cCbc );
-                std::cout << GREEN << "\t\t Successfully (re)configured CBC" << int ( cCbc->getCbcId() ) << "'s regsiters from " << pRegFile << " ." << RESET << std::endl;
+                LOG (INFO) <<GREEN << "\t\t Successfully (re)configured CBC" << int ( cCbc->getCbcId() ) << "'s regsiters from " << pRegFile << " ." << RESET;
             }
         }
 
@@ -119,7 +119,7 @@ void RegisterTester::PrintTestResults(std::ostream& os )
         os << "Malfunctioning Registers on Cbc " << cCbc.first << " : " << std::endl;
         for ( const auto& cReg : cCbc.second ) os << cReg << std::endl;
     }
-    std::cout << BOLDBLUE << "Channels diagnosis report written to: " + fDirectoryName + "/registers_test.txt" << RESET << std::endl;
+    LOG (INFO) <<BOLDBLUE << "Channels diagnosis report written to: " + fDirectoryName + "/registers_test.txt" << RESET ;
 }
 
 bool RegisterTester::PassedTest()

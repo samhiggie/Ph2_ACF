@@ -112,6 +112,14 @@ int launch_HMP4040server( std::string pHostname  = "localhost" , int pZmqPortNum
         std::string currentDir = getcwd(buffer, sizeof(buffer));
         std::string baseDirectory  = getHomeDirectory() + "/Ph2_USBInstDriver";
         // first check if process if running 
+        //before I do anything else, try to find an existing lock and if so, terminate
+        // AppLock* cLock = new AppLock ("/tmp/lvSupervisor.lock", cMessage.str() );
+
+        // if (cLock->getLockDescriptor() < 0)
+        // {
+        //     // server already running, might as well retreive the info before quitting!
+        //     std::string cInfo = cLock->get_info();
+        //     LOG (INFO) << "Retreived the following parameters from the info file: " << cInfo;
         if(0 == system("pidof -x lvSupervisor > /dev/null")) //lvSupervisor is running.
         {
             LOG (INFO) <<  "HMP4040 server already running .... so do nothing!";
@@ -211,8 +219,8 @@ bool check_CurrentConsumption(Tool pTool , int pNCBCs = 2 , std::string pHostnam
                         char buffer[120];
                         sprintf(buffer, "# Current measured on %s = %.3f mA.\n" , (srch_cMeasurements->first).c_str() , (double)(srch_cMeasurements->second)  );
                         message += buffer; 
-                        //std::cout << srch_cLimits->first << " : " << srch_cLimits->second << std::endl ;
-                        //std::cout << srch_cMeasurements->first << " : " << srch_cMeasurements->second << std::endl ;
+                        //LOG (INFO) << srch_cLimits->first << " : " << srch_cLimits->second ;
+                        //LOG (INFO) << srch_cMeasurements->first << " : " << srch_cMeasurements->second;
                     }
                 }
             }
@@ -223,7 +231,7 @@ bool check_CurrentConsumption(Tool pTool , int pNCBCs = 2 , std::string pHostnam
             cCurrentsMeasured = cMeasurement.second;
             if( cTimeStamp < cMeasurement.first) iterations++; 
             cTimeStamp = cMeasurement.first; 
-            if( limitReached){ cNumTimes_limitReached++;  std::cout << "Limit reached!!" << std::endl ; }
+            if( limitReached){ cNumTimes_limitReached++;  LOG (INFO) << BOLDRED << "Nominal current consumption limits exceeded!!" << rst ; }
         }while( iterations < cNumReads);
         message += "#";
         pTool.AmmendReport(message);
@@ -285,7 +293,7 @@ bool check_Shorts(Tool pTool , std::string pHWFile , uint32_t cMaxNumShorts)
     cShortFinder.AmmendReport( ( cNShorts <= cMaxNumShorts) ? ("# Shorts test passed.") : ("# Shorts test failed.") );
     
 
-    std::cout << GREEN << "\t\t" + std::to_string(cNShorts) + " shorts found on hybrid." << RESET << std::endl;
+    LOG (INFO) << GREEN << "\t\t" + std::to_string(cNShorts) + " shorts found on hybrid." << rst ; 
     return ( cNShorts <= cMaxNumShorts) ? true : false;
 }
 // measure the occupancy on the TOP/BOTTOM pads of the DUT 
@@ -349,6 +357,11 @@ void perform_AntennaOccupancyMeasurement(Tool pTool ,  std::string pHWFile )
 
 int main ( int argc, char* argv[] )
 {
+    //configure the logger
+    el::Configurations conf ("settings/logger.conf");
+    el::Loggers::reconfigureAllLoggers (conf);
+
+
     ArgvParser cmd;
 
     // init
@@ -404,7 +417,7 @@ int main ( int argc, char* argv[] )
 
     if ( result != ArgvParser::NoParserError )
     {
-        std::cout << cmd.parseErrorDescription ( result );
+        LOG (INFO) << cmd.parseErrorDescription ( result );
         exit ( 1 );
     }
 
@@ -512,7 +525,7 @@ int main ( int argc, char* argv[] )
                 if( !currentConsumptionTest_passed )
                 {
                     LOG(INFO) << BOLDRED << "Hybrid did not pass current consumption test. Stopping tester." ;
-                    std::cout << BOLDBLUE <<  "Stopping DUT tester!" << rst << std::endl ;
+                    LOG (INFO) << BOLDBLUE <<  "Stopping DUT tester!" << rst ;
                     // add cTool destroy here!
                     // have to destroy the tool at the end of the program
                     cTool.SaveResults();
@@ -536,8 +549,8 @@ int main ( int argc, char* argv[] )
                 // if DUT fails register R&W test then stop here. 
                 if( !registerReadWriteTest_passed )
                 {
-                    LOG(INFO) << BOLDRED << "Hybrid did not pass register check. Stopping tester." << BLACK ;
-                    std::cout << BOLDBLUE <<  "Stopping DUT tester!" << rst << std::endl ;
+                    LOG(INFO) << BOLDRED << "Hybrid did not pass register check. Stopping tester." << rst ;
+                    LOG (INFO) << BOLDBLUE <<  "Stopping DUT tester!" << rst ;
                     // have to destroy the tool at the end of the program
                     cTool.SaveResults();
                     cTool.CloseResultFile();
@@ -549,7 +562,7 @@ int main ( int argc, char* argv[] )
             // perform calibration of the CBCs on the DUT if --calibrate flag set in  arguments passed to tester 
             if( cCalibrate )
             {
-                LOG (INFO) << GREEN << "Hybrid passed register check. Moving on to calibration of the CBCs on the DUT."  << BLACK ; 
+                LOG (INFO) << GREEN << "Hybrid passed register check. Moving on to calibration of the CBCs on the DUT."  << rst ;
                 t.start();
                 perform_Calibration(cTool);
                 LOG (INFO) << "Calibration finished." ; 
@@ -567,8 +580,7 @@ int main ( int argc, char* argv[] )
                 // measurement is performed!
                 if( !cCalibrate)
                 {
-                    LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT."  ; 
-                    std::cout <<  rst ;
+                    LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT." << rst ;
                     t.start();
                     perform_Calibration(cTool);
                     LOG (INFO) << "Calibration finished." ; 
@@ -590,7 +602,7 @@ int main ( int argc, char* argv[] )
                 if( !shortFinder_passed )
                 {
                     LOG(INFO) << BOLDRED << "Hybrid did not pass shorts check. Stopping tester."  ;
-                    std::cout << BOLDBLUE <<  "Stopping DUT tester!" << rst << std::endl ;
+                    LOG (INFO) << BOLDBLUE <<  "Stopping DUT tester!" << rst ;
                 
                     cTool.SaveResults();
                     cTool.CloseResultFile();
@@ -607,7 +619,7 @@ int main ( int argc, char* argv[] )
                 // measurement is performed!
                 if( !cCalibrate)
                 {
-                    LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT."  << BLACK ; 
+                    LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT." << rst ;
                     t.start();
                     perform_Calibration(cTool);
                     LOG (INFO) << "Calibration finished." ; 
@@ -634,7 +646,7 @@ int main ( int argc, char* argv[] )
                 // measurement is performed!
                 if( !cCalibrate)
                 {
-                    LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT."  << BLACK ; 
+                    LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT."  << rst ;
                     t.start();
                     perform_Calibration(cTool);
                     LOG (INFO) << "Calibration finished." ; 
@@ -665,7 +677,7 @@ int main ( int argc, char* argv[] )
         }
         else if (returnStatus == 1)      
         {
-           std::cout << "The child process terminated with an error!." << std::endl;   
+           LOG (INFO) << "The child process terminated with an error!." ;
            exit(1); 
         }
     }

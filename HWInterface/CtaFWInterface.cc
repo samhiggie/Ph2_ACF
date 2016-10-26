@@ -29,7 +29,6 @@ namespace Ph2_HwInterface {
         fpgaConfig = nullptr;
         fData = nullptr;
         fNthAcq = 0;
-        fRegWriteAttempts=0;
     }
 
 
@@ -40,7 +39,7 @@ namespace Ph2_HwInterface {
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
         fFileHandler ( pFileHandler ),
-        fNthAcq (0), fRegWriteAttempts(0)
+        fNthAcq (0)
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
@@ -52,7 +51,7 @@ namespace Ph2_HwInterface {
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
-        fNthAcq (0), fRegWriteAttempts(0)
+        fNthAcq (0)
     {
     }
 
@@ -65,7 +64,7 @@ namespace Ph2_HwInterface {
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
         fFileHandler ( pFileHandler ),
-        fNthAcq (0), fRegWriteAttempts(0)
+        fNthAcq (0)
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
@@ -699,8 +698,9 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool CtaFWInterface::WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback)
+    bool CtaFWInterface::WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts , bool pReadback)
     {
+        int cMaxWriteAttempts = 5;
         bool cSuccess = false;
         std::vector<uint32_t> cWriteVec = pVecReq;
 
@@ -740,25 +740,25 @@ namespace Ph2_HwInterface {
 
             
             // now check the size of the WriteAgain vector and assert Success or not
-            // also check that the number of write attempts does not exceed MAX_WRITE_ATTEMPTS
+            // also check that the number of write attempts does not exceed cMaxWriteAttempts
             if (cWriteAgain.empty() ) cSuccess = true;
             else
             {
                 cSuccess = false;
 
                 // if the number of errors is greater than 100, give up
-                if (cWriteAgain.size() < 100 && fRegWriteAttempts < MAX_WRITE_ATTEMPTS )
+                if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
                 {
-                    if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(fRegWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
-                    else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(fRegWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
+                    if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
+                    else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
                 
-                    fRegWriteAttempts++;
-                    this->WriteCbcBlockReg ( cWriteAgain, true);
+                    pWriteAttempts++;
+                    this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
                 }
-                else if ( fRegWriteAttempts >= MAX_WRITE_ATTEMPTS )
+                else if ( pWriteAttempts >= cMaxWriteAttempts )
                 {
                     cSuccess = false; 
-                    fRegWriteAttempts = 0 ;   
+                    pWriteAttempts = 0 ;   
                 }
                 //else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
                 else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );

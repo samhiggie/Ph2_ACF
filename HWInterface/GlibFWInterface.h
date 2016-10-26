@@ -24,8 +24,6 @@
 
 using namespace Ph2_HwDescription;
 
-// maximum number of tries allowed to attempt a write procedure to a CBC register 
-const uint8_t MAX_WRITE_ATTEMPTS = 5 ;
 /*!
  * \namespace Ph2_HwInterface
  * \brief Namespace regrouping all the interfaces to the hardware
@@ -48,8 +46,6 @@ namespace Ph2_HwInterface {
         FpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fNthAcq, fNpackets;
-        // number of tries a CBC register write operation was attempted  
-        uint8_t fRegWriteAttempts; 
 
       private:
         /*!
@@ -256,7 +252,7 @@ namespace Ph2_HwInterface {
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) override;
+        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts ,  bool pReadback ) override;
         /*!
          * \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with

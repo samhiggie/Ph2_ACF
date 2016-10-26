@@ -14,7 +14,7 @@ struct HistogramFiller  : public HwDescriptionVisitor
         for ( uint32_t cId = 0; cId < NCHANNELS; cId++ ) {
             if ( cDataBitVector.at( cId ) ) {
                 uint32_t globalChannel = ( pCbc.getCbcId() * 254 ) + cId;
-                //              std::cout << "Channel " << globalChannel << " VCth " << int(pCbc.getReg( "VCth" )) << std::endl;
+                //              LOG (INFO)  << "Channel " << globalChannel << " VCth " << int(pCbc.getReg( "VCth" )) ;
                 // find out why histograms are not filling!
                 if ( globalChannel % 2 == 0 )
                     fBotHist->Fill( globalChannel / 2 );
@@ -121,7 +121,7 @@ void AntennaTester::ReconfigureCBCRegisters(std::string pDirectoryName )
                 pRegFile = buffer;
                 cCbc->loadfRegMap(pRegFile);
                 fCbcInterface->ConfigureCbc ( cCbc );
-                std::cout << GREEN << "\t\t Successfully reconfigured CBC" << int ( cCbc->getCbcId() ) << "'s regsiters from " << pRegFile << " ." << RESET << std::endl;
+                LOG (INFO)  << GREEN << "\t\t Successfully reconfigured CBC" << int ( cCbc->getCbcId() ) << "'s regsiters from " << pRegFile << " ." << RESET;
             }
         }
 
@@ -138,7 +138,7 @@ void AntennaTester::writeGraphs()
 }
 void AntennaTester::SaveResults()
 {
-    std::cout << BOLDBLUE << "Results of Antenna scan written to " << fDirectoryName + "/Summary.root" << RESET << std::endl; 
+    LOG (INFO)  << BOLDBLUE << "Results of Antenna scan written to " << fDirectoryName + "/Summary.root" << RESET; 
     writeGraphs();
 
 }
@@ -147,8 +147,8 @@ void AntennaTester::SaveResults()
 void AntennaTester::Measure()
 {
 
-    std::cout << "Measuring Efficiency per Strip with the Antenna ... " << std::endl;
-    std::cout << "Taking data with " << fTotalEvents << " Events!" << std::endl;
+    LOG (INFO)  << "Measuring Efficiency per Strip with the Antenna ... " ;
+    LOG (INFO)  << "Taking data with " << fTotalEvents << " Events!";
 
     CbcRegReader cReader( fCbcInterface, "VCth" );
     accept( cReader );
@@ -164,7 +164,7 @@ void AntennaTester::Measure()
 
         for ( uint8_t analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++ )
         {
-            std::cout << "Chip Select ID " << +analog_switch_cs << std::endl;
+            LOG (INFO)  << "Chip Select ID " << +analog_switch_cs ;
             cAntenna.ConfigureSpiSlave( analog_switch_cs );
 
             for ( uint8_t channel_position = 1; channel_position < 10; channel_position++ )

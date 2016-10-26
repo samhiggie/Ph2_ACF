@@ -21,9 +21,6 @@
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
 
-// maximum number of tries allowed to attempt a write procedure to a CBC register 
-const uint8_t MAX_WRITE_ATTEMPTS = 5 ;
-
 using namespace Ph2_HwDescription;
 
 /*!
@@ -50,9 +47,7 @@ namespace Ph2_HwInterface {
         FileHandler* fFileHandler ;
         uint32_t fNthAcq, fNpackets;
         bool fJustPaused;
-        // number of tries a CBC register write operation was attempted  
-        uint8_t fRegWriteAttempts; 
-
+       
       private:
         /*!
          * \brief SRAM selection for DAQ
@@ -266,7 +261,7 @@ namespace Ph2_HwInterface {
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback ) override;
+        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts, bool pReadback ) override;
         /*!
          * \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with

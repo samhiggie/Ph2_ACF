@@ -14,7 +14,7 @@ struct HistogramFiller  : public HwDescriptionVisitor
         for ( uint32_t cId = 0; cId < NCHANNELS; cId++ ) {
             if ( cDataBitVector.at( cId ) ) {
                 uint32_t globalChannel = ( pCbc.getCbcId() * 254 ) + cId;
-                //              std::cout << "Channel " << globalChannel << " VCth " << int(pCbc.getReg( "VCth" )) << std::endl;
+                //              LOG (INFO) << "Channel " << globalChannel << " VCth " << int(pCbc.getReg( "VCth" )) << std::endl;
                 // find out why histograms are not filling!
                 if ( globalChannel % 2 == 0 )
                     fBotHist->Fill( globalChannel / 2 );
@@ -34,7 +34,7 @@ void ShortFinder::writeGraphs()
 }
 void ShortFinder::SaveResults()
 {
-    std::cout << BOLDBLUE << "Results of short finder for all CBCs written to " << fDirectoryName + "/Summary.root" << RESET << std::endl; 
+    LOG (INFO) << BOLDBLUE << "Results of short finder for all CBCs written to " << fDirectoryName + "/Summary.root" << RESET ;
     writeGraphs();
 
 }
@@ -54,8 +54,8 @@ void ShortFinder::InitialiseSettings()
     cSetting = fSettingsMap.find( "Nevents" );
     fTotalEvents = ( cSetting != std::end( fSettingsMap ) ) ? cSetting->second : 999; 
 
-    // std::cout << "Read the following Settings: " << std::endl;
-    // std::cout << "Hole Mode: " << fHoleMode << std::endl << "NEvents: " << fTotalEvents << std::endl << "NSigmas: " << fSigmas << std::endl;
+    // LOG (INFO) << "Read the following Settings: " ;
+    // LOG (INFO) << "Hole Mode: " << fHoleMode << std::endl << "NEvents: " << fTotalEvents << std::endl << "NSigmas: " << fSigmas ;
 }
 void ShortFinder::Initialize()
 {
@@ -204,9 +204,9 @@ void ShortFinder::SetBeBoard(BeBoard* pBoard)
     fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID", 1 );
     fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", 2 );
     
-    std::cout << "COMMISSIONNING_MODE_RQ: " << fBeBoardInterface->ReadBoardReg( pBoard, "COMMISSIONNING_MODE_RQ" ) << std::endl;
-    std::cout << "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID: " << fBeBoardInterface->ReadBoardReg( pBoard, "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID" ) << std::endl;
-    std::cout << "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE: " << fBeBoardInterface->ReadBoardReg( pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE" ) << std::endl;
+    LOG (INFO) << "COMMISSIONNING_MODE_RQ: " << fBeBoardInterface->ReadBoardReg( pBoard, "COMMISSIONNING_MODE_RQ" );
+    LOG (INFO) << "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID: " << fBeBoardInterface->ReadBoardReg( pBoard, "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID" ) ;
+    LOG (INFO) << "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE: " << fBeBoardInterface->ReadBoardReg( pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE" ) ;
 
     std::vector<std::pair<std::string, uint8_t>> cRegVec;    
 
@@ -245,9 +245,8 @@ void ShortFinder::MergeShorts(ShortsList pShortsListA)
 
     for (auto cMemberChannel: fShortsList)
     {
-        for (auto i: cMemberChannel) std::cout << i << ' ';
+        for (auto i: cMemberChannel) LOG (INFO) << i << ' ';
     }
-    std::cout<<std::endl;
 }
 
 void ShortFinder::FindShorts(std::ostream& os )
@@ -342,7 +341,7 @@ void ShortFinder::FindShorts(std::ostream& os )
 void ShortFinder::ReconstructShorts(ShortedGroupsList pShortedGroupsArray, std::ostream& os )
 {
 
-    std::cout<<std::endl<<"---------Creating shorted pairs-----------------"<<std::endl;
+    LOG (INFO) << std::endl<<"---------Creating shorted pairs-----------------";
     std::vector<ShortsList> cShortsVector;
     ShortsList cShort;
     Short temp_shorted_channel;
@@ -401,7 +400,7 @@ void ShortFinder::ReconstructShorts(ShortedGroupsList pShortedGroupsArray, std::
 
                 for (auto cMemberChannel: cShort)
                 {
-                    for (auto i: cMemberChannel) std::cout << i << ' ';
+                    for (auto i: cMemberChannel) LOG (INFO) << i << ' ';
                 } 
                 os <<"smallest distance: "<<smallest_distance<<std::endl;
                 //DisplayGroupsContent(pShortedGroupsArray);
@@ -482,9 +481,9 @@ ShortsList ShortFinder::MergeShorts(ShortsList pShortA, ShortsList pShortB)
 
     for (auto cMemberChannel: pShortB)
     {
-        for (auto i: cMemberChannel) std::cout << i << ' ';
+        for (auto i: cMemberChannel) LOG (INFO) << i << ' ';
     }
-    std::cout<<std::endl;
+    LOG (INFO) <<std::endl;
     
     return pShortB;
 }
