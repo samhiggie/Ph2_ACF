@@ -21,7 +21,8 @@
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
 
-
+// maximum number of tries allowed to attempt a write procedure to a CBC register 
+const uint8_t MAX_WRITE_ATTEMPTS = 5 ;
 
 using namespace Ph2_HwDescription;
 
@@ -49,6 +50,8 @@ namespace Ph2_HwInterface {
         FileHandler* fFileHandler ;
         uint32_t fNthAcq, fNpackets;
         bool fJustPaused;
+        // number of tries a CBC register write operation was attempted  
+        uint8_t fRegWriteAttempts; 
 
       private:
         /*!

@@ -25,6 +25,9 @@
 
 using namespace Ph2_HwDescription;
 
+// maximum number of tries allowed to attempt a write procedure to a CBC register 
+const uint8_t MAX_WRITE_ATTEMPTS = 5 ;
+
 /*!
  * \namespace Ph2_HwInterface
  * \brief Namespace regrouping all the interfaces to the hardware
@@ -49,6 +52,10 @@ namespace Ph2_HwInterface {
         uint32_t fNEventsperAcquistion;
         uint32_t fDataSizeperEvent32;
         uint32_t fFMCId;
+        
+        // number of tries a CBC register write operation was attempted  
+        uint8_t fRegWriteAttempts; 
+
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
         //  const uint32_t SINGLE_I2C_WAIT = 700; //usec for 100 kHz I2C

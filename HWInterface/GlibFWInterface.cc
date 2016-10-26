@@ -653,17 +653,22 @@ namespace Ph2_HwInterface {
             // now I need to make sure that the written and the read-back vector are the same
             std::vector<uint32_t> cWriteAgain = get_mismatches (cWriteVec.begin(), cWriteVec.end(), pVecReq.begin(), GlibFWInterface::cmd_reply_comp);
 
+            // now check the size of the WriteAgain vector and assert Success or not
+            // also check that the number of write attempts does not exceed MAX_WRITE_ATTEMPTS
             if (cWriteAgain.empty() ) cSuccess = true;
             else
             {
                 cSuccess = false;
 
                 // if the number of errors is greater than 100, give up
-                if (cWriteAgain.size() < 120 && fRegWriteAttempts < MAX_WRITE_ATTEMPTS )
+                if (cWriteAgain.size() < 100 && fRegWriteAttempts < MAX_WRITE_ATTEMPTS )
                 {
-					LOG (INFO) << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" ;
+                    if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(fRegWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
+                    else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(fRegWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
+                
+                    fRegWriteAttempts++;
                     this->WriteCbcBlockReg ( cWriteAgain, true);
-				}
+                }
                 else if ( fRegWriteAttempts >= MAX_WRITE_ATTEMPTS )
                 {
                     cSuccess = false; 

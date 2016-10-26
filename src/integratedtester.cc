@@ -324,13 +324,13 @@ void perform_AntennaOccupancyMeasurement(Tool pTool ,  std::string pHWFile )
 {
     LOG (INFO) << "Starting occupancy measurement using the antenna." ; 
                     
-    //AntennaTester cAntennaTester;
-    //cAntennaTester.Inherit (&pTool);
-    //cAntennaTester.ChangeHWDescription ( pHWFile );
-    //cAntennaTester.ChangeSettings ( pHWFile );
-    //cAntennaTester.ConfigureHw();
+    AntennaTester cAntennaTester;
+    cAntennaTester.Inherit (&pTool);
+    cAntennaTester.ChangeHWDescription ( pHWFile );
+    cAntennaTester.ChangeSettings ( pHWFile );
+    cAntennaTester.ConfigureHw();
     //cAntennaTester.Initialize();
-
+    
     // re-configure CBC regsiters with values from the calibration 
     //cAntennaTester.ReconfigureCBCRegisters();
     
@@ -338,7 +338,7 @@ void perform_AntennaOccupancyMeasurement(Tool pTool ,  std::string pHWFile )
     //cAntennaTester.Measure();
     
     // save results 
-    //cAntennaTester.SaveResults();
+    // cAntennaTester.SaveResults();
     //char line[120];
     //sprintf(line, "# Top Pad Occupancy = %.2f ± %.3f" , cHybridTester.GetMeanOccupancyTop() , cHybridTester.GetRMSOccupancyTop() );
     //cHybridTester.AmmendReport(line);
