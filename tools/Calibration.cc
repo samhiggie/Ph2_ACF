@@ -494,24 +494,6 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
     }
 }
 
-// void Calibration::normalizeHists()
-// {
-//     std::string cHistName = "Occupancy";
-//     for ( const auto& cCbc : fCbcHistMap )
-//     {
-//         // loop the map of string vs TObject
-//         auto cHist = cCbc.second.find ( cHistName );
-
-//         if ( cHist != std::end ( cCbc.second ) )
-//         {
-//             fOffsetCanvas->cd ( cCbc.first->getCbcId() + 1 );
-//             TH1F* cTmpHist = static_cast<TH1F*> ( cHist->second );
-//             cTmpHist->Scale(100.0/(fEventsPerPoint*3));
-//             cTmpHist->DrawCopy();
-//         }
-//         else LOG (INFO) << "Error, could not find Histogram with name " << cHistName ;
-//     }
-// }
 void Calibration::updateHists ( std::string pHistname )
 {
     // loop the CBCs

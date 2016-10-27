@@ -27,9 +27,10 @@
 #include "../Utils/Timer.h"
 //#include "../Utils/easylogging++.h"
 
-#ifdef __HTTP__
-    #include "THttpServer.h"
-#endif
+// #ifdef __HTTP__
+//     #include "THttpServer.h"
+// #endif
+
 #ifdef __ZMQ__
     #include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
     #include "../Utils/AppLock.cc"
@@ -133,7 +134,7 @@ int launch_HMP4040server( std::string pHostname  = "localhost" , int pZmqPortNum
         {
             // have to do this here because actually lvSupervisor attempts to access the LOCK file as well...
             delete cLock;
-            
+
             LOG (INFO)  <<  "HMP4040 server not running .... so try and launch it.";
             // launch the server in the background with nohup... probably not the smartest way of doing this but the only way I know how without using screen/tmux 
             // // sprintf(cmd, "nohup bin/lvSupervisor -r %d -p %d -i %d  0< /dev/null", pZmqPortNumber, pHttpPortNumber, cMeasureInterval_s);
@@ -311,11 +312,9 @@ bool check_Shorts(Tool pTool , std::string pHWFile , uint32_t cMaxNumShorts)
 {
     ShortFinder cShortFinder; 
     cShortFinder.Inherit (&pTool);
-    cShortFinder.ChangeHWDescription ( pHWFile );
-    cShortFinder.ChangeSettings ( pHWFile );
     cShortFinder.ConfigureHw();
     //reload the calibration values for the CBCs
-    cShortFinder.ReconfigureRegisters();
+    //cShortFinder.ReconfigureRegisters();
     // I don't think this is neccesary ... but here for now
     cShortFinder.ConfigureVcth(0x78);
 
@@ -339,13 +338,11 @@ void perform_OccupancyMeasurment(Tool pTool ,  std::string pHWFile )
                     
     HybridTester cHybridTester;
     cHybridTester.Inherit (&pTool);
-    cHybridTester.ChangeHWDescription ( pHWFile );
-    cHybridTester.ChangeSettings ( pHWFile );
     cHybridTester.ConfigureHw();
     cHybridTester.Initialize();
 
     // re-configure CBC regsiters with values from the calibration 
-    cHybridTester.ReconfigureCBCRegisters();
+    //cHybridTester.ReconfigureCBCRegisters();
     // I don't think this is neccesary ... but here for now
     cHybridTester.ConfigureVcth(0x78);
 
@@ -375,14 +372,12 @@ void perform_AntennaOccupancyMeasurement(Tool pTool ,  std::string pHWFile )
 
     AntennaTester cAntennaTester;
     cAntennaTester.Inherit (&pTool);
-    cAntennaTester.ChangeHWDescription ( pHWFile );
-    cAntennaTester.ChangeSettings ( pHWFile );
     cAntennaTester.ConfigureHw(outp);
     LOG (INFO) << outp.str();
     cAntennaTester.Initialize();
     
     // re-configure CBC regsiters with values from the calibration 
-    cAntennaTester.ReconfigureCBCRegisters();
+    //cAntennaTester.ReconfigureCBCRegisters();
     cAntennaTester.ConfigureVcth(0x78);
 
     // measure occupancy 

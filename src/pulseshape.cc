@@ -6,16 +6,6 @@
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
 
-#ifdef __HTTP__
-    #include "THttpServer.h"
-#endif
-#ifdef __ZMQ__
-    #include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
-    #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Controller.h"
-    #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Client.h"
-    using namespace Ph2_UsbInst;
-#endif
-
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;

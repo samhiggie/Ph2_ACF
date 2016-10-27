@@ -665,8 +665,7 @@ namespace Ph2_HwInterface {
                 if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
                 {
                     if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
-                    else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
-                
+                    
                     pWriteAttempts++;
                     this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
                 }

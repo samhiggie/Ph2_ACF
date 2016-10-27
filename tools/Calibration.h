@@ -85,10 +85,6 @@ class Calibration : public Tool
 
 	void updateHists( std::string pHistname );
 
-	// normalize occupancy histograms  : offsets were found by taking pMultiple*fEvents triggers
-	// therefore the normalization factor is 100./(pMultiple*fEventsPerPoint)
-	void normalizeHists();
-
 	void writeGraphs();
 
 

@@ -18,7 +18,7 @@ export BASE_DIR=$(pwd)
 #ANTENNA
 export ANTENNALIB=CMSPh2_AntennaDriver/lib
 #HMP4040
-export HMP4040LIB=../Ph2_USBInstDriver/lib
+export USBINSTLIB=../Ph2_USBInstDriver/lib
 
 
 export PATH=$BASE_DIR/bin:$PATH

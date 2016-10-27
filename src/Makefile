@@ -12,8 +12,8 @@ ANTENNADIR=../CMSPh2_AntennaDriver
 AntennaFlag = -D__ANTENNA__
 AMC13DIR=/opt/cactus/include/amc13
 Amc13Flag     = -D__AMC13__
-HMP4040DIR=../../Ph2_USBInstDriver
-HMP4040Flag     = -D__HMP4040__
+USBINSTDIR=../../Ph2_USBInstDriver
+USBINSTFlag     = -D__USBINST__
 ZMQ_HEADER_PATH = /usr/include/zmq.hpp
 
 LibraryDirs = /opt/cactus/lib ../lib 
@@ -64,10 +64,10 @@ endif
 ##################################################
 ## check if the HMP4040 drivers are installed
 ##################################################
-ifneq ("$(wildcard $(HMP4040DIR))","")
-	LibraryDirs += $(HMP4040DIR)/lib $(HMP4040DIR)/Utils $(HMP4040DIR)/HMP4040
-	IncludeDirs += $(BOOST_INCLUDE) $(HMP4040DIR)/HMP4040 $(HMP4040DIR)/Utils $(HMP4040DIR)/Drivers 
-	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_USBUtils -lPh2_Drivers $(HMP4040Flag)
+ifneq ("$(wildcard $(USBINSTDIR))","")
+	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/Utils $(USBINSTDIR)/HMP4040
+	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
+	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_USBUtils -lPh2_Drivers $(USBINSTFlag)
 	HMP4040INSTALLED = yes
 else
 	HMP4040INSTALLED = no
