@@ -2,7 +2,8 @@
 <HwDescription>
 
   <BeBoard Id="0" boardType="GLIB">
-    <connection id="board" uri="ipbusudp-2.0://192.168.000.175:50001" address_table="file://settings/address_table_2CBC.xml" />
+    <!-- <connection id="board" uri="ipbusudp-2.0://192.168.000.175:50001" address_table="file://settings/address_table_2CBC.xml" /> -->
+    <connection id="board" uri="chtcp-2.0://localhost:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" />
     
     <FW_Version NCbcDataSize="4"/>
     
@@ -11,7 +12,7 @@
       <Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register>
       <!--Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
       
-      <CBC_Files path="./settings/"/>
+      <CBC_Files path="./Results/IntegratedTester_Hole_26-10-16_18:00/" />
       
       <CBC Id="0" configfile="FE0CBC0.txt"/>
       <CBC Id="1" configfile="FE0CBC1.txt"/>

@@ -44,6 +44,7 @@ using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
+
 /*!
  * \class HybridTester
  * \brief Class to test x*CBC2 Hybrids
@@ -51,69 +52,106 @@ using namespace Ph2_System;
 class HybridTester : public Tool
 {
   public:
-    // Default C'tor
-    HybridTester() {}
-    // Default D'tor
-    ~HybridTester() {}
-    /*!
-    * \brief Initialize the Histograms and Canvasses for CMD line applications
-    * \param pThresholdScan :  bool flag to initialize the additional canvas for the Threshold scan
-    */
-    void Initialize ( bool pThresholdScan );
-    /*!
-    * \brief Test CBC registers by writing complimentary bit patterns (0x55, 0xAA)
-    */
-    void TestRegisters();
-    /*!
-    * \brief Test CBC registers by writing complimentary bit patterns (0x55, 0xAA)
-    */
-    void FindShorts();
-    /*!
-    * \brief Scan the thresholds to identify the threshold with no noise occupancy
-    */
-    void ScanThresholds();
-    void ScanThreshold();
-    /*!
-    * \brief Measure the single strip efficiency
-    */
-    void Measure();
-    // scan latency
-    void ScanLatency();
+	// Default C'tor
+	HybridTester() {}
+	// Default D'tor
+	~HybridTester() {}
+	/*!
+	* \brief Initialize the Histograms and Canvasses for CMD line applications
+	* \param pThresholdScan :  bool flag to initialize the additional canvas for the Threshold scan
+	*/
+	void Initialize( bool pThresholdScan = false );
+	/*!
+	* \brief Test CBC registers by writing complimentary bit patterns (0x55, 0xAA)
+	*/
+	void TestRegisters();
+	/*!
+	* \brief Test CBC registers by writing complimentary bit patterns (0x55, 0xAA)
+	*/
+	void FindShorts();
+	/*!
+	* \brief Scan the thresholds to identify the threshold with no noise occupancy
+	*/
+	void ScanThresholds();
+	void ScanThreshold();
+	/*!
+	* \brief Measure the single strip efficiency
+	*/
+	void Measure();
+	// scan latency 
+	void ScanLatency();
+	
+	/*!
+	*\brief return mean occupancy for (TOP) pads
+	*/
+	double GetMeanOccupancyTop(){return fHistOccupancyTop->GetMean();};
+	/*!
+	*\brief return mean occupancy for (BOTTOM) pads
+	*/
+	double GetMeanOccupancyBottom(){return fHistOccupancyBottom->GetMean();};
 
+	/*!
+	*\brief return RMS occupancy for (TOP) pads
+	*/
+	double GetRMSOccupancyTop(){return fHistOccupancyTop->GetRMS();};
+	/*!
+	*\brief return RMS occupancy for (BOTTOM) pads
+	*/
+	double GetRMSOccupancyBottom(){return fHistOccupancyBottom->GetRMS();};
+
+	/*!
+	* \brief Measure the single strip efficiency
+	*/
+	void AntennaScan();
+	/*!
+	* \brief private method that checks channels malfunction based on occupancy histograms, produces output report in .txt format
+	*/
+	void TestChannels();
+	/*!
+	* \brief overload method that checks channels malfunction based on occupancy histograms, produces output report in .txt format, does not rely on shared arrays
+	*/
+	void TestChannels( double pDecisionThreshold );
+	/*!
+	* \brief Save the results of channels testing performed with antenna scan
+	*/
+	void SaveTestingResults(std::string pHybridId);
+	/*!
+	* \brief Save the results to the file created with SystemController::InitializeResultFile
+	*/
+	void SaveResults();
+	void ReconfigureCBCRegisters(std::string pDirectoryName = "");
     /*!
-    * \brief Measure the single strip efficiency
+    * \brief re-configure only the Vcth value on the CBCs
     */
-    void AntennaScan();
-    /*!
-    * \brief private method that checks channels malfunction based on occupancy histograms, produces output report in .txt format
-    */
-    void TestChannels();
-    /*!
-    * \brief overload method that checks channels malfunction based on occupancy histograms, produces output report in .txt format, does not rely on shared arrays
-    */
-    void TestChannels ( double pDecisionThreshold );
-    /*!
-    * \brief Save the results of channels testing performed with antenna scan
-    */
-    void SaveTestingResults (std::string pHybridId);
-    /*!
-    * \brief Save the results to the file created with SystemController::InitializeResultFile
-    */
-    void SaveResults();
+    void ConfigureVcth( uint8_t pVcth = 0x78 ){ CbcRegWriter cWriter ( fCbcInterface, "VCth", pVcth ); accept ( cWriter ); };
+
+	void DisplayNoisyChannels(std::ostream& os = std::cout );
+	void DisplayDeadChannels(std::ostream& os = std::cout );
+
 
   private:
     uint32_t fNCbc;   /*!< Number of CBCs in the Setup */
     TCanvas* fDataCanvas;   /*!<Canvas to output single-strip efficiency */
     TH1F* fHistTop;   /*!< Histogram for top pads */
     TH1F* fHistBottom;   /*!< Histogram for bottom pads */
-    TH1F* fHistTopMerged;   /*!< Histogram for top pads used for segmented antenna testing routine*/
+	TH1F* fHistTopMerged;   /*!< Histogram for top pads used for segmented antenna testing routine*/
     TH1F* fHistBottomMerged;   /*!< Histogram for bottom pads used for segmented antenna testing routine*/
+    
+	TCanvas* fSummaryCanvas;   /*!<Canvas to output single-strip efficiency */
+	TH1F* fHistOccupancyBottom;   /*!< Distibution of measured occupancies for bottom pads */
+	TH1F* fHistOccupancyTop;   /*!< Distibution of measured occupancies for top pads */
 
-    bool fThresholdScan; /*!< Flag for SCurve Canvas */
+	bool fThresholdScan; /*!< Flag for SCurve Canvas */
     TCanvas* fSCurveCanvas;   /*!< Canvas for threshold scan */
 
     std::map<Cbc*, TH1F*> fSCurveMap;  /*!< Histograms for SCurve */
     std::map<Cbc*, TF1*> fFitMap;   /*!< fits for SCurve*/
+
+	// noisy and dead channels on top/bottom sensors
+	std::vector<int> fNoisyChannelsTop; 
+	std::vector<int> fNoisyChannelsBottom; 
+	std::vector<int> fDeadChannelsTop; 
+	std::vector<int> fDeadChannelsBottom;  
 
     uint32_t fTotalEvents;
     bool fHoleMode;
@@ -128,7 +166,13 @@ class HybridTester : public Tool
     bool CheckChannelInShortPresence ( std::array<int, 2> pShortedChannel, std::vector<std::array<int, 2>> pShort);
     std::vector<std::array<int, 2>> MergeShorts (std::vector<std::array<int, 2>> pShortA, std::vector<std::array<int, 2>> pShortB);
 
-    //double fChannelDiagnosisThreshold;
+	
+	/*!
+	* \brief private method that classifies the channels on the top/bottom sensors into "Noisy/Dead"
+	*/
+	void ClassifyChannels(double pNoiseLevel = 65 , double pDeadLevel = 25 ); 
+	
+	//double fChannelDiagnosisThreshold;
     /*!
     * \brief private method that calls the constructors for the histograms
     */
@@ -147,6 +191,12 @@ class HybridTester : public Tool
         fDataCanvas->cd ( 2 );
         fHistBottom->Draw();
         fDataCanvas->Update();
+
+		fSummaryCanvas->cd( 1);
+		fHistOccupancyTop->Draw();
+		fSummaryCanvas->cd( 2);
+		fHistOccupancyBottom->Draw();
+		fSummaryCanvas->Update();
     }
 
     /*!
@@ -234,7 +284,6 @@ class HybridTester : public Tool
 
         return output_string;
     }
-
 };
 
 

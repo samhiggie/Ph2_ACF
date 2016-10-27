@@ -26,7 +26,7 @@ namespace Ph2_HwInterface {
         fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
-        fFMCId (1)
+        fFMCId (1) 
     {}
 
 
@@ -524,8 +524,10 @@ namespace Ph2_HwInterface {
 
 
 
-    bool ICFc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
+    bool ICFc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback)
     {
+        
+        uint8_t cMaxWriteAttempts = 5;
         // the actual write & readback command is in the vector
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
@@ -571,22 +573,29 @@ namespace Ph2_HwInterface {
         }
 
         // now check the size of the WriteAgain vector and assert Success or not
+        // also check that the number of write attempts does not exceed cMaxWriteAttempts
         if (cWriteAgain.empty() ) cSuccess = true;
         else
         {
             cSuccess = false;
 
             // if the number of errors is greater than 100, give up
-            if (cWriteAgain.size() < 100)
+            if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
             {
-                if (pReadback) LOG (INFO) << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" ;
-                else LOG (INFO) << "There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" ;
-
-                this->WriteCbcBlockReg ( cWriteAgain, true);
+                if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
+                else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
+            
+                pWriteAttempts++;
+                this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
             }
-            //else LOG(INFO) << "There were too many errors (>100 Registers). Something is wrong - aborting!" ;
+            else if ( pWriteAttempts >= cMaxWriteAttempts )
+            {
+                cSuccess = false; 
+                pWriteAttempts = 0 ;   
+            }
             else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
         }
+
 
         return cSuccess;
     }

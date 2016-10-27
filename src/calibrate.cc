@@ -13,11 +13,9 @@
 #include "../Utils/Timer.h"
 
 
-
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
-
 using namespace CommandLineProcessing;
 
 INITIALIZE_EASYLOGGINGPP
