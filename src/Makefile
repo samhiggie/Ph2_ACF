@@ -100,7 +100,7 @@ print:
 	@echo 'Amc13 SW installed:' $(AMC13INSTALLED)
 	@echo 'Antenna installed:' $(ANTENNAINSTALLED)
 	@echo 'Ph2_USBInstDriver installed:' $(USBINSTLIBINSTALLED)
-	@echo 'ZXMQ installed:' $(ZMQINSTALLED)
+	@echo 'ZeroMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
 
 integratedtester: integratedtester.cc

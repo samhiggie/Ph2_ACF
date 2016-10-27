@@ -23,7 +23,7 @@ else
 endif
 
 ifneq ("$(wildcard $(USBINSTDIR))","")
-	DEPENDENCIES := ../Ph2_USBInstDriver $(DEPENDENCIES)
+	#DEPENDENCIES := ../Ph2_USBInstDriver $(DEPENDENCIES)
 	USBINSTINSTALLED = yes
 	USBINSTINSTRUCTIONS = 
 else
