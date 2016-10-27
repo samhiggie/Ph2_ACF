@@ -66,7 +66,8 @@ namespace Ph2_System {
         else pVec = fFileHandler->readFileChunks (pNWords32);
     }
 
-    void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os )
+   
+     void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os )
     {
         this->fParser.parseHW (pFilename, fBeBoardFWMap, fBoardVector, os );
 
@@ -76,7 +77,7 @@ namespace Ph2_System {
         if (fWriteHandlerEnabled)
             this->initializeFileHandler();
     }
-
+    
     void SystemController::InitializeSettings ( const std::string& pFilename, std::ostream& os )
     {
         this->fParser.parseSettings (pFilename, fSettingsMap, os );

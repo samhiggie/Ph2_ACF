@@ -78,7 +78,9 @@ namespace Ph2_HwInterface {
         }
 
         // write the registers, the answer will be in the same cVec
-        bool cSuccess = fBoardFW->WriteCbcBlockReg ( cVec, pVerifLoop);
+        // the number of times the write operation has been attempted is given by cWriteAttempts
+        uint8_t cWriteAttempts = 0 ;
+        bool cSuccess = fBoardFW->WriteCbcBlockReg ( cVec, cWriteAttempts , pVerifLoop);
 
 #ifdef COUNT_FLAG
         fTransactionCount++;
@@ -160,17 +162,19 @@ namespace Ph2_HwInterface {
 
         // encode the reg specific to the FW, pVerifLoop decides if it should be read back, true means to write it
         fBoardFW->EncodeReg ( cRegItem, pCbc->getCbcId(), cVec, pVerifLoop, true );
-        // write the register, the answer is in the same cVec
-        bool cSuccess = fBoardFW->WriteCbcBlockReg (  cVec, pVerifLoop );
+        // write the registers, the answer will be in the same cVec
+        // the number of times the write operation has been attempted is given by cWriteAttempts
+        uint8_t cWriteAttempts = 0 ;
+        bool cSuccess = fBoardFW->WriteCbcBlockReg (  cVec, cWriteAttempts, pVerifLoop );
 
         //update the HWDescription object
         if (cSuccess)
             pCbc->setReg ( pRegNode, pValue );
 
-#ifdef COUNT_FLAG
-        fRegisterCount++;
-        fTransactionCount++;
-#endif
+        #ifdef COUNT_FLAG
+                fRegisterCount++;
+                fTransactionCount++;
+        #endif
 
         return cSuccess;
     }
@@ -196,8 +200,10 @@ namespace Ph2_HwInterface {
 #endif
         }
 
-        // write the registerss, the answer will be in the same cVec
-        bool cSuccess = fBoardFW->WriteCbcBlockReg ( cVec, pVerifLoop);
+        // write the registers, the answer will be in the same cVec
+        // the number of times the write operation has been attempted is given by cWriteAttempts
+        uint8_t cWriteAttempts = 0 ;
+        bool cSuccess = fBoardFW->WriteCbcBlockReg (  cVec, cWriteAttempts, pVerifLoop );
 
 #ifdef COUNT_FLAG
         fTransactionCount++;

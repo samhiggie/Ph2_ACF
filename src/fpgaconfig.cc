@@ -83,7 +83,7 @@ void verifyImageName ( const string& strImage, const vector<string>& lstNames)
 
 int main ( int argc, char* argv[] )
 {
-    //configure the logger
+ 	//configure the logger
     el::Configurations conf ("settings/logger.conf");
     el::Loggers::reconfigureAllLoggers (conf);
 

@@ -135,8 +135,10 @@ namespace Ph2_System {
          *\param os : ostream to dump output
          */
         void InitializeHw ( const std::string& pFilename, std::ostream& os = std::cout  );
+
         /*!
          * \brief Initialize the settings
+         * \Added to allow the reconfiguation of the settings during a test procedure.
          * \param pFilename :   settings file
          *\param os : ostream to dump output
         */

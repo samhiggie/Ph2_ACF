@@ -22,7 +22,7 @@ namespace Ph2_HwInterface {
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig ( nullptr ),
         fData ( nullptr ),
-        fNthAcq (0)
+        fNthAcq (0) 
     {
     }
 
@@ -611,8 +611,9 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool GlibFWInterface::WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, bool pReadback)
+    bool GlibFWInterface::WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts ,  bool pReadback)
     {
+        int cMaxWriteAttempts = 5;
         bool cSuccess = false;
         std::vector<uint32_t> cWriteVec = pVecReq;
 
@@ -653,18 +654,27 @@ namespace Ph2_HwInterface {
             // now I need to make sure that the written and the read-back vector are the same
             std::vector<uint32_t> cWriteAgain = get_mismatches (cWriteVec.begin(), cWriteVec.end(), pVecReq.begin(), GlibFWInterface::cmd_reply_comp);
 
+            // now check the size of the WriteAgain vector and assert Success or not
+            // also check that the number of write attempts does not exceed cMaxWriteAttempts
             if (cWriteAgain.empty() ) cSuccess = true;
             else
             {
                 cSuccess = false;
 
                 // if the number of errors is greater than 100, give up
-                if (cWriteAgain.size() < 120)
+                if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
                 {
-                    LOG (INFO) << "There were " << cWriteAgain.size() << " Readback Errors -trying again!" ;
-                    this->WriteCbcBlockReg ( cWriteAgain, true);
+                    if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
+                    
+                    pWriteAttempts++;
+                    this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
                 }
-                //else LOG(INFO) << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" ;
+                else if ( pWriteAttempts >= cMaxWriteAttempts )
+                {
+                    cSuccess = false; 
+                    pWriteAttempts = 0 ;   
+                }
+                //else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
                 else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
             }
         }
