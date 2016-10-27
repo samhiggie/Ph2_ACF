@@ -25,9 +25,9 @@ endif
 ifneq ("$(wildcard $(USBINSTDIR))","")
 	DEPENDENCIES := ../Ph2_USBInstDriver $(DEPENDENCIES)
 	USBINSTINSTALLED = yes
-	USBINSTINSTRUCTIONS = HMP4040 instrument driver found.
+	USBINSTINSTRUCTIONS = 
 else
-	USBINSTINSTRUCTIONS = To use the HMP4040 Instrument driver, please download the Driver from 'https://gitlab.cern.ch/cms_tk_ph2/Ph2_USBInstDriver.git'.
+	USBINSTINSTRUCTIONS = To use the Ph2_USBInstDriver please download it from 'https://gitlab.cern.ch/cms_tk_ph2/Ph2_USBInstDriver.git'.
 endif
 
 .PHONY: print dependencies $(DEPENDENCIES) clean src miniDAQ tools

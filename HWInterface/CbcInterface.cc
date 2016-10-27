@@ -171,10 +171,10 @@ namespace Ph2_HwInterface {
         if (cSuccess)
             pCbc->setReg ( pRegNode, pValue );
 
-        #ifdef COUNT_FLAG
-                fRegisterCount++;
-                fTransactionCount++;
-        #endif
+#ifdef COUNT_FLAG
+        fRegisterCount++;
+        fTransactionCount++;
+#endif
 
         return cSuccess;
     }

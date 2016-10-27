@@ -138,7 +138,6 @@ namespace Ph2_System {
 
         /*!
          * \brief Initialize the settings
-         * \Added to allow the reconfiguation of the settings during a test procedure.
          * \param pFilename :   settings file
          *\param os : ostream to dump output
         */

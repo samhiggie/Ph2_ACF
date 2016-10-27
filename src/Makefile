@@ -1,3 +1,11 @@
+ANTENNADIR=../CMSPh2_AntennaDriver
+AntennaFlag = -D__ANTENNA__
+AMC13DIR=/opt/cactus/include/amc13
+Amc13Flag     = -D__AMC13__
+USBINSTDIR=../../Ph2_USBInstDriver
+USBINSTFlag     = -D__USBINST__
+ZMQ_HEADER_PATH = /usr/include/zmq.hpp
+ 
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
@@ -7,14 +15,6 @@ HttpFlag = -D__HTTP__
 ZmqFlag = -D__ZMQ__
 
 DevFlags        =
-
-ANTENNADIR=../CMSPh2_AntennaDriver
-AntennaFlag = -D__ANTENNA__
-AMC13DIR=/opt/cactus/include/amc13
-Amc13Flag     = -D__AMC13__
-USBINSTDIR=../../Ph2_USBInstDriver
-USBINSTFlag     = -D__USBINST__
-ZMQ_HEADER_PATH = /usr/include/zmq.hpp
 
 LibraryDirs = /opt/cactus/lib ../lib 
 	IncludeDirs     =  /opt/cactus/include ../ 
@@ -35,7 +35,8 @@ endif
 ifneq ("$(wildcard $(ANTENNADIR))","")
 	IncludeDirs += $(ANTENNADIR)
 	LibraryDirs += $(ANTENNADIR)/lib /usr/lib64/ 
-	ExternalObjects += -lboost_thread -lPh2_Antenna $(AntennaFlag) 
+	#ExternalObjects += -lboost_thread -lPh2_Antenna $(AntennaFlag) 
+	ExternalObjects += -lPh2_Antenna $(AntennaFlag) 
 	ANTENNAINSTALLED = yes
 else
 	ANTENNAINSTALLED = no
@@ -61,16 +62,17 @@ else
 		ZMQINSTALLED = no
         ZMQINSTRUCTIONS = ZeroMQ library is required to build the lvSupervisor with the server option - get it with \'sudo yum install zeromq-devel\'
 endif
+
 ##################################################
-## check if the HMP4040 drivers are installed
+## check if the Ph2_USBInstDriver drivers are installed
 ##################################################
 ifneq ("$(wildcard $(USBINSTDIR))","")
 	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/Utils $(USBINSTDIR)/HMP4040
 	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
 	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_USBUtils -lPh2_Drivers $(USBINSTFlag)
-	HMP4040INSTALLED = yes
+	USBINSTLIBINSTALLED = yes
 else
-	HMP4040INSTALLED = no
+	USBINSTLIBINSTALLED = no
 endif
 
 IncludePaths            = $(IncludeDirs:%=-I%)
@@ -97,7 +99,7 @@ print:
 	@echo 'Root Has Http:' $(ROOTVERSION)
 	@echo 'Amc13 SW installed:' $(AMC13INSTALLED)
 	@echo 'Antenna installed:' $(ANTENNAINSTALLED)
-	@echo 'HMP4040 installed:' $(HMP4040INSTALLED)
+	@echo 'Ph2_USBInstDriver installed:' $(USBINSTLIBINSTALLED)
 	@echo 'ZXMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
 

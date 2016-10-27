@@ -567,16 +567,12 @@ void Calibration::setRegValues()
 void Calibration::writeGraphs()
 {
     fResultFile->cd();
-
-    // n
-
     // Save hist maps for CBCs
-    //
+
     //Tool::SaveResults();
 
     // save canvases too
     //fVplusCanvas->Write ( fVplusCanvas->GetName(), TObject::kOverwrite );
     fOffsetCanvas->Write ( fOffsetCanvas->GetName(), TObject::kOverwrite );
     fOccupancyCanvas->Write ( fOccupancyCanvas->GetName(), TObject::kOverwrite );
-
 }
