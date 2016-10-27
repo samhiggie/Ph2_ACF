@@ -32,6 +32,7 @@
 #endif
 #ifdef __ZMQ__
     #include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
+    #include "../Utils/AppLock.cc"
     #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Controller.h"
     #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Client.h"
     using namespace Ph2_UsbInst;
@@ -111,16 +112,47 @@ int launch_HMP4040server( std::string pHostname  = "localhost" , int pZmqPortNum
         char buffer[256];
         std::string currentDir = getcwd(buffer, sizeof(buffer));
         std::string baseDirectory  = getHomeDirectory() + "/Ph2_USBInstDriver";
+        
         // first check if process if running 
         //before I do anything else, try to find an existing lock and if so, terminate
-        // AppLock* cLock = new AppLock ("/tmp/lvSupervisor.lock", cMessage.str() );
+        std::stringstream cMessage;
+        cMessage << "THttpServer port: " << std::to_string (pHttpPortNumber) << " ZMQ port: " << pZmqPortNumber << std::endl;
+        AppLock* cLock = new AppLock ("/tmp/lvSupervisor.lock", cMessage.str() );
 
-        // if (cLock->getLockDescriptor() < 0)
-        // {
-        //     // server already running, might as well retreive the info before quitting!
-        //     std::string cInfo = cLock->get_info();
-        //     LOG (INFO) << "Retreived the following parameters from the info file: " << cInfo;
-        if(0 == system("pidof -x lvSupervisor > /dev/null")) //lvSupervisor is running.
+        // server already running
+        if (cLock->getLockDescriptor() < 0)
+        {
+            //might as well retreive the info before quitting!
+            std::string cInfo = cLock->get_info();
+            LOG (INFO) << "Retreived the following parameters from the info file: " << cInfo;
+            LOG (INFO) <<  "HMP4040 server already running .... so do nothing!";
+            delete cLock;
+            exit (0);
+        }
+        else
+        {
+            // have to do this here because actually lvSupervisor attempts to access the LOCK file as well...
+            delete cLock;
+            
+            LOG (INFO)  <<  "HMP4040 server not running .... so try and launch it.";
+            // launch the server in the background with nohup... probably not the smartest way of doing this but the only way I know how without using screen/tmux 
+            // // sprintf(cmd, "nohup bin/lvSupervisor -r %d -p %d -i %d  0< /dev/null", pZmqPortNumber, pHttpPortNumber, cMeasureInterval_s);
+            // nohup has a problem that i cannot seem to make it ignore std_in ... which seems to cause the server to crash/time-out ... 
+            // so do this with tmux instead 
+            create_HMP4040server_tmuxSession(pHostname , pZmqPortNumber, pHttpPortNumber, pMeasureInterval_s );
+            char cmd[120];
+            sprintf(cmd , ". %s/start_HMP4040.sh" ,  baseDirectory.c_str() );
+            system(cmd);
+
+            // start monitoring the voltages and currents on the HMP4040
+            HMP4040Client* cClient = new HMP4040Client (pHostname, pZmqPortNumber);
+            cClient->StartMonitoring();
+            std::this_thread::sleep_for (std::chrono::seconds (pMeasureInterval_s*2) );
+            delete cClient;
+        }
+            
+
+        /*if(0 == system("pidof -x lvSupervisor > /dev/null")) //lvSupervisor is running.
         {
             LOG (INFO) <<  "HMP4040 server already running .... so do nothing!";
             
@@ -144,7 +176,7 @@ int launch_HMP4040server( std::string pHostname  = "localhost" , int pZmqPortNum
             cClient->StartMonitoring();
             std::this_thread::sleep_for (std::chrono::seconds (pMeasureInterval_s*2) );
             delete cClient;
-        }
+        }*/
     #endif
     return 0;
 }
