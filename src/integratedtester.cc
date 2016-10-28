@@ -9,6 +9,10 @@
 #include <sys/wait.h>
 #include "boost/tokenizer.hpp"
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/spirit/include/qi_parse.hpp>
+#include <boost/spirit/include/qi_numeric.hpp>
+
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
@@ -25,11 +29,6 @@
 #include "TROOT.h"
 #include "TApplication.h"
 #include "../Utils/Timer.h"
-//#include "../Utils/easylogging++.h"
-
-// #ifdef __HTTP__
-//     #include "THttpServer.h"
-// #endif
 
 #ifdef __ZMQ__
 #include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
@@ -104,9 +103,18 @@ void create_HMP4040server_tmuxSession (std::string pHostname  = "localhost" , in
     starterScript.close();
 }
 
+// function to check if a string is alphanumeric ... 
+// shamelessly copied from a google search
+bool is_numeric(std::string const& str)
+{
+    std::string::const_iterator first(str.begin()), last(str.end());
+    return boost::spirit::qi::parse(first, last, boost::spirit::double_) && first == last;
+}
+
 // check if the HMP4040 server has been launched
 // if not launch it in a tmux session using a bask script created by create_HMP4040server_tmuxSession
-int launch_HMP4040server ( std::string pHostname  = "localhost" , int pZmqPortNumber = 8081 , int pHttpPortNumber = 8080, int pMeasureInterval_s = 2 )
+// 
+int launch_HMP4040server ( std::string pHostname , int& pZmqPortNumber  , int& pHttpPortNumber , int pMeasureInterval_s )
 {
 #ifdef __ZMQ__
     LOG (INFO) << "Check if HMP4040 server is not launched and if so launch it."  ;
@@ -126,9 +134,19 @@ int launch_HMP4040server ( std::string pHostname  = "localhost" , int pZmqPortNu
         LOG (INFO) << "Retreived the following parameters from the info file: " << cInfo;
         LOG (INFO) <<  "HMP4040 server already running .... so do nothing!";
         delete cLock;
-        //TODO: tokenize the cInfo string to recover the port numbers so the client can be smart enough to connect to the correct port!
-        //TODO: maybe pass the ports as references so they can be passed on in main()?
-        //exit (0);
+
+
+        //tokenize the cInfo string to recover the port numbers so the client can be smart enough to connect to the correct port!
+        std::vector<std::string> cTokens = tokenize_input ( cInfo , " ");
+        std::vector<int> cPorts; cPorts.clear();
+        for( auto token : cTokens )
+        {
+            if( is_numeric(token)){ cPorts.push_back( boost::lexical_cast<int>(token) );}
+        }
+        //ports passed as reference so they can be passed on in main()
+        // THttp port comes first, then ZMQ 
+        pHttpPortNumber = cPorts[0];
+        pZmqPortNumber = cPorts[1];
     }
     else
     {
