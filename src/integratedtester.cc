@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <limits.h>
 #include <signal.h>
-#include <zmq.hpp>
 #include <chrono>
 #include <thread>
 #include <sys/wait.h>
@@ -30,7 +29,8 @@
 #include "TApplication.h"
 #include "../Utils/Timer.h"
 
-#ifdef __ZMQ__
+#ifdef __USBINST__
+#include <zmq.hpp>
 #include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
 #include "../Utils/AppLock.cc"
 #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Controller.h"
@@ -103,20 +103,20 @@ void create_HMP4040server_tmuxSession (std::string pHostname  = "localhost" , in
     starterScript.close();
 }
 
-// function to check if a string is alphanumeric ... 
+// function to check if a string is alphanumeric ...
 // shamelessly copied from a google search
-bool is_numeric(std::string const& str)
+bool is_numeric (std::string const& str)
 {
-    std::string::const_iterator first(str.begin()), last(str.end());
-    return boost::spirit::qi::parse(first, last, boost::spirit::double_) && first == last;
+    std::string::const_iterator first (str.begin() ), last (str.end() );
+    return boost::spirit::qi::parse (first, last, boost::spirit::double_) && first == last;
 }
 
 // check if the HMP4040 server has been launched
 // if not launch it in a tmux session using a bask script created by create_HMP4040server_tmuxSession
-// 
+//
 int launch_HMP4040server ( std::string pHostname , int& pZmqPortNumber  , int& pHttpPortNumber , int pMeasureInterval_s )
 {
-#ifdef __ZMQ__
+#ifdef __USBINST__
     LOG (INFO) << "Check if HMP4040 server is not launched and if so launch it."  ;
     char buffer[256];
     std::string currentDir = getcwd (buffer, sizeof (buffer) );
@@ -138,13 +138,17 @@ int launch_HMP4040server ( std::string pHostname , int& pZmqPortNumber  , int& p
 
         //tokenize the cInfo string to recover the port numbers so the client can be smart enough to connect to the correct port!
         std::vector<std::string> cTokens = tokenize_input ( cInfo , " ");
-        std::vector<int> cPorts; cPorts.clear();
-        for( auto token : cTokens )
+        std::vector<int> cPorts;
+        cPorts.clear();
+
+        for ( auto token : cTokens )
         {
-            if( is_numeric(token)){ cPorts.push_back( boost::lexical_cast<int>(token) );}
+            if ( is_numeric (token) )
+                cPorts.push_back ( boost::lexical_cast<int> (token) );
         }
+
         //ports passed as reference so they can be passed on in main()
-        // THttp port comes first, then ZMQ 
+        // THttp port comes first, then ZMQ
         pHttpPortNumber = cPorts[0];
         pZmqPortNumber = cPorts[1];
     }
@@ -171,31 +175,6 @@ int launch_HMP4040server ( std::string pHostname , int& pZmqPortNumber  , int& p
     }
 
 
-    /*if(0 == system("pidof -x lvSupervisor > /dev/null")) //lvSupervisor is running.
-    {
-        LOG (INFO) <<  "HMP4040 server already running .... so do nothing!";
-
-    }
-    else //vSupervisor is not running.
-    {
-        char cmd[120];
-        //LOG (DEBUG) << "Current working directory is : " << cmd ;
-        LOG (INFO)  <<  "HMP4040 server not running .... so try and launch it.";
-        // launch the server in the background with nohup... probably not the smartest way of doing this but the only way I know how without using screen/tmux
-        // // sprintf(cmd, "nohup bin/lvSupervisor -r %d -p %d -i %d  0< /dev/null", pZmqPortNumber, pHttpPortNumber, cMeasureInterval_s);
-        // system(cmd);
-        // nohup has a problem that i cannot seem to make it ignore std_in ... which seems to cause the server to crash/time-out ...
-        // so do this with tmux instead
-        create_HMP4040server_tmuxSession(pHostname , pZmqPortNumber, pHttpPortNumber, pMeasureInterval_s );
-        sprintf(cmd , ". %s/start_HMP4040.sh" ,  baseDirectory.c_str() );
-        system(cmd);
-
-        // start monitoring the voltages and currents on the HMP4040
-        HMP4040Client* cClient = new HMP4040Client (pHostname, pZmqPortNumber);
-        cClient->StartMonitoring();
-        std::this_thread::sleep_for (std::chrono::seconds (pMeasureInterval_s*2) );
-        delete cClient;
-    }*/
 #endif
     return 0;
 }
@@ -206,7 +185,7 @@ HMP4040_measurement get_HMP4040currents ( std::string pHostname = "localhost" , 
     HMP4040_currents cCurrents ;
     HMP4040_voltages cVoltages = { {5.0, "pLVDS"}  , {5.0, "nLVDS"} , {3.3, "VREG"} , {1.2, "CBC"}};
 
-#ifdef __ZMQ__
+#ifdef __USBINST__
     HMP4040Client* cClient = new HMP4040Client (pHostname, pZmqPortNumber);
 
     int iterations = 0 ;
@@ -245,7 +224,7 @@ bool check_CurrentConsumption (Tool pTool , int pNCBCs = 2 , std::string pHostna
     int chkCBC = 0;
     int chkCurrent = 0;
     int cNumReads = 3;
-#ifdef __ZMQ__
+#ifdef __USBINST__
     std::string message;
     int iterations = 0 ;
     // get the latest reading from the logged using the HMP4040 monitoring function.
@@ -308,11 +287,11 @@ bool check_CurrentConsumption (Tool pTool , int pNCBCs = 2 , std::string pHostna
 }
 // check that the CBC registers can be written
 // tool tries to write 2 bit patterns (0xAA , 0x55) to the CBCs and checks how many write operations have failed
-bool check_Registers (Tool pTool)
+bool check_Registers (Tool* pTool)
 {
     // first check that the registers could be read/written to correctly
     RegisterTester cRegisterTester;
-    cRegisterTester.Inherit (&pTool);
+    cRegisterTester.Inherit (pTool);
     LOG (INFO) << "Running registers testing tool ... ";
     cRegisterTester.TestRegisters();
 
@@ -329,10 +308,10 @@ bool check_Registers (Tool pTool)
     return cRegTest;
 }
 // perform the CBC Vplus, Voffset calibration
-void perform_Calibration (Tool pTool)
+void perform_Calibration (Tool* pTool)
 {
     Calibration cCalibration;
-    cCalibration.Inherit (&pTool);
+    cCalibration.Inherit (pTool);
     cCalibration.Initialise ( false );
 
     cCalibration.FindVplus();
@@ -341,10 +320,10 @@ void perform_Calibration (Tool pTool)
     cCalibration.dumpConfigFiles();
 }
 // find the shorts on the DUT
-bool check_Shorts (Tool pTool , std::string pHWFile , uint32_t cMaxNumShorts)
+bool check_Shorts (Tool* pTool ,  uint32_t cMaxNumShorts)
 {
     ShortFinder cShortFinder;
-    cShortFinder.Inherit (&pTool);
+    cShortFinder.Inherit (pTool);
     cShortFinder.ConfigureHw();
     //reload the calibration values for the CBCs
     //cShortFinder.ReconfigureRegisters();
@@ -365,12 +344,12 @@ bool check_Shorts (Tool pTool , std::string pHWFile , uint32_t cMaxNumShorts)
     return ( cNShorts <= cMaxNumShorts) ? true : false;
 }
 // measure the occupancy on the TOP/BOTTOM pads of the DUT
-void perform_OccupancyMeasurment (Tool pTool ,  std::string pHWFile )
+void perform_OccupancyMeasurment (Tool* pTool )
 {
     LOG (INFO) << "Starting noise occupancy test." ;
 
     HybridTester cHybridTester;
-    cHybridTester.Inherit (&pTool);
+    cHybridTester.Inherit (pTool);
     cHybridTester.ConfigureHw();
     cHybridTester.Initialize();
 
@@ -397,14 +376,14 @@ void perform_OccupancyMeasurment (Tool pTool ,  std::string pHWFile )
     // measure pedestal
 
 }
-void perform_AntennaOccupancyMeasurement (Tool pTool ,  std::string pHWFile )
+void perform_AntennaOccupancyMeasurement (Tool* pTool )
 {
     LOG (INFO) << "Starting occupancy measurement using the antenna." ;
 
     std::stringstream outp;
 
     AntennaTester cAntennaTester;
-    cAntennaTester.Inherit (&pTool);
+    cAntennaTester.Inherit (pTool);
     cAntennaTester.ConfigureHw (outp);
     LOG (INFO) << outp.str();
     cAntennaTester.Initialize();
@@ -615,7 +594,7 @@ int main ( int argc, char* argv[] )
             if ( cRegisters )
             {
                 t.start();
-                bool registerReadWriteTest_passed = check_Registers (cTool);
+                bool registerReadWriteTest_passed = check_Registers (&cTool);
                 t.stop();
                 sprintf (line, "# %.3f s required to check register WRITE operation.", t.getElapsedTime() );
                 cTool.AmmendReport ( line);
@@ -639,7 +618,7 @@ int main ( int argc, char* argv[] )
             {
                 LOG (INFO) << GREEN << "Hybrid passed register check. Moving on to calibration of the CBCs on the DUT."  << rst ;
                 t.start();
-                perform_Calibration (cTool);
+                perform_Calibration (&cTool);
                 LOG (INFO) << "Calibration finished." ;
                 t.stop();
                 sprintf (line, "# %.3f s required to calibrate Vplus,Voffset on CBCs.", t.getElapsedTime() );
@@ -657,7 +636,7 @@ int main ( int argc, char* argv[] )
                 {
                     LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT." << rst ;
                     t.start();
-                    perform_Calibration (cTool);
+                    perform_Calibration (&cTool);
                     LOG (INFO) << "Calibration finished." ;
                     t.stop();
                     sprintf (line, "# %.3f s required to calibrate Vplus,Voffset on CBCs.", t.getElapsedTime() );
@@ -666,9 +645,8 @@ int main ( int argc, char* argv[] )
                 }
 
                 LOG (INFO) << "Starting short(s) test." ;
-                cHWFile =  "settings/HybridTest" + std::to_string (cNumCBCs) + "CBC.xml";
                 t.start();
-                bool shortFinder_passed = check_Shorts (cTool , cHWFile , cMaxNumShorts);
+                bool shortFinder_passed = check_Shorts (&cTool, cMaxNumShorts);
                 t.stop();
                 sprintf (line, "# %.3f s required to identify shorts on DUT.", t.getElapsedTime() );
                 cTool.AmmendReport ( line);
@@ -697,7 +675,7 @@ int main ( int argc, char* argv[] )
                 {
                     LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT." << rst ;
                     t.start();
-                    perform_Calibration (cTool);
+                    perform_Calibration (&cTool);
                     LOG (INFO) << "Calibration finished." ;
                     t.stop();
                     sprintf (line, "# %.3f s required to calibrate Vplus,Voffset on CBCs.", t.getElapsedTime() );
@@ -705,9 +683,8 @@ int main ( int argc, char* argv[] )
                     t.show ( "Calibration of the DUT" );
                 }
 
-                cHWFile =  "settings/HybridTest" + std::to_string (cNumCBCs) + "CBC.xml";
                 t.start();
-                perform_OccupancyMeasurment (cTool , cHWFile);
+                perform_OccupancyMeasurment (&cTool);
                 t.stop();
                 sprintf (line, "# %.3f s required to measure (NOISE) occupancy on DUT.", t.getElapsedTime() );
                 cTool.AmmendReport ( line);
@@ -725,7 +702,7 @@ int main ( int argc, char* argv[] )
                 {
                     LOG (INFO) << GREEN << "Calibrating CBCs before starting antenna test of the CBCs on the DUT."  << rst ;
                     t.start();
-                    perform_Calibration (cTool);
+                    perform_Calibration (&cTool);
                     LOG (INFO) << "Calibration finished." ;
                     t.stop();
                     sprintf (line, "# %.3f s required to calibrate Vplus,Voffset on CBCs.", t.getElapsedTime() );
@@ -734,9 +711,8 @@ int main ( int argc, char* argv[] )
 
                 }
 
-                cHWFile =  "settings/HybridTest" + std::to_string (cNumCBCs) + "CBC.xml";
                 t.start();
-                perform_AntennaOccupancyMeasurement (cTool , cHWFile);
+                perform_AntennaOccupancyMeasurement (&cTool);
                 t.stop();
                 sprintf (line, "# %.3f s required to measure occupancy on the DUT with the Antenna.", t.getElapsedTime() );
                 cTool.AmmendReport ( line);

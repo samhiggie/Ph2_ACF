@@ -1,9 +1,6 @@
 ANTENNADIR=../CMSPh2_AntennaDriver
-AntennaFlag = -D__ANTENNA__
 AMC13DIR=/opt/cactus/include/amc13
-Amc13Flag     = -D__AMC13__
 USBINSTDIR=../../Ph2_USBInstDriver
-USBINSTFlag     = -D__USBINST__
 ZMQ_HEADER_PATH = /usr/include/zmq.hpp
  
 CC              = gcc
@@ -11,8 +8,12 @@ CXX             = g++
 CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
 CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTVERSION := $(shell root-config --has-http)
+
 HttpFlag = -D__HTTP__
 ZmqFlag = -D__ZMQ__
+USBINSTFlag     = -D__USBINST__
+Amc13Flag     = -D__AMC13__
+AntennaFlag = -D__ANTENNA__
 
 DevFlags        =
 
