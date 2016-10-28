@@ -899,6 +899,10 @@ void HybridTester::FindShorts()
     uint8_t cTestPulseGroupId = 0;
     std::array<int, 5> cShortedChannelInfo;
     std::array<std::vector<std::array<int, 5>>, 8> cShortedGroupsArray;
+
+    std::array<int,2> cGroundedChannel;
+    std::vector<std::array<int,2> > cGroundedChannelsList;
+
     CbcRegReader cReader ( fCbcInterface, "VCth" );
     accept ( cReader );
     fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
@@ -962,6 +966,12 @@ void HybridTester::FindShorts()
                     ss << "\t0\t|\t" << cShortedChannelInfo[1] << "\t|\t" << cShortedChannelInfo[2] << "\t|\t" << cShortedChannelInfo[3] << std::endl;
                     fHistTopMerged->SetBinContent ( cChannelId, fHistTop->GetBinContent ( cChannelId ) );
                 }
+                if (fHistTop->GetBinContent( cChannelId ) < 0.5*fTotalEvents && ((cChannelId-1)%127)%8 == cTestPulseGroupId)
+                {
+                    cGroundedChannel = {0, (cChannelId-1)};
+                    cGroundedChannelsList.push_back(cGroundedChannel);
+                    ss<<"\t0\t|\t"<<(cChannelId-1)<<"\t|\t"<<(cTestPulseGroupId + 0)<<"\t|\tGND"<<std::endl;
+                }
 
                 if ( fHistBottom->GetBinContent ( cChannelId ) > 0.5 * fTotalEvents && ( (cChannelId - 1) % 127) % 8 != cTestPulseGroupId)
                 {
@@ -970,19 +980,25 @@ void HybridTester::FindShorts()
                     ss << "\t1\t|\t" << cShortedChannelInfo[1] << "\t|\t" << cShortedChannelInfo[2] << "\t|\t" << cShortedChannelInfo[3] << std::endl;
                     fHistBottomMerged->SetBinContent ( cChannelId, fHistBottom->GetBinContent ( cChannelId ) );
                 }
+                if (fHistBottom->GetBinContent( cChannelId ) < 0.5*fTotalEvents && ((cChannelId-1)%127)%8 == cTestPulseGroupId)
+                {
+                    cGroundedChannel = {1, (cChannelId-1)};
+                    cGroundedChannelsList.push_back(cGroundedChannel);
+                    ss<<"\t1\t|\t"<<(cChannelId-1)<<"\t|\t"<<(cTestPulseGroupId + 0)<<"\t|\tGND"<<std::endl;
+                }
 
             }
-
+            
             cShortedGroupsArray[cTestPulseGroupId] = cShortedChannelsGroup;
             //if (cTestPulseGroupId == 2) return;
             fHistBottom->Reset();
             fHistTop->Reset();
             ss << "------------------------------------------------------------------------" << std::endl;
-
+            
 
         }
     }
-
+    LOG (INFO) << ss.str();
     fHistTopMerged->Scale ( 100 / double_t ( fTotalEvents ) );
     fHistTopMerged->GetYaxis()->SetRangeUser ( 0, 100 );
     fHistBottomMerged->Scale ( 100 / double_t ( fTotalEvents ) );
@@ -990,7 +1006,7 @@ void HybridTester::FindShorts()
     ReconstructShorts (cShortedGroupsArray);
     UpdateHistsMerged();
 
-    LOG (INFO) << ss.str();
+    //LOG (INFO) << ss.str();
 }
 
 void HybridTester::Measure()
