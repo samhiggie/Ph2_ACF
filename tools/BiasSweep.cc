@@ -42,37 +42,37 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
     if ( cObj ) delete cObj;
 
-    fSweepCanvas = new TCanvas (cName, Form ("Bias Sweep%s", pBias), 10, 0, 500, 500 );
+    fSweepCanvas = new TCanvas (cName, Form ("Bias Sweep%s", pBias.c_str() ), 10, 0, 500, 500 );
     fSweepCanvas->cd();
 
-    cName = Form ("g_BiasSweep_%s_Fe%d_Cbc%d_Iteration%d", pBias, pCbc->getFeId(), pCbc->getCbcId(), fCounter );
+    cName = Form ("g_BiasSweep_%s_Fe%d_Cbc%d_Iteration%d", pBias.c_str(), pCbc->getFeId(), pCbc->getCbcId(), fCounter );
     cObj = gROOT->FindObject (cName);
 
     if (cObj) delete cObj;
 
     TGraph* cGraph = new TGraph ();
     cGraph->SetName (cName);
-    cGraph->SetTitle (Form ("Bias Sweep %s", pBias) );
+    cGraph->SetTitle (Form ("Bias Sweep %s", pBias.c_str() ) );
     cGraph->SetLineWidth ( 2 );
-    cGraph->GetXaxis()->SetTitle (pBias);
+    cGraph->GetXaxis()->SetTitle (pBias.c_str() );
     bookHistogram ( pCbc, pBias, cGraph );
 
     LOG (INFO) << "Created Canvas and Graph for Sweep of " << pBias;
 
     //create instance of Ke2110Controller
-    std::string cLogFile = fResultDirectory + "/DMM_log.txt";
+    std::string cLogFile = fDirectoryName + "/DMM_log.txt";
     Ke2110Controller* cKeController = new Ke2110Controller (cLogFile);
     cKeController->Reset();
     std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
     //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
     cKeController->Configure (cConfString, 0, 0.0001);
-    cController->Autozero();
+    cKeController->Autozero();
 
     //ok, now set the Analogmux to the value required to see the bias there
     //in order to do this, read the current value and store it for later
 
     uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
-    LOG (INFO) << "Analog mux set to: " << std::hex << cOriginalAmuxValue & 0x1F << std::dec << " (the Test pulse bits are not changed!)";
+    LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (the Test pulse bits are not changed!)";
 
     auto cAmuxValue = fAmuxSettings.find (pBias);
 
@@ -81,7 +81,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     if (cAmuxValue == std::end (fAmuxSettings) ) LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
     else
     {
-        cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue.second & 0x1F);
+        cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second & 0x1F);
         fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
         LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias;
     }
@@ -130,5 +130,5 @@ void BiasSweep::writeResults()
     this->SaveResults();
     //save the canvas too!
     fResultFile->cd();
-    fSweepCanvas->Write ( fOffsetCanvas->GetName(), TObject::kOverwrite );
+    fSweepCanvas->Write ( fSweepCanvas->GetName(), TObject::kOverwrite );
 }

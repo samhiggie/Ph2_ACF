@@ -1,7 +1,4 @@
-ANTENNADIR=../CMSPh2_AntennaDriver
-USBINSTDIR=../../Ph2_USBInstDriver
 AntennaFlag = -D__ANTENNA__
-AMC13DIR=/opt/cactus/include/amc13
 Amc13Flag     = -D__AMC13__
 
 ROOTVERSION := $(shell root-config --has-http)
@@ -48,9 +45,9 @@ endif
 ## check if the Ph2_USBInstDriver drivers are installed
 ##################################################
 ifneq ("$(wildcard $(USBINSTDIR))","")
-	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/Utils $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110
+	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils 
 	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils #$(USBINSTDIR)/Drivers 
-	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_USBUtils $(USBINSTFlag)# -lPh2_Drivers 
+	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 $(USBINSTFlag) -lPh2_Drivers -lPh2_USBUtils 
 	USBINSTLIBINSTALLED = yes
 	Objs += BiasSweep.o
 else
