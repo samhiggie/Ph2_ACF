@@ -15,6 +15,8 @@
 #include "Tool.h"
 #include "Ke2110Controller.h"
 #include <map>
+#include "TGraph.h"
+#include "TString.h"
 
 
 using namespace Ph2_HwDescription;

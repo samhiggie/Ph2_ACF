@@ -1,8 +1,3 @@
-ANTENNADIR=CMSPh2_AntennaDriver
-AMC13DIR=/opt/cactus/include/amc13
-USBINSTDIR=../Ph2_USBInstDriver
-
-#DEPENDENCIES := Utils HWDescription HWInterface System tools RootWeb Tracker src miniDAQ
 DEPENDENCIES := Utils HWDescription HWInterface RootWeb Tracker
 ANTENNAINSTALLED = no
 AMC13INSTALLED = no

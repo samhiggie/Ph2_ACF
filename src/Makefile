@@ -1,6 +1,3 @@
-ANTENNADIR=../CMSPh2_AntennaDriver
-AMC13DIR=/opt/cactus/include/amc13
-USBINSTDIR=../../Ph2_USBInstDriver
 ZMQ_HEADER_PATH = /usr/include/zmq.hpp
  
 CC              = gcc
@@ -33,7 +30,7 @@ endif
 ##################################################
 ## check if the Antenna driver is installed
 ##################################################
-ifneq ("$(wildcard $(ANTENNADIR))","")
+ifneq ("$(wildcard ../$(ANTENNADIR))","")
 	IncludeDirs += $(ANTENNADIR)
 	LibraryDirs += $(ANTENNADIR)/lib /usr/lib64/ 
 	#ExternalObjects += -lboost_thread -lPh2_Antenna $(AntennaFlag) 
@@ -68,9 +65,9 @@ endif
 ## check if the Ph2_USBInstDriver drivers are installed
 ##################################################
 ifneq ("$(wildcard $(USBINSTDIR))","")
-	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/Utils $(USBINSTDIR)/HMP4040
-	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
-	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_USBUtils -lPh2_Drivers $(USBINSTFlag)
+	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 #$(USBINSTDIR)/Utils 
+	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110# $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
+	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 $(USBINSTFlag) -lPh2_Drivers -lPh2_USBUtils 
 	USBINSTLIBINSTALLED = yes
 else
 	USBINSTLIBINSTALLED = no

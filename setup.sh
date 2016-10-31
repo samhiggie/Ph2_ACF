@@ -17,10 +17,14 @@ export BOOST_INCLUDE=/opt/cactus/include
 #Ph2_ACF
 export BASE_DIR=$(pwd)
 
+#External Plugins
+export ANTENNADIR=$BASE_DIR/CMSPh2_AntennaDriver
+export AMC13DIR=/opt/cactus/include/amc13
+export USBINSTDIR=$BASE_DIR/../Ph2_USBInstDriver
 #ANTENNA
-export ANTENNALIB=CMSPh2_AntennaDriver/lib
+export ANTENNALIB=$ANTENNADIR/lib
 #HMP4040
-export USBINSTLIB=../Ph2_USBInstDriver/lib
+export USBINSTLIB=$USBINSTLIB/lib
 
 
 export PATH=$BASE_DIR/bin:$PATH
