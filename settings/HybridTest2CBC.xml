@@ -11,9 +11,14 @@
       <Global_CBC_Register name="VCth"> 0x78 </Global_CBC_Register>
       <!--Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
       
-      <CBC_Files path="/settings/" />
-        <CBC Id="0" configfile="Cbc_default_electron.txt"/>
-        <CBC Id="1" configfile="Cbc_default_electron.txt"/>
+      <!-- extra decoupled -->
+      <!--CBC_Files path="Results/Calibration_Hole_28-10-16_13:34/" /-->
+
+      <!-- N06-->
+      <CBC_Files path="Results/Calibration_Hole_28-10-16_16:12/" />
+      
+        <CBC Id="0" configfile="FE0CBC0.txt"/>
+        <CBC Id="1" configfile="FE0CBC1.txt"/>
     </Module>
     
     <!-- Commissioning Mode -->

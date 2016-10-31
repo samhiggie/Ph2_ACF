@@ -311,10 +311,13 @@ void ShortFinder::MergeShorts(ShortsList pShortsListA)
 void ShortFinder::FindShorts(std::ostream& os )
 {
     uint8_t cGroupAddress[8] = {0, 4, 2, 6, 1, 5, 3, 7};
-    uint8_t cTestPulseGroupId = 0;
+    int cTestPulseGroupId = 0;
     
-    ShortedChannel cShortedChannelInfo; 
+    ShortedChannel cShortedChannelInfo;     
     ShortedGroupsList cShortedGroupsArray;
+
+    Short cGroundedChannel;
+    ShortsList cGroundedChannelsList;
     
     CbcRegReader cReader( fCbcInterface, "VCth" );
     accept( cReader );
@@ -371,6 +374,12 @@ void ShortFinder::FindShorts(std::ostream& os )
                     cShortedChannelsGroup.push_back(cShortedChannelInfo);
                     os<<"\t0\t|\t"<<cShortedChannelInfo[1]<<"\t|\t"<<cShortedChannelInfo[2]<<"\t|\t"<<cShortedChannelInfo[3]<<std::endl;
                 }
+                else if (fHistTop->GetBinContent( cChannelId ) < 0.5*fTotalEvents && ((cChannelId-1)%127)%8 == cTestPulseGroupId)
+                {
+                    cGroundedChannel = {0, (cChannelId-1)};
+                    cGroundedChannelsList.push_back(cGroundedChannel);
+                    os<<"\t0\t|\t"<<(cChannelId-1)<<"\t|\t"<<(cTestPulseGroupId)<<"\t|\tGND"<<std::endl;
+                }
                 
                 if ( fHistBottom->GetBinContent( cChannelId ) > 0.5*fTotalEvents && ((cChannelId-1)%127)%8 != cTestPulseGroupId) 
                 {
@@ -378,9 +387,11 @@ void ShortFinder::FindShorts(std::ostream& os )
                     cShortedChannelsGroup.push_back(cShortedChannelInfo);
                     os<<"\t1\t|\t"<<cShortedChannelInfo[1]<<"\t|\t"<<cShortedChannelInfo[2]<<"\t|\t"<<cShortedChannelInfo[3]<<std::endl;
                 }
-                else
+                else if (fHistBottom->GetBinContent( cChannelId ) < 0.5*fTotalEvents && ((cChannelId-1)%127)%8 == cTestPulseGroupId)
                 {
-
+                    cGroundedChannel = {1, (cChannelId-1)};
+                    cGroundedChannelsList.push_back(cGroundedChannel);
+                    os<<"\t1\t|\t"<<(cChannelId-1)<<"\t|\t"<<(cTestPulseGroupId)<<"\t|\tGND"<<std::endl;
                 }
                 
             }
