@@ -1,9 +1,11 @@
 ANTENNADIR=../CMSPh2_AntennaDriver
+USBINSTDIR=../../Ph2_USBInstDriver
 AntennaFlag = -D__ANTENNA__
 AMC13DIR=/opt/cactus/include/amc13
 Amc13Flag     = -D__AMC13__
 
 ROOTVERSION := $(shell root-config --has-http)
+Objs            = Tool.o SCurve.o Calibration.o Channel.o HybridTester.o CMTester.o  LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o
 
 RootLibraryDirs = /usr/local/lib/root
 LibraryDirs = ../lib 
@@ -42,7 +44,19 @@ else
 	AMC13INSTALLED = no
 endif
 
-Objs            = Tool.o SCurve.o Calibration.o Channel.o HybridTester.o CMTester.o  LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o
+##################################################
+## check if the Ph2_USBInstDriver drivers are installed
+##################################################
+ifneq ("$(wildcard $(USBINSTDIR))","")
+	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/Utils $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110
+	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils #$(USBINSTDIR)/Drivers 
+	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_USBUtils $(USBINSTFlag)# -lPh2_Drivers 
+	USBINSTLIBINSTALLED = yes
+	Objs += BiasSweep.o
+else
+	USBINSTLIBINSTALLED = no
+endif
+
 CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` 
@@ -71,6 +85,7 @@ print:
 	@echo 'Root Has Http:' $(ROOTVERSION)
 	@echo 'Amc13 SW installed:' $(AMC13INSTALLED)
 	@echo 'Antenna installed:' $(ANTENNAINSTALLED)
+	@echo 'Ph2_USBInstDriver installed:' $(USBINSTLIBINSTALLED)
 	@echo '****************************'
 clean:
 	rm -f *.o
