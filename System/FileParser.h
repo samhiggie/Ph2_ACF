@@ -21,6 +21,7 @@
 #include "../HWInterface/ICGlibFWInterface.h"
 #include "../HWInterface/CtaFWInterface.h"
 #include "../HWInterface/ICFc7FWInterface.h"
+#include "../HWInterface/Cbc3Fc7FWInterface.h"
 #include "../HWDescription/Definition.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/picojson.h"
@@ -98,7 +99,7 @@ namespace Ph2_System {
         void parseSettingsxml ( const std::string& pFilename, SettingsMap& pSettingsMap, std::ostream& os );
 
         BeBoard* parseBeBoard (pugi::xml_node pNode, BeBoardVec& pBoardVector, std::ostream& os );
-        void parseRegister (pugi::xml_node pNode, BeBoard* pBoard, std::ostream& os );
+        void parseRegister (pugi::xml_node pNode, std::string& pAttributeString, uint32_t& pValue, BeBoard* pBoard, std::ostream& os );
         void parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os );
         /*! \brief Expand environment variables in string
          * \param s input string

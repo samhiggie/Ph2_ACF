@@ -196,8 +196,8 @@
 	<node id="data"          address="0x40000400" permission="r" mode="non-incremental" size="65536"/>
 	<node id="cbc_i2c_regs"  address="0x40000800">
 		<node id="command_fifos"  address="0x0" permission="w" mode="non-incremental" size="65536" /> 
-		<node id="reply_fifos"    address="0x1" permission="r" mode="non-incremental" >
-			<node id="fe0"           address="0x0" size="65536"/>
+		<node id="reply_fifos"    address="0x1" permission="r" >
+			<node id="fe0"           address="0x0" size="65536" mode="non-incremental"/>
 		</node>
 	</node>
 

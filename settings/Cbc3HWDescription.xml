@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='utf-8'?>
+<HwDescription>
+  <BeBoard Id="0" boardType="CBC3FC7">
+    <connection id="board" uri="ipbusudp-2.0://192.168.0.80:50001" address_table="file://settings/cbc3_system_address_table.xml" />
+
+    <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
+        <Global_CBC_Register name="TriggerLatency1"> 0x09 </Global_CBC_Register>
+        <Global_CBC_Register name="Vth1"> 0x80 </Global_CBC_Register>
+        <!--<Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>-->
+        <CBC_Files path="./settings/" />
+        <CBC Id="0" configfile="CBC3_default.txt" />
+    </Module>
+
+    <!--TRIGGER-->
+
+    <Register name="cbc_system_cnfg">
+        <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->
+        <Register name="cbc_system_clk"> 0x1 </Register>
+        <!--FAST SIGNAL SOURCE-->
+        <Register name="serial_command_generator">
+            <Register name="fast_signal_enable">
+                <Register name="async_l1a"> 0x0 </Register>
+                <Register name="fmc"> 0x0 </Register>
+                <Register name="ipbus"> 0x0 </Register>
+                <Register name="internal"> 0x1 </Register>
+            </Register>
+        </Register>
+        <!--FAST SIGNAL GENERATOR CONFIG-->
+        <Register name="fast_signal_generator">
+            <Register name="enable">
+                <Register name="fast_reset"> 0 </Register>
+                <Register name="trigger"> 0 </Register>
+                <Register name="test_pulse"> 0 </Register>
+                <Register name="orbit_reset"> 0 </Register>
+            </Register>
+            <!--FAST SIGNAL GENERATOR TIMING-->
+            <Register name="Ncycle"> 100 </Register>
+            <Register name="cycle_period"> 500 </Register>
+            <Register name="trigger_timing"> 50 </Register>
+            <Register name="test_pulse_timing"> 10 </Register>
+            <Register name="orbit_reset_timing"> 400 </Register>
+        </Register>
+        <!--LATENCIES-->
+        <Register name="cbc_data_processor">
+            <Register name="cbc0.latencies">
+                <Register name="l1a"> 7 </Register>
+                <Register name="trig_data"> 3 </Register>
+            </Register>
+        </Register>
+    </Register>
+  </BeBoard>
+</HwDescription>
+
+<Settings>
+    <Setting name="TargetVcth">0x78</Setting>
+    <Setting name="TargetOffset">0x50</Setting>
+    <Setting name="TestPulsePotentiometer">0x00</Setting>
+    <Setting name="HoleMode">1</Setting>
+    <Setting name="VerificationLoop">1</Setting>
+    <!--PulseShape-->
+    <Setting name="Nevents" > 700 </Setting>
+    <Setting name="Vplus" > 0x50 </Setting>
+    <Setting name="TPAmplitude" > 0x0C </Setting>
+    <Setting name="TestGroup" > 1 </Setting>
+    <Setting name="ChannelOffset" > 0x40 </Setting>
+    <Setting name="StepSize" > 15 </Setting>
+    <Setting name="FitSCurves" > 0 </Setting>
+</Settings>
