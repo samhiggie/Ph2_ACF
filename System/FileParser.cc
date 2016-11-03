@@ -71,16 +71,23 @@ namespace Ph2_System {
                 RegManager::setDummyXml (strUhalConfig);
 
             os << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " URI: " << BOLDYELLOW << cUri << BOLDBLUE << " Address Table: " << BOLDYELLOW << cAddressTable << std::endl;
-            os << BOLDBLUE << " Type: " << BOLDYELLOW << cBoardType << RESET << std::endl;
+            os << BOLDBLUE << "|\t|----Type: " << BOLDYELLOW << cBoardType << RESET << std::endl << BLUE << "|\t|" << RESET << std::endl;
 
             //else LOG(INFO) << BOLDBLUE << "   " <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " Type: " << BOLDYELLOW << cBoardType << RESET ;
 
             // Iterate over the BeBoardRegister Nodes
             for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
             {
-                this->parseRegister (cBeBoardRegNode, cBeBoard, os);
-                // os << BOLDCYAN << "|" << "  " << "|" << "_____" << cBeBoardRegNode.name() << "  " << cBeBoardRegNode.first_attribute().name() << " :" << cBeBoardRegNode.attribute( "name" ).value() << RESET << std:: endl;
+                if (std::string (cBeBoardRegNode.name() ) == "Register")
+                {
+                    std::string cNameString;
+                    uint32_t cValue;
+                    this->parseRegister (cBeBoardRegNode, cNameString, cValue, cBeBoard, os);
+                    //os << BOLDCYAN << "|" << "  " << "|" << "_____" << cBeBoardRegNode.name() << "  " << cBeBoardRegNode.first_attribute().name() << " :" << cBeBoardRegNode.attribute ( "name" ).value() << RESET << std:: endl;
+                }
             }
+
+            os << BLUE <<  "|\t|" << RESET << std::endl;
 
             if ( !cBoardType.compare ( std::string ( "GLIB" ) ) )
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
@@ -90,6 +97,8 @@ namespace Ph2_System {
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
             else if ( !cBoardType.compare ( std::string ( "ICFC7" ) ) )
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+            else if ( !cBoardType.compare ( std::string ( "CBC3FC7" ) ) )
+                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new Cbc3Fc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
 
             //else
             //cBeBoardFWInterface = new OtherFWInterface();
@@ -159,13 +168,35 @@ namespace Ph2_System {
         return cBeBoard;
     }
 
-    void FileParser::parseRegister (pugi::xml_node pNode, BeBoard* pBoard, std::ostream& os)
+    void FileParser::parseRegister (pugi::xml_node pNode, std::string& pAttributeString, uint32_t& pValue, BeBoard* pBoard, std::ostream& os)
     {
         if (std::string (pNode.name() ) == "Register")
         {
-            // os << BOLDCYAN << "|" << "  " << "|" << "_____" << cBeBoardRegNode.name() << "  " << cBeBoardRegNode.first_attribute().name() << " :" << cBeBoardRegNode.attribute( "name" ).value() << RESET << std:: endl;
-            pBoard->setReg ( static_cast<std::string> ( pNode.attribute ( "name" ).value() ), std::stoi ( pNode.first_child().value() ) );
+            if (std::string (pNode.first_child().value() ).empty() ) // the node has no value associated and thus is just a container
+            {
+                if (!pAttributeString.empty() ) pAttributeString += ".";
+
+                pAttributeString += pNode.attribute ("name").value();
+
+                //ok, I have appended .name to the attribute string, now loop over all the children
+                for ( pugi::xml_node cNode = pNode.child ( "Register" ); cNode; cNode = cNode.next_sibling() )
+                {
+                    std::string cAttributeString = pAttributeString;
+                    this->parseRegister (cNode, cAttributeString, pValue, pBoard, os);
+                }
+            }
+            else // this node has a value and thus is the last down the hierarchy - so I am terminate the attribute string, get the value and thats it
+            {
+                if (!pAttributeString.empty() ) // this is the first node in the hierarchy and thus no children
+                    pAttributeString += ".";
+
+                pAttributeString += pNode.attribute ("name").value();
+                pValue = convertAnyInt (pNode.first_child().value() );
+                os << BLUE << "|" << "\t" << "|" << "----" << pNode.name() << "  " << pAttributeString << ": " << pValue << RESET << std:: endl;
+                pBoard->setReg ( pAttributeString, pValue );
+            }
         }
+
     }
 
     void FileParser::parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os )
