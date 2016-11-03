@@ -273,11 +273,11 @@ namespace Ph2_HwInterface {
 
         //now wait until nword_event is equal to pNEvents * eventSize
         uint32_t cNWords = 0;
-        uint32_t cEventSize = 4 + fNCbc * 11; // 4 words event header + nCbc*11 words per CBC in unsparsified mode
+        uint32_t cEventSize = 3 + fNCbc * 11; // 3 words event header + nCbc*11 words per CBC in unsparsified mode
 
         while (cNWords < pNEvents * cEventSize )
         {
-            std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
         }
 
@@ -330,7 +330,7 @@ namespace Ph2_HwInterface {
                                          bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( (fFMCId + 1) << 28 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( (fFMCId ) << 28 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
     void Cbc3Fc7FWInterface::EncodeReg ( const CbcRegItem& pRegItem,
                                          uint8_t pFeId,
@@ -350,7 +350,7 @@ namespace Ph2_HwInterface {
                                            bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( (fFMCId + 1) << 28 ) | ( fBroadcastCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 )  | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( (fFMCId ) << 28 ) | ( fBroadcastCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 )  | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void Cbc3Fc7FWInterface::DecodeReg ( CbcRegItem& pRegItem,
@@ -549,7 +549,6 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::CbcHardReset()
     {
-        //TODO!!
         WriteReg ("cbc_system_ctrl.global.cbc_hard_reset", 0x1);
     }
 
