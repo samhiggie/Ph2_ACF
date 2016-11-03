@@ -81,7 +81,8 @@
 			<node id="reset"                             mask="0x00000001" description="reset all the modules."/>
 			<node id="daq_reset"                         mask="0x00000002" description="The daq chain (except for signal delays) and serial_command_generator is reset. Should be sent before starting a new run."/> 
             <!--TODO:same mask?-->
-			<node id="init"                              mask="0x00000002" description="initialize cbc i2c manager, configure cbc to send only sync bits, ser_data_delay_start_tuning signal is emitted."/>
+			<node id="init"                              mask="0x00000004" description="initialize cbc i2c manager, configure cbc to send only sync bits, ser_data_delay_start_tuning signal is emitted."/>
+			<node id="cbc_hard_reset"                    mask="0x00010000" description="send a CBC hard reset on the corresponding line"/>
 
 		</node>
 		<node id="serial_command_generator" address="0x01">
@@ -199,4 +200,16 @@
 			<node id="fe0"           address="0x0" size="65536"/>
 		</node>
 	</node>
+
+    <!--Present in Glib or FC7 address table for fpgaconfig-->
+	  <node id="flash_async_read_cmd"	address="0x0800bddf"  mask="0xFFFFFFFF" description="FLASH memory asynchronous read mode"/>
+    <node id="flash_block" address="0x08000000"     mode="block" size="0x00800000" permission="rw" description="FLASH memory for FPGA configuration"/>
+    <!-- ICAP MEMORY SPACE -->
+    <node id="icap" address="0x00000200" mask="0xffffffff" permission="rw" />
+
+    <node id="buf_cta" address="0x0000400" class="MmcPipeInterface" description="UC link buffer test register" size="0x3" tags="slave">
+      <node id="FPGAtoMMCcounters" address="0x0"/>
+      <node id="MMCtoFPGAcounters" address="0x1"/>
+      <node id="FIFO" address="0x2" mode="non-incremental" size="512" />
+  	</node>
 </node>
