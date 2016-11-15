@@ -66,7 +66,12 @@ namespace Ph2_HwInterface {
 
             if ( cWordIndex > 0 &&  (cWordIndex + 1) % fEventSize == 0 )
             {
-                fEventList.push_back ( new Event ( pBoard, fNCbc, lvec ) );
+                if (pType != BoardType::CBC3FC7)
+                    fEventList.push_back ( new Cbc2Event ( pBoard, fNCbc, lvec ) );
+
+                //else
+                //fEventList.push_back ( new Cbc3Event ( pBoard, fNCbc, lvec ) );
+
                 lvec.clear();
 
                 if (fEventList.size() >= fNevents) break;
