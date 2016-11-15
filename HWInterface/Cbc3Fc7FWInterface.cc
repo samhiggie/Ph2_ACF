@@ -23,7 +23,6 @@ namespace Ph2_HwInterface {
             uint32_t pBoardId ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
-        fData ( nullptr ),
         fBroadcastCbcId (0),
         fNCbc (0),
         fFMCId (1)
@@ -35,7 +34,6 @@ namespace Ph2_HwInterface {
             FileHandler* pFileHandler ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
-        fData ( nullptr ),
         fBroadcastCbcId (0),
         fNCbc (0),
         fFileHandler ( pFileHandler ),
@@ -50,7 +48,6 @@ namespace Ph2_HwInterface {
             const char* pAddressTable ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
-        fData ( nullptr ),
         fBroadcastCbcId (0),
         fNCbc (0),
         fFMCId (1)
@@ -63,7 +60,6 @@ namespace Ph2_HwInterface {
             FileHandler* pFileHandler ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
-        fData ( nullptr ),
         fBroadcastCbcId (0),
         fNCbc (0),
         fFileHandler ( pFileHandler ),
@@ -208,7 +204,7 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.serial_command_generator.start_trigger", 0x1);
     }
 
-    uint32_t Cbc3Fc7FWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger )
+    uint32_t Cbc3Fc7FWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
     {
         //ok, first query the number of words to read from FW and if it is 0, wait for half a second
         //in other words, poll for the ring buffer to be NOT empty
@@ -220,17 +216,11 @@ namespace Ph2_HwInterface {
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
         }
 
-        std::vector<uint32_t> cData = ReadBlockRegValue ("data", cNWords);
-
-        // TODO
-        if (fData) delete fData;
-
-        fData = new Data();
-        //fData->Set (pBoard, cData, [>nEvents<], true );
+        pData = ReadBlockRegValue ("data", cNWords);
 
         if (fSaveToFile)
         {
-            fFileHandler->set (cData);
+            fFileHandler->set (pData);
             fFileHandler->writeFile();
         }
 
@@ -239,7 +229,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    void Cbc3Fc7FWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents )
+    void Cbc3Fc7FWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
     {
         //as per Kirika's recommendation, I will use the internal fast signal generator for this - if a method shows up to do this also with external triggers I can always modify in the future!
         //Procedure as follows:
@@ -287,20 +277,11 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.serial_command_generator.stop_trigger", 0x1);
 
         //and read data
-        std::vector<uint32_t> cData = ReadBlockRegValue ("data", cNWords);
-
-        // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
-        // TODO
-        if ( fData ) delete fData;
-
-        fData = new Data();
-
-        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        //fData->Set ( pBoard, cData , cNCycles * fNEventsperAcquistion, true );
+        pData = ReadBlockRegValue ("data", cNWords);
 
         if ( fSaveToFile )
         {
-            fFileHandler->set ( cData );
+            fFileHandler->set ( pData );
             fFileHandler->writeFile();
         }
     }

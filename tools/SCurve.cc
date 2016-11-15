@@ -128,9 +128,9 @@ void SCurve::measureSCurves ( int  pTGrpId )
             for (Module* cFe : pBoard->fModuleVector)
                 fCbcInterface->WriteBroadcast (cFe, "VCth", cValue);
 
-            fBeBoardInterface->ReadNEvents ( pBoard, fEventsPerPoint );
+            ReadNEvents ( pBoard, fEventsPerPoint );
 
-            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+            const std::vector<Event*>& events = GetEvents ( pBoard );
 
             // Loop over Events from this Acquisition
             for ( auto& ev : events )
@@ -230,8 +230,8 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
             //Counter cCounter;
             //pBoard->accept ( cCounter );
 
-            fBeBoardInterface->ReadNEvents ( pBoard, fEventsPerPoint );
-            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+            ReadNEvents ( pBoard, fEventsPerPoint );
+            const std::vector<Event*>& events = GetEvents ( pBoard );
 
             // Loop over Events from this Acquisition
             for ( auto& ev : events )

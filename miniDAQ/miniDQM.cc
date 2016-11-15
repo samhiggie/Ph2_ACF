@@ -106,6 +106,9 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "skipDebugHist", "Switch off debug histograms. Default = false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "skipDebugHist", "g" );
 
+    cmd.defineOption ( "BoardType", "Board Type (FW) the data was recorded with - possible values: IMPERIAL, STRASBOURG, SUPERVISOR, CBC3",  ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "BoardType", "b" );
+
     std::map<std::string, pair<int, std::string>>  cbcTypeEvtSizeMap;
     cbcTypeEvtSizeMap["2"] = { 2, XML_DESCRIPTION_FILE_2CBC };
     cbcTypeEvtSizeMap["4"] = { 4, XML_DESCRIPTION_FILE_4CBC };
@@ -151,6 +154,43 @@ int main ( int argc, char* argv[] )
     bool evtFilter = ( cmd.foundOption ( "filter" ) ) ? true : false;
     int maxevt     = ( cmd.foundOption ( "nevt" ) ) ? stoi (cmd.optionValue ( "nevt" ) ) : 100000;
     bool skipHist  = ( cmd.foundOption ( "skipDebugHist" ) ) ? true : false;
+    BoardType t;
+
+    if (cmd.foundOption ("BoardType") )
+    {
+        // the board type is specified, so I can generate the enum from the option value
+        std::string cBoardType = cmd.optionValue ("BoardType");
+
+        if (cBoardType == "IMPERIAL")
+            t = BoardType::ICGLIB;
+        else if (cBoardType == "SRASBOURG")
+            t = BoardType::GLIB;
+        else if (cBoardType == "SUPERVISOR")
+            t = BoardType::SUPERVISOR;
+        else if (cBoardType == "CBC3")
+            t = BoardType::CBC3FC7;
+        else
+        {
+            LOG (ERROR) << "Error, specified Board Type does not match any option";
+            exit (1);
+        }
+    }
+    else
+    {
+        // the old way is used, so I need to create t from the other options
+        //TODO!
+        if (cReverse)
+            t = BoardType::ICGLIB;
+        else if (cSwap)
+            t = BoardType::SUPERVISOR;
+        else if (cReverse && cSwap)
+        {
+            LOG (ERROR) << "Error, this combination of variables does not make sense!";
+            exit (1);
+        }
+        else
+            t = BoardType::GLIB;
+    }
 
     // Create the Histogrammer object
     DQMHistogrammer* dqmh = new DQMHistogrammer (addTree, ncol, evtFilter, skipHist);
@@ -179,7 +219,8 @@ int main ( int argc, char* argv[] )
 
     Data d;
     //call the Data::set() method - here is where i have to know the swap opitions
-    d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
+    //d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
+    d.Set ( pBoard, dataVec, nEvents, t);
     const std::vector<Event*>& elist = d.GetEvents ( pBoard );
 
     if ( cDQMPage )
@@ -199,7 +240,7 @@ int main ( int argc, char* argv[] )
 
             if (!nEvents) break;
 
-            d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
+            d.Set ( pBoard, dataVec, nEvents, t);
             const std::vector<Event*>& evlist = d.GetEvents ( pBoard );
             dqmh->fillHistos (evlist, ntotevt, eventSize);
             ntotevt += nEvents;

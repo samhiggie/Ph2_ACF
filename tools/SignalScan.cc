@@ -80,9 +80,9 @@ void SignalScan::ScanSignal (int pSignalScanLength)
 
             while (cTotalEvents < fNevents)
             {
-                fBeBoardInterface->ReadData ( pBoard, fNevents );
+                ReadData ( pBoard );
 
-                const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+                const std::vector<Event*>& events = GetEvents ( pBoard );
                 cTotalEvents += events.size();
 
                 // Loop over Events from this Acquisition

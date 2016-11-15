@@ -18,12 +18,14 @@ namespace Ph2_System {
 
     SystemController::SystemController()
         : fFileHandler (nullptr),
-          fWriteHandlerEnabled (false)
+          fWriteHandlerEnabled (false),
+          fData (nullptr)
     {
     }
 
     SystemController::~SystemController()
     {
+        if (fData) delete fData;
     }
     void SystemController::Destroy()
     {
@@ -43,6 +45,8 @@ namespace Ph2_System {
             delete el;
 
         fBoardVector.clear();
+
+        if (fData) delete fData;
     }
 
     void SystemController::addFileHandler ( const std::string& pFilename , char pOption )
@@ -66,8 +70,8 @@ namespace Ph2_System {
         else pVec = fFileHandler->readFileChunks (pNWords32);
     }
 
-   
-     void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os )
+
+    void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os )
     {
         this->fParser.parseHW (pFilename, fBeBoardFWMap, fBoardVector, os );
 
@@ -77,7 +81,7 @@ namespace Ph2_System {
         if (fWriteHandlerEnabled)
             this->initializeFileHandler();
     }
-    
+
     void SystemController::InitializeSettings ( const std::string& pFilename, std::ostream& os )
     {
         this->fParser.parseSettings (pFilename, fSettingsMap, os );
@@ -167,5 +171,48 @@ namespace Ph2_System {
             //finally set the handler
             fBeBoardInterface->SetFileHandler (cBoard, cHandler);
         }
+    }
+
+    uint32_t SystemController::ReadData (BeBoard* pBoard)
+    {
+        //reset the data object
+        if (fData) delete fData;
+
+        fData = new Data();
+
+        std::vector<uint32_t> cData;
+        //read the data and get it by reference
+        uint32_t cNPackets = fBeBoardInterface->ReadData (pBoard, false, cData);
+        //pass data by reference to set and let it know what board we are dealing with
+        fData->Set (pBoard, cData, cNPackets, fBeBoardInterface->getBoardType (pBoard) );
+        //return the packet size
+        return cNPackets;
+    }
+
+    void SystemController::ReadData()
+    {
+        for (auto cBoard : fBoardVector)
+            this->ReadData (cBoard);
+
+    }
+
+    void SystemController::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents)
+    {
+        //reset the data object
+        if (fData) delete fData;
+
+        fData = new Data();
+        std::vector<uint32_t> cData;
+        //read the data and get it by reference
+        fBeBoardInterface->ReadNEvents (pBoard, pNEvents, cData);
+        //pass data by reference to set and let it know what board we are dealing with
+        fData->Set (pBoard, cData, pNEvents, fBeBoardInterface->getBoardType (pBoard) );
+        //return the packet size
+    }
+
+    void SystemController::ReadNEvents (uint32_t pNEvents)
+    {
+        for (auto cBoard : fBoardVector)
+            this->ReadNEvents (cBoard, pNEvents);
     }
 }

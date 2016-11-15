@@ -40,11 +40,6 @@ namespace Ph2_HwInterface {
     {
 
       private:
-        //this might just as well become cbc3 data
-        //create a new CBC3Data class that adheres to the interface of Data (more or less that is just used in Cbc3 Interfaces - and in there re-shuffle the bits such that it fits in an expanded event implementation)
-        //this way only CBC3 compliant interfaces use this data but the event implementation will be the same but grow a bit
-        Data* fData; /*!< Data read storage*/
-
         struct timeval fStartVeto;
         CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
@@ -83,8 +78,6 @@ namespace Ph2_HwInterface {
 
         ~Cbc3Fc7FWInterface()
         {
-            if (fData) delete fData;
-
             if (fFileHandler) delete fFileHandler;
         }
 
@@ -139,29 +132,13 @@ namespace Ph2_HwInterface {
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read
          */
-        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger ) override;
+        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData ) override;
         /*!
          * \brief Read data for pNEvents
          * \param pBoard : the pointer to the BeBoard
          * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
          */
-        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents);
-        /*!
-         * \brief Get next event from data buffer
-         * \return Next event
-         */
-        const Event* GetNextEvent ( const BeBoard* pBoard ) const override
-        {
-            return fData->GetNextEvent ( pBoard );
-        }
-        const Event* GetEvent ( const BeBoard* pBoard, int i ) const override
-        {
-            return fData->GetEvent ( pBoard, i );
-        }
-        const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const override
-        {
-            return fData->GetEvents ( pBoard );
-        }
+        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData);
 
       private:
 

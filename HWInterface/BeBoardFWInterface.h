@@ -34,7 +34,8 @@
 
 using namespace Ph2_HwDescription;
 
-enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7};
+
+//enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7};
 
 /*!
  * \namespace Ph2_HwInterface
@@ -216,20 +217,13 @@ namespace Ph2_HwInterface {
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read
          */
-        virtual uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger ) = 0;
+        virtual uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData ) = 0;
         /*!
          * \brief Read data for pNEvents
          * \param pBoard : the pointer to the BeBoard
          * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
          */
-        virtual void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents) = 0;
-        /*!
-         * \brief Get next event from data buffer
-         * \return Next event
-         */
-        virtual const Event* GetNextEvent ( const BeBoard* pBoard ) const = 0;
-        virtual const Event* GetEvent ( const BeBoard* pBoard, int i ) const = 0;
-        virtual const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const = 0;
+        virtual void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData) = 0;
 
         virtual std::vector<uint32_t> ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
 

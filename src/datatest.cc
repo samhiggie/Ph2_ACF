@@ -206,12 +206,12 @@ int main ( int argc, char* argv[] )
         if (cmd.foundOption ( "read") )
         {
             FileHandler fFile (cmd.optionValue ("read"), 'r');
-            data.Set ( pBoard, fFile.readFile(), pEventsperVcth, false);
+            data.Set ( pBoard, fFile.readFile(), pEventsperVcth, cSystemController.fBeBoardInterface->getBoardType (pBoard) );
             pEvents = &data.GetEvents ( pBoard);
         }
         else
         {
-            uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData ( pBoard, false );
+            uint32_t cPacketSize = cSystemController.ReadData ( pBoard );
 
             pEvents = &cSystemController.GetEvents ( pBoard );
 

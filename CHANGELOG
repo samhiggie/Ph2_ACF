@@ -149,3 +149,11 @@
     - new binary: integratedtester
     - support for exernal USB instruments (HMP4040, Ke2110, TCP sockets via ZEROMQ)
 - 31.10.2016: changed makefiles to use environment variables exported in setup.sh
+- 15.11.2016: adding modifications for CBC3 usage:
+    - new Cbc3Fc7FWInterface and address tabel
+    - FileParser in System/ can now handle nested BeBoardRegisters like in uHAL address tables in HWDescription.xml config files
+    - new Cbc3 FW (K.Uchida) HWDescription file
+    - re-structured Data handling in the guts: Data object is now member of the SystemController and all methods like getting events etc are wrapped in system controller
+    - ReadData() and ReadNEvents() are now wrapped in SystemController and should thus only be used from there!
+    - FWInterfaces: ReadData() and ReadNEvents() now take a reference to std::vector<uint32_t>& to pass the data upwards to the Data object in SystemController
+    - re-structured the Data object internals: Data::Set() now decides the manipulation algorithm based on BoardType Enum class in Definition.h - no more set of boolean flags

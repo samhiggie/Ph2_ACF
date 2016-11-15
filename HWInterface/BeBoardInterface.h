@@ -138,26 +138,17 @@ namespace Ph2_HwInterface {
          * \param pBoard
          */
         uint32_t getBoardInfo ( const BeBoard* pBoard );
+        /*!
+         * \brief Get the board infos
+         * \param pBoard
+         */
+        BoardType getBoardType ( const BeBoard* pBoard );
 
         /*!
          * \brief Configure the board with its Config File
          * \param pBoard
          */
         void ConfigureBoard ( const BeBoard* pBoard );
-        /*!
-         * \brief Start an acquisition in a separate thread
-         * \param pBoard Board running the acquisition
-         * \param uNbAcq Number of acquisition iterations (each iteration will get CBC_DATA_PACKET_NUMBER + 1 events)
-         * \param visitor override the visit() method of this object to process each event
-         */
-        //void StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor );
-        /*! \brief Stop a running parallel acquisition
-         */
-        //void StopThread( BeBoard* pBoard );
-        //[>! \brief Get the parallel acquisition iteration number <]
-        //int getNumAcqThread( BeBoard* pBoard );
-        //[>! \brief Is a parallel acquisition running ? <]
-        //bool isRunningThread( BeBoard* pBoard );
 
         /*!
          * \brief Hard reset of all Cbc
@@ -196,21 +187,13 @@ namespace Ph2_HwInterface {
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read
          */
-        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger );
+        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData );
         /*!
          * \brief Read data for pNEvents
          * \param pBoard : the pointer to the BeBoard
          * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
          */
-        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents);
-        /*!
-         * \brief Get next event from data buffer
-         * \param pBoard
-         * \return Next event
-         */
-        const Event* GetNextEvent ( const BeBoard* pBoard );
-        const Event* GetEvent ( const BeBoard* pBoard, int i );
-        const std::vector<Event*>& GetEvents ( const BeBoard* pBoard );
+        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData);
 
         /*! \brief Get a uHAL node object from its path in the uHAL XML address file
          * \param pBoard pointer to a board description

@@ -254,10 +254,10 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
         setThresholdtoNSigma (cBoard, 5);
 
         //take data
-        fBeBoardInterface->ReadNEvents (cBoard, fEventsPerPoint * 200);
+        ReadNEvents (cBoard, fEventsPerPoint * 200);
 
         //analyze
-        const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( cBoard );
+        const std::vector<Event*>& events = GetEvents ( cBoard );
 
         fillOccupancyHist (cBoard, events);
 

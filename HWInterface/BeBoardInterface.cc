@@ -116,36 +116,17 @@ namespace Ph2_HwInterface {
         return fBoardFW->getBoardInfo();
     }
 
+    BoardType BeBoardInterface::getBoardType ( const BeBoard* pBoard )
+    {
+        setBoard ( pBoard->getBeBoardIdentifier() );
+        return fBoardFW->getBoardType();
+    }
+
     void BeBoardInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
         fBoardFW->ConfigureBoard ( pBoard );
     }
-
-
-    //void BeBoardInterface::StartThread( BeBoard* pBoard , uint32_t uNbAcq, HwInterfaceVisitor* visitor )
-    //{
-    //setBoard( pBoard->getBeBoardIdentifier() );
-    //fBoardFW->StartThread( pBoard, uNbAcq, visitor );
-    //}
-
-    //void BeBoardInterface::StopThread( BeBoard* pBoard )
-    //{
-    //setBoard( pBoard->getBeBoardIdentifier() );
-    //fBoardFW->StopThread();
-    //}
-
-    //int BeBoardInterface::getNumAcqThread( BeBoard* pBoard )
-    //{
-    //setBoard( pBoard->getBeBoardIdentifier() );
-    //return fBoardFW->getNumAcqThread();
-    //}
-
-    //bool BeBoardInterface::isRunningThread( BeBoard* pBoard )
-    //{
-    //setBoard( pBoard->getBeBoardIdentifier() );
-    //return fBoardFW->isRunningThread();
-    //}
 
     void BeBoardInterface::Start ( BeBoard* pBoard )
     {
@@ -175,16 +156,16 @@ namespace Ph2_HwInterface {
     }
 
 
-    uint32_t BeBoardInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger )
+    uint32_t BeBoardInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
-        fBoardFW->ReadData ( pBoard, pBreakTrigger );
+        fBoardFW->ReadData ( pBoard, pBreakTrigger, pData );
     }
 
-    void BeBoardInterface::ReadNEvents ( BeBoard* pBoard, uint32_t pNEvents )
+    void BeBoardInterface::ReadNEvents ( BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
-        fBoardFW->ReadNEvents ( pBoard, pNEvents );
+        fBoardFW->ReadNEvents ( pBoard, pNEvents, pData );
     }
 
     void BeBoardInterface::CbcFastReset ( const BeBoard* pBoard )
@@ -197,23 +178,6 @@ namespace Ph2_HwInterface {
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
         fBoardFW->CbcHardReset();
-    }
-
-    const Event* BeBoardInterface::GetNextEvent ( const BeBoard* pBoard )
-    {
-        setBoard ( pBoard->getBeBoardIdentifier() );
-        fBoardFW->GetNextEvent ( pBoard );
-    }
-
-    const Event* BeBoardInterface::GetEvent ( const BeBoard* pBoard, int i )
-    {
-        setBoard ( pBoard->getBeBoardIdentifier() );
-        return fBoardFW->GetEvent ( pBoard, i );
-    }
-    const std::vector<Event*>& BeBoardInterface::GetEvents ( const BeBoard* pBoard )
-    {
-        setBoard ( pBoard->getBeBoardIdentifier() );
-        return fBoardFW->GetEvents ( pBoard );
     }
 
     const uhal::Node& BeBoardInterface::getUhalNode ( const BeBoard* pBoard, const std::string& pStrPath )

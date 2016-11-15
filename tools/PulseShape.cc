@@ -129,8 +129,8 @@ void PulseShape::ScanVcth ( uint32_t pDelay )
             //fBeBoardInterface->Start( pBoard );
             //while ( cN <= fNevents )
             //{
-            fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
-            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+            ReadNEvents ( pBoard, fNevents );
+            const std::vector<Event*>& events = GetEvents ( pBoard );
 
             for ( auto& cEvent : events )
                 cNHits += fillVcthHist ( pBoard, cEvent, cVcth );

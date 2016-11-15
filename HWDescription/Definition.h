@@ -8,6 +8,8 @@
     Support :                      mail to : nico.pierre@icloud.com
 
  */
+#ifndef _DEFINITION_H__
+#define _DEFINITION_H__
 
 
 
@@ -59,3 +61,7 @@
 #define IC_OFFSET_CBCSTUBDATA        276  //BIT 12
 #define WIDTH_CBCSTUBDATA         12
 //------------------------------------------------------------------------------
+
+enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7, SUPERVISOR};
+
+#endif

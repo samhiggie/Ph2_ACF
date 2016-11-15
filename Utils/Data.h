@@ -79,6 +79,11 @@ namespace Ph2_HwInterface {
             return fChannelLastRows.find (pIndex) != std::end (fChannelLastRows);
         }
 
+        //private methods to be used in set according to the BoardType enum
+        void setIC (uint32_t& pWord, uint32_t pWordIndex, uint32_t pSwapIndex);
+        void setCbc3Fc7 (uint32_t& pWord);
+        void setStrasbourgSupervisor (uint32_t& pWord);
+
       public:
         /*!
          * \brief Constructor of the Data class
@@ -106,8 +111,10 @@ namespace Ph2_HwInterface {
          * \param *pBoard : pointer to Boat
          * \param *pData : Data from the Cbc
          * \param pNevents : The number of events in this acquisiton
+         * \param pType : the board type according to the Enum defined in Definitions.h
          */
-        void Set ( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, bool swapBits = false, bool swapBytes = false );
+        void Set ( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, BoardType pType);
+
         /*!
          * \brief Reset the data structure
          */
