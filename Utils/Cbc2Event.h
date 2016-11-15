@@ -36,7 +36,7 @@ namespace Ph2_HwInterface {
         /*!
          * \brief Copy Constructor of the Event Class
          */
-        Cbc2Event ( const Event& pEvent );
+        //Cbc2Event ( const Event& pEvent );
         /*!
          * \brief Destructor of the Event Class
          */
@@ -48,7 +48,7 @@ namespace Ph2_HwInterface {
          * \param pEvent : Event to set
          * \return Aknowledgement of the Event setting (1/0)
          */
-        int SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list );
+        int SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list ) override;
 
         //user interface
         /*!
@@ -57,19 +57,19 @@ namespace Ph2_HwInterface {
          * \param pCbcId : Cbc Id
          * \return Event buffer
          */
-        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData ) const;
+        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData ) const override;
         /*!
          * \brief Get an event contained in a Cbc
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Event buffer
          */
-        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) const;
+        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) const override;
         /*!
          * \brief Get the Cbc Event counter
          * \return Cbc Event counter
          */
-        uint32_t GetEventCountCBC() const
+        uint32_t GetEventCountCBC() const override
         {
             return fEventCountCBC;
         }
@@ -77,7 +77,14 @@ namespace Ph2_HwInterface {
          * \brief Convert Data to Hex string
          * \return Data string in hex
          */
-        std::string HexString() const;
+        std::string HexString() const override;
+        /*!
+         * \brief Function to get bit string in hexadecimal format for CBC data
+         * \param pFeId : FE Id
+         * \param pCbcId : Cbc Id
+         * \return Data Bit string in Hex
+         */
+        std::string DataHexString ( uint8_t pFeId, uint8_t pCbcId ) const override;
 
         /*!
          * \brief Function to get Error bit
@@ -86,21 +93,21 @@ namespace Ph2_HwInterface {
          * \param i : Error bit number i
          * \return Error bit
          */
-        bool Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const;
+        bool Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const override;
         /*!
          * \brief Function to get all Error bits
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Error bit
          */
-        uint32_t Error ( uint8_t pFeId, uint8_t pCbcId ) const;
+        uint32_t Error ( uint8_t pFeId, uint8_t pCbcId ) const override;
         /*!
          * \brief Function to get pipeline address
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Pipeline address
          */
-        uint32_t PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) const;
+        uint32_t PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) const override;
         /*!
          * \brief Function to get a CBC pixel bit data
          * \param pFeId : FE Id
@@ -108,49 +115,49 @@ namespace Ph2_HwInterface {
          * \param i : pixel bit data number i
          * \return Data Bit
          */
-        bool DataBit ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const;
+        bool DataBit ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const override;
         /*!
          * \brief Function to get bit string of CBC data
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Data Bit string
          */
-        std::string DataBitString ( uint8_t pFeId, uint8_t pCbcId ) const;
+        std::string DataBitString ( uint8_t pFeId, uint8_t pCbcId ) const override;
         /*!
          * \brief Function to get bit vector of CBC data
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Data Bit vector
          */
-        std::vector<bool> DataBitVector ( uint8_t pFeId, uint8_t pCbcId ) const;
-        std::vector<bool> DataBitVector ( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const;
+        std::vector<bool> DataBitVector ( uint8_t pFeId, uint8_t pCbcId ) const override;
+        std::vector<bool> DataBitVector ( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const override;
         /*!
          * \brief Function to get GLIB flag string
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Glib flag string
          */
-        std::string GlibFlagString ( uint8_t pFeId, uint8_t pCbcId ) const;
+        std::string GlibFlagString ( uint8_t pFeId, uint8_t pCbcId ) const override;
         /*!
          * \brief Function to get Stub bit
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return stub bit?
          */
-        std::string StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const;
+        std::string StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const override;
         /*!
         * \brief Function to get Stub bit
         * \param pFeId : FE Id
         * \param pCbcId : Cbc Id
         * \return stub bit?
         */
-        bool StubBit ( uint8_t pFeId, uint8_t pCbcId ) const;
+        bool StubBit ( uint8_t pFeId, uint8_t pCbcId ) const override;
         /*!
          * \brief Get a vector of Stubs - will be empty for Cbc2
         * \param pFeId : FE Id
         * \param pCbcId : Cbc Id
         */
-        std::vector<Stub> StubVector (uint8_t pFeId, uint8_t pCbcId ) const;
+        std::vector<Stub> StubVector (uint8_t pFeId, uint8_t pCbcId ) const override;
 
         /*!
         * \brief Function to count the Hits in this event
@@ -158,18 +165,18 @@ namespace Ph2_HwInterface {
         * \param pCbcId : Cbc Id
         * \return number of hits
         */
-        uint32_t GetNHits (uint8_t pFeId, uint8_t pCbcId) const;
+        uint32_t GetNHits (uint8_t pFeId, uint8_t pCbcId) const override;
         /*!
         * \brief Function to get a sparsified hit vector
         * \param pFeId : FE Id
         * \param pCbcId : Cbc Id
         * \return vector with hit channels
         */
-        std::vector<uint32_t> GetHits (uint8_t pFeId, uint8_t pCbcId) const;
+        std::vector<uint32_t> GetHits (uint8_t pFeId, uint8_t pCbcId) const override;
 
-        friend std::ostream& operator<< ( std::ostream& out, const Event& ev );
+        std::vector<Cluster> getClusters ( uint8_t pFeId, uint8_t pCbcId) const override;
 
-        std::vector<Cluster> getClusters ( uint8_t pFeId, uint8_t pCbcId);
+        void print (std::ostream& out) const override;
 
     };
 }

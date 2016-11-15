@@ -47,7 +47,7 @@ namespace Ph2_HwInterface {
       private:
         uint8_t fPosition;
         uint8_t fBend;
-    }
+    };
 
 
     /*!
@@ -67,8 +67,10 @@ namespace Ph2_HwInterface {
         uint32_t fTDC;                  /*!< TDC value*/
 
         // data map for CBC Data
+      public:
         EventDataMap fEventDataMap;
 
+      protected:
         //for CBC2 use
         uint32_t fBunch;                /*!< Bunch value */
         uint32_t fOrbit;                /*!< Orbit value */
@@ -108,11 +110,11 @@ namespace Ph2_HwInterface {
          * \param pNbCbc
          * \param pEventBuf : the pointer to the raw Event buffer of this Event
          */
-        virtual Event ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list ) = 0;
+        Event () ;
         /*!
          * \brief Copy Constructor of the Event Class
          */
-        virtual Event ( const Event& pEvent ) = 0;
+        Event ( const Event& pEvent );
         /*!
          * \brief Destructor of the Event Class
          */
@@ -203,13 +205,6 @@ namespace Ph2_HwInterface {
          */
         std::vector<bool> BitVector ( uint8_t pFeId, uint8_t pCbcId, uint32_t pOffset, uint32_t pWidth ) const;
         /*!
-         * \brief Function to get bit string in hexadecimal format for CBC data
-         * \param pFeId : FE Id
-         * \param pCbcId : Cbc Id
-         * \return Data Bit string in Hex
-         */
-        std::string DataHexString ( uint8_t pFeId, uint8_t pCbcId ) const;
-        /*!
          * \brief Function to get char at the global data string at position 8*i
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
@@ -243,38 +238,45 @@ namespace Ph2_HwInterface {
          * \param pCbcId : Cbc Id
          * \return Event buffer
          */
-        virtual void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData ) = 0;
+        virtual void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData ) const = 0;
         /*!
          * \brief Get an event contained in a Cbc
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Event buffer
          */
-        virtual void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) = 0;
+        virtual void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData )  const = 0;
         /*!
          * \brief Get the Cbc Event counter
          * \return Cbc Event counter
          */
-        virtual uint32_t GetEventCountCBC() = 0;
+        virtual uint32_t GetEventCountCBC() const = 0;
         /*!
          * \brief Convert Data to Hex string
          * \return Data string in hex
          */
-        virtual std::string HexString() = 0;
+        virtual std::string HexString() const = 0;
+        /*!
+         * \brief Function to get bit string in hexadecimal format for CBC data
+         * \param pFeId : FE Id
+         * \param pCbcId : Cbc Id
+         * \return Data Bit string in Hex
+         */
+        virtual std::string DataHexString ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
          * \brief Function to get bit string of CBC data
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Data Bit string
          */
-        virtual std::string DataBitString ( uint8_t pFeId, uint8_t pCbcId ) = 0;
+        virtual std::string DataBitString ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
          * \brief Function to get bit vector of CBC data
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Data Bit vector
          */
-        virtual std::vector<bool> DataBitVector ( uint8_t pFeId, uint8_t pCbcId ) = 0;
+        virtual std::vector<bool> DataBitVector ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
          * \brief Function to get Error bit
          * \param pFeId : FE Id
@@ -282,21 +284,21 @@ namespace Ph2_HwInterface {
          * \param i : Error bit number i
          * \return Error bit
          */
-        virtual bool Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) = 0;
+        virtual bool Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const = 0;
         /*!
          * \brief Function to get all Error bits
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Error bit
          */
-        virtual uint32_t Error ( uint8_t pFeId, uint8_t pCbcId ) = 0;
+        virtual uint32_t Error ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
          * \brief Function to get pipeline address
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Pipeline address
          */
-        virtual uint32_t PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) = 0;
+        virtual uint32_t PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
          * \brief Function to get a CBC pixel bit data
          * \param pFeId : FE Id
@@ -304,35 +306,35 @@ namespace Ph2_HwInterface {
          * \param i : pixel bit data number i
          * \return Data Bit
          */
-        virtual bool DataBit ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) = 0;
-        virtual std::vector<bool> DataBitVector ( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) = 0;
+        virtual bool DataBit ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const = 0;
+        virtual std::vector<bool> DataBitVector ( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const = 0;
         /*!
          * \brief Function to get GLIB flag string
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return Glib flag string
          */
-        virtual std::string GlibFlagString ( uint8_t pFeId, uint8_t pCbcId ) = 0;
+        virtual std::string GlibFlagString ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
          * \brief Function to get Stub bit
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
          * \return stub bit?
          */
-        virtual std::string StubBitString ( uint8_t pFeId, uint8_t pCbcId ) = 0;
+        virtual std::string StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
         * \brief Function to get Stub bit
         * \param pFeId : FE Id
         * \param pCbcId : Cbc Id
         * \return stub bit?
         */
-        virtual bool StubBit ( uint8_t pFeId, uint8_t pCbcId ) = 0;
+        virtual bool StubBit ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
          * \brief Get a vector of Stubs - will be empty for Cbc2
         * \param pFeId : FE Id
         * \param pCbcId : Cbc Id
         */
-        virtual std::vector<Stub> StubVector (uint8_t pFeId, uint8_t pCbcId ) = 0;
+        virtual std::vector<Stub> StubVector (uint8_t pFeId, uint8_t pCbcId ) const = 0;
 
 
         /*!
@@ -341,19 +343,26 @@ namespace Ph2_HwInterface {
         * \param pCbcId : Cbc Id
         * \return number of hits
         */
-        virtual uint32_t GetNHits (uint8_t pFeId, uint8_t pCbcId) = 0;
+        virtual uint32_t GetNHits (uint8_t pFeId, uint8_t pCbcId) const = 0;
         /*!
         * \brief Function to get a sparsified hit vector
         * \param pFeId : FE Id
         * \param pCbcId : Cbc Id
         * \return vector with hit channels
         */
-        virtual std::vector<uint32_t> GetHits (uint8_t pFeId, uint8_t pCbcId) = 0;
+        virtual std::vector<uint32_t> GetHits (uint8_t pFeId, uint8_t pCbcId) const = 0;
 
 
-        //virtual friend std::ostream& operator<< ( std::ostream& out, const Event& ev ) = 0;
+        friend std::ostream& operator<< ( std::ostream& out, const Event& ev )
+        {
+            ev.print (out);
+            return out;
+        }
 
-        virtual std::vector<Cluster> getClusters ( uint8_t pFeId, uint8_t pCbcId) = 0;
+        virtual std::vector<Cluster> getClusters ( uint8_t pFeId, uint8_t pCbcId) const = 0;
+
+      protected:
+        virtual void print (std::ostream& out) const = 0;
 
     };
 }
