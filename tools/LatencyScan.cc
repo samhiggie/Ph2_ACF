@@ -241,11 +241,13 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
                 for ( auto cCbc : cFe->fCbcVector )
                 {
                     //now loop the channels for this particular event and increment a counter
-                    for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
-                    {
-                        if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                            cHitCounter++;
-                    }
+                    cHitCounter += cEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
+
+                    //for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                    //{
+                    //if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                    //cHitCounter++;
+                    //}
                 }
 
                 //now I have the number of hits in this particular event for all CBCs and the TDC value

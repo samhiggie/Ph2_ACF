@@ -311,23 +311,27 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint8_t cIndex = 0;
+            uint32_t cIndex = 0;
 
-            for ( uint32_t i = 0; i < WIDTH_CBCDATA; ++i )
+            for ( uint32_t i = 0; i < NCHANNELS; ++i )
             {
                 uint32_t pos = i + OFFSET_CBCDATA;
                 uint32_t cWordP = pos / 32;
                 uint32_t cBitP = pos % 32;
 
-                if ( cWordP >= cData->second.size() ) break;
+                if ( cWordP >= cData->second.size() )
+                    break;
 
-                if ( ( cData->second[cWordP] >> ( 31 - cBitP ) ) & 0x1) cHits.push_back (cIndex);
+                if ( ( cData->second[cWordP] >> ( 31 - cBitP ) ) & 0x1)
+                    cHits.push_back (cIndex);
 
                 cIndex++;
             }
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
+
+        return cHits;
     }
 
     void Cbc2Event::print ( std::ostream& os) const
@@ -352,15 +356,36 @@ namespace Ph2_HwInterface {
             uint8_t cCbcId;
             this->decodeId (cKey.first, cFeId, cCbcId);
 
-            //for (auto& cWord : cKey.second)
-            //std::cout << std::bitset<32> (cWord) << std::endl;
-
             std::string data ( this->DataBitString ( cFeId, cCbcId ) );
             os << GREEN << "FEId = " << +cFeId << " CBCId = " << +cCbcId << RESET << " len(data) = " << data.size() << std::endl;
             os << YELLOW << "PipelineAddress: " << this->PipelineAddress (cFeId, cCbcId) << RESET << std::endl;
             os << RED << "Error: " << static_cast<std::bitset<2>> ( this->Error ( cFeId, cCbcId ) ) << RESET << std::endl;
             os << CYAN << "Total number of hits: " << this->GetNHits ( cFeId, cCbcId ) << RESET << std::endl;
-            os << "Ch. Data:      ";
+            os << BLUE << "List of hits: " << RESET << std::endl;
+            std::vector<uint32_t> cHits = this->GetHits (cFeId, cCbcId);
+
+            if (cHits.size() == 254) os << "All channels firing!" << std::endl;
+            else
+            {
+                int cCounter = 0;
+
+                for (auto& cHit : cHits )
+                {
+                    os << std::setw (3) << cHit << ", ";
+                    cCounter++;
+
+                    if (cCounter == 10)
+                    {
+                        os << std::endl;
+                        cCounter = 0;
+                    }
+
+                }
+
+                os << RESET << std::endl;
+            }
+
+            os << GREEN <<  "Ch. Data:      " << RESET;
 
             for (int i = 0; i < FIRST_LINE_WIDTH; i += 2)
                 os << data.substr ( i, 2 ) << " ";
@@ -370,7 +395,6 @@ namespace Ph2_HwInterface {
             for ( int i = 0; i < 7; ++i )
             {
                 for (int j = 0; j < LINE_WIDTH; j += 2)
-                    //os << data.substr ( FIRST_LINE_WIDTH + LINE_WIDTH * i, LINE_WIDTH ) << std::endl;
                     os << data.substr ( FIRST_LINE_WIDTH + LINE_WIDTH * i + j, 2 ) << " ";
 
                 os << std::endl;

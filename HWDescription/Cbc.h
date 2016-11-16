@@ -36,6 +36,7 @@ namespace Ph2_HwDescription {
 
     using CbcRegMap = std::map < std::string, CbcRegItem >;
     using CbcRegPair = std::pair <std::string, CbcRegItem>;
+    using CommentMap = std::map <int, std::string>;
 
     /*!
      * \class Cbc
@@ -138,6 +139,7 @@ namespace Ph2_HwDescription {
 
         // Map of Register Name vs. RegisterItem that contains: Page, Address, Default Value, Value
         CbcRegMap fRegMap;
+        CommentMap fCommentMap;
 
     };
 

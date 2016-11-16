@@ -25,7 +25,6 @@ namespace Ph2_System {
 
     SystemController::~SystemController()
     {
-        if (fData) delete fData;
     }
     void SystemController::Destroy()
     {

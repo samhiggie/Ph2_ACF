@@ -423,7 +423,7 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint8_t cIndex = 0;
+            uint32_t cIndex = 0;
 
             for ( uint32_t i = 0; i < NCHANNELS; ++i )
             {
@@ -439,6 +439,8 @@ namespace Ph2_HwInterface {
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
+
+        return cHits;
     }
 
     void Cbc3Event::printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const
@@ -464,17 +466,17 @@ namespace Ph2_HwInterface {
     {
         os << BOLDGREEN << "EventType: CBC3" << RESET << std::endl;
         os << BOLDBLUE <<  "L1A Counter: " << this->GetEventCount() << RESET << std::endl;
-        os << "Be Id: " << this->GetBeId() << std::endl;
-        os << "Be FW: " << this->GetFWType() << std::endl;
-        os << "Be Status: " << this->GetBeStatus() << std::endl;
-        os << "Cbc Data type: " << this->GetCbcDataType() << std::endl;
-        os << "N Cbc: " << this->GetNCbc() << std::endl;
+        os << "          Be Id: " << this->GetBeId() << std::endl;
+        os << "          Be FW: " << this->GetFWType() << std::endl;
+        os << "      Be Status: " << this->GetBeStatus() << std::endl;
+        os << "  Cbc Data type: " << this->GetCbcDataType() << std::endl;
+        os << "          N Cbc: " << this->GetNCbc() << std::endl;
         os << "Event Data size: " << this->GetEventDataSize() << std::endl;
         //os << "  CBC Counter: " << this->GetEventCountCBC() << RESET << std::endl;
         //os << "Bunch Counter: " << this->GetBunch() << std::endl;
         //os << "Orbit Counter: " << this->GetOrbit() << std::endl;
         //os << " Lumi Section: " << this->GetLumi() << std::endl;
-        os << BOLDRED << "  TDC Counter: " << this->GetTDC() << RESET << std::endl;
+        os << BOLDRED << "    TDC Counter: " << this->GetTDC() << RESET << std::endl;
 
         const int FIRST_LINE_WIDTH = 22;
         const int LINE_WIDTH = 32;
@@ -509,6 +511,30 @@ namespace Ph2_HwInterface {
             os << YELLOW << "PipelineAddress: " << this->PipelineAddress (cFeId, cCbcId) << RESET << std::endl;
             os << RED << "Error: " << static_cast<std::bitset<2>> ( this->Error ( cFeId, cCbcId ) ) << RESET << std::endl;
             os << CYAN << "Total number of hits: " << this->GetNHits ( cFeId, cCbcId ) << RESET << std::endl;
+            os << BLUE << "List of hits: " << RESET << std::endl;
+            std::vector<uint32_t> cHits = this->GetHits (cFeId, cCbcId);
+
+            if (cHits.size() == 254) os << "All channels firing!" << std::endl;
+            else
+            {
+                int cCounter = 0;
+
+                for (auto& cHit : cHits )
+                {
+                    os << std::setw (3) << cHit << ", ";
+                    cCounter++;
+
+                    if (cCounter == 10)
+                    {
+                        os << std::endl;
+                        cCounter = 0;
+                    }
+
+                }
+
+                os << RESET << std::endl;
+            }
+
             os << "Ch. Data:      ";
 
             for (int i = 0; i < FIRST_LINE_WIDTH; i += 2)
