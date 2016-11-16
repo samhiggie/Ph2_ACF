@@ -255,25 +255,26 @@ namespace Ph2_HwInterface {
         void SetForceStart (BeBoard* pBoard, bool bStart);
 
 
+
+
         /*!
          * Activate power on and off sequence 
          */
+        void PowerOn( BeBoard* pBoard );
 
-        virtual void PowerOn()=0;
-        virtual void PowerOff()=0;
+        void PowerOff( BeBoard* pBoard );
 
         /*!
          * Read the firmware version
          */
-
-        virtual void ReadVer()=0;
-
+        void ReadVer( BeBoard* pBoard );
 
         /*!
          * Returns data from buffernum and mpa.  Raw register output.
          */
+        std::pair<std::vector<uint32_t>, std::vector<uint32_t>>   ReadData( BeBoard* pBoard, int buffernum, int mpa);
 
-        virtual std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadData(int buffernum, int mpa)=0;  
+
 
 
     };

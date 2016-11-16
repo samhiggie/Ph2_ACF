@@ -710,5 +710,27 @@ namespace Ph2_HwInterface {
             return false;
     }
 
+    std::pair<std::vector<uint32_t>, std::vector<uint32_t>> ICGlibFWInterface::ReadData(int buffer_num, int mpa)
+    {
+
+    }
+
+
+    void ICGlibFWInterface::PowerOn()
+    {
+
+    }
+
+    void ICGlibFWInterface::PowerOff()
+    {
+
+    }
+
+
+    void ICGlibFWInterface::ReadVer()
+    {
+
+    }
+
 
 }

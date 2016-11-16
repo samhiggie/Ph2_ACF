@@ -64,7 +64,7 @@ namespace Ph2_HwInterface
 		/*!
 		* \uploads configuration data to MPA
 		*/
-		void ConfigureMPA(std::vector< uint32_t >* conf_upload, int nmpa);
+		void ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa);
 
 		/*!
 		* \initializes AR header 

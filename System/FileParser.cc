@@ -91,8 +91,7 @@ namespace Ph2_System {
             else if ( !cBoardType.compare ( std::string ( "ICFC7" ) ) )
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
             else if ( !cBoardType.compare ( std::string ( "MPAGLIB" ) ) )
-		pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new MPAGlibFWInterface( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-
+                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new MPAGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
 
 
 

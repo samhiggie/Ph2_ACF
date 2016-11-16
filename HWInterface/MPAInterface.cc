@@ -68,10 +68,10 @@ void MPAInterface::HeaderInitMPA(int nmpa)
 
 
 
-void MPAInterface::ConfigureMPA(std::vector< uint32_t >* conf_upload, int nmpa)
+void MPAInterface::ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa)
 {
 	setBoard(0);
-	fMPAFW->upload( conf_upload, nmpa );
+	fMPAFW->upload( conf_upload, conf,nmpa );
 }
 
 
@@ -166,7 +166,7 @@ std::pair<std::vector<uint32_t>, std::vector<uint64_t>> MPAInterface::ReadMemory
 }
 
 
-std::vector< uint32_t > MPAInterface::readconfig(const std::string& pFilename, int nmpa, int conf)
+std::vector< uint32_t > MPAInterface::ReadConfig(const std::string& pFilename, int nmpa, int conf)
 {
 
 	   	        pugi::xml_document doc;
@@ -245,7 +245,7 @@ std::vector< uint32_t > MPAInterface::readconfig(const std::string& pFilename, i
 
 
 
-void MPAInterface::modifyperif(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload)
+void MPAInterface::ModifyPerif(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload)
 {
 	  std::vector<std::string> vars = mod.first;
 	  std::vector< uint32_t > vals = mod.second;
@@ -293,7 +293,7 @@ void MPAInterface::modifyperif(std::pair < std::vector< std::string > ,std::vect
 	  conf_upload->at(0) = perif;
 
 }
-void MPAInterface::modifypix(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload ,  uint32_t  pixnum )
+void MPAInterface::ModifyPix(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload ,  uint32_t  pixnum )
 {
 
 	  	std::vector<std::string> vars = mod.first;

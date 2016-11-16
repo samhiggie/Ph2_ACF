@@ -1,24 +1,32 @@
+
 #include <cstring>
+#include <fstream>
+#include "../Utils/Utilities.h"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
-#include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/MPAInterface.h"
+#include "../HWInterface/MPAGlibFWInterface.h"
+#include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
-#include "../HWInterface/RegManager.h"
+//#include "../tools/Calibration.h"
+#include "../Utils/Timer.h"
+//#include <TApplication.h>
+#include <inttypes.h>
 #include "../Utils/argvparser.h"
+#include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
-#include "../HWInterface/MPAGlibFWInterface.h"
-#include "../HWInterface/GlibFpgaConfig.h"
-#include <uhal/uhal.hpp>
+#include "../Utils/CommonVisitors.h"
+#include "../Tracker/TrackerEvent.h"
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
-
 using namespace CommandLineProcessing;
 
+using namespace std;
+INITIALIZE_EASYLOGGINGPP
 
 int main( int argc, char* argv[] )
 {
@@ -41,10 +49,11 @@ int main( int argc, char* argv[] )
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_MAPSA.xml";
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 
-
+	std::cout << "\ndefsys...";
 	SystemController mysyscontroller;
+	std::cout << "\nINITHW...";
 	mysyscontroller.InitializeHw( cHWFile );
-
+	std::cout << "\nINITHWdone...";
         MPAInterface* fMPAInterface = mysyscontroller.fMPAInterface; 
 	BeBoard* pBoard = mysyscontroller.fBoardVector.at( 0 );
 	std::cout << "\nExecuting POWER ON...";
@@ -58,18 +67,18 @@ int main( int argc, char* argv[] )
 
 		std::this_thread::sleep_for( cWait );
 
-		confs.push_back(fMPAInterface->readconfig("testing", i+1, 1));
+		confs.push_back(fMPAInterface->ReadConfig("testing", i+1, 1));
 		fMPAInterface->HeaderInitMPA(i+1);
 
 		std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod1({"THDAC"},{60});
-		fMPAInterface->modifyperif(mod1,&confs[i]);
+		fMPAInterface->ModifyPerif(mod1,&confs[i]);
 		for (int j=1;j<=24;j++)
 			{
 			std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod2({"PML"},{1});
-			fMPAInterface->modifypix(mod2,&confs[i],j);
+			fMPAInterface->ModifyPix(mod2,&confs[i],j);
 			}
 
-		fMPAInterface->ConfigureMPA(&confs[i], i+1);
+		fMPAInterface->ConfigureMPA(&confs[i], 1 , i+1);
 	}
 	std::chrono::milliseconds cWait1( 100 );//
 
@@ -111,8 +120,8 @@ int main( int argc, char* argv[] )
 			}
 
 		std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod1({"THDAC"},{q});
-		fMPAInterface->modifyperif(mod1,&confs[i]);
-		fMPAInterface->ConfigureMPA(&confs[i], i+1);
+		fMPAInterface->ModifyPerif(mod1,&confs[i]);
+		fMPAInterface->ConfigureMPA(&confs[i],1, i+1);
 	}
 
 

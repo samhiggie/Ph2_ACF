@@ -71,6 +71,10 @@ public:
     MPAGlibFWInterface( const char* pId, const char* pUri, const char* pAddressTable );
     MPAGlibFWInterface( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
 
+    void setFileHandler (FileHandler* pHandler);
+
+    uint32_t getBoardInfo();
+
     /*!
      * \brief Destructor of the MPAGlibFWInterface class
      */
@@ -79,11 +83,52 @@ public:
         if (fData) delete fData;
     }
 
+
+
+
+
+
+
+
+
+    void EncodeReg ( const CbcRegItem& pRegItem,
+                                        uint8_t pCbcId,
+                                        std::vector<uint32_t>& pVecReq,
+                                        bool pRead,
+                                        bool pWrite ) {};
+
+    void EncodeReg ( const CbcRegItem& pRegItem,
+                                        uint8_t pFeId,
+                                        uint8_t pCbcId,
+                                        std::vector<uint32_t>& pVecReq,
+                                        bool pRead,
+                                        bool pWrite ) {};
+  
+    void BCEncodeReg ( const CbcRegItem& pRegItem,
+                                          uint8_t pNCbc,
+                                          std::vector<uint32_t>& pVecReq,
+                                          bool pRead,
+                                          bool pWrite ) {};
+
+
+    void DecodeReg ( CbcRegItem& pRegItem,
+                                        uint8_t& pCbcId,
+                                        uint32_t pWord,
+                                        bool& pRead,
+                                        bool& pFailed ) {};
+
+
+
+
+ 
+
+
+
     /*!
      * \brief Configure the board with its Config File
      * \param pBoard
      */
-    void ConfigureBoard( const BeBoard* pBoard ) override;
+    void ConfigureBoard( const BeBoard* pBoard ) override {};
     /*!
      * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
      */
@@ -96,7 +141,7 @@ public:
      * \brief Stop a DAQ
      * \param pNthAcq : actual number of acquisitions
      */
-    void Stop( uint32_t pNthAcq ) override;
+    void Stop() override;
     /*!
      * \brief Pause a DAQ
      */
@@ -111,7 +156,7 @@ public:
      * \param pBreakTrigger : if true, enable the break trigger
      * \return cNPackets: the number of packets read
      */
-    uint32_t ReadData( BeBoard* pBoard, uint32_t pNthAcq, bool pBreakTrigger ) override;
+    uint32_t ReadData( BeBoard* pBoard, bool pBreakTrigger ) override;
     std::pair<std::vector<uint32_t>, std::vector<uint32_t>>   ReadData( BeBoard* pBoard, int buffernum, int mpa);
     /*!
      * \brief Get next event from data buffer
@@ -138,7 +183,6 @@ public:
 
     bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues ) override;
 
-    void StartThread(BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) override;
     //Methods for the Cbc's:
 
 
@@ -180,22 +224,30 @@ private:
 
 public:
 
-    //r/w the Cbc registers
-    /*!
-     * \brief Read register blocks of a Cbc
-     * \param pFeId : FrontEnd to work with
-     * \param pVecReq : Vector to stack the read words
-     */
-    void WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq );
-    /*! \brief Read register blocks of a Cbc
-     * \param pFeId : FrontEnd to work with
-     * \param pVecReq : Vector to stack the read words
-     */
-    void ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq );
-    /*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration
-     * \param numConfig FPGA configuration number (1 or 2)
-     * \param pstrFile path to MCS file
-     */
+    bool WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback) {};
+
+
+    bool BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback) {};
+ 
+
+    void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg ) {};
+
+    BoardType getBoardType() const {};
+
+
+    void RebootBoard() {};
+
+    void SetForceStart ( bool bStart) {};
+
+
+    void CbcFastReset() {};
+ 
+
+    void CbcHardReset() {};
+
+    void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents ) {};
+
+  
     void FlashProm( const std::string& strConfig, const char* pstrFile );
     /*! \brief Jump to an FPGA configuration */
     void JumpToFpgaConfig( const std::string& strConfig);
@@ -223,7 +275,7 @@ public:
     void HeaderInitMPA(int nmpa);
     void ReadTrig(int buffer_num);
     int WaitSequencer();
-    int WaitTestbeam()
+    int WaitTestbeam();
 
 
 };

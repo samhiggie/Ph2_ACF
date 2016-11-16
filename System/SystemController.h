@@ -15,6 +15,7 @@
 
 #include "FileParser.h"
 #include "../HWInterface/CbcInterface.h"
+#include "../HWInterface/MPAInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWInterface/BeBoardFWInterface.h"
 #include "../HWInterface/GlibFWInterface.h"

@@ -292,26 +292,6 @@ namespace Ph2_HwInterface {
         void SetForceStart ( bool bStart);
 
 
-        /*!
-         * Activate power on and off sequence 
-         */
-
-        virtual void PowerOn()=0;
-        virtual void PowerOff()=0;
-
-        /*!
-         * Read the firmware version
-         */
-
-        virtual void ReadVer()=0;
-
-
-        /*!
-         * Returns data from buffernum and mpa.  Raw register output.
-         */
-
-        virtual std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadData(int buffernum, int mpa)=0;  
-
         void ReadVer() override;
         void PowerOn() override;
         void PowerOff() override;

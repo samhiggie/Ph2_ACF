@@ -276,4 +276,35 @@ namespace Ph2_HwInterface {
         setBoard ( pBoard->getBeBoardIdentifier() );
         fBoardFW->SetForceStart ( bStart );
     }
+
+
+
+
+    void BeBoardInterface::PowerOn( BeBoard* pBoard )
+    {
+        setBoard( pBoard->getBeBoardIdentifier() );
+        fBoardFW->PowerOn();
+    }
+
+    void BeBoardInterface::PowerOff( BeBoard* pBoard )
+    {
+        setBoard( pBoard->getBeBoardIdentifier() );
+        fBoardFW->PowerOff();
+    }
+
+    void BeBoardInterface::ReadVer( BeBoard* pBoard )
+    {
+        setBoard( pBoard->getBeBoardIdentifier() );
+        fBoardFW->ReadVer();
+    }
+
+      std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  BeBoardInterface::ReadData( BeBoard* pBoard, 
+                     int buffernum, int mpa)
+    {
+        setBoard( pBoard->getBeBoardIdentifier() );
+        std::pair<std::vector<uint32_t>, std::vector<uint32_t>> rval = fBoardFW->ReadData(buffernum,mpa);
+        return rval;    
+    }
+
+
 }

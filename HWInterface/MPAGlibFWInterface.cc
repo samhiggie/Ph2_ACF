@@ -55,17 +55,27 @@ namespace Ph2_HwInterface
 	}
 
 
-	void MPAGlibFWInterface::ConfigureBoard( const BeBoard* pBoard )
-	{
-	}
+        void MPAGlibFWInterface::setFileHandler (FileHandler* pHandler)
+        {
+            if (pHandler != nullptr )
+            {
+                fFileHandler = pHandler;
+                fSaveToFile = true;
+            }
+            else LOG (INFO) << "Error, can not set NULL FileHandler" ;
+        }
 
+        uint32_t MPAGlibFWInterface::getBoardInfo()
+        {
+
+        }
 
 	void MPAGlibFWInterface::Start()
 	{
 		TestbeamInit(0, 0);
 	}
 
-	void MPAGlibFWInterface::Stop( uint32_t pNthAcq )
+	void MPAGlibFWInterface::Stop()
 	{
 		WriteReg( "Control.testbeam_mode", 0 );
 		WriteReg( "Control.beam_on", 0 );
@@ -84,7 +94,7 @@ namespace Ph2_HwInterface
 
 	}
 
-	uint32_t MPAGlibFWInterface::ReadData( BeBoard* pBoard, unsigned int pNthAcq, bool pBreakTrigger )
+	uint32_t MPAGlibFWInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger )
 	{
 
 	}
@@ -112,8 +122,8 @@ namespace Ph2_HwInterface
 	  }
 
 
-	/** compute the block size according to the number of CBC's on this board
-	 * this will have to change with a more generic FW */
+	    /** compute the block size according to the number of CBC's on this board
+	     * this will have to change with a more generic FW */
 	uint32_t MPAGlibFWInterface::computeBlockSize( BeBoard* pBoard )
 	{
 
@@ -153,11 +163,6 @@ namespace Ph2_HwInterface
 
 	//Methods for Cbc's:
 
-	void MPAGlibFWInterface::StartThread( BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor )
-	{
-
-	}
-
 	void MPAGlibFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
 	{
 
@@ -178,16 +183,6 @@ namespace Ph2_HwInterface
 
 	}
 
-
-	void MPAGlibFWInterface::WriteCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
-	{
-
-	}
-
-	void MPAGlibFWInterface::ReadCbcBlockReg( uint8_t pFeId, std::vector<uint32_t>& pVecReq )
-	{
-
-	}
 
 	void MPAGlibFWInterface::FlashProm( const std::string& strConfig, const char* pstrFile )
 	{
@@ -383,16 +378,5 @@ namespace Ph2_HwInterface
 	    WriteBlockReg( "Configuration.Memory_DataConf.MPA"+std::to_string(nmpa)+".config_"+std::to_string(conf), (*conf_upload));
 	    WriteReg( "Configuration.mode",0x5);
 	  }
-
-
-
-
-
-
-
-
-
-
-
 
 }
