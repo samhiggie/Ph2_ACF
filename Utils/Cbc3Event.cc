@@ -521,7 +521,7 @@ namespace Ph2_HwInterface {
 
                 for (auto& cHit : cHits )
                 {
-                    os << std::setw (3) << cHit << ", ";
+                    os << std::setw (3) << cHit << " ";
                     cCounter++;
 
                     if (cCounter == 10)
