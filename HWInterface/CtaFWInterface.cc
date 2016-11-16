@@ -886,4 +886,31 @@ namespace Ph2_HwInterface {
         WriteReg ( "pc_commands.force_BG0_start", bStart ? 1 : 0);
     }
 
+
+
+    std::pair<std::vector<uint32_t>, std::vector<uint32_t>> CtaFWInterface::ReadData(int buffer_num, int mpa)
+    {
+
+    }
+
+
+    void CtaFWInterface::PowerOn()
+    {
+
+    }
+
+    void CtaFWInterface::PowerOff()
+    {
+
+    }
+
+
+    void CtaFWInterface::ReadVer()
+    {
+
+    }
+
+
+
+
 }

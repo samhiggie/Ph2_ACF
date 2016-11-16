@@ -55,6 +55,7 @@ namespace Ph2_System {
       public:
         BeBoardInterface*       fBeBoardInterface;                     /*!< Interface to the BeBoard */
         CbcInterface*           fCbcInterface;                         /*!< Interface to the Cbc */
+        MPAInterface*           fMPAInterface;                         /*!< Interface to the Cbc */
         BeBoardVec              fBoardVector;                          /*!< Vector of Board pointers */
         BeBoardFWMap            fBeBoardFWMap;
         SettingsMap             fSettingsMap;                          /*!< Maps the settings */

@@ -303,6 +303,14 @@ namespace Ph2_HwInterface {
         void RebootBoard();
         /*! \brief Set or reset the start signal */
         void SetForceStart ( bool bStart);
+
+
+
+        void ReadVer() override;
+        void PowerOn() override;
+        void PowerOff() override;
+        std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadData(int buffernum, int mpa);
+
     };
 }
 
