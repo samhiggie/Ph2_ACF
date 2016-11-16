@@ -49,6 +49,12 @@ namespace Ph2_HwInterface {
         fEventCountCBC = 0x00FFFFFF & list.at (4);
         fTDC = 0x000000FF & list.back();
 
+        fBeId = 0;
+        fBeFWType = 0;
+        fCBCDataType = 0;
+        fNCbc = 0;
+        fEventDataSize = 0;
+        fBeStatus = 0;
 
         //now decode FEEvents
         uint8_t cBeId = pBoard->getBeId();
@@ -84,42 +90,6 @@ namespace Ph2_HwInterface {
         }
     }
 
-    void Cbc2Event::GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData )  const
-    {
-        cbcData.clear();
-
-        uint16_t cKey = encodeId (pFeId, pCbcId);
-        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
-
-        if (cData != std::end (fEventDataMap) )
-        {
-            cbcData.reserve (cData->second.size() );
-            cbcData.assign (cData->second.begin(), cData->second.end() );
-        }
-        else
-            LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
-    }
-
-    void Cbc2Event::GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData )  const
-    {
-        cbcData.clear();
-
-        uint16_t cKey = encodeId (pFeId, pCbcId);
-        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
-
-        if (cData != std::end (fEventDataMap) )
-        {
-            for (const auto& cWord : cData->second)
-            {
-                cbcData.push_back ( (cWord >> 24) & 0xFF);
-                cbcData.push_back ( (cWord >> 16) & 0xFF);
-                cbcData.push_back ( (cWord >> 8) & 0xFF);
-                cbcData.push_back ( (cWord ) & 0xFF);
-            }
-        }
-        else
-            LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found.";
-    }
 
     std::string Cbc2Event::HexString() const
     {
@@ -362,6 +332,7 @@ namespace Ph2_HwInterface {
 
     void Cbc2Event::print ( std::ostream& os) const
     {
+        os << BOLDGREEN << "EventType: CBC2" << std::endl;
         os << BOLDBLUE <<  "  L1A Counter: " << this->GetEventCount() << std::endl;
         os << "  CBC Counter: " << this->GetEventCountCBC() << RESET << std::endl;
         os << "Bunch Counter: " << this->GetBunch() << std::endl;
@@ -388,6 +359,7 @@ namespace Ph2_HwInterface {
             os << GREEN << "FEId = " << +cFeId << " CBCId = " << +cCbcId << RESET << " len(data) = " << data.size() << std::endl;
             os << YELLOW << "PipelineAddress: " << this->PipelineAddress (cFeId, cCbcId) << RESET << std::endl;
             os << RED << "Error: " << static_cast<std::bitset<2>> ( this->Error ( cFeId, cCbcId ) ) << RESET << std::endl;
+            os << CYAN << "Total number of hits: " << this->GetNHits ( cFeId, cCbcId ) << RESET << std::endl;
             os << "Ch. Data:      ";
 
             for (int i = 0; i < FIRST_LINE_WIDTH; i += 2)

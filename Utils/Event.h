@@ -44,6 +44,17 @@ namespace Ph2_HwInterface {
 
     class Stub
     {
+      public:
+        Stub (uint8_t pPosition, uint8_t pBend) : fPosition (pPosition), fBend (pBend)
+        {}
+        uint8_t getPosition()
+        {
+            return fPosition;
+        }
+        uint8_t getBend()
+        {
+            return fBend;
+        }
       private:
         uint8_t fPosition;
         uint8_t fBend;
@@ -179,6 +190,20 @@ namespace Ph2_HwInterface {
             return fTDC;
         }
         /*!
+         * \brief Get an event contained in a Cbc
+         * \param pFeId : FE Id
+         * \param pCbcId : Cbc Id
+         * \return Event buffer
+         */
+        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData ) const;
+        /*!
+         * \brief Get an event contained in a Cbc
+         * \param pFeId : FE Id
+         * \param pCbcId : Cbc Id
+         * \return Event buffer
+         */
+        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData )  const;
+        /*!
          * \brief Function to get the bit at the global data string position
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id
@@ -230,32 +255,18 @@ namespace Ph2_HwInterface {
          * \return Aknowledgement of the Event setting (1/0)
          */
         virtual int SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list ) = 0;
-
-        //user interface
-        /*!
-         * \brief Get an event contained in a Cbc
-         * \param pFeId : FE Id
-         * \param pCbcId : Cbc Id
-         * \return Event buffer
-         */
-        virtual void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData ) const = 0;
-        /*!
-         * \brief Get an event contained in a Cbc
-         * \param pFeId : FE Id
-         * \param pCbcId : Cbc Id
-         * \return Event buffer
-         */
-        virtual void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData )  const = 0;
-        /*!
-         * \brief Get the Cbc Event counter
-         * \return Cbc Event counter
-         */
-        virtual uint32_t GetEventCountCBC() const = 0;
         /*!
          * \brief Convert Data to Hex string
          * \return Data string in hex
          */
         virtual std::string HexString() const = 0;
+
+        //user interface
+        /*!
+         * \brief Get the Cbc Event counter
+         * \return Cbc Event counter
+         */
+        virtual uint32_t GetEventCountCBC() const = 0;
         /*!
          * \brief Function to get bit string in hexadecimal format for CBC data
          * \param pFeId : FE Id

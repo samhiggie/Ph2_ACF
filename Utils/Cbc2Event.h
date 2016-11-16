@@ -50,21 +50,6 @@ namespace Ph2_HwInterface {
          */
         int SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list ) override;
 
-        //user interface
-        /*!
-         * \brief Get an event contained in a Cbc
-         * \param pFeId : FE Id
-         * \param pCbcId : Cbc Id
-         * \return Event buffer
-         */
-        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData ) const override;
-        /*!
-         * \brief Get an event contained in a Cbc
-         * \param pFeId : FE Id
-         * \param pCbcId : Cbc Id
-         * \return Event buffer
-         */
-        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) const override;
         /*!
          * \brief Get the Cbc Event counter
          * \return Cbc Event counter

@@ -50,21 +50,6 @@ namespace Ph2_HwInterface {
          */
         int SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list ) override;
 
-        //user interface
-        /*!
-         * \brief Get an event contained in a Cbc
-         * \param pFeId : FE Id
-         * \param pCbcId : Cbc Id
-         * \return Event buffer
-         */
-        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData ) const override;
-        /*!
-         * \brief Get an event contained in a Cbc
-         * \param pFeId : FE Id
-         * \param pCbcId : Cbc Id
-         * \return Event buffer
-         */
-        void GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData ) const override;
         /*!
          * \brief Get the Cbc Event counter
          * \return Cbc Event counter
@@ -72,6 +57,32 @@ namespace Ph2_HwInterface {
         uint32_t GetEventCountCBC() const override
         {
             return fEventCountCBC;
+        }
+
+        //private members of cbc3 events only
+        uint32_t GetBeId() const
+        {
+            return fBeId;
+        }
+        uint8_t GetFWType() const
+        {
+            return fBeFWType;
+        }
+        uint32_t GetCbcDataType() const
+        {
+            return fCBCDataType;
+        }
+        uint32_t GetNCbc() const
+        {
+            return fNCbc;
+        }
+        uint32_t GetEventDataSize() const
+        {
+            return fEventDataSize;
+        }
+        uint32_t GetBeStatus() const
+        {
+            return fBeStatus;
         }
         /*!
          * \brief Convert Data to Hex string
@@ -178,6 +189,17 @@ namespace Ph2_HwInterface {
 
         void print (std::ostream& out) const override;
 
+      private:
+        uint32_t reverse_bits ( uint32_t& n) const
+        {
+            n = ( (n >> 1) & 0x55555555) | ( (n << 1) & 0xaaaaaaaa) ;
+            n = ( (n >> 2) & 0x33333333) | ( (n << 2) & 0xcccccccc) ;
+            n = ( (n >> 4) & 0x0f0f0f0f) | ( (n << 4) & 0xf0f0f0f0) ;
+            n = ( (n >> 8) & 0x00ff00ff) | ( (n << 8) & 0xff00ff00) ;
+            n = ( (n >> 16) & 0x0000ffff) | ( (n << 16) & 0xffff0000) ;
+            return n;
+        }
+        void printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const;
     };
 }
 #endif

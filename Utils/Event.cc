@@ -49,6 +49,43 @@ namespace Ph2_HwInterface {
         return fEventDataMap == pEvent.fEventDataMap;
     }
 
+    void Event::GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint32_t >& cbcData )  const
+    {
+        cbcData.clear();
+
+        uint16_t cKey = encodeId (pFeId, pCbcId);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
+
+        if (cData != std::end (fEventDataMap) )
+        {
+            cbcData.reserve (cData->second.size() );
+            cbcData.assign (cData->second.begin(), cData->second.end() );
+        }
+        else
+            LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
+    }
+
+    void Event::GetCbcEvent ( const uint8_t& pFeId, const uint8_t& pCbcId, std::vector< uint8_t >& cbcData )  const
+    {
+        cbcData.clear();
+
+        uint16_t cKey = encodeId (pFeId, pCbcId);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
+
+        if (cData != std::end (fEventDataMap) )
+        {
+            for (const auto& cWord : cData->second)
+            {
+                cbcData.push_back ( (cWord >> 24) & 0xFF);
+                cbcData.push_back ( (cWord >> 16) & 0xFF);
+                cbcData.push_back ( (cWord >> 8) & 0xFF);
+                cbcData.push_back ( (cWord ) & 0xFF);
+            }
+        }
+        else
+            LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found.";
+    }
+
     bool Event::Bit ( uint8_t pFeId, uint8_t pCbcId, uint32_t pPosition ) const
     {
         uint32_t cWordP = pPosition / 32;
