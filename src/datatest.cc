@@ -141,10 +141,7 @@ int main ( int argc, char* argv[] )
     outp.str ("");
 
     if (!cmd.foundOption ("read") )
-    {
-        cSystemController.ConfigureHw ( outp, cmd.foundOption ( "ignoreI2c" ) );
-        LOG (INFO) << outp.str();
-    }
+        cSystemController.ConfigureHw ( cmd.foundOption ( "ignoreI2c" ) );
 
     t.stop();
     t.show ( "Time to Initialize/configure the system: " );

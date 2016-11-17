@@ -86,9 +86,9 @@ namespace Ph2_System {
         this->fParser.parseSettings (pFilename, fSettingsMap, os );
     }
 
-    void SystemController::ConfigureHw ( std::ostream& os , bool bIgnoreI2c )
+    void SystemController::ConfigureHw ( bool bIgnoreI2c )
     {
-        os << std::endl << BOLDBLUE << "Configuring HW parsed from .xml file: " << RESET << std::endl;
+        LOG (INFO) << std::endl << BOLDBLUE << "Configuring HW parsed from .xml file: " << RESET;
 
         bool cHoleMode, cCheck;
 
@@ -108,13 +108,13 @@ namespace Ph2_System {
             fBeBoardInterface->ConfigureBoard ( cBoard );
             fBeBoardInterface->CbcHardReset ( cBoard );
 
-            if ( cCheck && cBoard->getBoardType() == "GLIB")
+            if ( cCheck && cBoard->getBoardType() == BoardType::GLIB)
             {
                 fBeBoardInterface->WriteBoardReg ( cBoard, "pc_commands2.negative_logic_CBC", ( ( cHoleMode ) ? 0 : 1 ) );
-                os << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET << std::endl;
+                LOG (INFO) << GREEN << "Overriding GLIB register values for signal polarity with value from settings node!" << RESET;
             }
 
-            os << GREEN << "Successfully configured Board " << int ( cBoard->getBeId() ) << RESET << std::endl;
+            LOG (INFO) << GREEN << "Successfully configured Board " << int ( cBoard->getBeId() ) << RESET;
 
             for (auto& cFe : cBoard->fModuleVector)
             {
@@ -123,7 +123,7 @@ namespace Ph2_System {
                     if ( !bIgnoreI2c )
                     {
                         fCbcInterface->ConfigureCbc ( cCbc );
-                        os << GREEN <<  "Successfully configured Cbc " << int ( cCbc->getCbcId() ) << RESET << std::endl;
+                        LOG (INFO) << GREEN <<  "Successfully configured Cbc " << int ( cCbc->getCbcId() ) << RESET;
                     }
                 }
             }
@@ -140,7 +140,16 @@ namespace Ph2_System {
         // here would be the ideal position to fill the file Header and call openFile when in read mode
         for (const auto& cBoard : fBoardVector)
         {
-            std::string cBoardTypeString = cBoard->getBoardType();
+            std::string cBoardTypeString;
+            BoardType cBoardType = cBoard->getBoardType();
+
+            if (cBoardType == BoardType::GLIB) cBoardTypeString = "GLIB";
+            else if (cBoardType == BoardType::CTA) cBoardTypeString = "CTA";
+            else if (cBoardType == BoardType::ICGLIB) cBoardTypeString = "ICGLIB";
+            else if (cBoardType == BoardType::ICFC7) cBoardTypeString = "ICFC7";
+            else if (cBoardType == BoardType::CBC3FC7) cBoardTypeString = "CBC3FC7";
+
+
             uint32_t cBeId = cBoard->getBeId();
             uint32_t cNCbc = 0;
 

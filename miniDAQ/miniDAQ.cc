@@ -144,8 +144,7 @@ int main ( int argc, char* argv[] )
     cSystemController.InitializeHw ( cHWFile, outp );
     LOG (INFO) << outp.str();
     outp.str ("");
-    cSystemController.ConfigureHw (outp);
-    LOG (INFO) << outp.str();
+    cSystemController.ConfigureHw ();
 
     BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
 

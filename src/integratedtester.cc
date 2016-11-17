@@ -380,12 +380,9 @@ void perform_AntennaOccupancyMeasurement (Tool* pTool )
 {
     LOG (INFO) << "Starting occupancy measurement using the antenna." ;
 
-    std::stringstream outp;
-
     AntennaTester cAntennaTester;
     cAntennaTester.Inherit (pTool);
-    cAntennaTester.ConfigureHw (outp);
-    LOG (INFO) << outp.str();
+    cAntennaTester.ConfigureHw ();
     cAntennaTester.Initialize();
 
     // re-configure CBC regsiters with values from the calibration
@@ -555,12 +552,12 @@ int main ( int argc, char* argv[] )
             Tool cTool;
             cTool.InitializeHw ( cHWFile , outp );
             cTool.InitializeSettings ( cHWFile , outp );
+            LOG (INFO) << outp.str();
             cTool.CreateResultDirectory ( cDirectory );
             cTool.InitResultFile ( "Summary" );
             cTool.StartHttpServer();
-            cTool.ConfigureHw (outp );
+            cTool.ConfigureHw ();
             cTool.CreateReport();
-            LOG (INFO) << outp.str();
 
             char line[120];
 

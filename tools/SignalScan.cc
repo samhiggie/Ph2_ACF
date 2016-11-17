@@ -73,7 +73,7 @@ void SignalScan::ScanSignal (int pSignalScanLength)
             // I need this to normalize the TDC values I get from the Strasbourg FW
             bool pStrasbourgFW = false;
 
-            //if (pBoard->getBoardType() == "GLIB" || pBoard->getBoardType() == "CTA") pStrasbourgFW = true;
+            //if (pBoard->getBoardType() == BoardType::GLIB || pBoard->getBoardType() == BoardType::CTA) pStrasbourgFW = true;
             uint32_t cTotalEvents = 0;
 
             fBeBoardInterface->Start (pBoard);

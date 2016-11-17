@@ -104,11 +104,11 @@ int main ( int argc, char* argv[] )
     Tool cTool;
     cTool.InitializeHw ( cHWFile , outp);
     cTool.InitializeSettings ( cHWFile, outp );
+    LOG (INFO) << outp.str();
     cTool.CreateResultDirectory ( cDirectory );
     cTool.InitResultFile ( cResultfile );
     cTool.StartHttpServer();
-    cTool.ConfigureHw (outp);
-    LOG (INFO) << outp.str();
+    cTool.ConfigureHw ();
 
     if ( cLatency || cStubLatency )
     {
@@ -132,11 +132,9 @@ int main ( int argc, char* argv[] )
 
     else if ( cNoise )
     {
-        outp.str ("");
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        cPedeNoise.ConfigureHw (outp);
-        LOG (INFO) << outp.str();
+        cPedeNoise.ConfigureHw ();
         cPedeNoise.Initialise(); // canvases etc. for fast calibration
         cPedeNoise.measureNoise();
         cPedeNoise.Validate();

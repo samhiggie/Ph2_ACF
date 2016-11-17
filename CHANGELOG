@@ -157,3 +157,7 @@
     - ReadData() and ReadNEvents() are now wrapped in SystemController and should thus only be used from there!
     - FWInterfaces: ReadData() and ReadNEvents() now take a reference to std::vector<uint32_t>& to pass the data upwards to the Data object in SystemController
     - re-structured the Data object internals: Data::Set() now decides the manipulation algorithm based on BoardType Enum class in Definition.h - no more set of boolean flags
+    - introduced an Event class Polymorphism: normal Event class is now the almost virtual base class and Cbc2/3Event inherit from it.
+    - Updated the Cbc class to handle comments in CbcConigFiles better and re-produce them in eventual output files
+    - harmonized the use of BoardType: now FWInterfaces and BeBoard classes use the same enum BoardType defined in Definition.h
+    - implemented GetNHits() and GetHits() methods in both Cbc2/3Event::print() which is used by the Event friend operator <<

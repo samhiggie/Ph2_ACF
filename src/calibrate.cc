@@ -90,12 +90,12 @@ int main ( int argc, char* argv[] )
     std::stringstream outp;
     cTool.InitializeHw ( cHWFile, outp );
     cTool.InitializeSettings ( cHWFile, outp );
+    LOG (INFO) << outp.str();
+    outp.str ("");
     cTool.CreateResultDirectory ( cDirectory );
     cTool.InitResultFile ( "CalibrationResults" );
     cTool.StartHttpServer();
-    cTool.ConfigureHw (outp);
-    LOG (INFO) << outp.str();
-    outp.str ("");
+    cTool.ConfigureHw ();
     //if ( !cOld )
     //{
     t.start();
@@ -121,9 +121,7 @@ int main ( int argc, char* argv[] )
         //tool provides an Inherit(Tool* pTool) for this purpose
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        cPedeNoise.ConfigureHw (outp);
-        LOG (INFO) << outp.str();
-        outp.str ("");
+        cPedeNoise.ConfigureHw ();
         cPedeNoise.Initialise(); // canvases etc. for fast calibration
         cPedeNoise.measureNoise();
         cPedeNoise.Validate();

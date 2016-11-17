@@ -60,7 +60,18 @@ namespace Ph2_System {
         {
             BeBoard* cBeBoard = this->parseBeBoard (cBeBoardNode, pBoardVector, os);
             std::string cBoardType = cBeBoardNode.attribute ( "boardType" ).value();
-            cBeBoard->setBoardType (cBoardType);
+
+            if (cBoardType == "GLIB") cBeBoard->setBoardType (BoardType::GLIB);
+            else if (cBoardType == "CTA") cBeBoard->setBoardType (BoardType::CTA);
+            else if (cBoardType == "ICGLIB") cBeBoard->setBoardType (BoardType::ICGLIB);
+            else if (cBoardType == "ICFC7") cBeBoard->setBoardType (BoardType::ICFC7);
+            else if (cBoardType == "CBC3FC7") cBeBoard->setBoardType (BoardType::CBC3FC7);
+            else
+            {
+                LOG (ERROR) << "Error: Unknown Board Type: " << cBoardType << " - aborting!";
+                exit (1);
+            }
+
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
 
             std::string cId = cBeBoardConnectionNode.attribute ( "id" ).value();
@@ -83,21 +94,20 @@ namespace Ph2_System {
                     std::string cNameString;
                     uint32_t cValue;
                     this->parseRegister (cBeBoardRegNode, cNameString, cValue, cBeBoard, os);
-                    //os << BOLDCYAN << "|" << "  " << "|" << "_____" << cBeBoardRegNode.name() << "  " << cBeBoardRegNode.first_attribute().name() << " :" << cBeBoardRegNode.attribute ( "name" ).value() << RESET << std:: endl;
                 }
             }
 
             os << BLUE <<  "|\t|" << RESET << std::endl;
 
-            if ( !cBoardType.compare ( std::string ( "GLIB" ) ) )
+            if (cBeBoard->getBoardType() == BoardType::GLIB)
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if ( !cBoardType.compare ( std::string ( "ICGLIB" ) ) )
+            else if (cBeBoard->getBoardType() == BoardType::ICGLIB)
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if ( !cBoardType.compare ( std::string ( "CTA" ) ) )
+            else if (cBeBoard->getBoardType() == BoardType::CTA)
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if ( !cBoardType.compare ( std::string ( "ICFC7" ) ) )
+            else if (cBeBoard->getBoardType() == BoardType::ICFC7)
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if ( !cBoardType.compare ( std::string ( "CBC3FC7" ) ) )
+            else if (cBeBoard->getBoardType() == BoardType::CBC3FC7)
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new Cbc3Fc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
 
             //else

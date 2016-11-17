@@ -148,7 +148,7 @@ namespace Ph2_System {
         /*!
          * \brief Configure the Hardware with XML file indicated values
          */
-        void ConfigureHw ( std::ostream& os = std::cout , bool bIgnoreI2c = false );
+        void ConfigureHw ( bool bIgnoreI2c = false );
         /*!
          * \brief Run a DAQ
          * \param pBeBoard

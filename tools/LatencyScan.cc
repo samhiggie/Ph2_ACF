@@ -204,7 +204,7 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
 
 int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency)
 {
-    std::string cBoardType = pBoard->getBoardType();
+    BoardType cBoardType = pBoard->getBoardType();
     uint32_t cTotalHits = 0;
 
     for ( auto cFe : pBoard->fModuleVector )
@@ -224,15 +224,15 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
             //this should ensure that TDC value of 4 never happens
             uint8_t cFillVal = pParameter;
 
-            if (cTDCVal == 4 && cBoardType == "GLIB")
+            if (cTDCVal == 4 && cBoardType == BoardType::GLIB)
             {
                 cFillVal += 1;
                 cTDCVal = 12;
             }
 
             //for Strasbourg FW normalize to sane 3 bit values
-            if (cTDCVal != 0 && cBoardType == "GLIB") cTDCVal -= 5;
-            else if (cTDCVal != 0 && cBoardType == "CTA") cTDCVal -= 3;
+            if (cTDCVal != 0 && cBoardType == BoardType::GLIB) cTDCVal -= 5;
+            else if (cTDCVal != 0 && cBoardType == BoardType::CTA) cTDCVal -= 3;
 
             if (cTDCVal > 8 ) LOG (INFO) << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
 
