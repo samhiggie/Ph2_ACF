@@ -88,7 +88,7 @@ namespace Ph2_System {
 
     void SystemController::ConfigureHw ( bool bIgnoreI2c )
     {
-        LOG (INFO) << std::endl << BOLDBLUE << "Configuring HW parsed from .xml file: " << RESET;
+        LOG (INFO) << BOLDBLUE << "Configuring HW parsed from .xml file: " << RESET;
 
         bool cHoleMode, cCheck;
 
