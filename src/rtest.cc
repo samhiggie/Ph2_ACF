@@ -49,11 +49,8 @@ int main( int argc, char* argv[] )
 	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_MAPSA.xml";
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 
-	std::cout << "\ndefsys...";
 	SystemController mysyscontroller;
-	std::cout << "\nINITHW...";
 	mysyscontroller.InitializeHw( cHWFile );
-	std::cout << "\nINITHWdone...";
         MPAInterface* fMPAInterface = mysyscontroller.fMPAInterface; 
 	BeBoard* pBoard = mysyscontroller.fBoardVector.at( 0 );
 	std::cout << "\nExecuting POWER ON...";
@@ -79,7 +76,9 @@ int main( int argc, char* argv[] )
 			}
 
 		fMPAInterface->ConfigureMPA(&confs[i], 1 , i+1);
+
 	}
+	fMPAInterface->SendConfig(6);
 	std::chrono::milliseconds cWait1( 100 );//
 
 
@@ -123,6 +122,7 @@ int main( int argc, char* argv[] )
 		fMPAInterface->ModifyPerif(mod1,&confs[i]);
 		fMPAInterface->ConfigureMPA(&confs[i],1, i+1);
 	}
+	fMPAInterface->SendConfig(6);
 
 
 	}

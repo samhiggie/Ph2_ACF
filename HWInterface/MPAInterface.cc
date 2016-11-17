@@ -74,6 +74,13 @@ void MPAInterface::ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,
 	fMPAFW->upload( conf_upload, conf,nmpa );
 }
 
+void MPAInterface::SendConfig(int nummpa)
+{
+	setBoard(0);
+	fMPAFW->write(nummpa);
+}
+
+
 
 void MPAInterface::SequencerInit(int smode,int sdur,int mem,int ibuff)
 {

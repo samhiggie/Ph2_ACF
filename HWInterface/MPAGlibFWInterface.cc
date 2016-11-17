@@ -376,7 +376,10 @@ namespace Ph2_HwInterface
 	void MPAGlibFWInterface::upload( std::vector< uint32_t > *conf_upload, int conf, int nmpa)
 	  {
 	    WriteBlockReg( "Configuration.Memory_DataConf.MPA"+std::to_string(nmpa)+".config_"+std::to_string(conf), (*conf_upload));
-	    WriteReg( "Configuration.mode",0x5);
+	  }
+	void MPAGlibFWInterface::write(int nummpa)
+	  {
+	    WriteReg( "Configuration.mode",nummpa-1);
 	  }
 
 }

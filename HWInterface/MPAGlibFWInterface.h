@@ -272,6 +272,8 @@ public:
     std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadData(int buffernum, int mpa);
     void SequencerInit(int smode,int sdur,int mem,int ibuff);
     void upload(std::vector< uint32_t > *conf_upload, int conf, int nmpa);
+    void write(int nummpa);
+
     void HeaderInitMPA(int nmpa);
     void ReadTrig(int buffer_num);
     int WaitSequencer();

@@ -62,9 +62,14 @@ namespace Ph2_HwInterface
 		~MPAInterface();
 
 		/*!
-		* \uploads configuration data to MPA
+		* \uploads configuration data to glib
 		*/
 		void ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa);
+
+		/*!
+		* \sends configuration data to MAPSA from glib
+		*/
+		void SendConfig(int nummpa);
 
 		/*!
 		* \initializes AR header 
