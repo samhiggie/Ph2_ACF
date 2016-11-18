@@ -45,6 +45,7 @@ private:
     std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
     FpgaConfig* fpgaConfig;
     FileHandler* fFileHandler ;
+    std::vector<uint32_t>* curData;
 
 
 private:

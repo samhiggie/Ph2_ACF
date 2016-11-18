@@ -21,7 +21,8 @@ namespace Ph2_HwInterface
 	MPAGlibFWInterface::MPAGlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
 		fpgaConfig( nullptr ),
-		fData( nullptr )
+		fData( nullptr ),
+     		curData( nullptr )
 	{}
 
 
@@ -29,7 +30,7 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
 		fpgaConfig( nullptr ),
 		fData( nullptr ),
-
+     		curData( nullptr )
 		fFileHandler( pFileHandler )
 	{
 		if ( fFileHandler == nullptr ) fSaveToFile = false;
@@ -39,7 +40,8 @@ namespace Ph2_HwInterface
 	MPAGlibFWInterface::MPAGlibFWInterface( const char* pId, const char* pUri, const char* pAddressTable ) :
 		BeBoardFWInterface( pId, pUri, pAddressTable ),
 		fpgaConfig( nullptr ),
-		fData( nullptr )
+		fData( nullptr ),
+     		curData( nullptr )
 	{}
 
 
@@ -47,7 +49,7 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface( pId, pUri, pAddressTable ),
 		fpgaConfig( nullptr ),
 		fData( nullptr ),
-
+     		curData( nullptr ),
 		fFileHandler( pFileHandler )
 	{
 		if ( fFileHandler == nullptr ) fSaveToFile = false;
@@ -81,6 +83,14 @@ namespace Ph2_HwInterface
 		WriteReg( "Control.beam_on", 0 );
 	}
 
+	void MPAGlibFWInterface::Cleardata()
+	{
+		delete curData;
+		curData=new std::vector<uint32_t>;
+	}
+
+
+
 
 	void MPAGlibFWInterface::Pause()
 	{
@@ -97,11 +107,30 @@ namespace Ph2_HwInterface
 	uint32_t MPAGlibFWInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger )
 	{
 
+        if ( fData ) delete fData;
+	fNpackets = 5
+
+	
+	ReadMPAData(int buffer_num, int mpa)
+        fData = new Data();
+
+        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
+        fData->Set ( pBoard, curData , fNpackets, false );
+
+        if ( fSaveToFile )
+        {
+            fFileHandler->set ( curData );
+            fFileHandler->writeFile();
+        }
+
+        return fNpackets;
+
+
 	}
 
 
 
-	std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  MPAGlibFWInterface::ReadData(int buffer_num, int mpa)
+	std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  MPAGlibFWInterface::ReadMPAData(int buffer_num, int mpa)
 	  {
 	    std::string targ;
 	    targ = "Readout.Counter.MPA" + std::to_string(mpa);
@@ -117,6 +146,8 @@ namespace Ph2_HwInterface
 
 
 	    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata(counterdata,memorydata);
+	    curData->insert( curData.end(), counterdata.begin(), counterdata.end() );
+	    curData->insert( curData.end(), memorydata.begin(), memorydata.end() );
 	    return returndata;
 
 	  }
