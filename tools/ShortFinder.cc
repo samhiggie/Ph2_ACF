@@ -292,12 +292,18 @@ void ShortFinder::SetBeBoard (BeBoard* pBoard)
 
     cRegVec.push_back ( std::make_pair ( "TestPulsePot", 0xF0 ) );
 
-    cRegVec.push_back ( std::make_pair ( "VCth", 0x90 ) );
+    //cRegVec.push_back ( std::make_pair ( "VCth", 0x90 ) );
 
-    cRegVec.push_back ( std::make_pair ( "TriggerLatency", 0x01 ) );
+    //cRegVec.push_back ( std::make_pair ( "TriggerLatency", 0x01 ) );
 
     CbcMultiRegWriter cMultiWriter ( fCbcInterface, cRegVec );
     this->accept ( cMultiWriter );
+
+    //edit G.A: in order to be compatible with CBC3 (9 bit trigger latency) the recommended method is this:
+    LatencyVisitor cLatencyVisitor (fCbcInterface, 0x01);
+    this->accept (cLatencyVisitor);
+    ThresholdVisitor cThresholdVisitor (fCbcInterface, 0x90);
+    this->accept (cThresholdVisitor);
 }
 bool ShortFinder::CheckChannel (Short pShort , ShortsList pShortsList)
 {

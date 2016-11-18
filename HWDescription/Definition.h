@@ -93,5 +93,6 @@
 //------------------------------------------------------------------------------
 
 enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7, SUPERVISOR};
+enum class ChipType {UNDEFINED = 0, CBC2, CBC3};
 
 #endif

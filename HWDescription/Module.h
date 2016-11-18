@@ -83,10 +83,34 @@ namespace Ph2_HwDescription {
          */
         void addCbc ( Cbc& pCbc )
         {
+            //get the ChipType of the Cbc and set the module one accordingly
+            //this is the case when no chip type has been set so get the one from the Cbc
+            if (fChipType == ChipType::UNDEFINED)
+                fChipType = pCbc.getChipType();
+            //else, the chip type has already been set - if it is different from another Cbc, rais a warning
+            //no different chips should be on a module
+            else if (fChipType != pCbc.getChipType() )
+            {
+                LOG (ERROR) << "Error, Chips of a module should not be of different type! - aborting";
+                exit (1);
+            }
+
             fCbcVector.push_back ( &pCbc );
         }
         void addCbc ( Cbc* pCbc )
         {
+            //get the ChipType of the Cbc and set the module one accordingly
+            //this is the case when no chip type has been set so get the one from the Cbc
+            if (fChipType == ChipType::UNDEFINED)
+                fChipType = pCbc->getChipType();
+            //else, the chip type has already been set - if it is different from another Cbc, rais a warning
+            //no different chips should be on a module
+            else if (fChipType != pCbc->getChipType() )
+            {
+                LOG (ERROR) << "Error, Chips of a module should not be of different type! - aborting";
+                exit (1);
+            }
+
             fCbcVector.push_back ( pCbc );
         }
         /*!

@@ -76,11 +76,13 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
     LOG (INFO) << "Scanning Latency ... " ;
     uint32_t cIterationCount = 0;
 
-    for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
+    LatencyVisitor cVisitor (fCbcInterface, 0);
+
+    for ( uint16_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
     {
         //  Set a Latency Value on all FEs
-        cWriter.setRegister ( "TriggerLatency", cLat );
-        this->accept ( cWriter );
+        cVisitor.setLatency (  cLat );
+        this->accept ( cVisitor );
 
 
         // Take Data for all Modules

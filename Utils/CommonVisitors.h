@@ -194,5 +194,161 @@ struct CbcRegIncrementer : public HwDescriptionVisitor
 };
 
 
+struct ThresholdVisitor : public HWDescriptionVisitor
+{
+    uint16_t fThreshold;
+    CbcInterface* fInterface;
+    char fOption;
+
+    // Write constructor
+    ThresholdVisitor (CbcInterface* pInterface, uint16_t pThreshold) : fInterface (pInterface), fThreshold (pThreshold), fOption ('w')
+    {
+        if (fThreshold > 1023) LOG (ERROR) << "Error, Threshold value can be 10 bit max (1023)! - quitting";
+
+        exit (1);
+    }
+    // Read constructor
+    ThresholdVisitor (CbcInterface* pInterface) : fInterface (pInterface) , fOption ('r')
+    {
+    }
+    // Copy constructor
+    ThresholdVisitor (const ThresholdVisitor& pSetter) : fInterface (pSetter.fInterface), fThreshold (pSetter.fThreshold), fOption (pSetter.fOption)
+    {
+    }
+
+    void setOption (char pOption)
+    {
+        if (pOption == 'w' || pOption == 'r')
+            fOption = pOption;
+        else
+            LOG (ERROR) << "Error, not a valid option!";
+    }
+    uint16_t getThreshold()
+    {
+        return fThreshold;
+    }
+    void setThreshold (uint16_t pThreshold)
+    {
+        fThreshold = pThreshold;
+    }
+
+    void visit (Ph2_HwDescription::Cbc& pCbc)
+    {
+
+        if (pCbc.getChipType() == ChipType::CBC2)
+        {
+
+            if (fOption = 'w')
+            {
+                if (fThreshold > 255) LOG (ERROR) << "Error, Threshold for CBC2 can only be 8 bit max (255)!";
+                else
+                {
+                    uint8_t cVCth = fThreshold & 0x00FF;
+                    fInterface->WriteCbcReg ( &pCbc, "VCth", cVCth );
+                }
+            }
+            else
+            {
+                fInterface->ReadCbcReg ( &pCbc, "VCth" );
+                fThreshold = (pCbc.getReg ("VCth") ) & 0x00FF;
+            }
+        }
+        else
+        {
+
+            if (fOption = 'w')
+            {
+                std::vector<std::pair<std::string, uint8_t>> cRegVec;
+                // Vth1 holds bits 0-7 and Vth2 holds 8-9
+                uint8_t cVth1 = fThreshold & 0x00FF;
+                uint8_t cVth2 = fThreshold & 0x0300;
+                cRegVec.emplace_back ("Vth1", cVth1);
+                cRegVec.emplace_back ("Vth2", cVth2);
+                fInterface->WriteCbcMultReg (&pCbc, cRegVec);
+            }
+            else
+            {
+                fInterface->ReadCbcReg (&pCbc, "Vth1");
+                fInterface->ReadCbcReg (&pCbc, "Vth2");
+                fThreshold = ( (pCbc.getReg ("Vth2") & 0x03) << 8) | (pCbc.getReg ("Vth1") & 0xFF);
+            }
+        }
+    }
+};
+
+struct LatencyVisitor : public HwDescriptionVisitor
+{
+    uint16_t fLatency;
+    CbcInterface* fInterface;
+    char fOption;
+
+    // write constructor
+    LatencyVisitor (CbcInterface* pInterface, uint16_t pLatency) : fInterface (pInterface), fLatency (pLatency), fOption ('w') {}
+    // read constructor
+    LatencyVisitor (CbcInterface* pInterface) : fInterface (pInterface), fOption ('r') {}
+    // copy constructor
+    LatencyVisitor (const LatencyVisitor& pVisitor) : fInterface (pVisitor.fInterface), fLatency (pVisitor.fLatency), fOption (pVisitor.fOption) {}
+
+    void setOption (char pOption)
+    {
+        if (pOption == 'w' || pOption == 'r')
+            fOption = pOption;
+        else
+            LOG (ERROR) << "Error, not a valid option!";
+    }
+    uint16_t getLatency()
+    {
+        return fLatency;
+    }
+    void setLatency (uint16_t pLatency)
+    {
+        fLatency = pLatency;
+    }
+    void visit (Ph2_HwDescription::Cbc& pCbc)
+    {
+
+        if (pCbc.getChipType() == ChipType::CBC2)
+        {
+
+            if (fOption = 'w')
+            {
+
+                if (fLatency > 255) LOG (ERROR) << "Error, Latency for CBC2 can only be 8 bit max (255)!";
+                else
+                {
+                    uint8_t cLat = fLatency & 0x00FF;
+                    fInterface->WriteCbcReg ( &pCbc, "TriggerLatency", cLat );
+                }
+            }
+            else
+            {
+                fInterface->ReadCbcReg ( &pCbc, "TriggerLatency" );
+                fLatency = (pCbc.getReg ("TriggerLatency") ) & 0x00FF;
+            }
+        }
+        else
+        {
+            if (fOption = 'w')
+            {
+                std::vector<std::pair<std::string, uint8_t>> cRegVec;
+                // TriggerLatency1 holds bits 0-7 and FeCtrl&TrgLate2 holds 8
+                uint8_t cLat1 = fLatency & 0x00FF;
+                //in order to not mess with the other settings in FrontEndControl&TriggerLatency2, I have to read the reg
+                uint8_t presentValue = pCbc.getReg ("FeCtrl&TrgLat2") & 0xFE;
+                uint8_t cLat2 = presentValue | ( (fLatency & 0x0100) >> 8);
+                cRegVec.emplace_back ("TriggerLatency1", cLat1);
+                cRegVec.emplace_back ("FeCtrl&TrgLat2", cLat2);
+                fInterface->WriteCbcMultReg (&pCbc, cRegVec);
+            }
+            else
+            {
+                fInterface->ReadCbcReg (&pCbc, "TriggerLatency1");
+                fInterface->ReadCbcReg (&pCbc, "FeCtrl&TrgLat2");
+                fLatency = ( (pCbc.getReg ("FeCtrl&TrgLat2") & 0x01) << 8) | (pCbc.getReg ("TriggerLatency1") & 0xFF);
+            }
+        }
+    }
+};
+
 
 #endif

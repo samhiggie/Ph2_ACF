@@ -27,6 +27,10 @@ namespace Ph2_HwDescription {
 
     {
         loadfRegMap ( filename );
+
+        // determine the chip type by checking for existence of VCth register (CBC2 only, called Vth1 & Vth2 for CBC3)
+        if (fRegMap.find ("VCth") != std::end (fRegMap) ) this->setChipType ( ChipType::CBC2);
+        else this->setChipType ( ChipType::CBC2);
     }
 
     // C'tors which take BeId, FMCId, FeID, CbcId
@@ -35,13 +39,27 @@ namespace Ph2_HwDescription {
 
     {
         loadfRegMap ( filename );
+
+        // determine the chip type by checking for existence of VCth register (CBC2 only, called Vth1 & Vth2 for CBC3)
+        if (fRegMap.find ("VCth") != std::end (fRegMap) ) this->setChipType ( ChipType::CBC2);
+        else this->setChipType ( ChipType::CBC2);
+    }
+
+    Cbc::Cbc ( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pCbcId, const std::string& filename, ChipType pType ) : FrontEndDescription ( pBeId, pFMCId, pFeId ), fCbcId ( pCbcId )
+
+    {
+        loadfRegMap ( filename );
+
+        // determine the chip type by checking for existence of VCth register (CBC2 only, called Vth1 & Vth2 for CBC3)
+        this->setChipType (pType);
     }
 
     // Copy C'tor
 
     Cbc::Cbc ( const Cbc& cbcobj ) : FrontEndDescription ( cbcobj ),
         fCbcId ( cbcobj.fCbcId ),
-        fRegMap ( cbcobj.fRegMap )
+        fRegMap ( cbcobj.fRegMap ),
+        fCommentMap (cbcobj.fCommentMap)
     {
     }
 
