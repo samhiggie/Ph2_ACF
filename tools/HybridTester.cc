@@ -159,6 +159,8 @@ void HybridTester::InitializeHists()
         for ( auto cFe : cBoard->fModuleVector )
         {
             uint32_t cFeId = cFe->getFeId();
+            uint16_t cMaxRange = (cFe->getChipType() == ChipType::CBC2) ? 255 : 1023;
+            fType = cFe->getChipType();
 
             for ( auto cCbc : cFe->fCbcVector )
             {
@@ -170,7 +172,7 @@ void HybridTester::InitializeHists()
 
                 if ( cObject ) delete cObject;
 
-                TH1F* cTmpScurve = new TH1F ( cName, Form ( "Noise Occupancy Cbc%d; VCth; Counts", cCbcId ), 255, 0, 255 );
+                TH1F* cTmpScurve = new TH1F ( cName, Form ( "Noise Occupancy Cbc%d; VCth; Counts", cCbcId ), cMaxRange, 0, cMaxRange );
                 cTmpScurve->SetMarkerStyle ( 8 );
                 bookHistogram ( cCbc, "Scurve", cTmpScurve );
                 fSCurveMap[cCbc] = cTmpScurve;
@@ -180,7 +182,7 @@ void HybridTester::InitializeHists()
 
                 if ( cObject ) delete cObject;
 
-                TF1* cTmpFit = new TF1 ( cName, MyErf, 0, 255, 2 );
+                TF1* cTmpFit = new TF1 ( cName, MyErf, 0, cMaxRange, 2 );
                 bookHistogram ( cCbc, "ScurveFit", cTmpFit );
 
                 fFitMap[cCbc] = cTmpFit;
@@ -236,7 +238,7 @@ void HybridTester::Initialize ( bool pThresholdScan )
     fDeadChannelsBottom.clear();
 }
 
-uint32_t HybridTester::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint8_t pValue )
+uint32_t HybridTester::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint16_t pValue )
 {
     uint32_t cHitCounter = 0;
 
@@ -262,14 +264,21 @@ uint32_t HybridTester::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint
             if ( cScurve == fSCurveMap.end() ) LOG (INFO) << "Error: could not find an Scurve object for Cbc " << int ( cCbc->getCbcId() ) ;
             else
             {
-                for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
-                {
-                    if ( pEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                    {
-                        cScurve->second->Fill ( pValue );
-                        cHitCounter++;
-                    }
-                }
+                //for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                //{
+                //if ( pEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                //{
+                //cScurve->second->Fill ( pValue );
+                //cHitCounter++;
+                //}
+                //}
+                //experimental
+
+                std::vector<uint32_t> cHits = pEvent->GetHits (cCbc->getFeId(), cCbc->getCbcId() );
+                cHitCounter += cHits.size();
+
+                for (auto cHit : cHits)
+                    cScurve->second->Fill (pValue);
             }
         }
     }
@@ -283,18 +292,21 @@ void HybridTester::ScanThresholds()
     LOG (INFO) << "Taking data with " << fTotalEvents << " Events!" ;
 
     int cVcthStep = 2;
-    uint8_t cVcth = ( fHoleMode ) ?  0xFF :  0x00;
+    uint16_t cMaxValue = (fType == ChipType::CBC2) ? 0xFF : 0x03FF;
+    uint16_t cVcth = ( fHoleMode ) ?  cMaxValue :  0x00;
     int cStep = ( fHoleMode ) ? (-1 * cVcthStep) : cVcthStep;
 
     int iVcth =  + (cVcth);
     //LOG(INFO) << RED << "Vcth = " <<  iVcth << RESET ;
 
     //simple VCth loop
-    while ( 0 <= iVcth && iVcth <= 255 )
+    ThresholdVisitor cVisitor (fCbcInterface, 0);
+
+    while ( 0 <= iVcth && iVcth <= cMaxValue )
     {
 
-        CbcRegWriter cWriter ( fCbcInterface, "VCth", cVcth );
-        accept ( cWriter );
+        cVisitor.setThreshold (iVcth);
+        accept ( cVisitor );
 
         fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
         fHistBottom->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
@@ -389,12 +401,15 @@ void HybridTester::ScanThreshold()
     uint32_t cAllOneCounter = 0;
     uint32_t cSlopeZeroCounter = 0;
     uint32_t cOldHitCounter = 0;
-    uint8_t  cDoubleVcth;
-    uint8_t cVcth = ( fHoleMode ) ?  0xFF :  0x00;
+    uint16_t  cDoubleVcth;
+    uint16_t cMaxValue = (fType == ChipType::CBC2) ? 0xFF : 0x03FF;
+    uint16_t cVcth = ( fHoleMode ) ?  cMaxValue :  0x00;
     int cStep = ( fHoleMode ) ? -10 : 10;
 
     // Adaptive VCth loop
-    while ( 0x00 <= cVcth && cVcth <= 0xFF )
+    ThresholdVisitor cVisitor (fCbcInterface, 0);
+
+    while ( 0x00 <= cVcth && cVcth <= cMaxValue )
     {
         if ( cAllOne ) break;
 
@@ -405,8 +420,8 @@ void HybridTester::ScanThreshold()
         }
 
         // Set current Vcth value on all Cbc's
-        CbcRegWriter cWriter ( fCbcInterface, "VCth", cVcth );
-        accept ( cWriter );
+        cVisitor.setThreshold (cVcth);
+        accept ( cVisitor );
         uint32_t cN = 1;
         uint32_t cNthAcq = 0;
         uint32_t cHitCounter = 0;
@@ -564,7 +579,7 @@ void HybridTester::processSCurves ( uint32_t pEventsperVcth )
             double_t pedestal = cFit->second->GetParameter ( 0 );
             double_t noise = cFit->second->GetParameter ( 1 );
 
-            uint8_t cThreshold = ceil ( pedestal + fSigmas * fabs ( noise ) );
+            uint16_t cThreshold = ceil ( pedestal + fSigmas * fabs ( noise ) );
 
             LOG (INFO) << "Identified a noise Occupancy of 50% at VCth " << static_cast<int> ( pedestal ) << " -- increasing by " << fSigmas <<  " sigmas (=" << fabs ( noise ) << ") to " << +cThreshold << " for Cbc " << int ( cScurve.first->getCbcId() ) ;
 
@@ -573,7 +588,8 @@ void HybridTester::processSCurves ( uint32_t pEventsperVcth )
             cLine->SetLineColor ( kCyan );
             cLine->Draw ( "same" );
 
-            fCbcInterface->WriteCbcReg ( cScurve.first, "VCth", cThreshold );
+            ThresholdVisitor cVisitor (fCbcInterface, cThreshold);
+            cScurve.first->accept (cVisitor);
         }
 
     }
@@ -918,7 +934,7 @@ void HybridTester::FindShorts()
     std::array<int, 2> cGroundedChannel;
     std::vector<std::array<int, 2> > cGroundedChannelsList;
 
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
+    ThresholdVisitor cReader ( fCbcInterface );
     accept ( cReader );
     fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
     fHistBottom->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
@@ -1032,7 +1048,7 @@ void HybridTester::Measure()
     LOG (INFO) << "Mesuring Efficiency per Strip ... " ;
     LOG (INFO) << "Taking data with " << fTotalEvents << " Events!" ;
 
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
+    ThresholdVisitor cReader ( fCbcInterface );
     accept ( cReader );
     fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
     fHistBottom->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
@@ -1157,7 +1173,7 @@ void HybridTester::AntennaScan()
     LOG (INFO) << "Mesuring Efficiency per Strip ... " ;
     LOG (INFO) << "Taking data with " << fTotalEvents << " Events!" ;
 
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
+    ThresholdVisitor cReader (fCbcInterface);
     accept ( cReader );
 
     Antenna cAntenna;

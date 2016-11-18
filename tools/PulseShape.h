@@ -109,7 +109,7 @@ class PulseShape : public Tool
     uint8_t reverse ( uint8_t n )
     {
         // Reverse the top and bottom nibble then swap them.
-        return ( fLookup[n & 0b1111] << 4 ) | fLookup[n >> 4];
+        return ( fLookup[n & 0xF] << 4 ) | fLookup[n >> 4];
     }
 
     /*!
@@ -141,6 +141,7 @@ class PulseShape : public Tool
     uint8_t fOffset; /*!< Offset value for the channel */
     uint32_t fStepSize; /*!< Step size */
     std::vector<uint32_t> fChannelVector;  /*!< Channels in the test group */
+    ChipType fType;
 
     unsigned char fLookup[16] =
     {

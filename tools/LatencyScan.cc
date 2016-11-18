@@ -59,18 +59,19 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
 {
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
-    this->accept ( cReader );
-    uint8_t cVcth = cReader.fRegValue;
+    // ThresholdVisitor in read mode
+    ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    this->accept (cThresholdVisitor);
+    uint16_t cVcth = cThresholdVisitor.getThreshold();
 
     int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
     LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
     cVcth += cVcthStep;
 
     //  Set that VCth Value on all FEs
-    CbcRegWriter cWriter ( fCbcInterface, "VCth", cVcth );
-    this->accept ( cWriter );
-    this->accept ( cReader );
+    cThresholdVisitor.setOption ('w');
+    cThresholdVisitor.setThreshold (cVcth);
+    this->accept (cThresholdVisitor);
 
     // Now the actual scan
     LOG (INFO) << "Scanning Latency ... " ;
@@ -127,18 +128,19 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
 {
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
-    this->accept ( cReader );
-    uint8_t cVcth = cReader.fRegValue;
+    // ThresholdVisitor in read mode
+    ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    this->accept (cThresholdVisitor);
+    uint16_t cVcth = cThresholdVisitor.getThreshold();
 
     int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
     LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
     cVcth += cVcthStep;
 
     //  Set that VCth Value on all FEs
-    CbcRegWriter cVcthWriter ( fCbcInterface, "VCth", cVcth );
-    this->accept ( cVcthWriter );
-    this->accept ( cReader );
+    cThresholdVisitor.setOption ('w');
+    cThresholdVisitor.setThreshold (cVcth);
+    this->accept (cThresholdVisitor);
 
     // Now the actual scan
     LOG (INFO) << "Scanning Stub Latency ... " ;

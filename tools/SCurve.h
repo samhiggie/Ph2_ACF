@@ -67,6 +67,7 @@ class SCurve : public Tool
     uint8_t fTestPulseAmplitude;
     uint32_t fEventsPerPoint;
     bool fFitted;
+    ChipType fType;
 
 
 
@@ -77,8 +78,8 @@ class SCurve : public Tool
     // SCurve related
     void measureSCurves ( int  pTGrpId );
     void measureSCurvesOffset ( int  pTGrpId );
-    uint32_t fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint8_t pValue, int  pTGrpId, bool pDraw = false );
-    void initializeSCurves ( TString pParameter, uint8_t pValue, int  pTGrpId );
+    uint32_t fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint16_t pValue, int  pTGrpId, bool pDraw = false );
+    void initializeSCurves ( TString pParameter, uint16_t pValue, int  pTGrpId );
 
     // general stuff
     void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup );

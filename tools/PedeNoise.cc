@@ -37,7 +37,7 @@ void PedeNoise::Initialise()
                 // populate the channel vector
                 std::vector<Channel> cChanVec;
 
-                for ( uint8_t cChan = 0; cChan < 254; cChan++ )
+                for ( uint8_t cChan = 0; cChan < NCHANNELS; cChan++ )
                     cChanVec.push_back ( Channel ( cBoardId, cFeId, cCbcId, cChan ) );
 
                 fCbcChannelMap[cCbc] = cChanVec;
@@ -370,7 +370,7 @@ void PedeNoise::enableTestGroupforNoise ( int  pTGrpId )
 }
 
 
-void PedeNoise::processSCurvesNoise ( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId )
+void PedeNoise::processSCurvesNoise ( TString pParameter, uint16_t pValue, bool pDraw, int  pTGrpId )
 {
 
     // First fitHits for every Channel, then extract the midpoint and noise and fill it in fVplusVcthGraphMap
@@ -400,7 +400,7 @@ void PedeNoise::processSCurvesNoise ( TString pParameter, uint8_t pValue, bool p
 
 
             // instead of the code below, use a histogram to histogram the noise
-            if ( cChan.getNoise() == 0 || cChan.getNoise() > 255 ) LOG (INFO) << RED << "Error, SCurve Fit for Fe " << int ( cCbc.first->getFeId() ) << " Cbc " << int ( cCbc.first->getCbcId() ) << " Channel " << int ( cChan.fChannelId ) << " did not work correctly! Noise " << cChan.getNoise() << RESET ;
+            if ( cChan.getNoise() == 0 || cChan.getNoise() > 1023 ) LOG (INFO) << RED << "Error, SCurve Fit for Fe " << int ( cCbc.first->getFeId() ) << " Cbc " << int ( cCbc.first->getCbcId() ) << " Channel " << int ( cChan.fChannelId ) << " did not work correctly! Noise " << cChan.getNoise() << RESET ;
 
             cNoiseHist->Fill ( cChan.getNoise() );
             cPedeHist->Fill ( cChan.getPedestal() );
@@ -529,15 +529,16 @@ void PedeNoise::setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma)
             TH1F* cNoiseHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Noise" ) );
             TH1F* cPedeHist  = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Pedestal" ) );
 
-            uint8_t cPedestal = round (cPedeHist->GetMean() );
-            uint8_t cNoise =  round (cNoiseHist->GetMean() );
+            uint16_t cPedestal = round (cPedeHist->GetMean() );
+            uint16_t cNoise =  round (cNoiseHist->GetMean() );
             int cDiff = fHoleMode ? pNSigma * cNoise : -pNSigma * cNoise;
-            uint8_t cValue = cPedestal + cDiff;
+            uint16_t cValue = cPedestal + cDiff;
 
             if (pNSigma > 0) LOG (INFO) << "Changing Threshold on CBC " << +cCbcId << " by " << cDiff << " to " << cPedestal + cDiff << " VCth units to supress noise!" ;
             else LOG (INFO) << "Changing Threshold on CBC " << +cCbcId << " back to the pedestal at " << +cPedestal ;
 
-            fCbcInterface->WriteCbcReg (cCbc, "VCth", cValue);
+            ThresholdVisitor cThresholdVisitor (fCbcInterface, cValue);
+            cCbc->accept (cThresholdVisitor);
         }
     }
 }
@@ -553,11 +554,16 @@ void PedeNoise::fillOccupancyHist (BeBoard* pBoard, const std::vector<Event*>& p
 
             for (auto& cEvent : pEvents)
             {
-                for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
-                {
-                    if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                        cHist->Fill (cId);
-                }
+                //for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                //{
+                //if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                //cHist->Fill (cId);
+                //}
+                //experimental
+                std::vector<uint32_t> cHits = cEvent->GetHits (cCbc->getFeId(), cCbc->getCbcId() );
+
+                for (auto cHit : cHits)
+                    cHist->Fill (cHit);
             }
         }
     }

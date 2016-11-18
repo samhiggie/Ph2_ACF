@@ -74,7 +74,7 @@ void Channel::initializePulse ( TString pName )
     fPulse->GetYaxis()->SetLimits ( 0, 255 );
 
 }
-void Channel::initializeHist ( uint8_t pValue, TString pParameter )
+void Channel::initializeHist ( uint16_t pValue, TString pParameter )
 {
 
     TString histname;
@@ -94,7 +94,7 @@ void Channel::initializeHist ( uint8_t pValue, TString pParameter )
 
     if ( fScurve ) delete fScurve;
 
-    fScurve = new TH1F ( histname, Form ( "Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 256, -0.5, 255.5 );
+    fScurve = new TH1F ( histname, Form ( "Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 1024, -0.5, 1023.5 );
     fScurve->GetXaxis()->SetTitle ( pParameter );
     fScurve->GetYaxis()->SetTitle ( "Occupancy" );
 
@@ -102,7 +102,7 @@ void Channel::initializeHist ( uint8_t pValue, TString pParameter )
 
     if ( fDerivative ) delete fDerivative;
 
-    fDerivative = new TH1F ( graphname, Form ( "Derivative_Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 255, 0, 255 );
+    fDerivative = new TH1F ( graphname, Form ( "Derivative_Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 1023, 0, 1023 );
     fDerivative->GetXaxis()->SetTitle ( pParameter );
     fDerivative->GetYaxis()->SetTitle ( "Slope" );
 
@@ -118,12 +118,12 @@ void Channel::initializeHist ( uint8_t pValue, TString pParameter )
 }
 
 
-void Channel::fillHist ( uint8_t pVcth )
+void Channel::fillHist ( uint16_t pVcth )
 {
     fScurve->Fill ( float ( pVcth ) );
 }
 
-void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TString pParameter, TFile* pResultfile )
+void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TString pParameter, TFile* pResultfile )
 {
     fFitted = true;
 
@@ -208,7 +208,7 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TSt
 }
 
 
-void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint8_t pValue, TString pParameter, TFile* pResultfile )
+void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TString pParameter, TFile* pResultfile )
 {
     fFitted = false;
 
@@ -236,7 +236,7 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint8_t p
             cPrev = fScurve->GetBinContent ( fScurve->GetBin ( -0.5 ) );
             cActive = false;
 
-            for ( cBin = 0; cBin <= 255; cBin++ )
+            for ( cBin = 0; cBin <= 1023; cBin++ )
             {
                 cCurrent = fScurve->GetBinContent ( fScurve->GetBin ( cBin ) );
                 cDiff = cPrev - cCurrent;
@@ -254,10 +254,10 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint8_t p
         }
         else
         {
-            cPrev = fScurve->GetBinContent ( fScurve->GetBin ( 255.5 ) );
+            cPrev = fScurve->GetBinContent ( fScurve->GetBin ( 1023.5 ) );
             cActive = false;
 
-            for ( cBin = 255; cBin >= 0; cBin-- )
+            for ( cBin = 1023; cBin >= 0; cBin-- )
             {
                 cCurrent = fScurve->GetBinContent ( fScurve->GetBin ( cBin ) );
                 cDiff = cCurrent - cPrev;

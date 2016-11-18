@@ -57,7 +57,7 @@ class PedeNoise : public SCurve
 
     void Initialise();
     void measureNoise();
-    void Validate(uint32_t pNoiseStripThreshold = 1);
+    void Validate (uint32_t pNoiseStripThreshold = 1);
     void SaveResults();
 
   private:
@@ -71,7 +71,7 @@ class PedeNoise : public SCurve
     void setInitialOffsets();
     void setOffset ( uint8_t pOffset, int  pTGrpId );
     void enableTestGroupforNoise ( int  pTGrpId );
-    void processSCurvesNoise ( TString pParameter, uint8_t pValue, bool pDraw, int  pTGrpId );
+    void processSCurvesNoise ( TString pParameter, uint16_t pValue, bool pDraw, int  pTGrpId );
     void setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma);
     void fillOccupancyHist (BeBoard* pBoard, const std::vector<Event*>& pEvents);
     void writeGraphs();

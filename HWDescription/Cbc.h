@@ -52,6 +52,7 @@ namespace Ph2_HwDescription {
 
         // C'tors with object FE Description
         Cbc ( const FrontEndDescription& pFeDesc, uint8_t pCbcId, const std::string& filename );
+        Cbc ( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pCbcId, const std::string& filename, ChipType pType );
 
         // Default C'tor
         Cbc();

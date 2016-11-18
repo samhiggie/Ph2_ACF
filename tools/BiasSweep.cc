@@ -5,7 +5,7 @@ std::map<std::string, uint8_t> BiasSweep::fAmuxSettings =
     {"none", 0x00},
     {"Vplus", 0x01},
     {"VCth", 0x02},
-    {"VTh", 0x02},
+    {"Vth", 0x02},
     {"Ihyst", 0x03},
     {"Icomp", 0x04},
     {"TestPulseChargeMirrCascodeVolt", 0x05},
@@ -22,11 +22,8 @@ std::map<std::string, uint8_t> BiasSweep::fAmuxSettings =
     {"Vpafb", 0x10}
 };
 
-BiasSweep::BiasSweep() :
-    fCounter (0)
+BiasSweep::BiasSweep()
 {
-    //ugly but temporary
-    fCbcVersion = 2;
 }
 
 BiasSweep::~BiasSweep()
@@ -42,10 +39,11 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
     if ( cObj ) delete cObj;
 
-    fSweepCanvas = new TCanvas (cName, Form ("Bias Sweep%s", pBias.c_str() ), 10, 0, 500, 500 );
+    fSweepCanvas = new TCanvas (cName, Form ("Bias Sweep %s", pBias.c_str() ), 10, 0, 500, 500 );
     fSweepCanvas->cd();
 
-    cName = Form ("g_BiasSweep_%s_Fe%d_Cbc%d_Iteration%d", pBias.c_str(), pCbc->getFeId(), pCbc->getCbcId(), fCounter );
+    std::time_t cTime = std::time (nullptr);
+    cName = Form ("g_BiasSweep_%s_Fe%d_Cbc%d_TS%d", pBias.c_str(), pCbc->getFeId(), pCbc->getCbcId(), cTime );
     cObj = gROOT->FindObject (cName);
 
     if (cObj) delete cObj;
@@ -59,6 +57,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
     LOG (INFO) << "Created Canvas and Graph for Sweep of " << pBias;
 
+#ifdef __USBINST__
     //create instance of Ke2110Controller
     std::string cLogFile = fDirectoryName + "/DMM_log.txt";
     Ke2110Controller* cKeController = new Ke2110Controller (cLogFile);
@@ -67,6 +66,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
     cKeController->Configure (cConfString, 0, 0.0001);
     cKeController->Autozero();
+#endif
 
     //ok, now set the Analogmux to the value required to see the bias there
     //in order to do this, read the current value and store it for later
@@ -88,20 +88,26 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
     // here start sweeping the bias!
     // first, get the maximum necessary range (8 bits except for VTh of Cbc3)
-    uint16_t cMaxValue = (fCbcVersion == 3 && pBias == "VTh") ? 1024 : 255;
+    uint16_t cMaxValue = (pCbc->getChipType() == ChipType::CBC3 && pBias == "Vth") ? 1023 : 255;
     LOG (INFO) << "The selected Bias " << pBias << " requires a range of " << cMaxValue;
+
+    ThresholdVisitor cThresholdVisitor (fCbcInterface, 0);
 
     for (uint16_t cBias = 0; cBias < cMaxValue; cBias++)
     {
-        if (fCbcVersion == 2)
-            fCbcInterface->WriteCbcReg (pCbc, pBias, cBias);
-        else
+        if (pBias == "VCth" || pBias == "Vth" )
         {
-            //translate bias to registers and do a mutl reg write
+            cThresholdVisitor.setThreshold (cBias);
+            pCbc->accept (cThresholdVisitor);
         }
+        else
+            fCbcInterface->WriteCbcReg (pCbc, pBias, cBias);
 
+        double cReading = 0;
+#ifdef __USBINST__
         cKeController->Measure();
-        double cReading = cKeController->GetLatestReadValue();
+        cReading = cKeController->GetLatestReadValue();
+#endif
 
         //now I have the value I set and the reading from the DMM
         cGraph->SetPoint (cGraph->GetN(), cBias, cReading);

@@ -13,17 +13,21 @@
 #ifndef __BIASSWEEP_H__
 #define __BIASSWEEP_H__
 #include "Tool.h"
-#include "Ke2110Controller.h"
 #include <map>
 #include "TGraph.h"
+#include "TAxis.h"
 #include "TString.h"
+#include "Utils/CommonVisitors.h"
 
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
+#ifdef __USBINST__
+#include "Ke2110Controller.h"
 using namespace Ph2_UsbInst;
+#endif
 
 class BiasSweep : public Tool
 {
@@ -33,8 +37,7 @@ class BiasSweep : public Tool
     void SweepBias (std::string pBias, Cbc* pCbc);
 
   private:
-    int fCbcVersion;
-    int fCounter;
+    //ChipType fChipType;
     TCanvas* fSweepCanvas;
 
     static  std::map<std::string, uint8_t> fAmuxSettings;

@@ -19,7 +19,6 @@ struct HistogramFiller  : public HwDescriptionVisitor
             {
                 uint32_t globalChannel = ( pCbc.getCbcId() * 254 ) + cId;
 
-                //              LOG (INFO)  << "Channel " << globalChannel << " VCth " << int(pCbc.getReg( "VCth" )) ;
                 // find out why histograms are not filling!
                 if ( globalChannel % 2 == 0 )
                     fBotHist->Fill ( globalChannel / 2 );
@@ -168,7 +167,8 @@ void AntennaTester::Measure()
     LOG (INFO)  << "Measuring Efficiency per Strip with the Antenna ... " ;
     LOG (INFO)  << "Taking data with " << fTotalEvents << " Events!";
 
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
+    //in read mode like this!
+    ThresholdVisitor cReader ( fCbcInterface );
     accept ( cReader );
 
     InitializeHists();

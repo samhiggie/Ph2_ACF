@@ -151,8 +151,8 @@ void Calibration::MakeTestGroups ( bool pAllChan )
 void Calibration::FindVplus()
 {
     // first, set VCth to the target value for each CBC
-    CbcRegWriter cWriter ( fCbcInterface, "VCth", fTargetVcth );
-    accept ( cWriter );
+    ThresholdVisitor cThresholdVisitor (fCbcInterface, fTargetVcth);
+    this->accept (cThresholdVisitor);
 
     // now all offsets are either off (0x00 in holes mode, 0xFF in electrons mode)
     // next a group needs to be enabled - therefore now the group loop
@@ -263,8 +263,8 @@ void Calibration::FindOffsets()
 
 
     // just to be sure, configure the correct VCth and VPlus values
-    CbcRegWriter cWriter ( fCbcInterface, "VCth", fTargetVcth );
-    accept ( cWriter );
+    ThresholdVisitor cThresholdVisitor (fCbcInterface, fTargetVcth);
+    this->accept (cThresholdVisitor);
     // ok, done, all the offsets are at the starting value, VCth & Vplus are written
 
     // now loop over test groups

@@ -278,7 +278,7 @@ void CMTester::TakeData()
 {
     parseSettings();
 
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
+    //CbcRegReader cReader ( fCbcInterface, "VCth" );
     // accept( cReader );
 
     for ( BeBoard* pBoard : fBoardVector )

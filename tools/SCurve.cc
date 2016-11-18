@@ -77,14 +77,24 @@ void SCurve::measureSCurves ( int  pTGrpId )
     bool cNonZero = false;
     bool cAllOne = false;
     uint32_t cAllOneCounter = 0;
-    uint8_t cValue, cDoubleValue;
+    uint16_t cValue, cDoubleValue;
     int cStep;
     uint8_t cIterationCount = 0;
+
+    //figure out what kind of chips we are dealing with here
+    //not the nicest thing to do but assume it will work
+    for (BeBoard* cBoard : fBoardVector)
+    {
+        for (Module* cModule : cBoard->fModuleVector)
+            fType = cModule->getChipType();
+    }
+
+    uint16_t cMaxValue = (fType == ChipType::CBC2) ? 0xFF : 0x03FF;
 
     // the expression below mimics XOR
     if ( fHoleMode )
     {
-        cValue = 0xFF;
+        cValue = cMaxValue;
         cStep = -10;
     }
     else
@@ -93,10 +103,13 @@ void SCurve::measureSCurves ( int  pTGrpId )
         cStep = 10;
     }
 
+    //visitor to set threshold on CBC2 and CBC3
+    ThresholdVisitor cVisitor (fCbcInterface, 0);
+
     // Adaptive VCth loop
-    while ( 0x00 <= cValue && cValue <= 0xFF )
+    while ( 0x00 <= cValue && cValue <= cMaxValue )
     {
-        if (cIterationCount > 0 && (cValue == 0xFF || cValue == 0x00) )
+        if (cIterationCount > 0 && (cValue == cMaxValue || cValue == 0x00) )
         {
             LOG (INFO) << BOLDRED << "ERROR: something wrong with these SCurves"  << RESET ;
             break;
@@ -111,11 +124,6 @@ void SCurve::measureSCurves ( int  pTGrpId )
             continue;
         }
 
-
-        //CbcRegWriter cWriter ( fCbcInterface, "VCth", cValue );
-        //accept ( cWriter );
-
-
         uint32_t cN = 1;
         uint32_t cNthAcq = 0;
         uint32_t cHitCounter = 0;
@@ -126,7 +134,10 @@ void SCurve::measureSCurves ( int  pTGrpId )
         for ( BeBoard* pBoard : fBoardVector )
         {
             for (Module* cFe : pBoard->fModuleVector)
-                fCbcInterface->WriteBroadcast (cFe, "VCth", cValue);
+            {
+                cVisitor.setThreshold (cValue);
+                cFe->accept (cVisitor);
+            }
 
             ReadNEvents ( pBoard, fEventsPerPoint );
 
@@ -151,7 +162,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
                 cDoubleValue = cValue;
                 cNonZero = true;
 
-                if ( cValue == 255 ) cValue = 255;
+                if ( cValue == cMaxValue ) cValue = cMaxValue;
                 else if ( cValue == 0 ) cValue = 0;
                 else cValue -= cStep;
 
@@ -277,7 +288,7 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
     setOffset ( cStartValue, pTGrpId );
 }
 
-void SCurve::initializeSCurves ( TString pParameter, uint8_t pValue, int  pTGrpId )
+void SCurve::initializeSCurves ( TString pParameter, uint16_t pValue, int  pTGrpId )
 {
     // Just call the initializeHist method of every channel and tell it what we are varying
     for ( auto& cCbc : fCbcChannelMap )
@@ -291,7 +302,7 @@ void SCurve::initializeSCurves ( TString pParameter, uint8_t pValue, int  pTGrpI
     LOG (INFO) << "SCurve Histograms for " << pParameter << " =  " << int ( pValue ) << " initialized!" ;
 }
 
-uint32_t SCurve::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint8_t pValue, int  pTGrpId, bool pDraw )
+uint32_t SCurve::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint16_t pValue, int  pTGrpId, bool pDraw )
 {
     // loop over all FEs on board, check if channels are hit and if so , fill pValue in the histogram of Channel
     uint32_t cHitCounter = 0;

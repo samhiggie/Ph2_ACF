@@ -194,7 +194,7 @@ struct CbcRegIncrementer : public HwDescriptionVisitor
 };
 
 
-struct ThresholdVisitor : public HWDescriptionVisitor
+struct ThresholdVisitor : public HwDescriptionVisitor
 {
     uint16_t fThreshold;
     CbcInterface* fInterface;

@@ -19,7 +19,6 @@ struct HistogramFiller  : public HwDescriptionVisitor
             {
                 uint32_t globalChannel = ( pCbc.getCbcId() * 254 ) + cId;
 
-                //              LOG (INFO) << "Channel " << globalChannel << " VCth " << int(pCbc.getReg( "VCth" )) << std::endl;
                 // find out why histograms are not filling!
                 if ( globalChannel % 2 == 0 )
                     fBotHist->Fill ( globalChannel / 2 );
@@ -84,9 +83,9 @@ void ShortFinder::ReconfigureRegisters()
         fBeBoardInterface->CbcFastReset ( cBoard );
     }
 }
-void ShortFinder::ConfigureVcth (uint8_t pVcth)
+void ShortFinder::ConfigureVcth (uint16_t pVcth)
 {
-    CbcRegWriter cWriter ( fCbcInterface, "VCth", pVcth );
+    ThresholdVisitor cWriter ( fCbcInterface, pVcth );
     accept ( cWriter );
 }
 
@@ -292,9 +291,6 @@ void ShortFinder::SetBeBoard (BeBoard* pBoard)
 
     cRegVec.push_back ( std::make_pair ( "TestPulsePot", 0xF0 ) );
 
-    //cRegVec.push_back ( std::make_pair ( "VCth", 0x90 ) );
-
-    //cRegVec.push_back ( std::make_pair ( "TriggerLatency", 0x01 ) );
 
     CbcMultiRegWriter cMultiWriter ( fCbcInterface, cRegVec );
     this->accept ( cMultiWriter );
@@ -302,6 +298,7 @@ void ShortFinder::SetBeBoard (BeBoard* pBoard)
     //edit G.A: in order to be compatible with CBC3 (9 bit trigger latency) the recommended method is this:
     LatencyVisitor cLatencyVisitor (fCbcInterface, 0x01);
     this->accept (cLatencyVisitor);
+    //same for Threshold
     ThresholdVisitor cThresholdVisitor (fCbcInterface, 0x90);
     this->accept (cThresholdVisitor);
 }
@@ -340,8 +337,9 @@ void ShortFinder::FindShorts (std::ostream& os )
     Short cGroundedChannel;
     ShortsList cGroundedChannelsList;
 
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
-    accept ( cReader );
+    //in read mode
+    ThresholdVisitor cVisitor (fCbcInterface);
+    accept (cVisitor);
     fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
     fHistBottom->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
 
