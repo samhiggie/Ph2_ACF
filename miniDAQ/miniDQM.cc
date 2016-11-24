@@ -48,14 +48,21 @@ void tokenize ( const std::string& str, std::vector<std::string>& tokens, const 
 
 void dumpEvents ( const std::vector<Event*>& elist, size_t evt_limit )
 {
-  for ( int i = 0; i < min(elist.size(), evt_limit); i++ )
+    for ( int i = 0; i < min (elist.size(), evt_limit); i++ )
     {
-        std::cout << "Event index: " << i + 1 << std::endl;
-        std::cout << *elist[i] << std::endl;
+        LOG (INFO) << "Event index: " << i + 1 << std::endl;
+        std::stringstream outp;
+        outp << *elist[i] << std::endl;
+        LOG (INFO) << outp.str();
     }
 }
+
 int main ( int argc, char* argv[] )
 {
+    //configure the logger
+    el::Configurations conf ("settings/logger.conf");
+    el::Loggers::reconfigureAllLoggers (conf);
+
     ArgvParser cmd;
 
     // init
@@ -107,7 +114,7 @@ int main ( int argc, char* argv[] )
 
     if ( result != ArgvParser::NoParserError )
     {
-        std::cout << cmd.parseErrorDescription ( result ) << std::endl;
+        LOG (INFO) << cmd.parseErrorDescription ( result );
         exit ( 1 );
     }
 
@@ -116,14 +123,14 @@ int main ( int argc, char* argv[] )
 
     if ( rawFilename.empty() )
     {
-        std::cerr << "Error, no binary file provided. Quitting" << std::endl;
+        LOG (ERROR) << "Error, no binary file provided. Quitting" ;
         exit ( 2 );
     }
 
     // Check if the file can be found
     if ( ! boost::filesystem::exists ( rawFilename ) )
     {
-        std::cerr << "Error!! binary file " << rawFilename << " not found, exiting!" << std::endl;
+        LOG (ERROR) << "Error!! binary file " << rawFilename << " not found, exiting!";
         exit ( 3 );
     }
 
@@ -131,7 +138,7 @@ int main ( int argc, char* argv[] )
 
     if ( cbcTypeEvtSizeMap.find ( cbcType ) == cbcTypeEvtSizeMap.end()  )
     {
-        std::cerr << "Wrong CBC type specified!!!!" << std::endl;
+        LOG (ERROR) << "Wrong CBC type specified!!!!";
         exit ( 4 );
     }
 
@@ -144,20 +151,21 @@ int main ( int argc, char* argv[] )
     int maxevt     = ( cmd.foundOption ( "nevt" ) ) ? stoi (cmd.optionValue ( "nevt" ) ) : 100000;
     bool skipHist  = ( cmd.foundOption ( "skipDebugHist" ) ) ? true : false;
 
-
     // Create the Histogrammer object
     DQMHistogrammer* dqmh = new DQMHistogrammer (addTree, ncol, evtFilter, skipHist);
-
     // Add File handler
     dqmh->addFileHandler ( rawFilename, 'r' );
-
     // Build the hardware setup
     std::string cHWFile = getenv ( "BASE_DIR" );
     cHWFile += "/";
     cHWFile += cbcTypeEvtSizeMap[cbcType].second;
 
-    std::cout << "HWfile=" << cHWFile << std::endl;
-    dqmh->InitializeHw ( cHWFile );
+    LOG (INFO) << "HWfile=" << cHWFile;
+    //dqmh->parseHWxml ( cHWFile );
+    std::ofstream outp;
+    dqmh->InitializeHw ( cHWFile, outp );
+    LOG (INFO) << outp;
+    //dqmh->fParser.parseHW (cHWFile, fBeBoardFWMap, fBoardVector, os);
     const BeBoard* pBoard = dqmh->getBoard ( 0 );
 
     // Read the first event from the raw data file, needed to retrieve the event map
@@ -169,7 +177,7 @@ int main ( int argc, char* argv[] )
     int nEvents = dataVec.size() / eventSize;
 
     Data d;
-    // call the Data::set() method - here is where i have to know the swap opitions
+    //call the Data::set() method - here is where i have to know the swap opitions
     d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
     const std::vector<Event*>& elist = d.GetEvents ( pBoard );
 
@@ -181,6 +189,7 @@ int main ( int argc, char* argv[] )
         // now read the whole file in chunks of maxevt
         dqmh->getFileHandler()->rewind();
         long ntotevt = 0;
+
         while ( 1 )
         {
             dataVec.clear();
@@ -193,10 +202,9 @@ int main ( int argc, char* argv[] )
             const std::vector<Event*>& evlist = d.GetEvents ( pBoard );
             dqmh->fillHistos (evlist, ntotevt, eventSize);
             ntotevt += nEvents;
-            std::cout << "eventSize = "  << eventSize
-                      << ", eventsRead = " << nEvents
-                      << ", totalEventsRead = " << ntotevt
-                      << std::endl;
+            LOG (INFO) << "eventSize = "  << eventSize
+                       << ", eventsRead = " << nEvents
+                       << ", totalEventsRead = " << ntotevt;
 
             if ( !dqmh->getFileHandler()->file_open() ) break;
         }
@@ -222,15 +230,16 @@ int main ( int argc, char* argv[] )
         {
             cDirBasePath = cmd.optionValue ( "output" );
             cDirBasePath += "/";
+
         }
         else cDirBasePath = "Results/";
 
         // now read back the Root file and publish the histograms on the DQM page
         RootWeb::makeDQMmonitor ( dqmFilename, cDirBasePath, runLabel );
-        std::cout << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath << std::endl;
+        LOG (INFO) << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath ;
     }
 
-    else dumpEvents ( elist, maxevt );
+    else dumpEvents ( elist );
 
     delete dqmh;
     return 0;
