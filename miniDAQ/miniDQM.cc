@@ -24,6 +24,7 @@ using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
 using namespace CommandLineProcessing;
+INITIALIZE_EASYLOGGINGPP
 
 void tokenize ( const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters )
 {
@@ -50,10 +51,10 @@ void dumpEvents ( const std::vector<Event*>& elist, size_t evt_limit )
 {
     for ( int i = 0; i < min (elist.size(), evt_limit); i++ )
     {
-        LOG (INFO) << "Event index: " << i + 1 << std::endl;
+        //LOG (INFO) << "Event index: " << i + 1 << std::endl;
         std::stringstream outp;
         outp << *elist[i] << std::endl;
-        LOG (INFO) << outp.str();
+        //LOG (INFO) << outp.str();
     }
 }
 
@@ -239,7 +240,7 @@ int main ( int argc, char* argv[] )
         LOG (INFO) << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath ;
     }
 
-    else dumpEvents ( elist );
+    else dumpEvents ( elist, maxevt );
 
     delete dqmh;
     return 0;

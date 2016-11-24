@@ -12,6 +12,7 @@
 #define __DQMHISTOGRAMMER_H__
 
 #include "../tools/Tool.h"
+#include "../Utils/easylogging++.h"
 
 #include <vector>
 #include <string>
