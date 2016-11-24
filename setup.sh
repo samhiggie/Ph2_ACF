@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export CBCDAQ=$HOME/CBCDAQ
+
 #CACTUS
 export CACTUSBIN=/opt/cactus/bin
 export CACTUSLIB=/opt/cactus/lib

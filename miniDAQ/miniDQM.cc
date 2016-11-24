@@ -46,15 +46,14 @@ void tokenize ( const std::string& str, std::vector<std::string>& tokens, const 
     }
 }
 
-void dumpEvents ( const std::vector<Event*>& elist )
+void dumpEvents ( const std::vector<Event*>& elist, size_t evt_limit )
 {
-    for ( int i = 0; i < elist.size(); i++ )
+  for ( int i = 0; i < min(elist.size(), evt_limit); i++ )
     {
         std::cout << "Event index: " << i + 1 << std::endl;
         std::cout << *elist[i] << std::endl;
     }
 }
-
 int main ( int argc, char* argv[] )
 {
     ArgvParser cmd;
@@ -145,19 +144,20 @@ int main ( int argc, char* argv[] )
     int maxevt     = ( cmd.foundOption ( "nevt" ) ) ? stoi (cmd.optionValue ( "nevt" ) ) : 100000;
     bool skipHist  = ( cmd.foundOption ( "skipDebugHist" ) ) ? true : false;
 
+
     // Create the Histogrammer object
     DQMHistogrammer* dqmh = new DQMHistogrammer (addTree, ncol, evtFilter, skipHist);
+
     // Add File handler
     dqmh->addFileHandler ( rawFilename, 'r' );
+
     // Build the hardware setup
     std::string cHWFile = getenv ( "BASE_DIR" );
     cHWFile += "/";
     cHWFile += cbcTypeEvtSizeMap[cbcType].second;
 
     std::cout << "HWfile=" << cHWFile << std::endl;
-    //dqmh->parseHWxml ( cHWFile );
     dqmh->InitializeHw ( cHWFile );
-    //dqmh->fParser.parseHW (cHWFile, fBeBoardFWMap, fBoardVector, os);
     const BeBoard* pBoard = dqmh->getBoard ( 0 );
 
     // Read the first event from the raw data file, needed to retrieve the event map
@@ -169,7 +169,7 @@ int main ( int argc, char* argv[] )
     int nEvents = dataVec.size() / eventSize;
 
     Data d;
-    //call the Data::set() method - here is where i have to know the swap opitions
+    // call the Data::set() method - here is where i have to know the swap opitions
     d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
     const std::vector<Event*>& elist = d.GetEvents ( pBoard );
 
@@ -181,7 +181,6 @@ int main ( int argc, char* argv[] )
         // now read the whole file in chunks of maxevt
         dqmh->getFileHandler()->rewind();
         long ntotevt = 0;
-
         while ( 1 )
         {
             dataVec.clear();
@@ -192,7 +191,7 @@ int main ( int argc, char* argv[] )
 
             d.Set ( pBoard, dataVec, nEvents, cReverse, cSwap );
             const std::vector<Event*>& evlist = d.GetEvents ( pBoard );
-            dqmh->fillHistos (evlist, ntotevt);
+            dqmh->fillHistos (evlist, ntotevt, eventSize);
             ntotevt += nEvents;
             std::cout << "eventSize = "  << eventSize
                       << ", eventsRead = " << nEvents
@@ -223,7 +222,6 @@ int main ( int argc, char* argv[] )
         {
             cDirBasePath = cmd.optionValue ( "output" );
             cDirBasePath += "/";
-
         }
         else cDirBasePath = "Results/";
 
@@ -232,7 +230,7 @@ int main ( int argc, char* argv[] )
         std::cout << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath << std::endl;
     }
 
-    else dumpEvents ( elist );
+    else dumpEvents ( elist, maxevt );
 
     delete dqmh;
     return 0;
