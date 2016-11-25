@@ -145,3 +145,7 @@
     - revised mapping of Events vs CBC and FE
     - merged most recent AMC13 code from Pixel Phase 1 developments
 - 24.10.2016: added easylogging++ class for convenient log file creation and different logging levels
+- 28.10.2016: merged recent changes for HybridTesting (integratedtester)
+    - new binary: integratedtester
+    - support for exernal USB instruments (HMP4040, Ke2110, TCP sockets via ZEROMQ)
+- 31.10.2016: changed makefiles to use environment variables exported in setup.sh
