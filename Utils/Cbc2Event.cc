@@ -126,7 +126,7 @@ namespace Ph2_HwInterface {
             os << std::setw (8) << cbcData.at (i);
 
         //the last word with only 8 bits
-        os << std::setw (2) << ( (cbcData.at (8) & 0xFF000000) >> 24) << ;
+        os << std::setw (2) << ( (cbcData.at (8) & 0xFF000000) >> 24);
 
         os.copyfmt (oldState);
 
