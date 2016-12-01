@@ -127,6 +127,8 @@ namespace Ph2_HwInterface {
     {
         std::stringbuf tmp;
         std::ostream os ( &tmp );
+        std::ios oldState (nullptr);
+        oldState.copyfmt (os);
         os << std::hex << std::setfill ('0');
 
         //get the CBC event for pFeId and pCbcId into vector<32bit> cbcData
@@ -141,7 +143,8 @@ namespace Ph2_HwInterface {
             os << std::setw (8) << cbcData.at (i);
 
         //the last word with only 4 bits
-        os << std::setw (2) << (cbcData.at (2) & 0xF0000000);
+        os << std::setw (2) << ( (cbcData.at (2) & 0xF0000000) >> 28);
+        os.copyfmt (oldState);
 
         return tmp.str();
     }

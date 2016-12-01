@@ -115,7 +115,10 @@ namespace Ph2_HwDescription {
             file.close();
         }
         else
+        {
             LOG (ERROR) << "The CBC Settings File " << filename << " could not be opened!" ;
+            exit (1);
+        }
     }
 
 
