@@ -86,6 +86,7 @@ namespace Ph2_HwInterface
 		*/
     		void ModifyPix(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload, uint32_t  pixnum );
 
+		std::pair<std::vector<uint32_t>, std::vector<uint32_t>> ReadMPAData(int buffer_num, int mpa);
 		/*!
 		* \format the raw data output of ReadData to organize into events. Segmented due to processing time 
 		*/
@@ -105,6 +106,8 @@ namespace Ph2_HwInterface
 		* \initializes sequencer (starts daq)
 		*/
 		void SequencerInit(int smode,int sdur,int mem,int ibuff);
+
+		void Cleardata();
 	};
 }
 

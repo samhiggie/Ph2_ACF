@@ -298,13 +298,5 @@ namespace Ph2_HwInterface {
         fBoardFW->ReadVer();
     }
 
-      std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  BeBoardInterface::ReadData( BeBoard* pBoard, 
-                     int buffernum, int mpa)
-    {
-        setBoard( pBoard->getBeBoardIdentifier() );
-        std::pair<std::vector<uint32_t>, std::vector<uint32_t>> rval = fBoardFW->ReadData(buffernum,mpa);
-        return rval;    
-    }
-
 
 }

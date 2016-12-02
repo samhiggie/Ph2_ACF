@@ -733,10 +733,6 @@ namespace Ph2_HwInterface {
             return false;
     }
 
-    std::pair<std::vector<uint32_t>, std::vector<uint32_t>> ICFc7FWInterface::ReadData(int buffer_num, int mpa)
-    {
-
-    }
 
 
     void ICFc7FWInterface::PowerOn()

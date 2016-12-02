@@ -252,14 +252,6 @@ namespace Ph2_HwInterface {
          virtual void ReadVer()=0;
 
 
-         /*!
-          * Returns data from buffernum and mpa.  Raw register output.
-          */
-
-         virtual std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadData(int buffernum, int mpa)=0;  
-
-
-
         virtual BoardType getBoardType() const = 0;
         /*! \brief Reboot the board */
         virtual void RebootBoard() = 0;

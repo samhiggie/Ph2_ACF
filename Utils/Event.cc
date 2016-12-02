@@ -45,6 +45,8 @@ namespace Ph2_HwInterface {
     {
         fEventSize = pNbCbc *  CBC_EVENT_SIZE_32  + EVENT_HEADER_TDC_SIZE_32;
 
+
+        
         //now decode the header info
         fBunch = 0x00FFFFFF & list.at (0);
         fOrbit = 0x00FFFFFF & list.at (1);
@@ -57,11 +59,16 @@ namespace Ph2_HwInterface {
         //now decode FEEvents
         uint8_t cBeId = pBoard->getBeId();
         uint32_t cNFe = static_cast<uint32_t> ( pBoard->getNFe() );
+	std::cout <<"A working thing"<< std::endl;
+	std::cout <<cNFe<< std::endl;
+
+        for(int i=0; i<6; ++i)
+            std::cout<< i<<" : "<<(long int) pBoard->getModule ( i )<<std::endl;
 
         for ( uint8_t cFeId = 0; cFeId < cNFe; cFeId++ )
         {
             uint32_t cNCbc;
-
+            uint32_t cNMPA;
             // if the NCbcDataSize in the FW Version node of the BeBoard is set, the DataSize is assumed fixed:
             // if 1 module is defined, the number of CBCs is the datasize given in the xml
             // if more than one module is defined, the number of CBCs for each FE is the datasize divided by the nFe
@@ -73,6 +80,8 @@ namespace Ph2_HwInterface {
             // if there is no FWVersion node in the xml, the CBCs will be counted for each module according to the xml file
             else cNCbc = static_cast<uint32_t> ( pBoard->getModule ( cFeId )->getNCbc() );
 
+            cNMPA = static_cast<uint32_t> ( pBoard->getModule ( cFeId )->getNMPA() );
+
             //now loop the CBCs and encode the IDs in key
             for ( uint8_t cCbcId = 0; cCbcId < cNCbc; cCbcId++ )
             {
@@ -83,8 +92,31 @@ namespace Ph2_HwInterface {
 
                 std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
 
+
+
                 fEventDataMap[cKey] = cCbcData;
             }
+
+
+            for ( uint8_t cMPAId = 0; cMPAId < cNMPA; cMPAId++ )
+            {
+                uint16_t cKey = encodeId (cFeId, cMPAId);
+	    	std::cout<<"Event size Parameters"<<std::endl;
+	    	std::cout<<"Evsize "<<MPA_EVENT_SIZE_32<<std::endl;
+		
+                uint32_t begin = cFeId * MPA_EVENT_SIZE_32 * cNMPA + cMPAId * MPA_EVENT_SIZE_32;
+                uint32_t end = begin + MPA_EVENT_SIZE_32;
+	    	std::cout<<"begin "<<begin<<std::endl;
+	    	std::cout<<"end "<<end<<std::endl;
+
+                std::vector<uint32_t> cMPAData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
+		
+
+
+                fEventDataMap[cKey] = cMPAData;
+            }
+
+
         }
     }
 

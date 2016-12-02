@@ -147,6 +147,9 @@ public:
      * \brief Pause a DAQ
      */
     void Pause() override;
+
+    void Cleardata();
+
     /*!
      * \brief Unpause a DAQ
      */
@@ -158,7 +161,6 @@ public:
      * \return cNPackets: the number of packets read
      */
     uint32_t ReadData( BeBoard* pBoard, bool pBreakTrigger ) override;
-    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>   ReadData( BeBoard* pBoard, int buffernum, int mpa);
     /*!
      * \brief Get next event from data buffer
      * \return Next event
@@ -270,7 +272,7 @@ public:
     void PowerOff() override;
     void TestbeamInit(int clock, int phase);
     void StrobeSettings(int snum, int sdel, int slen, int sdist, int cal);
-    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadData(int buffernum, int mpa);
+    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadMPAData(int buffernum, int mpa);
     void SequencerInit(int smode,int sdur,int mem,int ibuff);
     void upload(std::vector< uint32_t > *conf_upload, int conf, int nmpa);
     void write(int nummpa);

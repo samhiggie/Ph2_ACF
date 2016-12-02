@@ -295,7 +295,6 @@ namespace Ph2_HwInterface {
         void ReadVer() override;
         void PowerOn() override;
         void PowerOff() override;
-        std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadData(int buffernum, int mpa);
 
     };
 }

@@ -10,6 +10,7 @@ export BOOST_LIB=/opt/cactus/lib
 export BOOST_INCLUDE=/opt/cactus/include
 
 #ROOT
+source /usr/local/products/root/v6_06_04a/Linux64bit+2.6-2.12-e10-prof/bin/thisroot.sh
 #source /usr/local/bin/thisroot.sh
 
 #Ph2_ACF

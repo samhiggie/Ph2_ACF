@@ -10,6 +10,7 @@
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
+#include "../HWDescription/FrontEndDescription.h"
 //#include "../tools/Calibration.h"
 #include "../Utils/Timer.h"
 //#include <TApplication.h>
@@ -50,9 +51,36 @@ int main( int argc, char* argv[] )
 	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
 
 	SystemController mysyscontroller;
+	std::cout << "\nInitHW";
 	mysyscontroller.InitializeHw( cHWFile );
+	std::cout << "\nMPAI";
         MPAInterface* fMPAInterface = mysyscontroller.fMPAInterface; 
+	std::cout << "\nBOARD";
 	BeBoard* pBoard = mysyscontroller.fBoardVector.at( 0 );
+	
+        std::vector < MPA* > fMPAVector;
+
+ 
+
+
+	uint8_t pBeId = 0;
+	uint8_t pFMCId = 0;
+	uint8_t pFeId = 0;
+	uint8_t pMPAId = 1;
+	Module* MAPSA = new Module( pBeId, pFMCId, pFeId, 0 ); 
+
+ 	//MPA *mpa1 = new MPA(pBeId, pFMCId, pFeId, pMPAId) ;
+	//MAPSA->addMPA(mpa1);
+
+	for (int i=0;i<6;i++)
+		MAPSA->addMPA(new MPA(pBeId, pFMCId, pFeId, i));
+
+	//std::cout << "\n"<<MAPSA->getNMPA();
+	pBoard->addModule(MAPSA);
+
+	
+
+
 	std::cout << "\nExecuting POWER ON...";
 	mysyscontroller.fBeBoardInterface->PowerOn(pBoard);
 	std::cout << "\nFirmware version: "; 
@@ -64,7 +92,7 @@ int main( int argc, char* argv[] )
 
 		std::this_thread::sleep_for( cWait );
 
-		confs.push_back(fMPAInterface->ReadConfig("testing", i+1, 1));
+		confs.push_back(fMPAInterface->ReadConfig("calibrated", i+1, 1));
 		fMPAInterface->HeaderInitMPA(i+1);
 
 		std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod1({"THDAC"},{60});
@@ -83,7 +111,7 @@ int main( int argc, char* argv[] )
 
 
 
-	for(int q=0;q<=140;q++)
+	for(int q=60;q<=61;q++)
 	{
 	std::cout<<"\n--------------------------------------\n "<<std::endl;
 
@@ -92,12 +120,15 @@ int main( int argc, char* argv[] )
 	std::this_thread::sleep_for( cWait );
 	fMPAInterface->SequencerInit(0,300000,1,0);
 
-
+	fMPAInterface->Cleardata();
 	for(int i=0;i<=5;i++)
 	{
-
+		
 		std::cout<<"\nReading MPA: "<<i<<std::endl;
-		std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = mysyscontroller.fBeBoardInterface->ReadData(pBoard, 1,i+1);
+
+		std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(1,i+1);
+
+
 
 		std::pair<std::vector<uint32_t>, std::vector<std::string>> formdata = fMPAInterface->FormatData(returndata);
 		std::vector<uint32_t> counts = formdata.first;
@@ -122,7 +153,29 @@ int main( int argc, char* argv[] )
 		fMPAInterface->ModifyPerif(mod1,&confs[i]);
 		fMPAInterface->ConfigureMPA(&confs[i],1, i+1);
 	}
+
+        uint32_t PacketSize = mysyscontroller.fBeBoardInterface->ReadData ( pBoard, false );
+
+        const std::vector<Event*>* pEvents ;
+        pEvents = &mysyscontroller.GetEvents ( pBoard );
+
+	const EventDataMap &EDM =(pEvents->at(0))->GetEventDataMap();
+	for (auto &ev: EDM)
+		{
+			std::cout<<ev.first<<std::endl;
+			int iic = 0;
+                        for( auto &vv : ev.second) {
+		    	      std::bitset<32> p(vv);
+
+                              std::cout<<iic++<<"  "<<p.to_string()<<std::endl;
+                        }
+		}
+
+	std::cout<<PacketSize<<std::endl;
+
 	fMPAInterface->SendConfig(6);
+
+
 
 
 	}

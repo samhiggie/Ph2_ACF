@@ -654,7 +654,7 @@ void HybridTester::TestRegisters()
 
         void dumpResult ( std::string fDirectoryName )
         {
-            ofstream report ( fDirectoryName + "/registers_test.txt" ); // Creates a file in the current directory
+            std::ofstream report ( fDirectoryName + "/registers_test.txt" ); // Creates a file in the current directory
             report << "Testing Cbc Registers one-by-one with complimentary bit-patterns (0xAA, 0x55)" << std::endl;
 
             for ( const auto& cCbc : fBadRegisters )
@@ -1215,12 +1215,12 @@ void HybridTester::AntennaScan()
 void HybridTester::SaveTestingResults (std::string pHybridId)
 {
 
-    ifstream infile;
+    std::ifstream infile;
     std::string line_buffer;
     std::string content_buffer;
     std::string date_string = currentDateTime();
     std::string filename = "Results/HybridTestingDatabase/Hybrid_ID" + pHybridId + "_on" + date_string + ".txt";
-    ofstream myfile;
+    std::ofstream myfile;
     myfile.open ( filename.c_str() );
     myfile << "Hybrid ID: " << pHybridId << std::endl;
     myfile << "Created on: " << date_string << std::endl << std::endl;

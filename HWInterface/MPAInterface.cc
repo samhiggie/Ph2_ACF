@@ -89,7 +89,20 @@ void MPAInterface::SequencerInit(int smode,int sdur,int mem,int ibuff)
 }
 
 
+std::pair<std::vector<uint32_t>, std::vector<uint32_t>> MPAInterface::ReadMPAData(int buffer_num, int mpa)
+{
+	setBoard(0);
+	fMPAFW->HeaderInitMPA( mpa );
+	return fMPAFW->ReadMPAData(buffer_num, mpa);
+}
 
+
+
+void MPAInterface::Cleardata()
+{
+	setBoard(0);
+	fMPAFW->Cleardata( );
+}
 
 
 

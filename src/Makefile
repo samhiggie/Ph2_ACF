@@ -104,49 +104,8 @@ print:
 	@echo 'ZeroMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
 
-integratedtester: integratedtester.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
-systemtest: systemtest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
-calibrate: calibrate.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
-datatest: datatest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
 rtest: rtest.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
-
-configure: configure.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
-hybridtest: hybridtest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
-cmtest: cmtest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
-commission: commission.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
-fpgaconfig: fpgaconfig.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
-pulseshape: pulseshape.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
 clean:
 	rm -f $(binaries) *.o

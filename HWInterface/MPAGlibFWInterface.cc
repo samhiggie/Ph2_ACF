@@ -22,7 +22,7 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
 		fpgaConfig( nullptr ),
 		fData( nullptr ),
-     		curData( nullptr )
+     		curData( new std::vector<uint32_t> ),
 	{}
 
 
@@ -30,7 +30,7 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
 		fpgaConfig( nullptr ),
 		fData( nullptr ),
-     		curData( nullptr )
+     		curData( new std::vector<uint32_t> ),
 		fFileHandler( pFileHandler )
 	{
 		if ( fFileHandler == nullptr ) fSaveToFile = false;
@@ -41,7 +41,7 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface( pId, pUri, pAddressTable ),
 		fpgaConfig( nullptr ),
 		fData( nullptr ),
-     		curData( nullptr )
+     		curData( new std::vector<uint32_t> )
 	{}
 
 
@@ -49,7 +49,7 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface( pId, pUri, pAddressTable ),
 		fpgaConfig( nullptr ),
 		fData( nullptr ),
-     		curData( nullptr ),
+     		curData( new std::vector<uint32_t> ),
 		fFileHandler( pFileHandler )
 	{
 		if ( fFileHandler == nullptr ) fSaveToFile = false;
@@ -108,18 +108,17 @@ namespace Ph2_HwInterface
 	{
 
         if ( fData ) delete fData;
-	fNpackets = 5
+	fNpackets = 1;
 
-	
-	ReadMPAData(int buffer_num, int mpa)
+
         fData = new Data();
 
         // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, curData , fNpackets, false );
+        fData->Set ( pBoard, *curData , fNpackets, false );
 
         if ( fSaveToFile )
         {
-            fFileHandler->set ( curData );
+            fFileHandler->set ( *curData );
             fFileHandler->writeFile();
         }
 
@@ -146,11 +145,23 @@ namespace Ph2_HwInterface
 
 
 	    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata(counterdata,memorydata);
-	    curData->insert( curData.end(), counterdata.begin(), counterdata.end() );
-	    curData->insert( curData.end(), memorydata.begin(), memorydata.end() );
+
+	    curData->insert( curData->end(), counterdata.begin()+1, counterdata.end() );
+	    curData->insert( curData->end(), memorydata.begin(), memorydata.end() );
+
+            for( auto &vv : *curData) 
+			{
+		    	      std::bitset<32> p(vv);
+                              std::cout<<"  "<<p.to_string()<<std::endl;
+                        }
+
+	    std::cout<<curData->size()<<std::endl;
+
 	    return returndata;
 
 	  }
+
+
 
 
 	    /** compute the block size according to the number of CBC's on this board
@@ -363,6 +374,12 @@ namespace Ph2_HwInterface
 
 	    targ = "Control.trigger_offset_MPA.buffer_" + std::to_string(buffer_num);  
 	    std::vector<uint32_t> rData2 =  ReadBlockRegValue( targ, 255 );
+	    curData->push_back(total_trigs);
+	    curData->push_back(trigger_total_counter);
+	    curData->push_back(trigger_counter);
+	    curData->insert( curData->end(), rData.begin(), rData.end() );
+	    curData->insert( curData->end(), rData2.begin(), rData2.end() );
+
 
 	  }
 

@@ -64,6 +64,7 @@ namespace Ph2_HwInterface {
         uint32_t fEventCount;           /*!< Event Counter */
         uint32_t fEventCountCBC;        /*!< Cbc Event Counter */
         uint32_t fTDC;                  /*!< TDC value*/
+        uint32_t fTrigCountShutter;                  /*!< TrigCountShutter value*/
 
         //std::vector<uint8_t> fEventData;
         //std::vector<uint32_t> fEventData;

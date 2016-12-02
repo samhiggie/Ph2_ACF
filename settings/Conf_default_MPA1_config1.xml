@@ -7,7 +7,7 @@
 	<SH2>0</SH2>
 	<SH1>0</SH1>
 	<CALDAC>15</CALDAC>
-	<THDAC>50</THDAC>
+	<THDAC>33</THDAC>
     </periphery>
     <pixel n="1">
 	<PML>1</PML>   

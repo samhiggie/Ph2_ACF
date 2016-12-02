@@ -778,10 +778,7 @@ namespace Ph2_HwInterface {
     {
         WriteReg ( "pc_commands2.force_BG0_start", bStart ? 1 : 0);
     }
-    std::pair<std::vector<uint32_t>, std::vector<uint32_t>> GlibFWInterface::ReadData(int buffer_num, int mpa)
-    {
 
-    }
 
 
     void GlibFWInterface::PowerOn()

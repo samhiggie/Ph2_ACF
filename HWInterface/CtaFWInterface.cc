@@ -888,12 +888,6 @@ namespace Ph2_HwInterface {
 
 
 
-    std::pair<std::vector<uint32_t>, std::vector<uint32_t>> CtaFWInterface::ReadData(int buffer_num, int mpa)
-    {
-
-    }
-
-
     void CtaFWInterface::PowerOn()
     {
 
