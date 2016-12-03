@@ -81,19 +81,21 @@ int main( int argc, char* argv[] )
 	
 
 
+
 	std::cout << "\nExecuting POWER ON...";
 	mysyscontroller.fBeBoardInterface->PowerOn(pBoard);
 	std::cout << "\nFirmware version: "; 
 	mysyscontroller.fBeBoardInterface->ReadVer(pBoard);
 	std::chrono::milliseconds cWait( 10 );
 	std::vector<std::vector< uint32_t >> confs;
+
 	for(int i=0;i<=5;i++)
 	{
 
 		std::this_thread::sleep_for( cWait );
 
 		confs.push_back(fMPAInterface->ReadConfig("calibrated", i+1, 1));
-		fMPAInterface->HeaderInitMPA(i+1);
+
 
 		std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod1({"THDAC"},{60});
 		fMPAInterface->ModifyPerif(mod1,&confs[i]);
@@ -109,34 +111,56 @@ int main( int argc, char* argv[] )
 	fMPAInterface->SendConfig(6);
 	std::chrono::milliseconds cWait1( 100 );//
 
+	int ibuffer = 1;
+	bool Kill=false;
 
 
-	for(int q=60;q<=61;q++)
+
+
+	fMPAInterface->TestbeamInit(0, 0);
+
+	std::cout<<"Clearing buffers"<<std::endl;
+	for(int k=1;k<=4;k++)
+		{
+		for(int j=1;j<=6;j++)
+			{
+				fMPAInterface->HeaderInitMPA(j);
+				std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(k,j);
+			}
+		fMPAInterface->ReadTrig(k);
+		}
+	fMPAInterface->Cleardata();
+
+	int spill = 0;
+	int tempspill = 0;
+	int nev = 0;
+	while (not Kill)
 	{
-	std::cout<<"\n--------------------------------------\n "<<std::endl;
 
-	std::cout<<"Threshold: "<<q<<std::endl;
-
-	std::this_thread::sleep_for( cWait );
-	fMPAInterface->SequencerInit(0,300000,1,0);
+        //string s;
+        //getline(cin, s) ;
+	//std::cout<<s<<std:::endl;
+        //if ( s.length() == 0 )
+          //  break ;
+	tempspill=spill;
+	spill+=fMPAInterface->WaitTestbeam();
+	if (tempspill!=spill) std::cout<<"Starting Spill "<<spill<<std::endl;
 
 	fMPAInterface->Cleardata();
+	fMPAInterface->ReadTrig(ibuffer);
 	for(int i=0;i<=5;i++)
 	{
 		
-		std::cout<<"\nReading MPA: "<<i<<std::endl;
+
 
 		std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(1,i+1);
+		/*std::pair<std::vector<uint32_t>, std::vector<std::string>> formdata = fMPAInterface->FormatData(returndata);
 
-
-
-		std::pair<std::vector<uint32_t>, std::vector<std::string>> formdata = fMPAInterface->FormatData(returndata);
 		std::vector<uint32_t> counts = formdata.first;
 
 		int totalcount = 0;
 		for (int j=0;j<counts.size();j++)	totalcount+=counts[j];
 
-		std::cout<<"Total Counts: "<<totalcount<<std::endl;
 		std::pair<std::vector<uint32_t>, std::vector<uint64_t>> readmem = fMPAInterface->ReadMemory(formdata.second, 3);
 
 		std::vector<uint32_t> bx = readmem.first;
@@ -152,12 +176,52 @@ int main( int argc, char* argv[] )
 		std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod1({"THDAC"},{q});
 		fMPAInterface->ModifyPerif(mod1,&confs[i]);
 		fMPAInterface->ConfigureMPA(&confs[i],1, i+1);
+		*/
 	}
 
-        uint32_t PacketSize = mysyscontroller.fBeBoardInterface->ReadData ( pBoard, false );
 
+	ibuffer+=1;
+	if (ibuffer >4) ibuffer=1 ;
+
+
+
+
+        uint32_t PacketSize = mysyscontroller.fBeBoardInterface->ReadData ( pBoard, false );
+	
         const std::vector<Event*>* pEvents ;
         pEvents = &mysyscontroller.GetEvents ( pBoard );
+
+
+	/*
+        uint32_t total_trigs = (pEvents->at(0))->Gettotal_trigs();
+        uint32_t trigger_total_counter = (pEvents->at(0))->Gettrigger_total_counter();
+        uint32_t trigger_counter = (pEvents->at(0))->Gettrigger_counter() ;
+	std::vector<uint32_t> trigger_offset_BEAM = (pEvents->at(0))->Gettrigger_offset_BEAM() ;
+	std::vector<uint32_t> trigger_offset_MPA =(pEvents->at(0))->Gettrigger_offset_MPA() ;
+
+	std::cout<<"trigger counter"<<std::endl;
+	std::cout<<trigger_counter<<std::endl;
+	std::cout<<"trigger total counter"<<std::endl;
+        std::cout<<trigger_total_counter<<std::endl;
+	std::cout<<"trigger_offset_BEAM"<<std::endl;
+	int iic1 = 0;
+        for( auto &vv : trigger_offset_BEAM) 
+		{
+
+		std::bitset<32> p(vv);
+		std::cout<<iic1++<<"  "<<p.to_string()<<std::endl;
+                }
+
+	std::cout<<"trigger_offset_MPA"<<std::endl;
+	int iic2 = 0;
+        for( auto &vv : trigger_offset_MPA) 
+		{
+
+		std::bitset<32> p(vv);
+		std::cout<<iic2++<<"  "<<p.to_string()<<std::endl;
+                }
+
+
 
 	const EventDataMap &EDM =(pEvents->at(0))->GetEventDataMap();
 	for (auto &ev: EDM)
@@ -172,12 +236,9 @@ int main( int argc, char* argv[] )
 		}
 
 	std::cout<<PacketSize<<std::endl;
-
-	fMPAInterface->SendConfig(6);
-
-
-
-
+	*/
+	nev+=1;
+	std::cout<<nev<<" Events"<<std::endl;
 	}
 
 }

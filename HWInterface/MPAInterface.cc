@@ -82,6 +82,16 @@ void MPAInterface::SendConfig(int nummpa)
 
 
 
+
+int MPAInterface::WaitTestbeam()
+{
+	setBoard(0);
+	return fMPAFW->WaitTestbeam();
+}
+
+
+
+
 void MPAInterface::SequencerInit(int smode,int sdur,int mem,int ibuff)
 {
 	setBoard(0);
@@ -89,11 +99,26 @@ void MPAInterface::SequencerInit(int smode,int sdur,int mem,int ibuff)
 }
 
 
+void MPAInterface::TestbeamInit(int clock, int phase)
+{
+	setBoard(0);
+	fMPAFW->TestbeamInit(clock, phase);
+}
+
+
+
 std::pair<std::vector<uint32_t>, std::vector<uint32_t>> MPAInterface::ReadMPAData(int buffer_num, int mpa)
 {
 	setBoard(0);
 	fMPAFW->HeaderInitMPA( mpa );
 	return fMPAFW->ReadMPAData(buffer_num, mpa);
+}
+
+
+void MPAInterface::ReadTrig(int buffer_num)
+{
+	setBoard(0);
+	return fMPAFW->ReadTrig(buffer_num);
 }
 
 

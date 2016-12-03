@@ -22,7 +22,7 @@ namespace Ph2_HwInterface
 		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
 		fpgaConfig( nullptr ),
 		fData( nullptr ),
-     		curData( new std::vector<uint32_t> ),
+     		curData( new std::vector<uint32_t> )
 	{}
 
 
@@ -140,22 +140,14 @@ namespace Ph2_HwInterface
 	    targ = targ + ".buffer_" + std::to_string(buffer_num);
 	    std::vector<uint32_t> memorydata =  ReadBlockRegValue( targ, 216 );
 
-	    if (counterdata[0]!=(0xFFFFFFF0 + mpa))
-		std::cout<<"Warning, header mismatch"<<std::endl;
+	   // if (counterdata[0]!=(0xFFFFFFF0 + mpa))
+		//std::cout<<"Warning, header mismatch"<<std::endl;
 
 
 	    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata(counterdata,memorydata);
 
 	    curData->insert( curData->end(), counterdata.begin()+1, counterdata.end() );
 	    curData->insert( curData->end(), memorydata.begin(), memorydata.end() );
-
-            for( auto &vv : *curData) 
-			{
-		    	      std::bitset<32> p(vv);
-                              std::cout<<"  "<<p.to_string()<<std::endl;
-                        }
-
-	    std::cout<<curData->size()<<std::endl;
 
 	    return returndata;
 
@@ -331,6 +323,7 @@ namespace Ph2_HwInterface
 
 	int MPAGlibFWInterface::WaitTestbeam()
 	  {
+	    int returnval = 0;
 	    int i=0;
 
  	    uhal::ValWord<uint32_t> buffers_num;
@@ -339,50 +332,68 @@ namespace Ph2_HwInterface
 	    while (buffers_num >= 4)
 	      {
 		buffers_num = ReadReg("Control.Sequencer.buffers_num");
-		std::this_thread::sleep_for( cWait );
 		i++;
-		if (i > 100) {
-		  std::cout<<"WaitTestbeam Timeout\n";
-		  return 0;
-		}
+		if (i % 20000==0) 
+			{
+		  		std::cout<<"Waiting for Spill: "<<i/10000<<" seconds"<<std::endl;
+			}
+		if (i == 30000) 
+			{
+				returnval=1;
+			}
 	      }
-	    return 1;
+	    return returnval;
 	  }
 
 
 
 
-	void MPAGlibFWInterface::ReadTrig(int buffer_num)
-	  {
-	    int total_trigs = -1;
-	    int trigger_counter = -1;
-	    int trigger_total_counter = -1;
-	    int Offset_BEAM = -1;
-	    int Offset_MPA = -1;
-	    std::string targ;
+       void MPAGlibFWInterface::ReadTrig(int buffer_num)
+          {
+            int total_trigs = -1;
+            int trigger_counter = -1;
+            int trigger_total_counter = -1;
+            int Offset_BEAM = -1;
+            int Offset_MPA = -1;
+            std::string targ;
 
-	    total_trigs = ReadReg("Control.total_triggers");
+            total_trigs = ReadReg("Control.total_triggers");
 
-	    targ = "Control.trigger_counter.buffer_" + std::to_string(buffer_num);  
-	    trigger_counter = ReadReg(targ);
+            targ = "Control.trigger_counter.buffer_" + std::to_string(buffer_num);
+            trigger_counter = ReadReg(targ);
 
-	    targ = "Control.trigger_counter.buffer_" + std::to_string(buffer_num);  
-	    trigger_total_counter = ReadReg(targ);
+            targ = "Control.trigger_counter.buffer_" + std::to_string(buffer_num);
+            trigger_total_counter = ReadReg(targ);
 
-	    targ = "Control.trigger_offset_BEAM.buffer_" + std::to_string(buffer_num); 
-	    std::vector<uint32_t> rData =  ReadBlockRegValue( targ, 255 );
+            targ = "Control.trigger_offset_BEAM.buffer_" + std::to_string(buffer_num);
+            std::vector<uint32_t> rData =  ReadBlockRegValue( targ, 255 );
 
-	    targ = "Control.trigger_offset_MPA.buffer_" + std::to_string(buffer_num);  
-	    std::vector<uint32_t> rData2 =  ReadBlockRegValue( targ, 255 );
-	    curData->push_back(total_trigs);
-	    curData->push_back(trigger_total_counter);
-	    curData->push_back(trigger_counter);
-	    curData->insert( curData->end(), rData.begin(), rData.end() );
-	    curData->insert( curData->end(), rData2.begin(), rData2.end() );
+            targ = "Control.trigger_offset_MPA.buffer_" + std::to_string(buffer_num);
+            std::vector<uint32_t> rData2 =  ReadBlockRegValue( targ, 255 );
+            curData->push_back(total_trigs);
+            curData->push_back(trigger_total_counter);
+            curData->push_back(trigger_counter);
+            curData->insert( curData->end(), rData.begin(), rData.end() );
+            curData->insert( curData->end(), rData2.begin(), rData2.end() );
+	    /*
+	    std::cout<<"trig offset beam"<<std::endl;
+	    int iic = 0;
+            for( auto &vv : rData) {
+		    	      std::bitset<32> p(vv);
 
+                              std::cout<<iic++<<"  "<<p.to_string()<<std::endl;
+                        }
 
-	  }
+	    std::cout<<"trig offset MPA"<<std::endl;
+	    int iic1 = 0;
+            for( auto &vv : rData2) {
+		    	      std::bitset<32> p(vv);
 
+                              std::cout<<iic1++<<"  "<<p.to_string()<<std::endl;
+                        }
+
+          */
+          }
 
 	void MPAGlibFWInterface::HeaderInitMPA(int nmpa)
 	  {

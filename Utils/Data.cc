@@ -93,11 +93,11 @@ namespace Ph2_HwInterface {
 		
             lvec.push_back ( word );
             std::bitset<32> p(word);
-            std::cout<<"data.cc: inserting "<<p.to_string()<<"\n";
+            //std::cout<<"data.cc: inserting "<<p.to_string()<<"\n";
 
             if ( cWordIndex > 0 &&  (cWordIndex + 1) % fEventSize == 0 )
             {
-                std::cout<<"data.cc: end of event! "<<cWordIndex<<" " << fEventSize<<"\n";
+             //   std::cout<<"data.cc: end of event! "<<cWordIndex<<" " << fEventSize<<"\n";
                 fEventList.push_back ( new Event ( pBoard, fNCbc, lvec ) );
                 lvec.clear();
 

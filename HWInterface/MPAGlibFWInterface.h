@@ -21,6 +21,7 @@
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/pugixml.hpp"
+#include "../Utils/Timer.h"
 using namespace Ph2_HwDescription;
 
 /*!
@@ -160,6 +161,10 @@ public:
      * \param pBreakTrigger : if true, enable the break trigger
      * \return cNPackets: the number of packets read
      */
+
+
+
+
     uint32_t ReadData( BeBoard* pBoard, bool pBreakTrigger ) override;
     /*!
      * \brief Get next event from data buffer

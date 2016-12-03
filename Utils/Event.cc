@@ -19,6 +19,10 @@ namespace Ph2_HwInterface {
     // Event implementation
     Event::Event ( const BeBoard* pBoard,  uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
+
+
+
+
         SetEvent ( pBoard, pNbCbc, list );
     }
 
@@ -32,6 +36,7 @@ namespace Ph2_HwInterface {
         fTDC ( pEvent.fTDC ),
         fEventSize (pEvent.fEventSize),
         fEventDataMap ( pEvent.fEventDataMap )
+
     {
 
     }
@@ -56,14 +61,28 @@ namespace Ph2_HwInterface {
         fTDC = 0x000000FF & list.back();
 
 
+        //MPA header for now 
+
+
+
+        ftotal_trigs = 0x00FFFFFF & list.at (0);
+        ftrigger_total_counter = 0x00FFFFFF & list.at (1);
+        ftrigger_counter = 0x00FFFFFF & list.at (2);
+
+
+	ftrigger_offset_BEAM.clear();
+
+	ftrigger_offset_MPA.clear();
+
+
+        ftrigger_offset_BEAM.insert( ftrigger_offset_BEAM.begin(), list.begin()+3, list.begin()+(3+255) );
+        ftrigger_offset_MPA.insert( ftrigger_offset_MPA.begin(), list.begin()+(3+255), list.begin()+(3+255*2) );
+
+
+
         //now decode FEEvents
         uint8_t cBeId = pBoard->getBeId();
         uint32_t cNFe = static_cast<uint32_t> ( pBoard->getNFe() );
-	std::cout <<"A working thing"<< std::endl;
-	std::cout <<cNFe<< std::endl;
-
-        for(int i=0; i<6; ++i)
-            std::cout<< i<<" : "<<(long int) pBoard->getModule ( i )<<std::endl;
 
         for ( uint8_t cFeId = 0; cFeId < cNFe; cFeId++ )
         {
@@ -101,13 +120,9 @@ namespace Ph2_HwInterface {
             for ( uint8_t cMPAId = 0; cMPAId < cNMPA; cMPAId++ )
             {
                 uint16_t cKey = encodeId (cFeId, cMPAId);
-	    	std::cout<<"Event size Parameters"<<std::endl;
-	    	std::cout<<"Evsize "<<MPA_EVENT_SIZE_32<<std::endl;
 		
-                uint32_t begin = cFeId * MPA_EVENT_SIZE_32 * cNMPA + cMPAId * MPA_EVENT_SIZE_32;
+                uint32_t begin = MPA_HEADER_SIZE_32 + cFeId * MPA_EVENT_SIZE_32 * cNMPA + cMPAId * MPA_EVENT_SIZE_32;
                 uint32_t end = begin + MPA_EVENT_SIZE_32;
-	    	std::cout<<"begin "<<begin<<std::endl;
-	    	std::cout<<"end "<<end<<std::endl;
 
                 std::vector<uint32_t> cMPAData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
 		

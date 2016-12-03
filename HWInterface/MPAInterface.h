@@ -71,6 +71,8 @@ namespace Ph2_HwInterface
 		*/
 		void SendConfig(int nummpa);
 
+
+		void ReadTrig(int buffer_num);
 		/*!
 		* \initializes AR header 
 		*/
@@ -80,7 +82,7 @@ namespace Ph2_HwInterface
 		* \modify periphery configuration  
 		*/
     		void ModifyPerif(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload);
-
+    		int WaitTestbeam();
 		/*!
 		* \modify pixel configuration for pixel pixnum
 		*/
@@ -106,6 +108,9 @@ namespace Ph2_HwInterface
 		* \initializes sequencer (starts daq)
 		*/
 		void SequencerInit(int smode,int sdur,int mem,int ibuff);
+
+		void TestbeamInit(int clock, int phase);
+
 
 		void Cleardata();
 	};
