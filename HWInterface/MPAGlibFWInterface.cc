@@ -74,7 +74,8 @@ namespace Ph2_HwInterface
 
 	void MPAGlibFWInterface::Start()
 	{
-		TestbeamInit(0, 0);
+		TestbeamInit(500000,0, 0);
+
 	}
 
 	void MPAGlibFWInterface::Stop()
@@ -129,14 +130,16 @@ namespace Ph2_HwInterface
 
 
 
-	std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  MPAGlibFWInterface::ReadMPAData(int buffer_num, int mpa)
+	std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  MPAGlibFWInterface::ReadMPAData(int buffer_num, int mpa, bool lr)
 	  {
 	    std::string targ;
-	    targ = "Readout.Counter.MPA" + std::to_string(mpa);
+	    if (lr) targ = "Readout_Right.Counter.MPA" + std::to_string(mpa);
+	    else targ = "Readout_Left.Counter.MPA" + std::to_string(mpa);
 	    targ = targ + ".buffer_" + std::to_string(buffer_num);
 	    std::vector<uint32_t> counterdata =  ReadBlockRegValue( targ, 25 );
 
-	    targ = "Readout.Memory.MPA" + std::to_string(mpa);
+	    if (lr) targ = "Readout_Right.Memory.MPA" + std::to_string(mpa);
+	    else targ = "Readout_Left.Memory.MPA" + std::to_string(mpa);
 	    targ = targ + ".buffer_" + std::to_string(buffer_num);
 	    std::vector<uint32_t> memorydata =  ReadBlockRegValue( targ, 216 );
 
@@ -235,7 +238,16 @@ namespace Ph2_HwInterface
 
 	void MPAGlibFWInterface::PowerOn()
 	{
-		std::chrono::milliseconds cWait( 10 );
+		std::chrono::milliseconds cWait( 20 );
+
+		WriteReg( "Control.logic_reset",1);
+		WriteReg( "Control.testbeam_mode",0);
+		WriteReg( "Control.testbeam_clock",0);
+		WriteReg( "Control.MPA_clock_enable",1);
+		WriteReg( "Utility.CLKUTIL_freq",7);
+
+		std::this_thread::sleep_for( cWait );
+
 
 		WriteReg( "Utility.MPA_settings.VDDPST_enable", 1 );
 		std::this_thread::sleep_for( cWait );
@@ -253,8 +265,10 @@ namespace Ph2_HwInterface
 		std::this_thread::sleep_for( cWait );
 		WriteReg( "Utility.MPA_settings.PVDD_enable", 1 );
 		std::this_thread::sleep_for( cWait );
+        	WriteReg("Control.MPA_clock_80",0);
         	WriteReg("Control.MPA_clock_enable", 1);
 		std::this_thread::sleep_for( cWait );
+
 	}
 
 
@@ -362,19 +376,27 @@ namespace Ph2_HwInterface
             targ = "Control.trigger_counter.buffer_" + std::to_string(buffer_num);
             trigger_counter = ReadReg(targ);
 
-            targ = "Control.trigger_counter.buffer_" + std::to_string(buffer_num);
+            targ = "Control.trigger_total_counter.buffer_" + std::to_string(buffer_num);
             trigger_total_counter = ReadReg(targ);
-
-            targ = "Control.trigger_offset_BEAM.buffer_" + std::to_string(buffer_num);
-            std::vector<uint32_t> rData =  ReadBlockRegValue( targ, 255 );
-
-            targ = "Control.trigger_offset_MPA.buffer_" + std::to_string(buffer_num);
-            std::vector<uint32_t> rData2 =  ReadBlockRegValue( targ, 255 );
             curData->push_back(total_trigs);
             curData->push_back(trigger_total_counter);
             curData->push_back(trigger_counter);
-            curData->insert( curData->end(), rData.begin(), rData.end() );
-            curData->insert( curData->end(), rData2.begin(), rData2.end() );
+	    for(int ii=0;ii<=7;ii++)
+		{
+
+
+            	targ = "Control.trigger_offset_BEAM.p" + std::to_string(ii+1) + ".buffer_" + std::to_string(buffer_num);
+            	std::vector<uint32_t> rData =  ReadBlockRegValue( targ, 256 );
+
+            	targ = "Control.trigger_offset_MPA.p" + std::to_string(ii+1) + ".buffer_" + std::to_string(buffer_num);
+            	std::vector<uint32_t> rData2 =  ReadBlockRegValue( targ, 256 );
+
+            	curData->insert( curData->end(), rData.begin(), rData.end() );
+            	curData->insert( curData->end(), rData2.begin(), rData2.end() );
+		}
+
+
+
 	    /*
 	    std::cout<<"trig offset beam"<<std::endl;
 	    int iic = 0;
@@ -395,17 +417,20 @@ namespace Ph2_HwInterface
           */
           }
 
-	void MPAGlibFWInterface::HeaderInitMPA(int nmpa)
+	void MPAGlibFWInterface::HeaderInitMPA(int nmpa, bool lr)
 	  {
-	    WriteReg( "Readout.Header.MPA"+std::to_string(nmpa), 0xFFFFFFF0 + nmpa );
+	    if (lr) WriteReg( "Readout_Right.Header.MPA"+std::to_string(nmpa), 0xFFFFFFF0 + nmpa );
+	    else WriteReg( "Readout_Left.Header.MPA"+std::to_string(nmpa), 0xFFFFFFF0 + nmpa );
 	  }
 
-	void MPAGlibFWInterface::TestbeamInit(int clock, int phase)
+	void MPAGlibFWInterface::TestbeamInit(int sdur,int clock, int phase)
 	  {
+	    WriteReg( "Control.beam_on", 0 );
+	    WriteReg("Control.readout", 1);
 	    WriteReg("Control.testbeam_clock", clock);
 	    WriteReg("Control.testbeam_mode", 1);
-	    
-	    WriteReg("Control.beam_on", 1);
+	    WriteReg("Control.beam_on", 1 );
+	    WriteReg("Shutter.time", sdur);
 	    WriteReg("Control.shutter_delay", phase);
 	  }
 
@@ -432,13 +457,17 @@ namespace Ph2_HwInterface
 	  }
 
 
-	void MPAGlibFWInterface::upload( std::vector< uint32_t > *conf_upload, int conf, int nmpa)
+	void MPAGlibFWInterface::upload( std::vector< uint32_t > *conf_upload, int conf, int nmpa, bool lr)
 	  {
-	    WriteBlockReg( "Configuration.Memory_DataConf.MPA"+std::to_string(nmpa)+".config_"+std::to_string(conf), (*conf_upload));
+	    if (lr) WriteBlockReg( "Configuration_Right.Memory_DataConf.MPA"+std::to_string(nmpa)+".config_"+std::to_string(conf), (*conf_upload));
+	    else WriteBlockReg( "Configuration_Left.Memory_DataConf.MPA"+std::to_string(nmpa)+".config_"+std::to_string(conf), (*conf_upload));
 	  }
-	void MPAGlibFWInterface::write(int nummpa)
+	void MPAGlibFWInterface::write(int nummpal, int nummpar)
 	  {
-	    WriteReg( "Configuration.mode",nummpa-1);
+		WriteReg("Configuration_Left.num_MPA",nummpal);
+		WriteReg("Configuration_Right.num_MPA",nummpar);
+		WriteReg("Control.confs",0);
+		WriteReg("Control.conf_upload",1);
 	  }
 
 }

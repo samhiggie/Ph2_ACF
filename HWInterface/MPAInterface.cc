@@ -60,24 +60,24 @@ void MPAInterface::setBoard( uint16_t pBoardIdentifier )
 
 
 
-void MPAInterface::HeaderInitMPA(int nmpa)
+void MPAInterface::HeaderInitMPA(int nmpa, bool lr)
 {
 	setBoard(0);
-	fMPAFW->HeaderInitMPA( nmpa );
+	fMPAFW->HeaderInitMPA( nmpa , lr);
 }
 
 
 
-void MPAInterface::ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa)
+void MPAInterface::ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa, bool lr)
 {
 	setBoard(0);
-	fMPAFW->upload( conf_upload, conf,nmpa );
+	fMPAFW->upload( conf_upload, conf,nmpa , lr);
 }
 
-void MPAInterface::SendConfig(int nummpa)
+void MPAInterface::SendConfig(int nummpal, int nummpar)
 {
 	setBoard(0);
-	fMPAFW->write(nummpa);
+	fMPAFW->write(nummpal, nummpar);
 }
 
 
@@ -99,19 +99,19 @@ void MPAInterface::SequencerInit(int smode,int sdur,int mem,int ibuff)
 }
 
 
-void MPAInterface::TestbeamInit(int clock, int phase)
+void MPAInterface::TestbeamInit(int sdur,int clock, int phase)
 {
 	setBoard(0);
-	fMPAFW->TestbeamInit(clock, phase);
+	fMPAFW->TestbeamInit(sdur,clock, phase);
 }
 
 
 
-std::pair<std::vector<uint32_t>, std::vector<uint32_t>> MPAInterface::ReadMPAData(int buffer_num, int mpa)
+std::pair<std::vector<uint32_t>, std::vector<uint32_t>> MPAInterface::ReadMPAData(int buffer_num, int mpa, bool lr)
 {
 	setBoard(0);
-	fMPAFW->HeaderInitMPA( mpa );
-	return fMPAFW->ReadMPAData(buffer_num, mpa);
+	fMPAFW->HeaderInitMPA( mpa , lr );
+	return fMPAFW->ReadMPAData(buffer_num, mpa, lr);
 }
 
 

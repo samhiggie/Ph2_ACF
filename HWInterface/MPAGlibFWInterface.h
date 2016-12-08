@@ -275,14 +275,14 @@ public:
     void ReadVer() override;
     void PowerOn() override;
     void PowerOff() override;
-    void TestbeamInit(int clock, int phase);
+    void TestbeamInit(int sdur,int clock, int phase);
     void StrobeSettings(int snum, int sdel, int slen, int sdist, int cal);
-    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadMPAData(int buffernum, int mpa);
+    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadMPAData(int buffernum, int mpa, bool lr);
     void SequencerInit(int smode,int sdur,int mem,int ibuff);
-    void upload(std::vector< uint32_t > *conf_upload, int conf, int nmpa);
-    void write(int nummpa);
+    void upload(std::vector< uint32_t > *conf_upload, int conf, int nmpa, bool lr);
+    void write(int nummpal, int nummpar);
 
-    void HeaderInitMPA(int nmpa);
+    void HeaderInitMPA(int nmpa, bool lr);
     void ReadTrig(int buffer_num);
     int WaitSequencer();
     int WaitTestbeam();

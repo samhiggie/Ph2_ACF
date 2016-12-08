@@ -75,8 +75,8 @@ namespace Ph2_HwInterface {
 	ftrigger_offset_MPA.clear();
 
 
-        ftrigger_offset_BEAM.insert( ftrigger_offset_BEAM.begin(), list.begin()+3, list.begin()+(3+255) );
-        ftrigger_offset_MPA.insert( ftrigger_offset_MPA.begin(), list.begin()+(3+255), list.begin()+(3+255*2) );
+        ftrigger_offset_BEAM.insert( ftrigger_offset_BEAM.begin(), list.begin()+3, list.begin()+(3+2048) );
+        ftrigger_offset_MPA.insert( ftrigger_offset_MPA.begin(), list.begin()+(3+2048), list.begin()+(3+2048*2) );
 
 
 

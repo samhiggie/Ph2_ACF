@@ -64,19 +64,19 @@ namespace Ph2_HwInterface
 		/*!
 		* \uploads configuration data to glib
 		*/
-		void ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa);
+		void ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa, bool lr);
 
 		/*!
 		* \sends configuration data to MAPSA from glib
 		*/
-		void SendConfig(int nummpa);
+		void SendConfig(int nummpal, int nummpar);
 
 
 		void ReadTrig(int buffer_num);
 		/*!
 		* \initializes AR header 
 		*/
-		void HeaderInitMPA(int nmpa);
+		void HeaderInitMPA(int nmpa, bool lr);
 
 		/*!
 		* \modify periphery configuration  
@@ -88,7 +88,7 @@ namespace Ph2_HwInterface
 		*/
     		void ModifyPix(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload, uint32_t  pixnum );
 
-		std::pair<std::vector<uint32_t>, std::vector<uint32_t>> ReadMPAData(int buffer_num, int mpa);
+		std::pair<std::vector<uint32_t>, std::vector<uint32_t>> ReadMPAData(int buffer_num, int mpa, bool lr);
 		/*!
 		* \format the raw data output of ReadData to organize into events. Segmented due to processing time 
 		*/
@@ -109,7 +109,7 @@ namespace Ph2_HwInterface
 		*/
 		void SequencerInit(int smode,int sdur,int mem,int ibuff);
 
-		void TestbeamInit(int clock, int phase);
+		void TestbeamInit(int sdur,int clock, int phase);
 
 
 		void Cleardata();
