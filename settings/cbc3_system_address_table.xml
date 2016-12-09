@@ -13,63 +13,43 @@
 			</node>
 			<node id="cbc0" address="0x10">
 				<node id="active" mask="0x00000001" description="0x1(default)"/>
-				<!--
-				other values are not valid for single cbc firmware.
-				<node id="id"          mask="0x000000F0" description="0x1(default)"/>
-				<node id="fe_id"       mask="0x00000F00" description="0x1(default)"/>
-				<node id="i2c_address" mask="0x0007F000" description="0x41(default)"/>
-				-->
+                <!--other values are not valid for single cbc firmware.-->
+                <node id="id"          mask="0x000000F0" description="0x1(default)"/>
+                <node id="fe_id"       mask="0x00000F00" description="0x1(default)"/>
+                <node id="i2c_address" mask="0x0007F000" description="0x41(default)"/>
 			</node>
+             <!--some more reigsters here that have to go into initial configure-->
+             <node id="misc"        address="0x10">
+                 <node id="cbc_clk_phase_shift" mask="0x00000001"/>
+             </node>
 		</node>
 		<node id="cbc_system_clk" mask="0x20" description="0x0(external)/0x1(internal)"/>
-		<node id="serial_command_generator" address="0x21">
-			<node id="fast_signal_enable" address="0x0">
+		<node id="fast_command_manager">
+			<node id="fast_signal_enable" address="0x21">
 				<node id="async_l1a" mask="0x00000001"/>
 				<node id="fmc"       mask="0x00000002"/>
+                <!--TODO: ipbus should be enabled to send fast signals via ipbus-->
 				<node id="ipbus"     mask="0x00000004"/>
 				<node id="internal"  mask="0x00000008"/>
 			</node>
-			<node id="fast_signal_generator" address="0x1" description="internal fast signal is generated in the fast_signal_generator module and the settings are here.">
-				<node id="enable" address="0x0">
+			<node id="fast_signal_generator" description="internal fast signal is generated in the fast_signal_generator module and the settings are here.">
+				<node id="enable" address="0x22">
 					<node id="fast_reset"  mask="0x00000001"/>
 					<node id="trigger"     mask="0x00000002"/>
 					<node id="test_pulse"  mask="0x00000004"/>
 					<node id="orbit_reset" mask="0x00000008"/>
 				</node>
-				<node id="Ncycle"             address="0x1" description="# of periodic fast signal cycle from the start signal."/>
-				<node id="cycle_period"       address="0x2" description="period of one cycle in 40MHz clock cycle."/>
+				<node id="Ncycle"             address="0x23" description="# of periodic fast signal cycle from the start signal."/>
+				<node id="cycle_period"       address="0x24" description="period of one cycle in 40MHz clock cycle."/>
 				<!-- fast reset timing is fixed to 0 -->
-				<node id="trigger_timing"     address="0x3" description="timing of the trigger in the periodic cycle in 40MHz clock cycle."/>
-				<node id="test_pulse_timing"  address="0x4" description="timing of the test pulse in the periodic cycle in 40MHz clock cycle."/>
-				<node id="orbit_reset_timing" address="0x5" description="timing of the orbit reset in the periodic cycle in 40MHz clock cycle."/>
+				<node id="trigger_timing"     address="0x25" description="timing of the trigger in the periodic cycle in 40MHz clock cycle."/>
+				<node id="test_pulse_timing"  address="0x26" description="timing of the test pulse in the periodic cycle in 40MHz clock cycle."/>
+				<node id="orbit_reset_timing" address="0x27" description="timing of the orbit reset in the periodic cycle in 40MHz clock cycle."/>
 			</node>
 		</node>
-		<!--<node id="cbc_emulator" address="0x30">-->
-			<!--<node id="test_pulse_data_pattern_slvs1234" address="0x0">-->
-				<!--<node id="s1_addr" mask="0x000000FF"/>-->
-				<!--<node id="s2_addr" mask="0x0000FF00"/>-->
-				<!--<node id="s3_addr" mask="0x00FF0000"/>-->
-				<!--<node id="s1_bend" mask="0x0F000000"/>-->
-				<!--<node id="s2_bend" mask="0xF0000000"/>-->
-			<!--</node>-->
-			<!--<node id="test_pulse_data_pattern_slvs5"    address="0x1">-->
-				<!--<node id="s3_bend" mask="0x0000000F"/>-->
-				<!--<node id="sof"     mask="0x00000010"/>-->
-				<!--<node id="or254"   mask="0x00000020"/>-->
-				<!--<node id="error"   mask="0x00000040"/>-->
-			<!--</node>-->
-			<!--<node id="test_pulse_data_pattern_hit001_to_hit032" address="0x2" description="hit bits for channel 001 to 032."/>-->
-			<!--<node id="test_pulse_data_pattern_hit033_to_hit064" address="0x3" description="hit bits for channel 033 to 064."/>-->
-			<!--<node id="test_pulse_data_pattern_hit065_to_hit096" address="0x4" description="hit bits for channel 065 to 096."/>-->
-			<!--<node id="test_pulse_data_pattern_hit097_to_hit128" address="0x5" description="hit bits for channel 097 to 128."/>-->
-			<!--<node id="test_pulse_data_pattern_hit129_to_hit160" address="0x6" description="hit bits for channel 129 to 160."/>-->
-			<!--<node id="test_pulse_data_pattern_hit161_to_hit192" address="0x7" description="hit bits for channel 161 to 192."/>-->
-			<!--<node id="test_pulse_data_pattern_hit193_to_hit224" address="0x8" description="hit bits for channel 193 to 224."/>-->
-			<!--<node id="test_pulse_data_pattern_hit225_to_hit254" address="0x9" description="the last 30 bits from channel 225 to 254."/>-->
-		<!--</node>-->
-		<node id="cbc_data_processor"    address="0x50">
-			<node id="cbc0"              address="0x0">
-				<node id="latencies"     address="0x0">
+		<node id="cbc_data_processor">
+			<node id="cbc0">
+				<node id="latencies"     address="0x50">
 					<node id="l1a"       mask="0x0000007F" description="l1a latency, The event timing to the timing of the l1a arrival at CBC. the same as the one at CBC."/>
 					<node id="trig_data" mask="0x00003F80" description="trigger data latency. The event timing to the trigger data arrival timing at BE + time for l1a from BE to CBC."/>
 				</node>
@@ -80,12 +60,13 @@
 		<node id="global"                   address="0x00">
 			<node id="reset"                             mask="0x00000001" description="reset all the modules."/>
 			<node id="daq_reset"                         mask="0x00000002" description="The daq chain (except for signal delays) and serial_command_generator is reset. Should be sent before starting a new run."/> 
-            <!--TODO:same mask?-->
-			<node id="init"                              mask="0x00000004" description="initialize cbc i2c manager, configure cbc to send only sync bits, ser_data_delay_start_tuning signal is emitted."/>
+            <!--TODO:to be implemented -->
+			<!--<node id="init"                              mask="0x00000004" description="initialize cbc i2c manager, configure cbc to send only sync bits, ser_data_delay_start_tuning signal is emitted."/>-->
 			<node id="cbc_hard_reset"                    mask="0x00010000" description="send a CBC hard reset on the corresponding line"/>
-
+            <node id="idelayctrl_reset"                  mask="0x00100000"/>
+            <node id="fs_oserdes_reset"                  mask="0x00400000"/>
 		</node>
-		<node id="serial_command_generator" address="0x01">
+		<node id="fast_command_manager" address="0x01">
 			<node id="reset"                             mask="0x00000001"/>
 			<node id="start_trigger"                     mask="0x00000002"/>
 			<node id="stop_trigger"                      mask="0x00000004"/>
@@ -103,19 +84,21 @@
 		</node>
 		<node id="data_buffer"              address="0x03">
 			<node id="reset"                             mask="0x00000001"/>
-			<!--<node id="trig_readall"                      mask="0x00000002" description="set the read pointer to read all the contents of the buffer. (just for debugging.)"/>-->
+            <!--<node id="trig_readall"                      mask="0x00000002" description="set the read pointer to read all the contents of the buffer. (just for debugging.)"/>-->
 		</node>
 		<!--<node id="cbc_emulator"             address="0x04">-->
 			<!--<node id="reset"                             mask="0x00000001"/>-->
 			<!--<node id="load_data_pattern"                 mask="0x00000002" description="test pulse data pattern set in cbc_system_cnfg is loaded."/>-->
 		<!--</node>-->
 		<node id="cbc_data_processors"       address="0x10">
-			<node id="reset"                              mask="0x00000001"/>
-			<node id="cbc_ser_data_delay_reset"          mask="0x00000002"/>
-			<node id="cbc_ser_data_delay_start_tuning"   mask="0x00000004"/>
+            <node id="cbc0">
+			    <node id="reset"                              mask="0x00000001"/>
+			    <node id="cbc_ser_data_delay_reset"          mask="0x00000002"/>
+			    <node id="cbc_ser_data_delay_start_tuning"   mask="0x00000004"/>
+            </node>
 		</node>
-		<node id="cbc_i2c_bus_managers"      address="0x30">
-			<node id="fe0"                       address="0x0">
+		<node id="cbc_i2c_bus_managers">
+			<node id="fe0"              address="0x30">
 				<node id="reset"                             mask="0x00000001"/>
 				<node id="init"                              mask="0x00000002"/>
 				<node id="reset_fifos"                       mask="0x00000004"/>
@@ -123,75 +106,63 @@
 		</node>
 	</node>
 	<node id="cbc_system_stat" address="0x40000300" permission="r" >
-		<node id="id"                       address = "0x00"/> <!-- 'C' 'B' 'C' '3' --> 
-		<node id="version"                  address = "0x01">  <!-- The version information --> 
-			<node id="ver_major"                         mask="0xF0000000"/>
-			<node id="ver_minor"                         mask="0x0F000000"/>
-			<node id="ver_build"                         mask="0x00FF0000"/>
-			<node id="ver_year"                          mask="0x0000FE00"/>
-			<node id="ver_month"                         mask="0x000001E0"/>
-			<node id="ver_day"                           mask="0x0000001F"/>
-		</node>
-		<node id="misc"                     address = "0x02">  <!-- SYSTEM CONFIG information --> 
-			<node id="mmcm_cbc_system_locked"            mask="0x00000001"/>  <!-- MMCM CBC SYSTEM LOCKED --> 
-		</node>
-		<node id="serial_command_generator" address = "0x03">
+        <node id="global">
+		    <node id="id"                       address = "0x00"/> <!-- 'C' 'B' 'C' '3' --> 
+		    <node id="version"                  address = "0x01">  <!-- The version information --> 
+		    	<node id="ver_major"                         mask="0xF0000000"/>
+		    	<node id="ver_minor"                         mask="0x0F000000"/>
+		    	<node id="ver_build"                         mask="0x00FF0000"/>
+		    	<node id="ver_year"                          mask="0x0000FE00"/>
+		    	<node id="ver_month"                         mask="0x000001E0"/>
+		    	<node id="ver_day"                           mask="0x0000001F"/>
+		    </node>
+            <node id="type" address="0x02"/>
+		    <node id="misc"                     address = "0x03">  <!-- SYSTEM CONFIG information --> 
+		    	<node id="mmcm_cbc_system_locked"            mask="0x00000001"/>  <!-- MMCM CBC SYSTEM LOCKED --> 
+                <node id="idelayctrl_rdy"                    mask="0x00000002"/>
+		    </node>
+        </node>
+		<node id="serial_command_generator" address = "0x04">
 			<node id="fsm"                               mask="0x00000001"/>
-			<node id="fast_signal_generator_fsm"         mask="0x00000010"/>
+			<node id="trigger_fsm"                       mask="0x00000010"/>
+			<node id="fast_signal_generator_fsm"         mask="0x00000100"/>
 		</node>
-		<node id="event_builder"            address = "0x04">
+		<node id="event_builder"            address = "0x05">
 			<node id="write_data_fsm"                    mask="0x00000007"/>
 			<node id="send_data_fsm"                     mask="0x00000030"/> 
 		</node>
-		<node id="data_buffer"              address = "0x05">
-			<node id="nword_all"                 address="0x0" description="# of words ready to be read."/>
-			<node id="nword_events"              address="0x1" description="# of words in event block ready to be read."/>
-			<node id="nword_free"                address="0x2" description="# of free words in the buffer." />
+		<node id="data_buffer">
+			<node id="nword_all"                 address="0x6" mask="0x0000FFFF" description="# of words ready to be read."/>
+			<node id="nword_events"              address="0x7" mask="0x0000FFFF" description="# of words in event block ready to be read."/>
+			<node id="nword_free"                address="0x8" mask="0x0000FFFF" description="# of free words in the buffer." />
+            <node id="waddr"                     address="0x9" mask="0x0000FFFF"/>
+            <node id="raddr"                     address="0xa" mask="0x0000FFFF"/>
 		</node>
-		<!--<node id="cbc_emulator"             address="0x10">-->
-			<!--<node id="test_pulse_data_pattern_slvs1234" address="0x0">-->
-				<!--<node id="s1_addr" mask="0x000000FF"/>-->
-				<!--<node id="s2_addr" mask="0x0000FF00"/>-->
-				<!--<node id="s3_addr" mask="0x00FF0000"/>-->
-				<!--<node id="s1_bend" mask="0x0F000000"/>-->
-				<!--<node id="s2_bend" mask="0xF0000000"/>-->
-			<!--</node>-->
-			<!--<node id="test_pulse_data_pattern_slvs5"    address="0x1">-->
-				<!--<node id="s3_bend" mask="0x0000000F"/>-->
-				<!--<node id="sof"     mask="0x00000010"/>-->
-				<!--<node id="or254"   mask="0x00000020"/>-->
-				<!--<node id="error"   mask="0x00000040"/>-->
-			<!--</node>-->
-			<!--<node id="test_pulse_data_pattern_hit001_to_hit032" address="0x2" description="hit bits for channel 001 to 032."/>-->
-			<!--<node id="test_pulse_data_pattern_hit033_to_hit064" address="0x3" description="hit bits for channel 033 to 064."/>-->
-			<!--<node id="test_pulse_data_pattern_hit065_to_hit096" address="0x4" description="hit bits for channel 065 to 096."/>-->
-			<!--<node id="test_pulse_data_pattern_hit097_to_hit128" address="0x5" description="hit bits for channel 097 to 128."/>-->
-			<!--<node id="test_pulse_data_pattern_hit129_to_hit160" address="0x6" description="hit bits for channel 129 to 160."/>-->
-			<!--<node id="test_pulse_data_pattern_hit161_to_hit192" address="0x7" description="hit bits for channel 161 to 192."/>-->
-			<!--<node id="test_pulse_data_pattern_hit193_to_hit224" address="0x8" description="hit bits for channel 193 to 224."/>-->
-			<!--<node id="test_pulse_data_pattern_hit225_to_hit254" address="0x9" description="the last 30 bits from channel 225 to 254."/>-->
-		<!--</node>-->
-		<node id="cbc_data_processors"       address="0x30">
-			<node id="cbc0"                     address="0x0">
+		<node id="cbc_data_processors">
+			<node id="cbc0"                     address="0x30">
 				<node id="deserializer_fsm"                  mask="0x00000001"/>
 				<node id="ser_data_delay_idelay_tuning_fsm"  mask="0x0000000E"/>
 				<node id="ser_data_delay_idelay_delay"       mask="0x000001F0"/>
 			</node>
 		</node>
 		<!--</node>-->
-		<node id="cbc_i2c_bus_managers"      address = "0x50">
-			<node id="fe0"                     address = "0x0">
-				<node id="command_fifo_stat"           address = "0x0">
+		<node id="cbc_i2c_bus_managers">
+			<node id="fe0">
+				<node id="command_fifo_stat"           address = "0x50">
 					<node id="empty"                             mask="0x00000001"/> 
 					<node id="full"                              mask="0x00000002"/> 
 				</node>
-				<node id="reply_fifo_stat"             address = "0x1">
+				<node id="reply_fifo_stat"             address = "0x51">
 					<node id="empty"                             mask="0x00000001"/>
 					<node id="full"                              mask="0x00000002"/>
 				</node>
-				<node id="reply_fifo_ndata"            address = "0x2"/>
+				<node id="reply_fifo_ndata"            address = "0x52"/>
+				<!--<node id="reply_fifo_nrdata"            address = "0x52"/>-->
 			</node>
 		</node>
+        <node id="cbc_data_frame"       address="0xa0">
+            <node id="cbc0"             address="0x0" mode="non_incremental" size="9"/>
+        </node>
 	</node>
 	<node id="data"          address="0x40000400" permission="r" mode="non-incremental" size="65536"/>
 	<node id="cbc_i2c_regs"  address="0x40000800">

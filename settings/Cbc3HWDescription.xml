@@ -15,36 +15,39 @@
 
     <Register name="cbc_system_cnfg">
         <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->
+        <!--required-->
         <Register name="cbc_system_clk"> 0x1 </Register>
         <!--FAST SIGNAL SOURCE-->
-        <Register name="serial_command_generator">
+        <Register name="fast_command_manager">
             <Register name="fast_signal_enable">
-                <Register name="async_l1a"> 0x0 </Register>
-                <Register name="fmc"> 0x0 </Register>
-                <Register name="ipbus"> 0x0 </Register>
+                <Register name="async_l1a"> 0x1 </Register>
+                <Register name="fmc"> 0x1 </Register>
+                <!--required-->
+                <Register name="ipbus"> 0x1 </Register>
                 <Register name="internal"> 0x1 </Register>
             </Register>
-        </Register>
-        <!--FAST SIGNAL GENERATOR CONFIG-->
-        <Register name="fast_signal_generator">
-            <Register name="enable">
-                <Register name="fast_reset"> 0 </Register>
-                <Register name="trigger"> 0 </Register>
-                <Register name="test_pulse"> 0 </Register>
-                <Register name="orbit_reset"> 0 </Register>
+            <!--FAST SIGNAL GENERATOR CONFIG-->
+            <Register name="fast_signal_generator">
+                <!--Kirkia sets this node to 7, so enables everything but fast_reset-->
+                <Register name="enable">
+                    <Register name="fast_reset"> 0 </Register>
+                    <Register name="trigger"> 0 </Register>
+                    <Register name="test_pulse"> 0 </Register>
+                    <Register name="orbit_reset"> 0 </Register>
+                </Register>
+                <!--FAST SIGNAL GENERATOR TIMING-->
+                <Register name="Ncycle"> 100 </Register>
+                <Register name="cycle_period"> 4000 </Register>
+                <Register name="trigger_timing"> 212 </Register>
+                <Register name="test_pulse_timing"> 12 </Register>
+                <Register name="orbit_reset_timing"> 1000 </Register>
             </Register>
-            <!--FAST SIGNAL GENERATOR TIMING-->
-            <Register name="Ncycle"> 100 </Register>
-            <Register name="cycle_period"> 500 </Register>
-            <Register name="trigger_timing"> 50 </Register>
-            <Register name="test_pulse_timing"> 10 </Register>
-            <Register name="orbit_reset_timing"> 400 </Register>
         </Register>
         <!--LATENCIES-->
         <Register name="cbc_data_processor">
             <Register name="cbc0.latencies">
-                <Register name="l1a"> 7 </Register>
-                <Register name="trig_data"> 3 </Register>
+                <Register name="l1a"> 10 </Register>
+                <Register name="trig_data"> 4 </Register>
             </Register>
         </Register>
     </Register>

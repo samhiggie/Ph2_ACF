@@ -84,11 +84,11 @@ namespace Ph2_HwInterface {
         //LOG(INFO) << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) ;
         //LOG(INFO) << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) ;
         uint32_t cVersionMajor, cVersionMinor;
-        cVersionMajor = ReadReg ( "cbc_system_stat.version.ver_major" );
-        cVersionMinor = ReadReg ( "cbc_system_stat.version.ver_minor" );
-        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "cbc_system_stat.version.ver_build" ) ) ;
+        cVersionMajor = ReadReg ( "cbc_system_stat.global.version.ver_major" );
+        cVersionMinor = ReadReg ( "cbc_system_stat.global.version.ver_minor" );
+        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "cbc_system_stat.global.version.ver_build" ) ) ;
 
-        uhal::ValWord<uint32_t> cBoardType = ReadReg ( "cbc_system_stat.id" );
+        uhal::ValWord<uint32_t> cBoardType = ReadReg ( "cbc_system_stat.global.id" );
 
         LOG (INFO) << "BoardType : ";
 
@@ -113,7 +113,9 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         //OK, first we need to apply the configuration to the config part of the FW residing at address 0x40000100
-        cVecReg.push_back ({"cbc_system_cnfg.global.be.id", pBoard->getBeId() });
+        //all IDs start with 1
+        cVecReg.push_back ({"cbc_system_cnfg.global.be.id", pBoard->getBeId() + 1 });
+        //enable fast signal ipbus
 
         //then loop the HWDescription and find out about our Connected CBCs
         for (Module* cFe : pBoard->fModuleVector)
@@ -128,15 +130,18 @@ namespace Ph2_HwInterface {
                 uint8_t cFeId = cCbc->getFeId();
                 uint32_t cAddress = 0x41 + cCbcId;
                 char cTmpChar[30];
-                sprintf (cTmpChar, "cbc_system_cnfg.global.cbc%d.", cCbcId);
+                sprintf (cTmpChar, "cbc_system_cnfg.global.cbc%d.", cCbcId );
                 std::string cRegString (cTmpChar);
                 cVecReg.push_back ({cRegString + "active", 0x1});
                 // TODO
-                //cVecReg.push_back ({cRegString + "id", cCbcId});
-                //cVecReg.push_back ({cRegString + "fe_id", cFeId});
-                //cVecReg.push_back ({cRegString + "i2c_address", cAddress});
+                //all IDs start with 1
+                cVecReg.push_back ({cRegString + "id", cCbcId + 1});
+                cVecReg.push_back ({cRegString + "fe_id", cFeId + 1});
+                cVecReg.push_back ({cRegString + "i2c_address", cAddress});
             }
         }
+
+        cVecReg.push_back ({"cbc_system_cnfg.global.misc.cbc_clk_phase_shift", 0x1});
 
         //last, loop over the variable registers from the HWDescription.xml file
         //this is where I should get all the clocking and FastCommandInterface settings
@@ -153,13 +158,15 @@ namespace Ph2_HwInterface {
         //hard reset CBC and the DAQ
         this->CbcHardReset();
 
-        WriteReg ("cbc_system_ctrl.global.reset", 0x1);
+        //this will do everthing that comes below eventually
         WriteReg ("cbc_system_ctrl.global.init", 0x1);
+        //temporary, should be in global init later
+        WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset", 0x1);
+        WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.init", 0x1);
 
-        usleep (10);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
 
-
-        //not sure if this is implemented in this version
+        //read the replies for the pings!
         std::vector<uint32_t> pReplies;
         ReadI2C (  fBroadcastCbcId, pReplies);
 
@@ -170,23 +177,80 @@ namespace Ph2_HwInterface {
 
         if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fBroadcastCbcId << " Cbcs";
         else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fBroadcastCbcId << ", received: " << pReplies.size() ;
+
+        //perform a global reset, just to be sure
+        WriteReg ("cbc_system_ctrl.global.reset", 0x1);
     }
 
+    void Cbc3Fc7FWInterface::FindPhase()
+    {
+        //this is to run the idelay tuning, similar to what we had to do for the pixels
+        uint32_t cCount = 0;
+
+        while (ReadReg ("cbc_system_stat.global.misc.idelayctrl_rdy") == 0)
+        {
+            WriteReg ("cbc_system_ctrl.global.idelayctrl_reset", 1);
+
+            if (++cCount > 10)
+            {
+                LOG (ERROR) << "Error, idelayctrl does not go to ready! Aborting!";
+                exit (1);
+            }
+
+            std::this_thread::sleep_for (std::chrono::microseconds (1000) );
+        }
+
+        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_reset", 1);
+        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_start_tuning", 1);
+        std::this_thread::sleep_for (std::chrono::microseconds (20) );
+        cCount = 0;
+
+        while (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.cbc_ser_data_delay_idelay_tuning_fsm") != 4)
+        {
+            //Are we sure we are writing to to the stat register?
+            WriteReg ("cbc_system_stat.cbc_data_processor.cbc0.cbc_ser_data_delay_idelay_tuning_fsm", 1);
+            std::this_thread::sleep_for (std::chrono::microseconds (20) );
+
+            if (++cCount > 5)
+            {
+                LOG (ERROR) << "Error, idelay tuning failed! Aborting!";
+                exit (1);
+            }
+        }
+
+        uint32_t cDelay = ReadReag ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
+        LOG (INFO) << "Idealy tuned to delay tap = " << cDelay;
+    }
 
     void Cbc3Fc7FWInterface::Start()
     {
         //first reset the DAQ
-        WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
+        //global daq reset is not implemented yet
+        //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
+        //in the meantime, do this
+        std::vector< std::pair<std::string, uint32_t> > cVecReg;
+        cVecReg.push_back ({"cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1});
+        cVecReg.push_back ({"cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1});
+        cVecReg.push_back ({"cbc_system_ctrl.event_builder.reset", 0x1});
+        cVecReg.push_back ({"cbc_system_ctrl.data_buffer.reset", 0x1});
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
+
+        //this could go into Configure() once it is more stable
+        this->FindPhase();
+
         //then start the triggers
-        WriteReg ("cbc_system_ctrl.serial_command_generator.start_trigger", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
+        //reload the config of the fast_command_manager
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
         //start the periodic fast signals if enabled
-        WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_start", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
     }
 
     void Cbc3Fc7FWInterface::Stop()
     {
-        WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_stop", 0x1);
-        WriteReg ("cbc_system_ctrl.serial_command_generator.stop_trigger", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
     }
 
 
@@ -194,14 +258,14 @@ namespace Ph2_HwInterface {
     {
         //this should just brake triggers
         //WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_stop", 0x1);
-        WriteReg ("cbc_system_ctrl.serial_command_generator.stop_trigger", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
     }
 
 
     void Cbc3Fc7FWInterface::Resume()
     {
         //WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_start", 0x1);
-        WriteReg ("cbc_system_ctrl.serial_command_generator.start_trigger", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
     }
 
     uint32_t Cbc3Fc7FWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
@@ -239,27 +303,30 @@ namespace Ph2_HwInterface {
         //4)read data
 
         //Reset the DAQ and clear all the buffers
-        WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
+        //not implemented yet, in the meantime do below
+        //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
+        std::vector< std::pair<std::string, uint32_t> > cVecReg;
+        cVecReg.push_back ({"cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1});
+        cVecReg.push_back ({"cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1});
+        cVecReg.push_back ({"cbc_system_ctrl.event_builder.reset", 0x1});
+        cVecReg.push_back ({"cbc_system_ctrl.data_buffer.reset", 0x1});
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
+
         // configure the fast command cycle to send triggers
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.enable.trigger", 0x1});
         cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.Ncycle", pNEvents});
-        //the cycle period should come from the config file
-        //cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.cycle_period", 500});
-        //the trigger timing should come from the config file
-        //cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.trigger_timing", 50});
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
 
-        //re-load the config
-        //WriteReg ("cbc_system_ctrl.serial_command_generator.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.serial_command_generator.load_config", 0x1);
-
         //then start the triggers
-        WriteReg ("cbc_system_ctrl.serial_command_generator.start_trigger", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
+        //reload the config of the fast_command_manager
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
         //start the periodic fast signals if enabled
-        WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_start", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
 
         //now wait until nword_event is equal to pNEvents * eventSize
         uint32_t cNWords = 0;
@@ -274,7 +341,8 @@ namespace Ph2_HwInterface {
         if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
 
         //disable triggers
-        WriteReg ("cbc_system_ctrl.serial_command_generator.stop_trigger", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
 
         //and read data
         pData = ReadBlockRegValue ("data", cNWords);
@@ -304,6 +372,7 @@ namespace Ph2_HwInterface {
     /////////////////////////////////////////////////////
     //TODO: check what to do with fFMCid and if I need it!
     // this is clearly for addressing individual CBCs, have to see how to deal with broadcast commands
+    // for this FW, page values are 1 and 2 so need to increment the 0 and 1 from config file
     void Cbc3Fc7FWInterface::EncodeReg ( const CbcRegItem& pRegItem,
                                          uint8_t pCbcId,
                                          std::vector<uint32_t>& pVecReq,
@@ -311,7 +380,7 @@ namespace Ph2_HwInterface {
                                          bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( (fFMCId ) << 28 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( (fFMCId ) << 29 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( (pRegItem.fPage + 1) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
     void Cbc3Fc7FWInterface::EncodeReg ( const CbcRegItem& pRegItem,
                                          uint8_t pFeId,
@@ -321,7 +390,7 @@ namespace Ph2_HwInterface {
                                          bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( (pFeId + 1) << 28 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( (pFeId + 1) << 29 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( (pRegItem.fPage + 1) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void Cbc3Fc7FWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
@@ -331,7 +400,7 @@ namespace Ph2_HwInterface {
                                            bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( (fFMCId ) << 28 ) | ( fBroadcastCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 )  | ( pRegItem.fPage << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( (fFMCId ) << 29 ) | ( fBroadcastCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 )  | ( (pRegItem.fPage + 1) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void Cbc3Fc7FWInterface::DecodeReg ( CbcRegItem& pRegItem,
@@ -344,7 +413,7 @@ namespace Ph2_HwInterface {
         pFailed  =  ( ( pWord & 0x00100000 ) >> 20) - 1;
         //pRead is 1 for read transaction, 0 for a write transaction
         pRead    =  ( pWord & 0x00020000 ) >> 17;
-        pRegItem.fPage    =  ( pWord & 0x00010000 ) >> 16;
+        pRegItem.fPage    =  ( (pWord & 0x00010000 ) - 1) >> 16;
         pRegItem.fAddress =  ( pWord & 0x0000FF00 ) >> 8;
         pRegItem.fValue   =  ( pWord & 0x000000FF );
     }
@@ -525,7 +594,7 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::CbcFastReset()
     {
-        WriteReg ( "cbc_system_ctrl.serial_command_generator.fast_signal_reset", 0x1 );
+        WriteReg ( "cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1 );
     }
 
     void Cbc3Fc7FWInterface::CbcHardReset()
@@ -535,12 +604,12 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::CbcTestPulse()
     {
-        WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_test_pulse_req", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_test_pulse_req", 0x1);
     }
 
     void Cbc3Fc7FWInterface::CbcTrigger()
     {
-        WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_trigger", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_trigger", 0x1);
     }
 
     void Cbc3Fc7FWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )

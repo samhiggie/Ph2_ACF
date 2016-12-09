@@ -141,7 +141,8 @@ namespace Ph2_HwInterface {
         void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData);
 
       private:
-
+        //to find the correct idelay tap
+        void FindPhase();
         //I2C command sending implementation
         bool WriteI2C (  std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pWriteRead, bool pBroadcast );
         bool ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies);
