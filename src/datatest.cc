@@ -121,7 +121,10 @@ int main ( int argc, char* argv[] )
         cSaveToFile = true ;
 
     if ( cSaveToFile )
+    {
         cOutputFile =  cmd.optionValue ( "save" );
+        cSystemController.addFileHandler ( cOutputFile, 'w' );
+    }
 
     if (cmd.foundOption ( "daq") )
         filNewDaq.open (cmd.optionValue ( "daq" ), ios_base::binary);
@@ -133,7 +136,6 @@ int main ( int argc, char* argv[] )
 
     Timer t;
     t.start();
-    cSystemController.addFileHandler ( cOutputFile, 'w' );
 
     std::stringstream outp;
     cSystemController.InitializeHw ( cHWFile, outp );

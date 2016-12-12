@@ -51,7 +51,6 @@ void FileHandler::set ( std::vector<uint32_t> pVector )
 
     std::lock_guard<std::mutex> cLock (fMutex);
     fQueue.push (pVector);
-    std::cout << "DEBUG 1: added element to the queue" << std::endl;
     fSet.notify_one();
 }
 
@@ -224,7 +223,6 @@ void FileHandler::writeFile()
         //this method blocks this thread until it receives data
         this->dequeue (cData);
         //copy data in buffer array for faster I/O
-        std::cout << "DEBUG 3: got element from queue -- processing" << std::endl;
         uint32_t cBuffer[cData.size()];
         std::copy ( cData.begin(), cData.end(), cBuffer );
         //write the buffer
@@ -243,5 +241,4 @@ void FileHandler::dequeue (std::vector<uint32_t>& pData)
 
     pData = fQueue.front();
     fQueue.pop();
-    std::cout << "DEBUG 2: popping element from queue for processing" << std::endl;
 }
