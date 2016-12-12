@@ -164,6 +164,7 @@ void PedeNoise::measureNoise()
 
         // now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
         processSCurvesNoise ( "Final", fTestPulseAmplitude, true, cTGrpM.first );
+        //std::async (&PedeNoise::processSCurvesNoise, this, "Final", fTestPulseAmplitude, true, cTGrpM.first);
     }
 
     LOG (INFO) << BOLDBLUE << "Finished measuring the noise ..."  << RESET ;
@@ -171,6 +172,7 @@ void PedeNoise::measureNoise()
     // now plot the histogram with the noise
 
     // instead of looping over the Histograms and finding everything according to the CBC from the map, just loop the CBCs
+
     for ( auto cBoard : fBoardVector )
     {
         uint32_t cBoardId = cBoard->getBeId();
@@ -260,6 +262,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
         const std::vector<Event*>& events = GetEvents ( cBoard );
 
         fillOccupancyHist (cBoard, events);
+        //std::future<void> cFuture = std::async (&PedeNoise::fillOccupancyHist, this, cBoard, events);
 
         //now I've filled the histogram with the occupancy
         //let's say if there is more than 1% noise occupancy, we consider the strip as noise and thus set the offset to either 0 or FF
@@ -269,6 +272,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
             {
                 //get the histogram for the occupancy
                 TH1F* cHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_occupancy" ) );
+                //cFuture.get();
                 cHist->Scale (1 / (fEventsPerPoint * 200.) );
                 TLine* line = new TLine (0, pNoiseStripThreshold * 0.001, NCHANNELS, pNoiseStripThreshold * 0.001);
 

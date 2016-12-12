@@ -203,9 +203,11 @@ struct ThresholdVisitor : public HwDescriptionVisitor
     // Write constructor
     ThresholdVisitor (CbcInterface* pInterface, uint16_t pThreshold) : fInterface (pInterface), fThreshold (pThreshold), fOption ('w')
     {
-        if (fThreshold > 1023) LOG (ERROR) << "Error, Threshold value can be 10 bit max (1023)! - quitting";
-
-        exit (1);
+        if (fThreshold > 1023)
+        {
+            LOG (ERROR) << "Error, Threshold value can be 10 bit max (1023)! - quitting";
+            exit (1);
+        }
     }
     // Read constructor
     ThresholdVisitor (CbcInterface* pInterface) : fInterface (pInterface) , fOption ('r')
@@ -253,7 +255,7 @@ struct ThresholdVisitor : public HwDescriptionVisitor
                 fThreshold = (pCbc.getReg ("VCth") ) & 0x00FF;
             }
         }
-        else
+        else if (pCbc.getChipType() == ChipType::CBC3)
         {
 
             if (fOption = 'w')
@@ -273,6 +275,8 @@ struct ThresholdVisitor : public HwDescriptionVisitor
                 fThreshold = ( (pCbc.getReg ("Vth2") & 0x03) << 8) | (pCbc.getReg ("Vth1") & 0xFF);
             }
         }
+        else
+            LOG (ERROR) << "Not a valid chip type!";
     }
 };
 
@@ -326,7 +330,7 @@ struct LatencyVisitor : public HwDescriptionVisitor
                 fLatency = (pCbc.getReg ("TriggerLatency") ) & 0x00FF;
             }
         }
-        else
+        else if (pCbc.getChipType() == ChipType::CBC3)
         {
             if (fOption = 'w')
             {
@@ -347,6 +351,8 @@ struct LatencyVisitor : public HwDescriptionVisitor
                 fLatency = ( (pCbc.getReg ("FeCtrl&TrgLat2") & 0x01) << 8) | (pCbc.getReg ("TriggerLatency1") & 0xFF);
             }
         }
+        else
+            LOG (ERROR) << "Not a valid chip type!";
     }
 };
 
