@@ -218,7 +218,7 @@ namespace Ph2_HwInterface {
             }
         }
 
-        uint32_t cDelay = ReadReag ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
+        uint32_t cDelay = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
         LOG (INFO) << "Idealy tuned to delay tap = " << cDelay;
     }
 
@@ -314,7 +314,6 @@ namespace Ph2_HwInterface {
         cVecReg.clear();
 
         // configure the fast command cycle to send triggers
-        std::vector< std::pair<std::string, uint32_t> > cVecReg;
         cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.enable.trigger", 0x1});
         cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.Ncycle", pNEvents});
         WriteStackReg ( cVecReg );
