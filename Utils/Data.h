@@ -14,6 +14,7 @@
 
 #include <uhal/uhal.hpp>
 #include <memory>
+#include <future>
 #include <ios>
 #include <istream>
 #include "../Utils/Event.h"
@@ -44,6 +45,7 @@ namespace Ph2_HwInterface {
         const std::set<uint32_t> fChannelLastRows {13, 22, 31, 40, 49, 58, 67, 76};
 
         std::vector<Event*> fEventList;
+        std::future<void> fFuture;
 
       private:
 
@@ -116,6 +118,7 @@ namespace Ph2_HwInterface {
          * \param pType : the board type according to the Enum defined in Definitions.h
          */
         void Set ( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, BoardType pType);
+        void privateSet ( const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, BoardType pType);
 
         /*!
          * \brief Reset the data structure
@@ -129,14 +132,20 @@ namespace Ph2_HwInterface {
         // cannot be const as fCurrentEvent is incremented
         const Event* GetNextEvent ( const BeBoard* pBoard )
         {
+            //fFuture.wait();
+            fFuture.get();
             return ( ( fCurrentEvent >= fEventList.size() ) ? nullptr : fEventList.at ( fCurrentEvent++ ) );
         }
-        const Event* GetEvent ( const BeBoard* pBoard, int i ) const
+        const Event* GetEvent ( const BeBoard* pBoard, int i )
         {
+            //fFuture.wait();
+            fFuture.get();
             return ( ( i >= (int) fEventList.size() ) ? nullptr : fEventList.at ( i ) );
         }
-        const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const
+        const std::vector<Event*>& GetEvents ( const BeBoard* pBoard )
         {
+            //fFuture.wait();
+            fFuture.get();
             return fEventList;
         }
     };
