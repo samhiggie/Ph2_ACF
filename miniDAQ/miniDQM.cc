@@ -47,13 +47,12 @@ void tokenize ( const std::string& str, std::vector<std::string>& tokens, const 
     }
 }
 
-void dumpEvents ( const std::vector<Event*>& elist, size_t evt_limit )
+void dumpEvents ( const std::vector<Event*>& elist, size_t evt_limit, std::ostream& os )
 {
     for ( int i = 0; i < min (elist.size(), evt_limit); i++ )
     {
         //LOG (INFO) << "Event index: " << i + 1 << std::endl;
-        std::stringstream outp;
-        outp << *elist[i] << std::endl;
+        os << *elist[i] << std::endl;
         //LOG (INFO) << outp.str();
     }
 }
@@ -163,7 +162,7 @@ int main ( int argc, char* argv[] )
 
         if (cBoardType == "IMPERIAL")
             t = BoardType::ICGLIB;
-        else if (cBoardType == "SRASBOURG")
+        else if (cBoardType == "STRASBOURG")
             t = BoardType::GLIB;
         else if (cBoardType == "SUPERVISOR")
             t = BoardType::SUPERVISOR;
@@ -203,9 +202,10 @@ int main ( int argc, char* argv[] )
 
     LOG (INFO) << "HWfile=" << cHWFile;
     //dqmh->parseHWxml ( cHWFile );
-    std::ofstream outp;
+    std::stringstream outp;
     dqmh->InitializeHw ( cHWFile, outp );
-    LOG (INFO) << outp;
+    LOG (INFO) << outp.str();
+    outp.str ("");
     //dqmh->fParser.parseHW (cHWFile, fBeBoardFWMap, fBoardVector, os);
     const BeBoard* pBoard = dqmh->getBoard ( 0 );
 
@@ -281,7 +281,13 @@ int main ( int argc, char* argv[] )
         LOG (INFO) << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath ;
     }
 
-    else dumpEvents ( elist, maxevt );
+    else
+    {
+
+        std::stringstream outp;
+        dumpEvents ( elist, maxevt, outp );
+        LOG (INFO) << outp.str();
+    }
 
     delete dqmh;
     return 0;
