@@ -182,9 +182,6 @@ int main ( int argc, char* argv[] )
     uint32_t cN = 1;
     uint32_t cNthAcq = 0;
 
-    if (!cmd.foundOption ( "read") )
-        cSystemController.fBeBoardInterface->Start ( pBoard );
-
     Counter cCbcCounter;
     pBoard->accept ( cCbcCounter );
     uint32_t uFeMask = (1 << cCbcCounter.getNFe() ) - 1;
@@ -197,6 +194,9 @@ int main ( int argc, char* argv[] )
         pPSet = new ParamSet (cmd.optionValue ("condition") );
         TrackerEvent::setI2CValuesForConditionData (pBoard, pPSet);
     }
+
+    if (!cmd.foundOption ( "read") )
+        cSystemController.fBeBoardInterface->Start ( pBoard );
 
     const std::vector<Event*>* pEvents ;
 
@@ -212,10 +212,11 @@ int main ( int argc, char* argv[] )
         {
             uint32_t cPacketSize = cSystemController.ReadData ( pBoard );
 
-            pEvents = &cSystemController.GetEvents ( pBoard );
 
             if ( cN + cPacketSize > pEventsperVcth )
                 cSystemController.fBeBoardInterface->Stop ( pBoard );
+
+            pEvents = &cSystemController.GetEvents ( pBoard );
         }
 
         for ( auto& ev : *pEvents )
