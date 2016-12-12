@@ -251,7 +251,7 @@ namespace Ph2_HwInterface {
         if ( fSaveToFile )
         {
             fFileHandler->set ( pData );
-            fFileHandler->writeFile();
+            //fFileHandler->writeFile();
         }
 
         return fNEventsperAcquistion;
@@ -324,7 +324,7 @@ namespace Ph2_HwInterface {
         if ( fSaveToFile )
         {
             fFileHandler->set ( pData );
-            fFileHandler->writeFile();
+            //fFileHandler->writeFile();
         }
     }
 

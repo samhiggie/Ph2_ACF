@@ -297,7 +297,7 @@ namespace Ph2_HwInterface {
         if ( fSaveToFile )
         {
             fFileHandler->set ( pData );
-            fFileHandler->writeFile();
+            //fFileHandler->writeFile();
         }
 
         return nbEvtPacket;
@@ -370,7 +370,7 @@ namespace Ph2_HwInterface {
         if ( fSaveToFile )
         {
             fFileHandler->set ( pData );
-            fFileHandler->writeFile();
+            //fFileHandler->writeFile();
         }
 
         WriteReg ( "pc_commands.PC_config_ok", 0 );
