@@ -86,11 +86,14 @@ namespace Ph2_HwInterface {
                 uint8_t cCbcId_Data = list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) & 0x0001F000;
                 uint16_t cCbcDataSize = list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x00000FFF;
 
+                //this ID i get from the header
                 if (fBeId != cBeId_Data) LOG (INFO) << "Warning, EeId in Data frame does not match what is expected! - check your configuration!";
 
-                if (cFeId != cFeId_Data) LOG (INFO) << "Warning, FeId in Data frame does not match what is expected! - check your configuration!";
+                //the cFeId is from memory, thus increment by 1
+                if (cFeId + 1 != cFeId_Data) LOG (INFO) << "Warning, FeId in Data frame does not match what is expected! - check your configuration!";
 
-                if (cCbcId != cCbcId_Data) LOG (INFO) << "Warning, CbcId in Data frame does not match what is expected! - check your configuration!";
+                //the cCbcId is from memory, thus increase by 1
+                if (cCbcId + 1 != cCbcId_Data) LOG (INFO) << "Warning, CbcId in Data frame does not match what is expected! - check your configuration!";
 
                 if (cCbcDataSize != CBC_EVENT_SIZE_32_CBC3 * 32) LOG (INFO) << "Warning, CbcDataSize in Data frame does not match what is expected! - check your configuration!";
 
@@ -134,16 +137,15 @@ namespace Ph2_HwInterface {
         //get the CBC event for pFeId and pCbcId into vector<32bit> cbcData
         std::vector< uint32_t > cbcData;
         GetCbcEvent (pFeId, pCbcId, cbcData);
-        //for the first 32-bit word, use only the 26 LSBs
-        //this unfortunately means that i have two leading bits that are always 0
-        os << std::setw (6) << (cbcData.at (10) & 0x03FFFFFF);
+        //for the first 32-bit word, use only the 4 MSBs and reverse the bit order
+        os << std::setw (1) << reverse_bits (cbcData.at (2) & 0xF0000000);
 
         //this is the body of 7 words that are full of data
-        for ( uint32_t i = 9; i > 2; i++ )
-            os << std::setw (8) << cbcData.at (i);
+        for ( uint32_t i = 3; i < 10; i++ )
+            os << std::setw (8) << reverse_bits (cbcData.at (i) );
 
-        //the last word with only 4 bits
-        os << std::setw (2) << ( (cbcData.at (2) & 0xF0000000) >> 28);
+        //the last word with only 26 bits
+        os << std::setw (7) << ( reverse_bits (cbcData.at (10) & 0x03FFFFFF) );
         os.copyfmt (oldState);
 
         return tmp.str();
@@ -162,8 +164,8 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint32_t cError = ( (cData->second.at (2) >> 8) & 0x00000003);
-            return this->reverse_bits (cError);
+            uint32_t cError = ( reverse_bits (cData->second.at (2) & 0x00000300) >> 22);
+            return cError;
         }
         else
         {
@@ -179,8 +181,8 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint32_t cPipeAddress = ( (cData->second.at (2) >> 10) & 0x000001FF);
-            return this->reverse_bits (cPipeAddress);
+            uint32_t cPipeAddress = ( reverse_bits (cData->second.at (2) & 0x0007FC00) >> 13 );
+            return cPipeAddress;
         }
         else
         {
@@ -196,8 +198,8 @@ namespace Ph2_HwInterface {
 
         //words 0 and 1 only contain header
         //this algorithm works
-        uint32_t cWordP = 10 - ( (i + 6) / 32) ;
-        uint32_t cBitP = (i + 6) % 32;
+        uint32_t cWordP = 2 + ( (i + 28)  / 32) ;
+        uint32_t cBitP = (i + 28) % 32;
 
         uint16_t cKey = encodeId (pFeId, pCbcId);
         EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
@@ -206,7 +208,7 @@ namespace Ph2_HwInterface {
         {
             if (cWordP >= cData->second.size() ) return false;
 
-            return ( (cData->second.at (cWordP) >> (31 - cBitP) ) & 0x1);
+            return ( (cData->second.at (cWordP) >> (cBitP) ) & 0x1);
         }
         else
         {
@@ -228,12 +230,12 @@ namespace Ph2_HwInterface {
 
             for ( uint32_t i = 0; i < NCHANNELS; ++i )
             {
-                uint32_t cWordP = 10 - ( (i + 6) / 32);
-                uint32_t cBitP = (i + 6) % 32;
+                uint32_t cWordP = 2 + ( (i + 28)  / 32) ;
+                uint32_t cBitP = (i + 28) % 32;
 
                 if ( cWordP >= cData->second.size() ) break;
 
-                os << ( ( cData->second.at (cWordP) >> ( 31 - cBitP ) ) & 0x1 );
+                os << ( ( cData->second.at (cWordP) >> (cBitP ) ) & 0x1 );
             }
 
             return os.str();
@@ -261,19 +263,19 @@ namespace Ph2_HwInterface {
 
             for ( uint32_t i = 0; i < NCHANNELS; ++i )
             {
-                uint32_t cWordP = 10 - ( (i + 6) / 32);
-                uint32_t cBitP = (i + 6) % 32;
+
+                uint32_t cWordP = 2 + ( (i + 28)  / 32) ;
+                uint32_t cBitP = (i + 28) % 32;
 
                 if ( cWordP >= cData->second.size() ) break;
 
-                blist.push_back ( ( cData->second.at (cWordP) >> ( 31 - cBitP ) ) & 0x1 );
+                blist.push_back ( ( cData->second.at (cWordP) >> (cBitP ) ) & 0x1 );
             }
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
 
         return blist;
-        //return BitVector ( pFeId, pCbcId, OFFSET_CBCDATA, WIDTH_CBCDATA );
     }
 
     std::vector<bool> Cbc3Event::DataBitVector ( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const
@@ -287,12 +289,13 @@ namespace Ph2_HwInterface {
         {
             for ( auto i :  channelList )
             {
-                uint32_t cWordP = 10 - ( (i + 6) / 32);
-                uint32_t cBitP = (i + 6) % 32;
+
+                uint32_t cWordP = 2 + ( (i + 28)  / 32) ;
+                uint32_t cBitP = (i + 28) % 32;
 
                 if ( cWordP >= cData->second.size() ) break;
 
-                blist.push_back ( ( cData->second.at (cWordP) >> ( 31 - cBitP ) ) & 0x1 );
+                blist.push_back ( ( cData->second.at (cWordP) >> (cBitP ) ) & 0x1 );
             }
         }
         else
@@ -324,15 +327,14 @@ namespace Ph2_HwInterface {
 
             for ( uint32_t i = 0; i < 36; ++i )
             {
-                uint32_t cWordP = i / 32;
+                uint32_t cWordP = (i / 32) + 1;
                 uint32_t cBitP = i % 32;
 
                 if ( cWordP >= cData->second.size() ) break;
 
                 //os << ((cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ))?"1":"0");
                 uint32_t cWord = cData->second.at (cWordP);
-                this->reverse_bits (cWord);
-                os <<  (  (cWord >> ( 31 - cBitP ) ) & 0x1 );
+                os <<  (  (cWord >> (cBitP ) ) & 0x1 );
             }
 
             return os.str();
@@ -355,9 +357,10 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint8_t pos1 = cData->second.at (1) & 0x000000FF;
-            uint8_t pos2 = cData->second.at (1) & 0x0000FF00;
-            uint8_t pos3 = cData->second.at (1) & 0x00FF0000;
+            uint32_t cWord = reverse_bits (cData->second.at (1) );
+            uint8_t pos1 = cWord & 0xFF000000;
+            uint8_t pos2 = cWord & 0x00FF0000;
+            uint8_t pos3 = cWord & 0x0000FF00;
             return (pos1 || pos2 || pos3);
         }
         else
@@ -376,13 +379,14 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint8_t pos1 = cData->second.at (1) & 0x000000FF;
-            uint8_t pos2 = cData->second.at (1) & 0x0000FF00;
-            uint8_t pos3 = cData->second.at (1) & 0x00FF0000;
-
-            uint8_t bend1 = cData->second.at (1) & 0x0F000000;
-            uint8_t bend2 = cData->second.at (1) & 0xF0000000;
-            uint8_t bend3 = cData->second.at (2) & 0x0000000F;
+            uint32_t cWord = reverse_bits (cData->second.at (1) );
+            uint8_t pos1 = cWord & 0xFF000000;
+            uint8_t pos2 = cWord & 0x00FF0000;
+            uint8_t pos3 = cWord & 0x0000FF00;
+            uint8_t bend1 = cWord & 0x000000F0;
+            uint8_t bend2 = cWord & 0x0000000F;
+            cWord = reverse_bits (cData->second.at (2) );
+            uint8_t bend3 = cWord & 0xF0000000;
 
             cStubVec.emplace_back (pos1, bend1) ;
             cStubVec.emplace_back (pos2, bend2) ;
@@ -406,10 +410,10 @@ namespace Ph2_HwInterface {
         {
             cNHits += __builtin_popcount ( cData->second.at (2) & 0xF0000000);
 
-            for (auto cWord = (cData->second.begin() + 3); cWord != cData->second.end() - 1;  cWord++)
+            for (auto cWord = (cData->second.begin() + 3); cWord != cData->second.rbegin() + 1;  cWord++)
                 cNHits += __builtin_popcount (*cWord);
 
-            cNHits += __builtin_popcount (cData->second.back() & 0x03FFFFFF);
+            cNHits += __builtin_popcount (cData->second.rbegin() & 0x03FFFFFF);
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
@@ -426,18 +430,14 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint32_t cIndex = 0;
-
             for ( uint32_t i = 0; i < NCHANNELS; ++i )
             {
-                uint32_t cWordP = 10 - ( (i + 6) / 32);
-                uint32_t cBitP = (i + 6) % 32;
+                uint32_t cWordP = 2 + ( (i + 28)  / 32) ;
+                uint32_t cBitP = (i + 28) % 32;
 
                 if ( cWordP >= cData->second.size() ) break;
 
-                if ( ( cData->second.at (cWordP) >> ( 31 - cBitP ) ) & 0x1) cHits.push_back (cIndex);
-
-                cIndex++;
+                if ( ( cData->second.at (cWordP) >> ( cBitP ) ) & 0x1) cHits.push_back (i);
             }
         }
         else

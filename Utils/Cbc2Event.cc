@@ -316,7 +316,6 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint32_t cIndex = 0;
 
             for ( uint32_t i = 0; i < NCHANNELS; ++i )
             {
@@ -328,9 +327,8 @@ namespace Ph2_HwInterface {
                     break;
 
                 if ( ( cData->second[cWordP] >> ( 31 - cBitP ) ) & 0x1)
-                    cHits.push_back (cIndex);
+                    cHits.push_back (i);
 
-                cIndex++;
             }
         }
         else

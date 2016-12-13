@@ -20,7 +20,7 @@ void Tool::bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject )
 
     if ( cCbcHistMap == std::end ( fCbcHistMap ) )
     {
-        LOG (ERROR) << "Histo Map for CBC " << int ( pCbc->getCbcId() ) <<  " (FE " << int ( pCbc->getFeId() ) << ") does not exist - creating " ;
+        LOG (INFO) << "Histo Map for CBC " << int ( pCbc->getCbcId() ) <<  " (FE " << int ( pCbc->getFeId() ) << ") does not exist - creating " ;
         std::map<std::string, TObject*> cTempCbcMap;
 
         fCbcHistMap[pCbc] = cTempCbcMap;
@@ -45,7 +45,7 @@ void Tool::bookHistogram ( Module* pModule, std::string pName, TObject* pObject 
 
     if ( cModuleHistMap == std::end ( fModuleHistMap ) )
     {
-        LOG (ERROR) << "Histo Map for Module " << int ( pModule->getFeId() ) << " does not exist - creating " ;
+        LOG (INFO) << "Histo Map for Module " << int ( pModule->getFeId() ) << " does not exist - creating " ;
         std::map<std::string, TObject*> cTempModuleMap;
 
         fModuleHistMap[pModule] = cTempModuleMap;
