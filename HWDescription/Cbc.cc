@@ -89,27 +89,29 @@ namespace Ph2_HwDescription {
                 {
                     fCommentMap[cLineCounter] = line;
                     cLineCounter++;
-                    continue;
+                    //continue;
                 }
 
-                if ( line.at ( 0 ) == '#' || line.at ( 0 ) == '*' || line.empty() )
+                else if ( line.at ( 0 ) == '#' || line.at ( 0 ) == '*' || line.empty() )
                 {
                     //if it is a comment, save the line mapped to the line number so I can later insert it in the same place
                     fCommentMap[cLineCounter] = line;
                     cLineCounter++;
-                    continue;
+                    //continue;
                 }
+                else
+                {
+                    std::istringstream input ( line );
+                    input >> fName >> fPage_str >> fAddress_str >> fDefValue_str >> fValue_str;
 
-                std::istringstream input ( line );
-                input >> fName >> fPage_str >> fAddress_str >> fDefValue_str >> fValue_str;
+                    fRegItem.fPage = strtoul ( fPage_str.c_str(), 0, 16 );
+                    fRegItem.fAddress = strtoul ( fAddress_str.c_str(), 0, 16 );
+                    fRegItem.fDefValue = strtoul ( fDefValue_str.c_str(), 0, 16 );
+                    fRegItem.fValue = strtoul ( fValue_str.c_str(), 0, 16 );
 
-                fRegItem.fPage = strtoul ( fPage_str.c_str(), 0, 16 );
-                fRegItem.fAddress = strtoul ( fAddress_str.c_str(), 0, 16 );
-                fRegItem.fDefValue = strtoul ( fDefValue_str.c_str(), 0, 16 );
-                fRegItem.fValue = strtoul ( fValue_str.c_str(), 0, 16 );
-
-                fRegMap[fName] = fRegItem;
-                cLineCounter++;
+                    fRegMap[fName] = fRegItem;
+                    cLineCounter++;
+                }
             }
 
             file.close();
@@ -119,6 +121,9 @@ namespace Ph2_HwDescription {
             LOG (ERROR) << "The CBC Settings File " << filename << " does not exist!" ;
             exit (1);
         }
+
+        for (auto cItem : fRegMap)
+            LOG (DEBUG) << cItem.first;
     }
 
 

@@ -169,7 +169,7 @@ namespace Ph2_HwInterface {
 
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
-        ReadI2C (  fBroadcastCbcId, pReplies);
+        ReadI2C (  fNCbc, pReplies);
 
         bool cSuccess = false;
 
@@ -408,7 +408,7 @@ namespace Ph2_HwInterface {
                                          bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( (fFMCId ) << 29 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( (pRegItem.fPage + 1) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( (fFMCId ) << 29 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( (pRegItem.fPage) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
     void Cbc3Fc7FWInterface::EncodeReg ( const CbcRegItem& pRegItem,
                                          uint8_t pFeId,
@@ -418,7 +418,7 @@ namespace Ph2_HwInterface {
                                          bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( (pFeId + 1) << 29 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( (pRegItem.fPage + 1) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( (pFeId + 1) << 29 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( (pRegItem.fPage ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void Cbc3Fc7FWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
@@ -428,7 +428,7 @@ namespace Ph2_HwInterface {
                                            bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( (fFMCId ) << 29 ) | ( fBroadcastCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 )  | ( (pRegItem.fPage + 1) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        pVecReq.push_back ( ( (fFMCId ) << 29 ) | ( fBroadcastCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 )  | ( (pRegItem.fPage ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void Cbc3Fc7FWInterface::DecodeReg ( CbcRegItem& pRegItem,
@@ -438,10 +438,10 @@ namespace Ph2_HwInterface {
                                          bool& pFailed )
     {
         pCbcId   =  ( ( pWord & 0x07000000 ) >> 24) - 1;
-        pFailed  =  ( ( pWord & 0x00100000 ) >> 20) - 1;
+        pFailed  =  ( ( pWord & 0x00100000 ) >> 20) ;
         //pRead is 1 for read transaction, 0 for a write transaction
         pRead    =  ( pWord & 0x00020000 ) >> 17;
-        pRegItem.fPage    =  ( (pWord & 0x00010000 ) - 1) >> 16;
+        pRegItem.fPage    =  ( (pWord & 0x00010000  ) >> 16) ;
         pRegItem.fAddress =  ( pWord & 0x0000FF00 ) >> 8;
         pRegItem.fValue   =  ( pWord & 0x000000FF );
     }
@@ -506,18 +506,19 @@ namespace Ph2_HwInterface {
         // the actual write & readback command is in the vector
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
+
+        //for (int i = 0; i < pVecReg.size(); i++)
+        //{
+        //LOG (DEBUG) << std::bitset<16> ( pVecReg.at (i)  >> 16)  << " " << std::bitset<16> ( pVecReg.at (i) );
+        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i)  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i) );
+        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i + 1 )  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i + 1 ) );
+        //LOG (DEBUG) << std::endl;
+        //}
+
+        //LOG (DEBUG) << "Command Size: " << pVecReg.size() << " Reply size " << cReplies.size();
+
         // the reply format is different from the sent format, therefore a binary predicate is necessary to compare
         // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
-        // could use a mask 0x0F01FFFF
-
-        //for (int index = 0; index < pVecReg.size(); index++)
-        //{
-        //uint32_t cWord1 = pVecReg.at (index);
-        //uint32_t cWord2 = cReplies.at (2 * index);
-        //uint32_t cWord3 = cReplies.at ( (2 * index) + 1);
-        //LOG(INFO)  << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)   << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)   << " ## " << std::bitset<32> (cWord3) << " ### Read:           CbcId " << + ( (cWord3 >> 24) & 0xF) << " Info " << + ( (cWord3 >> 20) & 0x1) << " Read? " << + ( (cWord3 >> 17) & 0x1) << " Page  " << + ( (cWord3 >> 16) & 0x1) << " Address " << + ( (cWord3 >> 8) & 0xFF) << " Value " << + ( (cWord3) & 0xFF)  ;
-        //;
-        //}
 
         //here make a distinction: if pReadback is true, compare only the read replies using the binary predicate
         //else, just check that info is 0 and thus the CBC acqnowledged the command if the writeread is 0
@@ -684,8 +685,12 @@ namespace Ph2_HwInterface {
     bool Cbc3Fc7FWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
         //TODO: cleanup
-        if ( (cWord1 & 0x0F00FFFF) != (cWord2 & 0x0F00FFFF) )
-            LOG (INFO)  << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 28) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF)   << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  ;
+        //if ( (cWord1 & 0x0F00FFFF) != (cWord2 & 0x0F00FFFF) )
+        //{
+        //LOG (INFO)  << " ## " << std::bitset<32> (cWord1) << " ### Written: FMCId " <<  + ( (cWord1 >> 29) & 0xF) << " CbcId " << + ( (cWord1 >> 24) & 0xF) << " Read " << + ( (cWord1 >> 21) & 0x1) << " Write " << + ( (cWord1 >> 20) & 0x1) << " Page  " << + ( (cWord1 >> 16) & 0x1) << " Address " << + ( (cWord1 >> 8) & 0xFF) << " Value " << + ( (cWord1) & 0xFF);
+
+        //LOG (INFO) << " ## " << std::bitset<32> (cWord2) << " ### Read:           CbcId " << + ( (cWord2 >> 24) & 0xF) << " Info " << + ( (cWord2 >> 20) & 0x1) << " Read? " << + ( (cWord2 >> 17) & 0x1) << " Page  " << + ( (cWord2 >> 16) & 0x1) << " Address " << + ( (cWord2 >> 8) & 0xFF) << " Value " << + ( (cWord2) & 0xFF)  ;
+        //}
 
         //if the Register is FrontEndControl at p0 addr0, page is not defined and therefore I ignore it!
         if ( ( (cWord1 >> 16) & 0x1) == 0 && ( (cWord1 >> 8 ) & 0xFF) == 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
