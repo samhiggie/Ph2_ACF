@@ -16,6 +16,7 @@
     <Register name="cbc_system_cnfg">
         <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->
         <!--required-->
+        <Register name="global.misc.cbc_clk_phase_shift"> 0x1 </Register>
         <Register name="cbc_system_clk"> 0x1 </Register>
         <!--FAST SIGNAL SOURCE-->
         <Register name="fast_command_manager">
