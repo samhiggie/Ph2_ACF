@@ -3,31 +3,31 @@
 *--------------------------------------------------------------------------------
 * RegName                                    	Page	Addr	Defval	Value
 *--------------------------------------------------------------------------------
-FeCtrl&TrgLat2                                  0x00	0x00	0x3C	0x00
-TriggerLatency1                               	0x00	0x01	0xC8	0x00
-BetaMult&SLVS                                	0x00	0x02	0x18	0x00
-Ipre1                                        	0x00	0x03	0x46	0x00
-Ipre2                                        	0x00	0x04	0x2E	0x00
-Ipsf                                         	0x00	0x05	0x7A	0x00
-Ipa                                          	0x00	0x06	0x6A	0x00
-Ipaos                                        	0x00	0x07	0x4B	0x00
-Icomp                                        	0x00	0x09	0x23	0x00
-Vplus1&2                                       	0x00	0x0B	0x77	0x00
-HIP&TestMode                                  	0x00	0x0C	0x00	0x00
-TestPulsePot&NodeSel                           	0x00	0x0D	0x00	0x00
+FeCtrl&TrgLat2                                  0x00	0x00	0x3C	0x7C
+TriggerLatency1                               	0x00	0x01	0xC8	0xC8
+BetaMult&SLVS                                	0x00	0x02	0x18	0x18
+Ipre1                                        	0x00	0x03	0x46	0x0A
+Ipre2                                        	0x00	0x04	0x2E	0x78
+Ipsf                                         	0x00	0x05	0x7A	0x82
+Ipa                                          	0x00	0x06	0x6A	0x69
+Ipaos                                        	0x00	0x07	0x4B	0x32
+Icomp                                        	0x00	0x09	0x23	0x5A
+Vplus1&2                                       	0x00	0x0B	0x77	0x77
+HIP&TestMode                                  	0x00	0x0C	0x00	0x18
+TestPulsePot&NodeSel                           	0x00	0x0D	0x00	0x08
 TestPulseDel&ChanGroup                      	0x00	0x0E	0x00	0x00
-MiscTestPulseCtrl&AnalogMux                    	0x00	0x0F	0x00	0x00
-CALIbias                                       	0x00	0x10	0x10	0x00
-CALVcasc                                       	0x00	0x11	0x11	0x00
-Pipe&StubInpSel                                	0x00	0x12	0x03	0x00
+MiscTestPulseCtrl&AnalogMux                    	0x00	0x0F	0x00	0x60
+CALIbias                                       	0x00	0x10	0x10	0xF0
+CALVcasc                                       	0x00	0x11	0x11	0x3F
+Pipe&StubInpSel                                	0x00	0x12	0x03	0x53
 CoincWind&Offset34                            	0x00	0x13	0x00	0x00
 CoincWind&Offset12                             	0x00	0x14	0x00	0x00
 BandgapFuse                                  	0x00	0x15	0x00	0x00
 ChipIDFuse1                                  	0x00	0x16	0x00	0x00
 ChipIDFuse2                                  	0x00	0x17	0x00	0x00
 ChipIDFuse3                                 	0x00	0x18	0x00	0x00
-LayerSwap&CluWidth                              0x00    0x1B    0x00    0x00
-40MhzClk&Or254                                  0x00    0x1C    0x00    0x00
+LayerSwap&CluWidth                              0x00    0x1B    0x00    0x04
+40MhzClk&Or254                                  0x00    0x1C    0x00    0x84
 SerialIface&Error                               0x00    0x1D    0x00    0x00
 
 *--------------------------------------------------------------------------------
@@ -73,8 +73,8 @@ MaskChannel-254-to-249                        	0x00	0x3F	0x00	0xFF
 *--------------------------------------------------------------------------------
 * RegName                                    	Page	Addr	Defval	Value
 *--------------------------------------------------------------------------------
-Bend0                                           0x00    0x40    0x99    0x00
-Bend1                                           0x00    0x41    0xAA    0x00
+Bend0                                           0x00    0x40    0x99    0x99
+Bend1                                           0x00    0x41    0xAA    0xAA
 Bend2                                           0x00    0x42    0xBB    0x00
 Bend3                                           0x00    0x43    0xCC    0x00
 Bend4                                           0x00    0x44    0xDD    0x00
@@ -94,8 +94,8 @@ Bend14                                          0x00    0x4E    0x77    0x00
 *--------------------------------------------------------------------------------
 * RegName                                    	Page	Addr	Defval	Value
 *--------------------------------------------------------------------------------
-Vth1                                            0x00    0x4F    0x00    0x00
-Vth2                                            0x00    0x50    0x02    0x00
+Vth1                                            0x00    0x4F    0x00    0x3A
+Vth2                                            0x00    0x50    0x02    0x02
 
 *--------------------------------------------------------------------------------
 * Channel Offsets

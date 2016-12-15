@@ -60,7 +60,8 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 #ifdef __USBINST__
     //create instance of Ke2110Controller
     std::string cLogFile = fDirectoryName + "/DMM_log.txt";
-    Ke2110Controller* cKeController = new Ke2110Controller (cLogFile);
+    Ke2110Controller* cKeController = new Ke2110Controller ();
+    cKeController->SetLogFileName (cLogFile);
     cKeController->Reset();
     std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
     //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
