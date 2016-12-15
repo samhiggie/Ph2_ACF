@@ -141,7 +141,7 @@ namespace Ph2_HwInterface {
             }
         }
 
-        cVecReg.push_back ({"cbc_system_cnfg.global.misc.cbc_clk_phase_shift", 0x1});
+        cVecReg.push_back ({"cbc_system_cnfg.global.misc.cbc_clk_phase_shift", 0x0});
 
         //last, loop over the variable registers from the HWDescription.xml file
         //this is where I should get all the clocking and FastCommandInterface settings
@@ -159,12 +159,12 @@ namespace Ph2_HwInterface {
         this->CbcHardReset();
 
         //this will do everthing that comes below eventually
-        WriteReg ("cbc_system_ctrl.global.init", 0x1);
+        //WriteReg ("cbc_system_ctrl.global.init", 0x1);
         //temporary, should be in global init later
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset", 0x1);
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.init", 0x1);
 
-        std::this_thread::sleep_for (std::chrono::microseconds (10) );
+        std::this_thread::sleep_for (std::chrono::microseconds (50) * fNCbc );
 
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
@@ -207,8 +207,36 @@ namespace Ph2_HwInterface {
 
         while (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.cbc_ser_data_delay_idelay_tuning_fsm") != 4)
         {
-            //Are we sure we are writing to to the stat register?
-            WriteReg ("cbc_system_stat.cbc_data_processor.cbc0.cbc_ser_data_delay_idelay_tuning_fsm", 1);
+            //here read "SerialIface&Error" register of CBC
+            //this whole block is needed for the manual low-level I2C transaction
+            {
+                CbcRegItem cRegItem (0, 0x1D, 0, 0);
+                std::vector<uint32_t> cVecReq;
+                this->EncodeReg (cRegItem, 0, cVecReq, true, false);
+                this->ReadCbcBlockReg (cVecReq);
+                bool cFailed = false;
+                bool cRead;
+                uint8_t cId;
+                this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
+                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: " << std::hex << +cRegItem.fValue << std::dec;
+            }
+            LOG (INFO) << "sending Cbc fast reset!";
+            this->CbcFastReset();
+            //here read "SerialIface&Error" register of CBC again
+            //this whole block is needed for the manual low-level I2C transaction
+            {
+                CbcRegItem cRegItem (0, 0x1D, 0, 0);
+                std::vector<uint32_t> cVecReq;
+                this->EncodeReg (cRegItem, 0, cVecReq, true, false);
+                this->ReadCbcBlockReg (cVecReq);
+                bool cFailed = false;
+                bool cRead;
+                uint8_t cId;
+                this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
+                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: " << std::hex << +cRegItem.fValue << std::dec;
+            }
+            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_reset", 1);
+            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_start_tuning", 1);
             std::this_thread::sleep_for (std::chrono::microseconds (20) );
 
             if (++cCount > 5)
@@ -219,7 +247,7 @@ namespace Ph2_HwInterface {
         }
 
         uint32_t cDelay = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
-        LOG (INFO) << "Idealy tuned to delay tap = " << cDelay;
+        LOG (INFO) << "Idelay tuned to delay tap = " << cDelay;
     }
 
     void Cbc3Fc7FWInterface::Start()

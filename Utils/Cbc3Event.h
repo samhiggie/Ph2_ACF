@@ -190,7 +190,7 @@ namespace Ph2_HwInterface {
         void print (std::ostream& out) const override;
 
       private:
-        uint32_t reverse_bits ( uint32_t& n) const
+        uint32_t reverse_bits ( uint32_t n) const
         {
             n = ( (n >> 1) & 0x55555555) | ( (n << 1) & 0xaaaaaaaa) ;
             n = ( (n >> 2) & 0x33333333) | ( (n << 2) & 0xcccccccc) ;

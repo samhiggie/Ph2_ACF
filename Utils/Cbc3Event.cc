@@ -410,10 +410,10 @@ namespace Ph2_HwInterface {
         {
             cNHits += __builtin_popcount ( cData->second.at (2) & 0xF0000000);
 
-            for (auto cWord = (cData->second.begin() + 3); cWord != cData->second.rbegin() + 1;  cWord++)
+            for (auto cWord = (cData->second.begin() + 3); cWord != (++cData->second.rbegin() ).base() ;  cWord++)
                 cNHits += __builtin_popcount (*cWord);
 
-            cNHits += __builtin_popcount (cData->second.rbegin() & 0x03FFFFFF);
+            cNHits += __builtin_popcount (* (cData->second.rbegin() ) & 0x03FFFFFF);
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
