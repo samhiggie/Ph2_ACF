@@ -219,7 +219,12 @@ namespace Ph2_HwInterface {
                 bool cRead;
                 uint8_t cId;
                 this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: " << std::hex << +cRegItem.fValue << std::dec;
+                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
+                LOG (DEBUG) << "RAM Buffer Overflow: " << (cRegItem.fValue >> 4) & 0x1;
+                LOG (DEBUG) << "Latency Error:       " << (cRegItem.fValue >> 3) & 0x1;
+                LOG (DEBUG) << "Sync Lost:           " << (cRegItem.fValue >> 2) & 0x1;
+                LOG (DEBUG) << "Sync Stat:           " << (cRegItem.fValue >> 1) & 0x1;
+                LOG (DEBUG) << "Bad Code:            " << (cRegItem.fValue ) & 0x1;
             }
             LOG (INFO) << "sending Cbc fast reset!";
             this->CbcFastReset();
@@ -234,7 +239,12 @@ namespace Ph2_HwInterface {
                 bool cRead;
                 uint8_t cId;
                 this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: " << std::hex << +cRegItem.fValue << std::dec;
+                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ", RESET;
+                LOG (DEBUG) << "RAM Buffer Overflow: " << (cRegItem.fValue >> 4) & 0x1;
+                LOG (DEBUG) << "Latency Error:       " << (cRegItem.fValue >> 3) & 0x1;
+                LOG (DEBUG) << "Sync Lost:           " << (cRegItem.fValue >> 2) & 0x1;
+                LOG (DEBUG) << "Sync Stat:           " << (cRegItem.fValue >> 1) & 0x1;
+                LOG (DEBUG) << "Bad Code:            " << (cRegItem.fValue ) & 0x1;
             }
             WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_reset", 1);
             WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_start_tuning", 1);
