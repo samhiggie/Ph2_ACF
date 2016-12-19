@@ -220,11 +220,11 @@ namespace Ph2_HwInterface {
                 uint8_t cId;
                 this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
                 LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-                LOG (DEBUG) << "RAM Buffer Overflow: " << (cRegItem.fValue >> 4) & 0x1;
-                LOG (DEBUG) << "Latency Error:       " << (cRegItem.fValue >> 3) & 0x1;
-                LOG (DEBUG) << "Sync Lost:           " << (cRegItem.fValue >> 2) & 0x1;
-                LOG (DEBUG) << "Sync Stat:           " << (cRegItem.fValue >> 1) & 0x1;
-                LOG (DEBUG) << "Bad Code:            " << (cRegItem.fValue ) & 0x1;
+                LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
+                LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
+                LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
+                LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
+                LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
             }
             LOG (INFO) << "sending Cbc fast reset!";
             this->CbcFastReset();
@@ -239,12 +239,12 @@ namespace Ph2_HwInterface {
                 bool cRead;
                 uint8_t cId;
                 this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ", RESET;
-                LOG (DEBUG) << "RAM Buffer Overflow: " << (cRegItem.fValue >> 4) & 0x1;
-                LOG (DEBUG) << "Latency Error:       " << (cRegItem.fValue >> 3) & 0x1;
-                LOG (DEBUG) << "Sync Lost:           " << (cRegItem.fValue >> 2) & 0x1;
-                LOG (DEBUG) << "Sync Stat:           " << (cRegItem.fValue >> 1) & 0x1;
-                LOG (DEBUG) << "Bad Code:            " << (cRegItem.fValue ) & 0x1;
+                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
+                LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
+                LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
+                LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
+                LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
+                LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
             }
             WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_reset", 1);
             WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_start_tuning", 1);
@@ -327,8 +327,16 @@ namespace Ph2_HwInterface {
             //fFileHandler->writeFile();
         }
 
+        //need to return the number of events read
+        uint32_t cEventSize = computeEventSize (pBoard);
+        uint32_t cNEvents = 0;
+
+        if (cNWords % cEventSize == 0 ) cNEvents = cNWords / cEventSize;
+        else
+            LOG (ERROR) << "Packet Size is not a multiple of the event size!";
+
         //return nEvents;
-        return 0;
+        return cNEvents;
     }
 
 
@@ -390,6 +398,35 @@ namespace Ph2_HwInterface {
             fFileHandler->set ( pData );
             //fFileHandler->writeFile();
         }
+    }
+
+    /** compute the block size according to the number of CBC's on this board
+     * this will have to change with a more generic FW */
+    uint32_t Cbc3Fc7FWInterface::computeEventSize ( BeBoard* pBoard )
+    {
+        //use a counting visitor to find out the number of CBCs
+        struct CbcCounter : public HwDescriptionVisitor
+        {
+            uint32_t fNCbc = 0;
+
+            void visit ( Cbc& pCbc )
+            {
+                fNCbc++;
+            }
+            uint32_t getNCbc()
+            {
+                if ( fNCbc == 2 )
+                    // since the 2 CBC FW outputs data for 4 CBCs (beamtest heritage, might have to change in the future)
+                    return 2 * fNCbc;
+                else return fNCbc;
+            }
+        };
+
+        CbcCounter cCounter;
+        pBoard->accept ( cCounter );
+
+        //return 3 words header + fNCbc * CBC Event Size  (11 words)
+        return cCounter.getNCbc() * CBC_EVENT_SIZE_32_CBC3 + EVENT_HEADER_TDC_SIZE_32_CBC3;
     }
 
     std::vector<uint32_t> Cbc3Fc7FWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )

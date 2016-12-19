@@ -141,6 +141,7 @@ namespace Ph2_HwInterface {
         void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData);
 
       private:
+        uint32_t computeEventSize ( BeBoard* pBoard );
         //to find the correct idelay tap
         void FindPhase();
         //I2C command sending implementation
