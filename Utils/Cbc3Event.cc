@@ -48,12 +48,12 @@ namespace Ph2_HwInterface {
         fEventCount = 0x1FFFFFFF &  list.at (2);
         //TODO: get the value from 1 CBC here?
         fEventCountCBC = 0;
-        fTDC = 0xE0000000 & list.at (2);
+        fTDC = (0xE0000000 & list.at (2) ) >> 29;
 
-        fBeId = 0x0FE00000 & list.at (0);
-        fBeFWType = 0x001C0000 & list.at (0);
-        fCBCDataType = 0x00030000 & list.at (0);
-        fNCbc = 0x0000F000 & list.at (0);
+        fBeId = (0x0FE00000 & list.at (0) ) >> 21;
+        fBeFWType = (0x001C0000 & list.at (0) ) >> 18;
+        fCBCDataType = (0x00030000 & list.at (0) ) >> 16;
+        fNCbc = (0x0000F000 & list.at (0) ) >> 12;
         fEventDataSize = 0x00000FFF & list.at (0);
         fBeStatus = list.at (1);
 
@@ -81,13 +81,13 @@ namespace Ph2_HwInterface {
             {
                 //Sanity Check with CBC header
                 //first, get the BeID, FeId, CbcId and CBCDataSize from the data frame CBC header and check against the Software
-                uint8_t cBeId_Data = list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x07F00000;
-                uint8_t cFeId_Data = list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x000E0000;
-                uint8_t cCbcId_Data = list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) & 0x0001F000;
+                uint8_t cBeId_Data = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x07F00000) >> 20;
+                uint8_t cFeId_Data = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x000E0000) >> 17;
+                uint8_t cCbcId_Data = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) & 0x0001F000) >> 12;
                 uint16_t cCbcDataSize = list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x00000FFF;
 
                 //this ID i get from the header
-                if (fBeId != cBeId_Data) LOG (INFO) << "Warning, EeId in Data frame does not match what is expected! - check your configuration!";
+                if (fBeId != cBeId_Data) LOG (INFO) << "Warning, BeId in Data frame does not match what is expected! - check your configuration!";
 
                 //the cFeId is from memory, thus increment by 1
                 if (cFeId + 1 != cFeId_Data) LOG (INFO) << "Warning, FeId in Data frame does not match what is expected! - check your configuration!";
@@ -95,7 +95,8 @@ namespace Ph2_HwInterface {
                 //the cCbcId is from memory, thus increase by 1
                 if (cCbcId + 1 != cCbcId_Data) LOG (INFO) << "Warning, CbcId in Data frame does not match what is expected! - check your configuration!";
 
-                if (cCbcDataSize != CBC_EVENT_SIZE_32_CBC3 * 32) LOG (INFO) << "Warning, CbcDataSize in Data frame does not match what is expected! - check your configuration!";
+                //-1 since the data size is 10 without the Cbc Header
+                if (cCbcDataSize != CBC_EVENT_SIZE_32_CBC3 - 1 ) LOG (INFO) << "Warning, CbcDataSize in Data frame (" << cCbcDataSize << ") does not match what is expected (" << CBC_EVENT_SIZE_32_CBC3 - 1 << ")! - check your configuration!";
 
                 uint16_t cKey = encodeId (cFeId, cCbcId);
 
@@ -380,13 +381,13 @@ namespace Ph2_HwInterface {
         if (cData != std::end (fEventDataMap) )
         {
             uint32_t cWord = reverse_bits (cData->second.at (1) );
-            uint8_t pos1 = cWord & 0xFF000000;
-            uint8_t pos2 = cWord & 0x00FF0000;
-            uint8_t pos3 = cWord & 0x0000FF00;
-            uint8_t bend1 = cWord & 0x000000F0;
-            uint8_t bend2 = cWord & 0x0000000F;
+            uint8_t pos1 =  (cWord & 0xFF000000) >> 24;
+            uint8_t pos2 =  (cWord & 0x00FF0000) >> 16;
+            uint8_t pos3 =  (cWord & 0x0000FF00) >> 8;
+            uint8_t bend1 = (cWord & 0x000000F0) >> 4;
+            uint8_t bend2 = (cWord & 0x0000000F);
             cWord = reverse_bits (cData->second.at (2) );
-            uint8_t bend3 = cWord & 0xF0000000;
+            uint8_t bend3 = (cWord & 0xF0000000) >> 28;
 
             cStubVec.emplace_back (pos1, bend1) ;
             cStubVec.emplace_back (pos2, bend2) ;
@@ -453,9 +454,9 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint8_t cBeId = cData->second.at (0) & 0x07F00000;
-            uint8_t cFeId = cData->second.at (0) & 0x000E0000;
-            uint8_t cCbcId = cData->second.at (0) & 0x0001F000;
+            uint8_t cBeId =  (cData->second.at (0) & 0x07F00000) >> 20;
+            uint8_t cFeId =  (cData->second.at (0) & 0x000E0000) >> 17;
+            uint8_t cCbcId = (cData->second.at (0) & 0x0001F000) >> 12;
             uint16_t cCbcDataSize = cData->second.at (0) & 0x00000FFF;
             os << GREEN << "CBC Header:" << std::endl;
             os << "BeId: " << +cBeId << " FeId: " << +cFeId << " CbcId: " << +cCbcId << " DataSize: " << cCbcDataSize << RESET << std::endl;
@@ -469,23 +470,22 @@ namespace Ph2_HwInterface {
     {
         os << BOLDGREEN << "EventType: CBC3" << RESET << std::endl;
         os << BOLDBLUE <<  "L1A Counter: " << this->GetEventCount() << RESET << std::endl;
-        os << "          Be Id: " << this->GetBeId() << std::endl;
-        os << "          Be FW: " << this->GetFWType() << std::endl;
-        os << "      Be Status: " << this->GetBeStatus() << std::endl;
-        os << "  Cbc Data type: " << this->GetCbcDataType() << std::endl;
-        os << "          N Cbc: " << this->GetNCbc() << std::endl;
-        os << "Event Data size: " << this->GetEventDataSize() << std::endl;
+        os << "          Be Id: " << +this->GetBeId() << std::endl;
+        os << "          Be FW: " << +this->GetFWType() << std::endl;
+        os << "      Be Status: " << +this->GetBeStatus() << std::endl;
+        os << "  Cbc Data type: " << +this->GetCbcDataType() << std::endl;
+        os << "          N Cbc: " << +this->GetNCbc() << std::endl;
+        os << "Event Data size: " << +this->GetEventDataSize() << "(+1 for header)" << std::endl;
         //os << "  CBC Counter: " << this->GetEventCountCBC() << RESET << std::endl;
         //os << "Bunch Counter: " << this->GetBunch() << std::endl;
         //os << "Orbit Counter: " << this->GetOrbit() << std::endl;
         //os << " Lumi Section: " << this->GetLumi() << std::endl;
-        os << BOLDRED << "    TDC Counter: " << this->GetTDC() << RESET << std::endl;
+        os << BOLDRED << "    TDC Counter: " << +this->GetTDC() << RESET << std::endl;
 
         const int FIRST_LINE_WIDTH = 22;
         const int LINE_WIDTH = 32;
         const int LAST_LINE_WIDTH = 8;
 
-        os << GREEN << "CBC Header:" << std::endl;
 
         for (auto const& cKey : this->fEventDataMap)
         {
@@ -499,12 +499,15 @@ namespace Ph2_HwInterface {
             // here print a list of stubs
             uint8_t cCounter = 1;
 
-            os << BOLDCYAN << "List of Stubs: " << RESET << std::endl;
-
-            for (auto& cStub : this->StubVector (cFeId, cCbcId) )
+            if (this->StubBit (cFeId, cCbcId) )
             {
-                os << CYAN << "Stub: " << +cCounter << " Position: " << cStub.getPosition() << " Bend: " << cStub.getBend() << RESET << std::endl;
-                cCounter++;
+                os << BOLDCYAN << "List of Stubs: " << RESET << std::endl;
+
+                for (auto& cStub : this->StubVector (cFeId, cCbcId) )
+                {
+                    os << CYAN << "Stub: " << +cCounter << " Position: " << +cStub.getPosition() << " Bend: " << +cStub.getBend() << RESET << std::endl;
+                    cCounter++;
+                }
             }
 
             // here list other bits in the stub stream

@@ -4,8 +4,8 @@
     <connection id="board" uri="ipbusudp-2.0://192.168.0.80:50001" address_table="file://settings/cbc3_system_address_table.xml" />
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
-        <Global_CBC_Register name="TriggerLatency1"> 0x09 </Global_CBC_Register>
-        <Global_CBC_Register name="Vth1"> 0x80 </Global_CBC_Register>
+        <!--<Global_CBC_Register name="TriggerLatency1"> 0x09 </Global_CBC_Register>-->
+        <!--<Global_CBC_Register name="Vth1"> 0x80 </Global_CBC_Register>-->
         <!--<Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>-->
         <CBC_Files path="./settings/" />
         <CBC Id="0" configfile="CBC3_default.txt" />
@@ -17,12 +17,14 @@
         <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->
         <!--required-->
         <Register name="global.misc.cbc_clk_phase_shift"> 0x1 </Register>
+        <!--to output trigger-->
+        <!--<Register name"global.test_out.1"> 0x0004 </Register>-->
         <Register name="cbc_system_clk"> 0x1 </Register>
         <!--FAST SIGNAL SOURCE-->
         <Register name="fast_command_manager">
             <Register name="fast_signal_enable">
-                <Register name="async_l1a"> 0x1 </Register>
-                <Register name="fmc"> 0x1 </Register>
+                <Register name="async_l1a"> 0x0 </Register>
+                <Register name="fmc"> 0x0 </Register>
                 <!--required-->
                 <Register name="ipbus"> 0x1 </Register>
                 <Register name="internal"> 0x1 </Register>
@@ -37,7 +39,7 @@
                     <Register name="orbit_reset"> 0 </Register>
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
-                <Register name="Ncycle"> 100 </Register>
+                <Register name="Ncycle"> 0 </Register>
                 <Register name="cycle_period"> 40 </Register>
                 <Register name="trigger_timing"> 10 </Register>
                 <Register name="test_pulse_timing"> 5 </Register>
@@ -56,17 +58,17 @@
 </HwDescription>
 
 <Settings>
-    <Setting name="TargetVcth">0x78</Setting>
-    <Setting name="TargetOffset">0x50</Setting>
-    <Setting name="TestPulsePotentiometer">0x00</Setting>
-    <Setting name="HoleMode">1</Setting>
-    <Setting name="VerificationLoop">1</Setting>
+    <!--<Setting name="TargetVcth">0x78</Setting>-->
+    <!--<Setting name="TargetOffset">0x50</Setting>-->
+    <!--<Setting name="TestPulsePotentiometer">0x00</Setting>-->
+    <!--<Setting name="HoleMode">0</Setting>-->
+    <!--<Setting name="VerificationLoop">1</Setting>-->
     <!--PulseShape-->
-    <Setting name="Nevents" > 700 </Setting>
-    <Setting name="Vplus" > 0x50 </Setting>
-    <Setting name="TPAmplitude" > 0x0C </Setting>
-    <Setting name="TestGroup" > 1 </Setting>
-    <Setting name="ChannelOffset" > 0x40 </Setting>
-    <Setting name="StepSize" > 15 </Setting>
-    <Setting name="FitSCurves" > 0 </Setting>
+    <!--<Setting name="Nevents" > 700 </Setting>-->
+    <!--<Setting name="Vplus" > 0x50 </Setting>-->
+    <!--<Setting name="TPAmplitude" > 0x0C </Setting>-->
+    <!--<Setting name="TestGroup" > 1 </Setting>-->
+    <!--<Setting name="ChannelOffset" > 0x40 </Setting>-->
+    <!--<Setting name="StepSize" > 15 </Setting>-->
+    <!--<Setting name="FitSCurves" > 0 </Setting>-->
 </Settings>

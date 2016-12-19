@@ -114,7 +114,7 @@ namespace Ph2_HwInterface {
 
         //OK, first we need to apply the configuration to the config part of the FW residing at address 0x40000100
         //all IDs start with 1
-        cVecReg.push_back ({"cbc_system_cnfg.global.be.id", pBoard->getBeId() + 1 });
+        cVecReg.push_back ({"cbc_system_cnfg.global.be.id", pBoard->getBeId() + 1  });
         //enable fast signal ipbus
 
         //then loop the HWDescription and find out about our Connected CBCs
@@ -201,54 +201,53 @@ namespace Ph2_HwInterface {
             std::this_thread::sleep_for (std::chrono::microseconds (1000) );
         }
 
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_reset", 1);
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_start_tuning", 1);
+        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
+        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
         std::this_thread::sleep_for (std::chrono::microseconds (20) );
-        cCount = 0;
 
-        while (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.cbc_ser_data_delay_idelay_tuning_fsm") != 4)
+        uint32_t cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
+        cCount = 1;
+
+        while (cFsm != 4)
         {
+            LOG (DEBUG) << "FSM: " << cFsm;
             //here read "SerialIface&Error" register of CBC
             //this whole block is needed for the manual low-level I2C transaction
-            {
-                CbcRegItem cRegItem (0, 0x1D, 0, 0);
-                std::vector<uint32_t> cVecReq;
-                this->EncodeReg (cRegItem, 0, cVecReq, true, false);
-                this->ReadCbcBlockReg (cVecReq);
-                bool cFailed = false;
-                bool cRead;
-                uint8_t cId;
-                this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-                LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
-                LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
-                LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
-                LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
-                LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
-            }
+            CbcRegItem cRegItem (0, 0x1D, 0, 0);
+            std::vector<uint32_t> cVecReq;
+            this->EncodeReg (cRegItem, 0, cVecReq, true, false);
+            this->ReadCbcBlockReg (cVecReq);
+            bool cFailed = false;
+            bool cRead;
+            uint8_t cId;
+            this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
+            LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
+            LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
+            LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
+            LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
+            LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
+            LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
             LOG (INFO) << "sending Cbc fast reset!";
             this->CbcFastReset();
             //here read "SerialIface&Error" register of CBC again
             //this whole block is needed for the manual low-level I2C transaction
-            {
-                CbcRegItem cRegItem (0, 0x1D, 0, 0);
-                std::vector<uint32_t> cVecReq;
-                this->EncodeReg (cRegItem, 0, cVecReq, true, false);
-                this->ReadCbcBlockReg (cVecReq);
-                bool cFailed = false;
-                bool cRead;
-                uint8_t cId;
-                this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-                LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
-                LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
-                LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
-                LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
-                LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
-            }
-            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_reset", 1);
-            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.cbc_ser_data_delay_start_tuning", 1);
+            cRegItem.fValue = 0;
+            cVecReq.clear();
+            this->EncodeReg (cRegItem, 0, cVecReq, true, false);
+            this->ReadCbcBlockReg (cVecReq);
+            cFailed = false;
+            this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
+            LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
+            LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
+            LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
+            LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
+            LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
+            LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
+
+            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
+            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
             std::this_thread::sleep_for (std::chrono::microseconds (20) );
+            cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
 
             if (++cCount > 5)
             {
@@ -263,27 +262,34 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::Start()
     {
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
         //first reset the DAQ
         //global daq reset is not implemented yet
         //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
         //in the meantime, do this
-        std::vector< std::pair<std::string, uint32_t> > cVecReg;
-        cVecReg.push_back ({"cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1});
-        cVecReg.push_back ({"cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1});
-        cVecReg.push_back ({"cbc_system_ctrl.event_builder.reset", 0x1});
-        cVecReg.push_back ({"cbc_system_ctrl.data_buffer.reset", 0x1});
-        WriteStackReg ( cVecReg );
-        cVecReg.clear();
+        //std::vector< std::pair<std::string, uint32_t> > cVecReg;
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1);
+        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1);
+        WriteReg ("cbc_system_ctrl.event_builder.reset", 0x1);
+        WriteReg ("cbc_system_ctrl.data_buffer.reset", 0x1);
+        //WriteStackReg ( cVecReg );
+        //cVecReg.clear();
 
         //this could go into Configure() once it is more stable
         this->FindPhase();
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
         //reload the config of the fast_command_manager
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
         //start the periodic fast signals if enabled
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
+        LOG (DEBUG) << "Reading " << "cbc_system_stat.serial_command_generator.fast_signal_generator_fsm " << static_cast<uint32_t> (ReadReg ("cbc_system_stat.serial_command_generator.fast_signal_generator_fsm") );
+        LOG (DEBUG) << "END of START";
     }
 
     void Cbc3Fc7FWInterface::Stop()
@@ -311,12 +317,17 @@ namespace Ph2_HwInterface {
     {
         //ok, first query the number of words to read from FW and if it is 0, wait for half a second
         //in other words, poll for the ring buffer to be NOT empty
-        uint32_t cNWords = 0;
+        uint32_t cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
+        //this->CbcTrigger();
 
         while (cNWords == 0)
         {
+            LOG (DEBUG) << "Reading " << "cbc_system_stat.serial_command_generator.fast_signal_generator_fsm " << static_cast<uint32_t> (ReadReg ("cbc_system_stat.serial_command_generator.fast_signal_generator_fsm") );
+
             std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+            //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
+            LOG (DEBUG) << cNWords;
         }
 
         pData = ReadBlockRegValue ("data", cNWords);
@@ -352,14 +363,16 @@ namespace Ph2_HwInterface {
         //Reset the DAQ and clear all the buffers
         //not implemented yet, in the meantime do below
         //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
-        std::vector< std::pair<std::string, uint32_t> > cVecReg;
-        cVecReg.push_back ({"cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1});
-        cVecReg.push_back ({"cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1});
-        cVecReg.push_back ({"cbc_system_ctrl.event_builder.reset", 0x1});
-        cVecReg.push_back ({"cbc_system_ctrl.data_buffer.reset", 0x1});
-        WriteStackReg ( cVecReg );
-        cVecReg.clear();
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
+        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1);
+        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1);
+        WriteReg ("cbc_system_ctrl.event_builder.reset", 0x1);
+        WriteReg ("cbc_system_ctrl.data_buffer.reset", 0x1);
+        //WriteStackReg ( cVecReg );
+        //cVecReg.clear();
 
+        std::vector< std::pair<std::string, uint32_t> > cVecReg;
         // configure the fast command cycle to send triggers
         cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.enable.trigger", 0x1});
         cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.Ncycle", pNEvents});

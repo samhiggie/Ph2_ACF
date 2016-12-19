@@ -100,6 +100,7 @@ namespace Ph2_HwInterface {
         if (pType != BoardType::CBC3FC7) fNCbc = ( fEventSize - ( EVENT_HEADER_TDC_SIZE_32 ) ) / ( CBC_EVENT_SIZE_32 );
         else fNCbc = (fEventSize - (EVENT_HEADER_SIZE_32_CBC3) ) / (CBC_EVENT_SIZE_32_CBC3);
 
+
         // to fill fEventList
         std::vector<uint32_t> lvec;
 
@@ -121,13 +122,13 @@ namespace Ph2_HwInterface {
             //else if (pType == BoardType::CBC3FC7)
             //this->setCbc3Fc7 (word);
 
-            //#ifdef __CBCDAQ_DEV__
+#ifdef __CBCDAQ_DEV__
             LOG (DEBUG) << std::setw (3) << "Original " << cWordIndex << " ### " << std::bitset<32> (pData.at (cWordIndex) );
             //LOG (DEBUG) << std::setw (3) << "Treated  " << cWordIndex << " ### " << std::bitset<32> (word);
 
             if ( (cWordIndex + 1) % fEventSize == 0 && cWordIndex > 0 ) LOG (DEBUG) << std::endl << std::endl;
 
-            //#endif
+#endif
 
             lvec.push_back ( word );
 

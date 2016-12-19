@@ -122,8 +122,8 @@ namespace Ph2_HwDescription {
             exit (1);
         }
 
-        for (auto cItem : fRegMap)
-            LOG (DEBUG) << cItem.first;
+        //for (auto cItem : fRegMap)
+        //LOG (DEBUG) << cItem.first;
     }
 
 

@@ -4,7 +4,7 @@
 * RegName                                    	Page	Addr	Defval	Value
 *--------------------------------------------------------------------------------
 FeCtrl&TrgLat2                                  0x00	0x00	0x3C	0x7C
-TriggerLatency1                               	0x00	0x01	0xC8	0xC8
+TriggerLatency1                               	0x00	0x01	0xC8	0x08
 BetaMult&SLVS                                	0x00	0x02	0x18	0x18
 Ipre1                                        	0x00	0x03	0x46	0x0A
 Ipre2                                        	0x00	0x04	0x2E	0x78

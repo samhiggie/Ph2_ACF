@@ -109,10 +109,7 @@ namespace Ph2_HwInterface {
         fBoardMutex.lock();
 
         for ( auto const& v : pVecReg )
-        {
             fBoard->getNode ( v.first ).write ( v.second );
-            // LOG(INFO) << v.first << "  :  " << v.second ;
-        }
 
         try
         {
