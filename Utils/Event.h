@@ -46,7 +46,10 @@ namespace Ph2_HwInterface {
     {
       public:
         Stub (uint8_t pPosition, uint8_t pBend) : fPosition (pPosition), fBend (pBend)
-        {}
+        {
+            //with Strips starting at 0
+            fCenter = static_cast<float> ( (pPosition / 2.) - 1);
+        }
         uint8_t getPosition()
         {
             return fPosition;
@@ -55,9 +58,14 @@ namespace Ph2_HwInterface {
         {
             return fBend;
         }
+        float getCenter()
+        {
+            return fCenter;
+        }
       private:
         uint8_t fPosition;
         uint8_t fBend;
+        float fCenter;
     };
 
 

@@ -485,7 +485,7 @@ namespace Ph2_HwInterface {
 
                 for (auto& cStub : this->StubVector (cFeId, cCbcId) )
                 {
-                    os << CYAN << "Stub: " << +cCounter << " Position: " << +cStub.getPosition() << " Bend: " << +cStub.getBend() << RESET << std::endl;
+                    os << CYAN << "Stub: " << +cCounter << " Position: " << +cStub.getPosition() << " Bend: " << +cStub.getBend() << " Strip: " << cStub.getCenter() << RESET << std::endl;
                     cCounter++;
                 }
             }
