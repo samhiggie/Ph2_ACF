@@ -22,6 +22,10 @@
              <node id="misc"        address="0x10">
                  <node id="cbc_clk_phase_shift" mask="0x00000001"/>
              </node>
+             <node id="test_out" address="0x11">
+				 <node id="1" mask="0x0000FFFF"/>
+				 <node id="2" mask="0xFFFF0000"/>
+			 </node>
 		</node>
 		<node id="cbc_system_clk" mask="0x20" description="0x0(external)/0x1(internal)"/>
 		<node id="fast_command_manager">

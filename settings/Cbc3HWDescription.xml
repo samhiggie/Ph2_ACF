@@ -18,7 +18,8 @@
         <!--required-->
         <Register name="global.misc.cbc_clk_phase_shift"> 0x1 </Register>
         <!--to output trigger-->
-        <!--<Register name"global.test_out.1"> 0x0004 </Register>-->
+        <Register name="global.test_out.1"> 0x0020 </Register>
+        <Register name="global.test_out.2"> 0x0001 </Register>
         <Register name="cbc_system_clk"> 0x1 </Register>
         <!--FAST SIGNAL SOURCE-->
         <Register name="fast_command_manager">
