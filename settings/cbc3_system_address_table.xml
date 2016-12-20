@@ -7,7 +7,7 @@
     <node id="user_stat" address ="0x40000000" permission="r" mode="block" size="0x0000000F">
     </node>
 	<node id="cbc_system_cnfg" address="0x40000100" permission="rw" >
-		<node id="global" address="0x00" > 
+		<node id="global" > 
 			<node id="be" address="0x00" >
 				<node id="id" mask="0x0000007F"/>
 			</node>
@@ -50,8 +50,8 @@
 		<node id="cbc_data_processor">
 			<node id="cbc0">
 				<node id="latencies"     address="0x50">
-					<node id="l1a"       mask="0x0000007F" description="l1a latency, The event timing to the timing of the l1a arrival at CBC. the same as the one at CBC."/>
-					<node id="trig_data" mask="0x00003F80" description="trigger data latency. The event timing to the trigger data arrival timing at BE + time for l1a from BE to CBC."/>
+					<node id="l1a"       mask="0x000001FF" description="l1a latency, The event timing to the timing of the l1a arrival at CBC. the same as the one at CBC."/>
+					<node id="trig_data" mask="0x0003FE00" description="trigger data latency. The event timing to the trigger data arrival timing at BE + time for l1a from BE to CBC."/>
 				</node>
 			</node>
 		</node>
@@ -76,7 +76,7 @@
 			<node id="fast_signal_orbit_reset"           mask="0x00080000"/>
 			<node id="fast_signal_generator_reset"       mask="0x00100000"/>
 			<node id="fast_signal_generator_load_config" mask="0x00200000"/>
-			<node id="fast_signal_generator_start"       mask="0x00400080"/>
+			<node id="fast_signal_generator_start"       mask="0x00400000"/>
 			<node id="fast_signal_generator_stop"        mask="0x00800000"/>
 		</node>
 		<node id="event_builder"            address="0x02">
@@ -90,11 +90,11 @@
 			<!--<node id="reset"                             mask="0x00000001"/>-->
 			<!--<node id="load_data_pattern"                 mask="0x00000002" description="test pulse data pattern set in cbc_system_cnfg is loaded."/>-->
 		<!--</node>-->
-		<node id="cbc_data_processors"       address="0x10">
+		<node id="cbc_data_processor"       address="0x10">
             <node id="cbc0">
 			    <node id="reset"                              mask="0x00000001"/>
-			    <node id="cbc_ser_data_delay_reset"          mask="0x00000002"/>
-			    <node id="cbc_ser_data_delay_start_tuning"   mask="0x00000004"/>
+			    <node id="ser_data_delay_reset"          mask="0x00000002"/>
+			    <node id="ser_data_delay_start_tuning"   mask="0x00000004"/>
             </node>
 		</node>
 		<node id="cbc_i2c_bus_managers">
@@ -132,13 +132,13 @@
 			<node id="send_data_fsm"                     mask="0x00000030"/> 
 		</node>
 		<node id="data_buffer">
-			<node id="nword_all"                 address="0x6" mask="0x0000FFFF" description="# of words ready to be read."/>
-			<node id="nword_events"              address="0x7" mask="0x0000FFFF" description="# of words in event block ready to be read."/>
-			<node id="nword_free"                address="0x8" mask="0x0000FFFF" description="# of free words in the buffer." />
-            <node id="waddr"                     address="0x9" mask="0x0000FFFF"/>
-            <node id="raddr"                     address="0xa" mask="0x0000FFFF"/>
+			<node id="nword_all"                 address="0x06" mask="0x0000FFFF" description="# of words ready to be read."/>
+			<node id="nword_events"              address="0x07" mask="0x0000FFFF" description="# of words in event block ready to be read."/>
+			<node id="nword_free"                address="0x08" mask="0x0000FFFF" description="# of free words in the buffer." />
+            <node id="waddr"                     address="0x09" mask="0x0000FFFF"/>
+            <node id="raddr"                     address="0x0a" mask="0x0000FFFF"/>
 		</node>
-		<node id="cbc_data_processors">
+		<node id="cbc_data_processor">
 			<node id="cbc0"                     address="0x30">
 				<node id="deserializer_fsm"                  mask="0x00000001"/>
 				<node id="ser_data_delay_idelay_tuning_fsm"  mask="0x0000000E"/>
@@ -164,11 +164,11 @@
             <node id="cbc0"             address="0x0" mode="non_incremental" size="9"/>
         </node>
 	</node>
-	<node id="data"          address="0x40000400" permission="r" mode="non-incremental" size="65536"/>
+	<node id="data"          address="0x40000400" permission="r" mode="non-incremental" size="32768"/>
 	<node id="cbc_i2c_regs"  address="0x40000800">
-		<node id="command_fifos"  address="0x0" permission="w" mode="non-incremental" size="65536" /> 
-		<node id="reply_fifos"    address="0x1" permission="r" >
-			<node id="fe0"           address="0x0" size="65536" mode="non-incremental"/>
+		<node id="command_fifos"  address="0x00" permission="w" mode="non-incremental" size="65536" /> 
+		<node id="reply_fifos" >
+			<node id="fe0"   address="0x01" permission="r" size="65536" mode="non-incremental"/>
 		</node>
 	</node>
 

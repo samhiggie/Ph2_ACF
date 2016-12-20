@@ -162,6 +162,7 @@ namespace Ph2_HwInterface {
         //this will do everthing that comes below eventually
         //WriteReg ("cbc_system_ctrl.global.init", 0x1);
         //temporary, should be in global init later
+        WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset_fifos", 0x1);
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset", 0x1);
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.init", 0x1);
 
@@ -289,7 +290,6 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (10) );
         LOG (DEBUG) << "Reading " << "cbc_system_stat.serial_command_generator.fast_signal_generator_fsm " << static_cast<uint32_t> (ReadReg ("cbc_system_stat.serial_command_generator.fast_signal_generator_fsm") );
-        LOG (DEBUG) << "END of START";
     }
 
     void Cbc3Fc7FWInterface::Stop()
@@ -322,8 +322,6 @@ namespace Ph2_HwInterface {
 
         while (cNWords == 0)
         {
-            LOG (DEBUG) << "Reading " << "cbc_system_stat.serial_command_generator.fast_signal_generator_fsm " << static_cast<uint32_t> (ReadReg ("cbc_system_stat.serial_command_generator.fast_signal_generator_fsm") );
-
             std::this_thread::sleep_for (std::chrono::milliseconds (500) );
             //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
@@ -567,15 +565,15 @@ namespace Ph2_HwInterface {
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
 
-        //for (int i = 0; i < pVecReg.size(); i++)
-        //{
-        //LOG (DEBUG) << std::bitset<16> ( pVecReg.at (i)  >> 16)  << " " << std::bitset<16> ( pVecReg.at (i) );
-        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i)  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i) );
-        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i + 1 )  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i + 1 ) );
-        //LOG (DEBUG) << std::endl;
-        //}
+        for (int i = 0; i < pVecReg.size(); i++)
+        {
+            LOG (DEBUG) << std::bitset<16> ( pVecReg.at (i)  >> 16)  << " " << std::bitset<16> ( pVecReg.at (i) );
+            LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i)  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i) );
+            LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i + 1 )  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i + 1 ) );
+            LOG (DEBUG) << std::endl;
+        }
 
-        //LOG (DEBUG) << "Command Size: " << pVecReg.size() << " Reply size " << cReplies.size();
+        LOG (DEBUG) << "Command Size: " << pVecReg.size() << " Reply size " << cReplies.size();
 
         // the reply format is different from the sent format, therefore a binary predicate is necessary to compare
         // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24

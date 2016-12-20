@@ -39,7 +39,7 @@
                     <Register name="orbit_reset"> 0 </Register>
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
-                <Register name="Ncycle"> 0 </Register>
+                <Register name="Ncycle"> 3 </Register>
                 <Register name="cycle_period"> 40 </Register>
                 <Register name="trigger_timing"> 10 </Register>
                 <Register name="test_pulse_timing"> 5 </Register>
