@@ -317,35 +317,15 @@ namespace Ph2_HwInterface {
 
     std::string Cbc3Event::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
-        //TODO: this is super weird - don't do it like that!
-        //EDIT: just never use this method
-        uint16_t cKey = encodeId (pFeId, pCbcId);
-        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
+        std::ostringstream os;
 
-        if (cData != std::end (fEventDataMap) )
-        {
-            std::ostringstream os;
+        std::vector<Stub> cStubVector = this->StubVector (pFeId, pCbcId);
 
-            for ( uint32_t i = 0; i < 36; ++i )
-            {
-                uint32_t cWordP = (i / 32) + 1;
-                uint32_t cBitP = i % 32;
+        for (auto cStub : cStubVector)
+            os << std::bitset<8> (cStub.getPosition() ) << " " << std::bitset<4> (cStub.getBend() ) << " ";
 
-                if ( cWordP >= cData->second.size() ) break;
+        return os.str();
 
-                //os << ((cbcData[cByteP] & ( 1 << ( 7 - cBitP ) ))?"1":"0");
-                uint32_t cWord = cData->second.at (cWordP);
-                os <<  (  (cWord >> (cBitP ) ) & 0x1 );
-            }
-
-            return os.str();
-
-        }
-        else
-        {
-            LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
-            return "";
-        }
 
         //return BitString ( pFeId, pCbcId, OFFSET_CBCSTUBDATA, WIDTH_CBCSTUBDATA );
     }
@@ -358,10 +338,9 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint32_t cWord = reverse_bits (cData->second.at (1) );
-            uint8_t pos1 = cWord & 0xFF000000;
-            uint8_t pos2 = cWord & 0x00FF0000;
-            uint8_t pos3 = cWord & 0x0000FF00;
+            uint8_t pos1 = (cData->second.at (1) & 0x000000FF);
+            uint8_t pos2 = (cData->second.at (1) & 0x0000FF00) >> 8;
+            uint8_t pos3 = (cData->second.at (1) & 0x00FF0000) >> 16;
             return (pos1 || pos2 || pos3);
         }
         else
@@ -380,14 +359,15 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint32_t cWord = reverse_bits (cData->second.at (1) );
-            uint8_t pos1 =  (cWord & 0xFF000000) >> 24;
-            uint8_t pos2 =  (cWord & 0x00FF0000) >> 16;
-            uint8_t pos3 =  (cWord & 0x0000FF00) >> 8;
-            uint8_t bend1 = (cWord & 0x000000F0) >> 4;
-            uint8_t bend2 = (cWord & 0x0000000F);
-            cWord = reverse_bits (cData->second.at (2) );
-            uint8_t bend3 = (cWord & 0xF0000000) >> 28;
+            uint8_t pos1 =  (cData->second.at (1) &  0x000000FF) ;
+            uint8_t pos2 =   (cData->second.at (1) & 0x0000FF00) >> 8;
+            uint8_t pos3 =   (cData->second.at (1) & 0x00FF0000) >> 16;
+            //LOG (DEBUG) << std::bitset<8> (pos1);
+            //LOG (DEBUG) << std::bitset<8> (pos2);
+            //LOG (DEBUG) << std::bitset<8> (pos3);
+            uint8_t bend1 = (cData->second.at (1) & 0x0F000000) >> 24;
+            uint8_t bend2 = (cData->second.at (1) & 0xF0000000) >> 28;
+            uint8_t bend3 = (cData->second.at (2) & 0x0000000F);
 
             cStubVec.emplace_back (pos1, bend1) ;
             cStubVec.emplace_back (pos2, bend2) ;
@@ -499,7 +479,7 @@ namespace Ph2_HwInterface {
             // here print a list of stubs
             uint8_t cCounter = 1;
 
-            if (this->StubBit (cFeId, cCbcId) )
+            //if (this->StubBit (cFeId, cCbcId) )
             {
                 os << BOLDCYAN << "List of Stubs: " << RESET << std::endl;
 

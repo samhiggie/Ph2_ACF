@@ -29,62 +29,6 @@ namespace Ph2_HwInterface {
 
     void Data::Set (const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, BoardType pType)
     {
-        //Reset();
-
-        //fNevents = static_cast<uint32_t> ( pNevents );
-        //fEventSize = static_cast<uint32_t> ( (pData.size() ) / fNevents );
-
-        //if (pType != BoardType::CBC3FC7) fNCbc = ( fEventSize - ( EVENT_HEADER_TDC_SIZE_32 ) ) / ( CBC_EVENT_SIZE_32 );
-        //else fNCbc = (fEventSize - (EVENT_HEADER_SIZE_32_CBC3) ) / (CBC_EVENT_SIZE_32_CBC3);
-
-        //// to fill fEventList
-        //std::vector<uint32_t> lvec;
-
-        ////use a SwapIndex to decide wether to swap a word or not
-        ////use a WordIndex to pick events apart
-        //uint32_t cWordIndex = 0;
-        //uint32_t cSwapIndex = 0;
-
-        //for ( auto word : pData )
-        //{
-        ////if the SwapIndex is greater than 0 and a multiple of the event size in 32 bit words, reset SwapIndex to 0
-        //if (cSwapIndex > 0 && cSwapIndex % fEventSize == 0) cSwapIndex = 0;
-
-        //if (pType == BoardType::ICGLIB || pType == BoardType::ICFC7)
-        //this->setIC (word, cWordIndex, cSwapIndex);
-        //else if (pType == BoardType::SUPERVISOR)
-        //this->setStrasbourgSupervisor (word);
-
-        ////else if (pType == BoardType::CBC3FC7)
-        ////this->setCbc3Fc7 (word);
-
-        //#ifdef __CBCDAQ_DEV__
-        //LOG (DEBUG) << std::setw (3) << "Original " << cWordIndex << " ### " << std::bitset<32> (pData.at (cWordIndex) );
-        //LOG (DEBUG) << std::setw (3) << "Treated  " << cWordIndex << " ### " << std::bitset<32> (word);
-
-        //if ( (cWordIndex + 1) % fEventSize == 0 && cWordIndex > 0 ) LOG (DEBUG) << std::endl << std::endl;
-
-        //#endif
-
-        //lvec.push_back ( word );
-
-        //if ( cWordIndex > 0 &&  (cWordIndex + 1) % fEventSize == 0 )
-        //{
-        //if (pType != BoardType::CBC3FC7)
-        //fEventList.push_back ( new Cbc2Event ( pBoard, fNCbc, lvec ) );
-
-        //else
-        //fEventList.push_back ( new Cbc3Event ( pBoard, fNCbc, lvec ) );
-
-        //lvec.clear();
-
-        //if (fEventList.size() >= fNevents) break;
-        //}
-
-        //cWordIndex++;
-        //cSwapIndex++;
-
-        //}
         fFuture = std::async (&Data::privateSet, this, pBoard, pData, pNevents, pType);
         //fFuture.share();
     }

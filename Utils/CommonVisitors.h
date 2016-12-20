@@ -263,7 +263,7 @@ struct ThresholdVisitor : public HwDescriptionVisitor
                 std::vector<std::pair<std::string, uint8_t>> cRegVec;
                 // Vth1 holds bits 0-7 and Vth2 holds 8-9
                 uint8_t cVth1 = fThreshold & 0x00FF;
-                uint8_t cVth2 = fThreshold & 0x0300;
+                uint8_t cVth2 = (fThreshold & 0x0300) >> 8;
                 cRegVec.emplace_back ("Vth1", cVth1);
                 cRegVec.emplace_back ("Vth2", cVth2);
                 fInterface->WriteCbcMultReg (&pCbc, cRegVec);

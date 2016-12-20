@@ -5,7 +5,8 @@
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
         <!--<Global_CBC_Register name="TriggerLatency1"> 0x09 </Global_CBC_Register>-->
-        <!--<Global_CBC_Register name="Vth1"> 0x80 </Global_CBC_Register>-->
+        <!--<Global_CBC_Register name="Vth1"> 0x74 </Global_CBC_Register>-->
+        <!--<Global_CBC_Register name="Vth2"> 0x03 </Global_CBC_Register>-->
         <!--<Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>-->
         <CBC_Files path="./settings/" />
         <CBC Id="0" configfile="CBC3_default.txt" />
@@ -27,7 +28,7 @@
                 <Register name="async_l1a"> 0x0 </Register>
                 <Register name="fmc"> 0x0 </Register>
                 <!--required-->
-                <Register name="ipbus"> 0x1 </Register>
+                <Register name="ipbus"> 0x0 </Register>
                 <Register name="internal"> 0x1 </Register>
             </Register>
             <!--FAST SIGNAL GENERATOR CONFIG-->
@@ -41,17 +42,17 @@
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
                 <Register name="Ncycle"> 3 </Register>
-                <Register name="cycle_period"> 40 </Register>
-                <Register name="trigger_timing"> 10 </Register>
-                <Register name="test_pulse_timing"> 5 </Register>
+                <Register name="cycle_period"> 80 </Register>
+                <Register name="trigger_timing"> 19 </Register>
+                <Register name="test_pulse_timing"> 2 </Register>
                 <Register name="orbit_reset_timing"> 100 </Register>
             </Register>
         </Register>
         <!--LATENCIES-->
         <Register name="cbc_data_processor">
             <Register name="cbc0.latencies">
-                <Register name="l1a"> 10 </Register>
-                <Register name="trig_data"> 4 </Register>
+                <Register name="l1a"> 200 </Register>
+                <Register name="trig_data"> 196 </Register>
             </Register>
         </Register>
     </Register>

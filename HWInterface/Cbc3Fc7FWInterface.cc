@@ -282,14 +282,11 @@ namespace Ph2_HwInterface {
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (10) );
         //reload the config of the fast_command_manager
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (10) );
         //start the periodic fast signals if enabled
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (10) );
-        LOG (DEBUG) << "Reading " << "cbc_system_stat.serial_command_generator.fast_signal_generator_fsm " << static_cast<uint32_t> (ReadReg ("cbc_system_stat.serial_command_generator.fast_signal_generator_fsm") );
     }
 
     void Cbc3Fc7FWInterface::Stop()
@@ -372,8 +369,8 @@ namespace Ph2_HwInterface {
 
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         // configure the fast command cycle to send triggers
-        cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.enable.trigger", 0x1});
-        cVecReg.push_back ({"cbc_system_cnfg.fast_signal_generator.Ncycle", pNEvents});
+        cVecReg.push_back ({"cbc_system_cnfg.fast_command_manager.fast_signal_generator.enable.trigger", 0x1});
+        cVecReg.push_back ({"cbc_system_cnfg.fast_command_manager.fast_signal_generator.Ncycle", pNEvents});
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
@@ -382,6 +379,7 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
         //reload the config of the fast_command_manager
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
         //start the periodic fast signals if enabled
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
 
@@ -565,15 +563,15 @@ namespace Ph2_HwInterface {
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
 
-        for (int i = 0; i < pVecReg.size(); i++)
-        {
-            LOG (DEBUG) << std::bitset<16> ( pVecReg.at (i)  >> 16)  << " " << std::bitset<16> ( pVecReg.at (i) );
-            LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i)  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i) );
-            LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i + 1 )  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i + 1 ) );
-            LOG (DEBUG) << std::endl;
-        }
+        //for (int i = 0; i < pVecReg.size(); i++)
+        //{
+        //LOG (DEBUG) << std::bitset<16> ( pVecReg.at (i)  >> 16)  << " " << std::bitset<16> ( pVecReg.at (i) );
+        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i)  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i) );
+        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i + 1 )  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i + 1 ) );
+        //LOG (DEBUG) << std::endl;
+        //}
 
-        LOG (DEBUG) << "Command Size: " << pVecReg.size() << " Reply size " << cReplies.size();
+        //LOG (DEBUG) << "Command Size: " << pVecReg.size() << " Reply size " << cReplies.size();
 
         // the reply format is different from the sent format, therefore a binary predicate is necessary to compare
         // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
