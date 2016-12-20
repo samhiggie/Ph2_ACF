@@ -479,7 +479,7 @@ namespace Ph2_HwInterface {
             // here print a list of stubs
             uint8_t cCounter = 1;
 
-            //if (this->StubBit (cFeId, cCbcId) )
+            if (this->StubBit (cFeId, cCbcId) )
             {
                 os << BOLDCYAN << "List of Stubs: " << RESET << std::endl;
 
