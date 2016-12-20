@@ -254,6 +254,22 @@ namespace Ph2_System {
         }
     }
 
+    void FileParser::parseGlobalCbcSettings (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os)
+    {
+        //use this to parse GlobalCBCRegisters and the Global CBC settings
+        //i deliberately pass the Module object so I can loop the CBCs of the Module inside this method
+        //this has to be called at the end of the parseCBC() method
+        //Global_CBC_Register takes precedence over Global
+
+    }
+
+    void FileParser::parseCbcSettings (pugi::xml_node pCbcNode, Cbc* pCbc, std::ostream& os)
+    {
+        //parse the cbc settings here and put them in the corresponding registers of the Cbc object
+        //call this for every CBC, Register nodes should take precedence over specific settings??
+
+    }
+
     void FileParser::parseSettingsxml ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os)
     {
         pugi::xml_document doc;
