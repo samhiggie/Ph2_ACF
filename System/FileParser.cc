@@ -232,9 +232,12 @@ namespace Ph2_System {
 
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
 
+            //here parse the specific CBC settings so that Registers take precedence
+
             for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
                 cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), atoi ( cCbcRegisterNode.first_child().value() ) );
 
+            // here parese the GlobalCbcSettings so that Global CBC regisers take precedence over Global CBC settings which take precedence over CBC specific settings
             for ( pugi::xml_node cCbcGlobalNode = pModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != pModuleNode.child ( "CBC" ) && cCbcGlobalNode != pModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
             {
 
@@ -267,6 +270,137 @@ namespace Ph2_System {
     {
         //parse the cbc settings here and put them in the corresponding registers of the Cbc object
         //call this for every CBC, Register nodes should take precedence over specific settings??
+        ChipType cType = pCbc->getChipType();
+        os << RED << "ChipType: ";
+
+        if (cType == ChipType::CBC2)
+            os << "CBC2";
+        else
+            os << "CBC3";
+
+        os << RESET << std::endl;
+
+        //THRESHOLD
+        pugi::xml_node cThresholdNode = pCbcNode.child ( "Threshold" );
+        uint16_t cThreshold = convertAnyInt (cThresholdNode.value() );
+
+        //the moment the cbc object is constructed, it knows which chip type it is
+        if (cType == ChipType::CBC2)
+            pCbc->SetReg ("VCth", uint8_t (cThreshold) );
+        else
+        {
+            pCbc->SetReg ("Vth1", (cThreshold & 0x00FF) );
+            pCbc->SetReg ("Vth2", (cThreshold & 0x0300) >> 8);
+        }
+
+        os << "VCth: " << std::hex << "0x" << cThreshold << std::dec << " (" << cThreshold << ")" << std::endl;
+
+        //TEST PULSE
+        pugi::xml_node cTPNode = pCbcNode.child ("TestPulse");
+        uint8_t cEnable, cPolarity, cGroundOthers;
+        uint8_t cAmplitude, cChanGroup, cDelay;
+
+        cEnable = static_cast<uint8_t> (cTPNode.attribute ("enable").as_int() );
+        cPolarity = static_cast<uint8_t> (cTPNode.attribute ("polarity").as_int() );
+        cAmplitude = static_cast<uint8_t> (cTPNode.attribute ("amplitude").as_int() );
+        cChanGroup = static_cast<uint8_t> (cTPNode.attribute ("channel_group").as_int() );
+        cDelay = static_cast<uint8_t> (cTPNode.attribute ("delay").as_int() ) ;
+        cGroundOthers = static_cast<uint8_t> (cTPNode.attribute ("ground_others").as_int() );
+
+        if (cType == ChipType::CBC2)
+        {
+            pCbc->SetReg ("TestPulsePot", cAmplitude );
+            pCbc->SetReg ("SelTestPulseDel&ChanGroup", reverse_bits ( (cChanGroup & 0x07) << 5 | (cDelay & 0x1F) ) );
+            uint8_t cAmuxValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
+            pCbc->SetReg ("MiscTestPulseCtrl&AnalogMux", ( ( (cPolarity & 0x01) << 7) | ( (cEnable & 0x01) << 6) | ( (cGroundOhters & 0x01) << 5) | (cAmuxValue & 0x1F) ) );
+
+        }
+        else
+        {
+            pCbc->SetReg ("TestPulsePotNodeSel", cAmplitude );
+            pCbc->SetReg ("TestPulseDel&ChanGroup", reverse_bits ( (cChanGroup & 0x07) << 5 | (cDelay & 0x1F) ) );
+            uint8_t cAmuxValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
+            pCbc->SetReg ("MiscTestPulseCtrl&AnalogMux", ( ( (cPolarity & 0x01) << 7) | ( (cEnable & 0x01) << 6) | ( (cGroundOhters & 0x01) << 5) | (cAmuxValue & 0x1F) ) );
+        }
+
+        os << "TestPulse: " << "enabled: " << cEnable << ", polarity: " << cPolarity << ", amplitude: 0x" << std::hex << cAmplitude << std::dec << ", channel group: " << cChanGroup << ", delay: " << cDelay << ", ground ohters: " << cGroundOthers std::endl;
+
+
+        //CLUSTERS & STUBS
+        pugi::xml_node cStubNode = pCbcNode.child ("Cluster&Stub");
+        uint8_t cCluWidth, cPtWidth, cLayerswap, cOffset1, cOffset2, cOffset3, cOffset4;
+
+        cCluWidth = static_cast<uint8_t> (cStubNode.attribute ("clusterwidth").as_int() );
+        cPtWidth = static_cast<uint8_t> (cStubNode.attribute ("ptwidth").as_int() );
+        cLayerswap = static_cast<uint8_t> (cStubNode.attribute ("layerswap").as_int() );
+        cOffset1 = static_cast<uint8_t> (cStubNode.attribute ("off1").as_int() );
+        cOffset2 = static_cast<uint8_t> (cStubNode.attribute ("off2").as_int() );
+        cOffset3 = static_cast<uint8_t> (cStubNode.attribute ("off3").as_int() );
+        cOffset4 = static_cast<uint8_t> (cStubNode.attribute ("off4").as_int() );
+
+        if (cType == ChipType::CBC2)
+        {
+            pCbc->SetReg ("CwdWindow&Coincid", ( ( (cCluWidth & 0x03) << 6) | (cOffset1 & 0x3F) ) );
+            uint8_t cMiscStubLogic = pCbc->getReg ("MiscStubLogic");
+            pCbc->SetReg ("MiscStubLogic", ( (cPtWidth & 0x0F) << 4 | cMiscStubLogic & 0x0F) );
+
+            os << "Cluster & Stub Logic: " << " ClusterWidthDiscrimination: " << cCluWidth << ", PtWidth: " << cPtWidth << ", Offset: " << cOffset << std::endl;
+        }
+        else
+        {
+            uint8_t cLogicSel = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
+            pCbc->SetReg ("Pipe&StubInpSel&Ptwidth", ( (cLogicSel & 0xF0) | (cPtWidth & 0x0F) ) );
+            pCbc->SetReg ("LayerSwap&CluWidth", ( ( (cLayerswap & 0x01) << 3) | cCluWidth & 0x07) );
+            pCbc->SetReg ("CoincWind&Offset34", ( ( (cOffset4 & 0x0F) << 4) | cOffset3 & 0x0F) );
+            pCbc->SetReg ("CoincWind&Offset12", ( ( (cOffset2 & 0x0F) << 4) | cOffset1 & 0x0F) );
+
+            os << "Cluster & Stub Logic: " << "ClusterWidthDiscrimination: " << cCluWidth << ", PtWidth: " << cPtWidth << ", Layerswap: " << cLayerswap << ", Offset1: " << cOffset1 << ", Offset2: " << cOffset2 << ", Offset3: " << cOffset3 << ", Offset4: " << cOffset4 << std::endl;
+        }
+
+        //MISC
+        pugi::xml_node cMiscNode = pCbcNode.child ("Misc");
+        uint8_t cPipeLogic, cStubLogic, cOr254, cTpgClock, cDll;
+
+        cPipeLogic = static_cast<uint8_t> (cMiscNode.attribute ("pipelogic").as_int() );
+        cStubLogic = static_cast<uint8_t> (cMiscNode.attribute ("stublogic").as_int() );
+        cOr254 = static_cast<uint8_t> (cMiscNode.attribute ("or254").as_int() );
+        cTpgClock = static_cast<uint8_t> (cMiscNode.attribute ("tpgclock").as_int() );
+        cDll = static_cast<uint8_t> (cMiscNode.attribute ("dll").as_int() );
+
+        if (cType == ChipType::CBC2)
+        {
+            //uint8_t cLogic = pCbc->getReg("MiscStubLogic");
+            os << "Curerntly not supported for CBC2, please set manually!" << std::endl;
+
+        }
+        else
+        {
+            pCbc->SetReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | cDll & 0x1F) );
+            cPtWidthRead = pCbc->getReg ("Pipe&StubInpSel&Ptwidt");
+            pCbc->SetReg ("Pipe&StubInpSel&Ptwidt", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) >> 4) | cPtWidthRead & 0x0F) );
+
+            os << "Misc Settings: " << " PipelineLogicSource (): " << cPipeLogic << ", StubLogicSource (): " << cStubLogic << ", OR254: " << cOr254 << ", TPG Clock: " << cTpgClock << ", DLL: " << cDll << std::endl;
+        }
+
+
+        // CHANNEL MASK
+        pugi::xml_node cDisableNode = pCbcNode.child ("ChannelMask");
+        std::string cList = std::string (cDisableNode.attribute ("disable").value() );
+        std::string ctoken;
+        std::stringstream cStr (cList);
+        os << "List of disabled Channels: ";
+
+        std::vector<uint8_t> cDisableVec;
+
+        while (std::getline (cStr, ctoken, ',') )
+        {
+            cDisableVec.push_back (convertAnyInt ( ctoken.c_str() ) );
+            os << ctoken << ", ";
+        }
+
+        os << std::endl;
+        //TODO: mask channels in ChannelMaskRegisters
+
 
     }
 
