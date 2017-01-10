@@ -6,6 +6,8 @@
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
         <!--<Global>-->
             <!--<Threshold> 580 </Threshold>-->
+            <!--<Latency> 200 </Latency>-->
+            <!--<AnalogMux> 0b1101 </AnalogMux>-->
             <!--<TestPulse enable="1" polarity="0" amplitude="0x08" channel_group="0" delay="0" ground_others="1"/>-->
             <!--<Cluster&Stub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>-->
             <!--<Misc pipelogic="1" stublogic="1" or254="0" tpgclock="1" dll="4"/>-->
@@ -20,6 +22,8 @@
         <!--experimental-->
         <CBC Id="0" configfile="CBC3_default.txt" >
             <Threshold> 580 </Threshold>
+            <Latency> 200 </Latency>
+            <AnalogMux> 0b00000 </AnalogMux>
             <TestPulse enable="1" polarity="0" amplitude="0x08" channel_group="0" delay="0" ground_others="1"/>
             <Cluster&Stub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
             <Misc pipelogic="1" stublogic="1" or254="0" tpgclock="1" dll="4"/>

@@ -233,28 +233,32 @@ namespace Ph2_System {
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
 
             //here parse the specific CBC settings so that Registers take precedence
+            this->parseCbcSetting (pModuleNode.child ("CBC"), cCbc, os);
 
             for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
                 cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), atoi ( cCbcRegisterNode.first_child().value() ) );
 
             // here parese the GlobalCbcSettings so that Global CBC regisers take precedence over Global CBC settings which take precedence over CBC specific settings
-            for ( pugi::xml_node cCbcGlobalNode = pModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != pModuleNode.child ( "CBC" ) && cCbcGlobalNode != pModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
-            {
+            //for ( pugi::xml_node cCbcGlobalNode = pModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != pModuleNode.child ( "CBC" ) && cCbcGlobalNode != pModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
+            //{
 
-                if ( cCbcGlobalNode != nullptr )
-                {
-                    std::string regname = std::string ( cCbcGlobalNode.attribute ( "name" ).value() );
-                    uint32_t regvalue = convertAnyInt ( cCbcGlobalNode.first_child().value() ) ;
-                    cCbc->setReg ( regname, uint8_t ( regvalue ) ) ;
+            //if ( cCbcGlobalNode != nullptr )
+            //{
+            //std::string regname = std::string ( cCbcGlobalNode.attribute ( "name" ).value() );
+            //uint32_t regvalue = convertAnyInt ( cCbcGlobalNode.first_child().value() ) ;
+            //cCbc->setReg ( regname, uint8_t ( regvalue ) ) ;
 
-                    os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcGlobalNode.name()
-                       << "  " << cCbcGlobalNode.first_attribute().name() << " :"
-                       << regname << " =  0x" << std::hex << std::setw ( 2 ) << std::setfill ( '0' ) << regvalue << std::dec << RESET << std:: endl;
-                }
-            }
+            //os << GREEN << "|" << "   " << "|" << "   " << "|" << "----" << cCbcGlobalNode.name()
+            //<< "  " << cCbcGlobalNode.first_attribute().name() << " :"
+            //<< regname << " =  0x" << std::hex << std::setw ( 2 ) << std::setfill ( '0' ) << regvalue << std::dec << RESET << std:: endl;
+            //}
+            //}
 
             pModule->addCbc (cCbc);
         }
+
+        // here parese the GlobalCbcSettings so that Global CBC regisers take precedence over Global CBC settings which take precedence over CBC specific settings
+        this->parseGlobalCbcSettings (pModuleNode, pModule, os);
     }
 
     void FileParser::parseGlobalCbcSettings (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os)
@@ -263,7 +267,30 @@ namespace Ph2_System {
         //i deliberately pass the Module object so I can loop the CBCs of the Module inside this method
         //this has to be called at the end of the parseCBC() method
         //Global_CBC_Register takes precedence over Global
+        pugi::xml_node cGlobalCbcSettingsNode = pModuleNode.child ("Global");
 
+        if (cGlobalCbcSettingsNode != nullptr)
+        {
+            for (auto cCbc : pModule->fCbcVector)
+                this->parseCbcSettings (cGlobalCbcSettingsNode, cCbc, os);
+        }
+
+        // now that global has been applied to each CBC, handle the GlobalCBCRegisters
+        for ( pugi::xml_node cCbcGlobalNode = pModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != pModuleNode.child ( "CBC" ) && cCbcGlobalNode != pModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
+        {
+            if ( cCbcGlobalNode != nullptr )
+            {
+                std::string regname = std::string ( cCbcGlobalNode.attribute ( "name" ).value() );
+                uint32_t regvalue = convertAnyInt ( cCbcGlobalNode.first_child().value() ) ;
+
+                for (auto cCbc : pModule->fCbcVector)
+                    cCbc->setReg ( regname, uint8_t ( regvalue ) ) ;
+
+                os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcGlobalNode.name()
+                   << "  " << cCbcGlobalNode.first_attribute().name() << " :"
+                   << regname << " =  0x" << std::hex << std::setw ( 2 ) << std::setfill ( '0' ) << regvalue << std::dec << RESET << std:: endl;
+            }
+        }
     }
 
     void FileParser::parseCbcSettings (pugi::xml_node pCbcNode, Cbc* pCbc, std::ostream& os)
@@ -295,10 +322,28 @@ namespace Ph2_System {
 
         os << "VCth: " << std::hex << "0x" << cThreshold << std::dec << " (" << cThreshold << ")" << std::endl;
 
-        //TEST PULSE
+        //LATENCY
+        pugi::xml_node cLatencyNode = pCbcNode.child ( "Latency" );
+        uint16_t cLatency = convertAnyInt (cLatencyNode.value() );
+
+        //the moment the cbc object is constructed, it knows which chip type it is
+        if (cType == ChipType::CBC2)
+            pCbc->SetReg ("TriggerLatency", uint8_t (cLatency) );
+        else
+        {
+            pCbc->SetReg ("TriggerLatency1", (cLatency & 0x00FF) );
+            uint8_t cLatReadValue = pCbc->getReg ("FeCtrl&TrgLat2") & 0xFE;
+            pCbc->SetReg ("FeCtrl&TrgLat2", (cLatReadValue | ( (cLatency & 0x0100) >> 8) ) );
+        }
+
+        os << "TriggerLatency: " << std::hex << "0x" << cLatency << std::dec << " (" << cLatency << ")" << std::endl;
+
+        //TEST PULSE & ANALOG MUX VALUE
         pugi::xml_node cTPNode = pCbcNode.child ("TestPulse");
+        pugi::xml_node cAmuxNode = pCbcNode.child ("AnalogMux");
         uint8_t cEnable, cPolarity, cGroundOthers;
         uint8_t cAmplitude, cChanGroup, cDelay;
+        uint8_t cAmuxValue;
 
         cEnable = static_cast<uint8_t> (cTPNode.attribute ("enable").as_int() );
         cPolarity = static_cast<uint8_t> (cTPNode.attribute ("polarity").as_int() );
@@ -306,12 +351,12 @@ namespace Ph2_System {
         cChanGroup = static_cast<uint8_t> (cTPNode.attribute ("channel_group").as_int() );
         cDelay = static_cast<uint8_t> (cTPNode.attribute ("delay").as_int() ) ;
         cGroundOthers = static_cast<uint8_t> (cTPNode.attribute ("ground_others").as_int() );
+        cAmuxValue = static_cast<uint8_t> convertAnyInt (cAmuxNode.value() );
 
         if (cType == ChipType::CBC2)
         {
             pCbc->SetReg ("TestPulsePot", cAmplitude );
             pCbc->SetReg ("SelTestPulseDel&ChanGroup", reverse_bits ( (cChanGroup & 0x07) << 5 | (cDelay & 0x1F) ) );
-            uint8_t cAmuxValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
             pCbc->SetReg ("MiscTestPulseCtrl&AnalogMux", ( ( (cPolarity & 0x01) << 7) | ( (cEnable & 0x01) << 6) | ( (cGroundOhters & 0x01) << 5) | (cAmuxValue & 0x1F) ) );
 
         }
@@ -319,10 +364,11 @@ namespace Ph2_System {
         {
             pCbc->SetReg ("TestPulsePotNodeSel", cAmplitude );
             pCbc->SetReg ("TestPulseDel&ChanGroup", reverse_bits ( (cChanGroup & 0x07) << 5 | (cDelay & 0x1F) ) );
-            uint8_t cAmuxValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
+            //uint8_t cAmuxValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
             pCbc->SetReg ("MiscTestPulseCtrl&AnalogMux", ( ( (cPolarity & 0x01) << 7) | ( (cEnable & 0x01) << 6) | ( (cGroundOhters & 0x01) << 5) | (cAmuxValue & 0x1F) ) );
         }
 
+        os << "Analog Mux: " << "value: " << cAmuxValue << " (0x" << std::hex << cAmuxValue << std::dec << ", 0b" << std::bitset<5> (cAmuxValue) << ")" << std::endl;
         os << "TestPulse: " << "enabled: " << cEnable << ", polarity: " << cPolarity << ", amplitude: 0x" << std::hex << cAmplitude << std::dec << ", channel group: " << cChanGroup << ", delay: " << cDelay << ", ground ohters: " << cGroundOthers std::endl;
 
 
@@ -390,18 +436,49 @@ namespace Ph2_System {
         std::stringstream cStr (cList);
         os << "List of disabled Channels: ";
 
-        std::vector<uint8_t> cDisableVec;
+        //std::vector<uint8_t> cDisableVec;
 
         while (std::getline (cStr, ctoken, ',') )
         {
-            cDisableVec.push_back (convertAnyInt ( ctoken.c_str() ) );
-            os << ctoken << ", ";
+            uint8_t cChannel = convertAnyInt (ctoken.c_str() );
+            //cDisableVec.push_back (cChannel);
+
+            if (cChannel == 0 || cChannel > 254) LOG (ERROR) << "Error: channels for mask have to be between 1 and 254!";
+            else
+            {
+                //get the reigister string name from the map in Definition.h
+                uint8_t cRegisterIndex = (cChannel - 1) / 8;
+                //get the index of the bit to shift
+                uint8_t cBitShift = (cChannel - 1) % 8;
+                //get the original value of the register
+                uint8_t cReadValue;
+
+                if (cType == ChipType::CBC2)
+                {
+                    //get the original value of the register
+                    cReadValue = pCbc->getReg (ChannelMaskMapCBC2[cRegisterIndex]);
+                    //clear bit cBitShift
+                    cReadValue &= ~ (1 << cBitShift);
+                    //write the new value
+                    pCbc->SetReg (ChannelMaskMapCBC2[cRegisgterIndex], cReadValue);
+                    LOG (DEBUG) << ChannelMaskMapCBC3[cRegisterIndex] << " " << std::bitset<8> (cReadValue);
+                }
+                else
+                {
+                    //get the original value of the register
+                    cReadValue = pCbc->getReg (ChannelMaskMapCBC2[cRegisterIndex]);
+                    //clear bit cBitShift
+                    cReadValue &= ~ (1 << cBitShift);
+                    //write the new value
+                    pCbc->SetReg (ChannelMaskMapCBC2[cRegisgterIndex], cReadValue);
+                    LOG (DEBUG) << ChannelMaskMapCBC3[cRegisterIndex] << " " << std::bitset<8> (cReadValue);
+                }
+
+                os << cChannel << ", ";
+            }
         }
 
         os << std::endl;
-        //TODO: mask channels in ChannelMaskRegisters
-
-
     }
 
     void FileParser::parseSettingsxml ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os)
