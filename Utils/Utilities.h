@@ -20,6 +20,7 @@
 #include <limits>
 #include "../HWDescription/Definition.h"
 #include <iostream>
+#include <bitset>
 
 /*!
  * \brief Get time took since the start
@@ -54,6 +55,7 @@ double MyErf ( double* x, double* par );
  * \return converted integer
  */
 uint32_t convertAnyInt ( const char* pRegValue );
+//uint8_t convertAnyInt ( const char* pRegValue );
 
 uint8_t reverseBits (const uint8_t cValue);
 

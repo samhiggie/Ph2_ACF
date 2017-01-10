@@ -81,14 +81,39 @@ uint32_t convertAnyInt ( const char* pRegValue )
     if ( std::string ( pRegValue ).find ( "0x" ) != std::string::npos ) return static_cast<uint32_t> ( strtoul ( pRegValue, 0, 16 ) );
     else if ( std::string ( pRegValue ).find ( "0b" ) != std::string::npos ) //return static_cast<uint32_t> ( strtoul ( pRegValue, 0, 16 ) );
     {
-        std::bitset<8> cBitset (std::string (pRegValue).erase (0, 2) );
-        return std::bitset::to_ulong (cBitset);
+        std::bitset<32> cBitset (std::string (pRegValue).erase (0, 2) );
+        return static_cast<uint32_t> (cBitset.to_ulong () );
     }
     else return static_cast<uint32_t> ( strtoul ( pRegValue, 0, 10 ) );
 
 }
 
-uint8_t reverseBits (const uint8_t cValue)
+//uint16_t convertAnyInt ( const char* pRegValue )
+//{
+//if ( std::string ( pRegValue ).find ( "0x" ) != std::string::npos ) return static_cast<uint16_t> ( strtoul ( pRegValue, 0, 16 ) );
+//else if ( std::string ( pRegValue ).find ( "0b" ) != std::string::npos ) //return static_cast<uint32_t> ( strtoul ( pRegValue, 0, 16 ) );
+//{
+//std::bitset<16> cBitset (std::string (pRegValue).erase (0, 2) );
+//return static_cast<uint16_t> (cBitset.to_ulong () );
+//}
+//else return static_cast<uint16_t> ( strtoul ( pRegValue, 0, 10 ) );
+
+//}
+
+
+//uint8_t convertAnyInt ( const char* pRegValue )
+//{
+//if ( std::string ( pRegValue ).find ( "0x" ) != std::string::npos ) return static_cast<uint8_t> ( strtoul ( pRegValue, 0, 16 ) );
+//else if ( std::string ( pRegValue ).find ( "0b" ) != std::string::npos ) //return static_cast<uint32_t> ( strtoul ( pRegValue, 0, 16 ) );
+//{
+//std::bitset<8> cBitset (std::string (pRegValue).erase (0, 2) );
+//return static_cast<uint8_t> (cBitset.to_ulong () );
+//}
+//else return static_cast<uint8_t> ( strtoul ( pRegValue, 0, 10 ) );
+
+//}
+
+uint8_t reverseBits (uint8_t cValue)
 {
     cValue = (cValue & 0xF0) >> 4 | (cValue & 0x0F) << 4;
     cValue = (cValue & 0xCC) >> 2 | (cValue & 0x33) << 2;

@@ -202,7 +202,7 @@ namespace Ph2_System {
 
                 pAttributeString += pNode.attribute ("name").value();
                 pValue = convertAnyInt (pNode.first_child().value() );
-                os << BLUE << "|" << "\t" << "|" << "----" << pNode.name() << "  " << pAttributeString << ": " << pValue << RESET << std:: endl;
+                os << BLUE << "|" << "\t" << "|" << "----" << pNode.name() << "  " << pAttributeString << ": " << BOLDYELLOW << pValue << RESET << std:: endl;
                 pBoard->setReg ( pAttributeString, pValue );
             }
         }
@@ -233,7 +233,7 @@ namespace Ph2_System {
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
 
             //here parse the specific CBC settings so that Registers take precedence
-            this->parseCbcSetting (pModuleNode.child ("CBC"), cCbc, os);
+            this->parseCbcSettings (pModuleNode.child ("CBC"), cCbc, os);
 
             for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
                 cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), atoi ( cCbcRegisterNode.first_child().value() ) );
@@ -286,9 +286,9 @@ namespace Ph2_System {
                 for (auto cCbc : pModule->fCbcVector)
                     cCbc->setReg ( regname, uint8_t ( regvalue ) ) ;
 
-                os << GREEN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcGlobalNode.name()
+                os << BOLDGREEN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcGlobalNode.name()
                    << "  " << cCbcGlobalNode.first_attribute().name() << " :"
-                   << regname << " =  0x" << std::hex << std::setw ( 2 ) << std::setfill ( '0' ) << regvalue << std::dec << RESET << std:: endl;
+                   << regname << " =  0x" << std::hex << std::setw ( 2 ) << std::setfill ( '0' ) << RED << regvalue << std::dec << RESET << std:: endl;
             }
         }
     }
@@ -298,187 +298,213 @@ namespace Ph2_System {
         //parse the cbc settings here and put them in the corresponding registers of the Cbc object
         //call this for every CBC, Register nodes should take precedence over specific settings??
         ChipType cType = pCbc->getChipType();
-        os << RED << "ChipType: ";
+        os << GREEN << "|\t|\t|\t|----ChipType: ";
 
         if (cType == ChipType::CBC2)
-            os << "CBC2";
-        else
-            os << "CBC3";
+            os << RED << "CBC2";
+        else if (cType == ChipType::CBC3)
+            os << RED << "CBC3";
 
         os << RESET << std::endl;
 
-        //THRESHOLD
-        pugi::xml_node cThresholdNode = pCbcNode.child ( "Threshold" );
-        uint16_t cThreshold = convertAnyInt (cThresholdNode.value() );
+        //THRESHOLD & LATENCY
+        pugi::xml_node cThresholdNode = pCbcNode.child ( "Settings" );
 
-        //the moment the cbc object is constructed, it knows which chip type it is
-        if (cType == ChipType::CBC2)
-            pCbc->SetReg ("VCth", uint8_t (cThreshold) );
-        else
+        if (cThresholdNode != nullptr)
         {
-            pCbc->SetReg ("Vth1", (cThreshold & 0x00FF) );
-            pCbc->SetReg ("Vth2", (cThreshold & 0x0300) >> 8);
+            uint16_t cThreshold = convertAnyInt (cThresholdNode.attribute ("threshold").value() ) ;
+            uint16_t cLatency = convertAnyInt (cThresholdNode.attribute ("latency").value() );
+
+            //the moment the cbc object is constructed, it knows which chip type it is
+            if (cType == ChipType::CBC2)
+            {
+                pCbc->setReg ("VCth", uint8_t (cThreshold) );
+                pCbc->setReg ("TriggerLatency", uint8_t (cLatency) );
+            }
+            else if (cType == ChipType::CBC3)
+            {
+                pCbc->setReg ("Vth1", (cThreshold & 0x00FF) );
+                pCbc->setReg ("Vth2", (cThreshold & 0x0300) >> 8);
+                pCbc->setReg ("TriggerLatency1", (cLatency & 0x00FF) );
+                uint8_t cLatReadValue = pCbc->getReg ("FeCtrl&TrgLat2") & 0xFE;
+                pCbc->setReg ("FeCtrl&TrgLat2", (cLatReadValue | ( (cLatency & 0x0100) >> 8) ) );
+            }
+
+            os << GREEN << "|\t|\t|\t|----VCth: " << RED << std::hex << "0x" << cThreshold << std::dec << " (" << cThreshold << ")" << RESET << std::endl;
+            os << GREEN << "|\t|\t|\t|----TriggerLatency: " << RED << std::hex << "0x" << cLatency << std::dec << " (" << cLatency << ")" << RESET << std::endl;
         }
 
-        os << "VCth: " << std::hex << "0x" << cThreshold << std::dec << " (" << cThreshold << ")" << std::endl;
-
-        //LATENCY
-        pugi::xml_node cLatencyNode = pCbcNode.child ( "Latency" );
-        uint16_t cLatency = convertAnyInt (cLatencyNode.value() );
-
-        //the moment the cbc object is constructed, it knows which chip type it is
-        if (cType == ChipType::CBC2)
-            pCbc->SetReg ("TriggerLatency", uint8_t (cLatency) );
-        else
-        {
-            pCbc->SetReg ("TriggerLatency1", (cLatency & 0x00FF) );
-            uint8_t cLatReadValue = pCbc->getReg ("FeCtrl&TrgLat2") & 0xFE;
-            pCbc->SetReg ("FeCtrl&TrgLat2", (cLatReadValue | ( (cLatency & 0x0100) >> 8) ) );
-        }
-
-        os << "TriggerLatency: " << std::hex << "0x" << cLatency << std::dec << " (" << cLatency << ")" << std::endl;
-
-        //TEST PULSE & ANALOG MUX VALUE
+        //TEST PULSE
         pugi::xml_node cTPNode = pCbcNode.child ("TestPulse");
-        pugi::xml_node cAmuxNode = pCbcNode.child ("AnalogMux");
-        uint8_t cEnable, cPolarity, cGroundOthers;
-        uint8_t cAmplitude, cChanGroup, cDelay;
-        uint8_t cAmuxValue;
 
-        cEnable = static_cast<uint8_t> (cTPNode.attribute ("enable").as_int() );
-        cPolarity = static_cast<uint8_t> (cTPNode.attribute ("polarity").as_int() );
-        cAmplitude = static_cast<uint8_t> (cTPNode.attribute ("amplitude").as_int() );
-        cChanGroup = static_cast<uint8_t> (cTPNode.attribute ("channel_group").as_int() );
-        cDelay = static_cast<uint8_t> (cTPNode.attribute ("delay").as_int() ) ;
-        cGroundOthers = static_cast<uint8_t> (cTPNode.attribute ("ground_others").as_int() );
-        cAmuxValue = static_cast<uint8_t> convertAnyInt (cAmuxNode.value() );
-
-        if (cType == ChipType::CBC2)
+        if (cTPNode != nullptr)
         {
-            pCbc->SetReg ("TestPulsePot", cAmplitude );
-            pCbc->SetReg ("SelTestPulseDel&ChanGroup", reverse_bits ( (cChanGroup & 0x07) << 5 | (cDelay & 0x1F) ) );
-            pCbc->SetReg ("MiscTestPulseCtrl&AnalogMux", ( ( (cPolarity & 0x01) << 7) | ( (cEnable & 0x01) << 6) | ( (cGroundOhters & 0x01) << 5) | (cAmuxValue & 0x1F) ) );
+            //pugi::xml_node cAmuxNode = pCbcNode.child ("Misc");
+            uint8_t cEnable, cPolarity, cGroundOthers;
+            uint8_t cAmplitude, cChanGroup, cDelay;
 
-        }
-        else
-        {
-            pCbc->SetReg ("TestPulsePotNodeSel", cAmplitude );
-            pCbc->SetReg ("TestPulseDel&ChanGroup", reverse_bits ( (cChanGroup & 0x07) << 5 | (cDelay & 0x1F) ) );
-            //uint8_t cAmuxValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
-            pCbc->SetReg ("MiscTestPulseCtrl&AnalogMux", ( ( (cPolarity & 0x01) << 7) | ( (cEnable & 0x01) << 6) | ( (cGroundOhters & 0x01) << 5) | (cAmuxValue & 0x1F) ) );
-        }
+            cEnable = convertAnyInt (cTPNode.attribute ("enable").value() );
+            cPolarity = convertAnyInt (cTPNode.attribute ("polarity").value() );
+            cAmplitude = convertAnyInt (cTPNode.attribute ("amplitude").value() );
+            cChanGroup = convertAnyInt (cTPNode.attribute ("channelgroup").value() );
+            cDelay = convertAnyInt (cTPNode.attribute ("delay").value() );
+            cGroundOthers = convertAnyInt (cTPNode.attribute ("groundothers").value() );
 
-        os << "Analog Mux: " << "value: " << cAmuxValue << " (0x" << std::hex << cAmuxValue << std::dec << ", 0b" << std::bitset<5> (cAmuxValue) << ")" << std::endl;
-        os << "TestPulse: " << "enabled: " << cEnable << ", polarity: " << cPolarity << ", amplitude: 0x" << std::hex << cAmplitude << std::dec << ", channel group: " << cChanGroup << ", delay: " << cDelay << ", ground ohters: " << cGroundOthers std::endl;
+            if (cType == ChipType::CBC2)
+            {
+                pCbc->setReg ("TestPulsePot", cAmplitude );
+                pCbc->setReg ("SelTestPulseDel&ChanGroup", reverseBits ( (cChanGroup & 0x07) << 5 | (cDelay & 0x1F) ) );
+                uint8_t cAmuxValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
+                pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", ( ( (cPolarity & 0x01) << 7) | ( (cEnable & 0x01) << 6) | ( (cGroundOthers & 0x01) << 5) | (cAmuxValue & 0x1F) ) );
+
+            }
+            else if (cType == ChipType::CBC3)
+            {
+                pCbc->setReg ("TestPulsePotNodeSel", cAmplitude );
+                pCbc->setReg ("TestPulseDel&ChanGroup", reverseBits ( (cChanGroup & 0x07) << 5 | (cDelay & 0x1F) ) );
+                uint8_t cAmuxValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
+                pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", ( ( (cPolarity & 0x01) << 7) | ( (cEnable & 0x01) << 6) | ( (cGroundOthers & 0x01) << 5) | (cAmuxValue & 0x1F) ) );
+            }
+
+            os << GREEN << "|\t|\t|\t|----TestPulse: " << "enabled: " << RED << +cEnable << GREEN << ", polarity: " << RED << +cPolarity << GREEN << ", amplitude: " << RED << +cAmplitude << GREEN << " (0x" << std::hex << +cAmplitude << std::dec << ")" << RESET << std::endl;
+            os << GREEN << "|\t|\t|\t|               channelgroup: " << RED << +cChanGroup << GREEN << ", delay: " << RED << +cDelay << GREEN << ", groundohters: " << RED << +cGroundOthers << RESET << std::endl;
+        }
 
 
         //CLUSTERS & STUBS
-        pugi::xml_node cStubNode = pCbcNode.child ("Cluster&Stub");
-        uint8_t cCluWidth, cPtWidth, cLayerswap, cOffset1, cOffset2, cOffset3, cOffset4;
+        pugi::xml_node cStubNode = pCbcNode.child ("ClusterStub");
 
-        cCluWidth = static_cast<uint8_t> (cStubNode.attribute ("clusterwidth").as_int() );
-        cPtWidth = static_cast<uint8_t> (cStubNode.attribute ("ptwidth").as_int() );
-        cLayerswap = static_cast<uint8_t> (cStubNode.attribute ("layerswap").as_int() );
-        cOffset1 = static_cast<uint8_t> (cStubNode.attribute ("off1").as_int() );
-        cOffset2 = static_cast<uint8_t> (cStubNode.attribute ("off2").as_int() );
-        cOffset3 = static_cast<uint8_t> (cStubNode.attribute ("off3").as_int() );
-        cOffset4 = static_cast<uint8_t> (cStubNode.attribute ("off4").as_int() );
-
-        if (cType == ChipType::CBC2)
+        if (cStubNode != nullptr)
         {
-            pCbc->SetReg ("CwdWindow&Coincid", ( ( (cCluWidth & 0x03) << 6) | (cOffset1 & 0x3F) ) );
-            uint8_t cMiscStubLogic = pCbc->getReg ("MiscStubLogic");
-            pCbc->SetReg ("MiscStubLogic", ( (cPtWidth & 0x0F) << 4 | cMiscStubLogic & 0x0F) );
+            uint8_t cCluWidth, cPtWidth, cLayerswap, cOffset1, cOffset2, cOffset3, cOffset4;
 
-            os << "Cluster & Stub Logic: " << " ClusterWidthDiscrimination: " << cCluWidth << ", PtWidth: " << cPtWidth << ", Offset: " << cOffset << std::endl;
-        }
-        else
-        {
-            uint8_t cLogicSel = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
-            pCbc->SetReg ("Pipe&StubInpSel&Ptwidth", ( (cLogicSel & 0xF0) | (cPtWidth & 0x0F) ) );
-            pCbc->SetReg ("LayerSwap&CluWidth", ( ( (cLayerswap & 0x01) << 3) | cCluWidth & 0x07) );
-            pCbc->SetReg ("CoincWind&Offset34", ( ( (cOffset4 & 0x0F) << 4) | cOffset3 & 0x0F) );
-            pCbc->SetReg ("CoincWind&Offset12", ( ( (cOffset2 & 0x0F) << 4) | cOffset1 & 0x0F) );
+            cCluWidth = convertAnyInt (cStubNode.attribute ("clusterwidth").value() );
+            cPtWidth = convertAnyInt (cStubNode.attribute ("ptwidth").value() );
+            cLayerswap = convertAnyInt (cStubNode.attribute ("layerswap").value() );
+            cOffset1 = convertAnyInt (cStubNode.attribute ("off1").value() );
+            cOffset2 = convertAnyInt (cStubNode.attribute ("off2").value() );
+            cOffset3 = convertAnyInt (cStubNode.attribute ("off3").value() );
+            cOffset4 = convertAnyInt (cStubNode.attribute ("off4").value() );
 
-            os << "Cluster & Stub Logic: " << "ClusterWidthDiscrimination: " << cCluWidth << ", PtWidth: " << cPtWidth << ", Layerswap: " << cLayerswap << ", Offset1: " << cOffset1 << ", Offset2: " << cOffset2 << ", Offset3: " << cOffset3 << ", Offset4: " << cOffset4 << std::endl;
+            if (cType == ChipType::CBC2)
+            {
+                pCbc->setReg ("CwdWindow&Coincid", ( ( (cCluWidth & 0x03) << 6) | (cOffset1 & 0x3F) ) );
+                uint8_t cMiscStubLogic = pCbc->getReg ("MiscStubLogic");
+                pCbc->setReg ("MiscStubLogic", ( (cPtWidth & 0x0F) << 4 | cMiscStubLogic & 0x0F) );
+
+                os << GREEN << "Cluster & Stub Logic: " << " ClusterWidthDiscrimination: " << RED << +cCluWidth << GREEN << ", PtWidth: " << RED << +cPtWidth << GREEN << ", Offset: " << RED << +cOffset1 << RESET << std::endl;
+            }
+            else if (cType == ChipType::CBC3)
+            {
+                uint8_t cLogicSel = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
+                pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( (cLogicSel & 0xF0) | (cPtWidth & 0x0F) ) );
+                pCbc->setReg ("LayerSwap&CluWidth", ( ( (cLayerswap & 0x01) << 3) | cCluWidth & 0x07) );
+                pCbc->setReg ("CoincWind&Offset34", ( ( (cOffset4 & 0x0F) << 4) | cOffset3 & 0x0F) );
+                pCbc->setReg ("CoincWind&Offset12", ( ( (cOffset2 & 0x0F) << 4) | cOffset1 & 0x0F) );
+
+                os << GREEN << "|\t|\t|\t|----Cluster & Stub Logic: " << "ClusterWidthDiscrimination: " << RED << +cCluWidth << GREEN << ", PtWidth: " << RED << +cPtWidth << GREEN << ", Layerswap: " << RED << +cLayerswap << RESET << std::endl;
+                os << GREEN << "|\t|\t|\t|                          Offset1: " << RED << +cOffset1 << GREEN << ", Offset2: " << RED << +cOffset2 << GREEN << ", Offset3: " << RED << +cOffset3 << GREEN << ", Offset4: " << RED << +cOffset4 << RESET << std::endl;
+            }
         }
 
         //MISC
         pugi::xml_node cMiscNode = pCbcNode.child ("Misc");
-        uint8_t cPipeLogic, cStubLogic, cOr254, cTpgClock, cDll;
 
-        cPipeLogic = static_cast<uint8_t> (cMiscNode.attribute ("pipelogic").as_int() );
-        cStubLogic = static_cast<uint8_t> (cMiscNode.attribute ("stublogic").as_int() );
-        cOr254 = static_cast<uint8_t> (cMiscNode.attribute ("or254").as_int() );
-        cTpgClock = static_cast<uint8_t> (cMiscNode.attribute ("tpgclock").as_int() );
-        cDll = static_cast<uint8_t> (cMiscNode.attribute ("dll").as_int() );
-
-        if (cType == ChipType::CBC2)
+        if (cMiscNode != nullptr)
         {
-            //uint8_t cLogic = pCbc->getReg("MiscStubLogic");
-            os << "Curerntly not supported for CBC2, please set manually!" << std::endl;
+            uint8_t cPipeLogic, cStubLogic, cOr254, cTpgClock, cDll;
+            uint8_t cAmuxValue;
 
-        }
-        else
-        {
-            pCbc->SetReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | cDll & 0x1F) );
-            cPtWidthRead = pCbc->getReg ("Pipe&StubInpSel&Ptwidt");
-            pCbc->SetReg ("Pipe&StubInpSel&Ptwidt", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) >> 4) | cPtWidthRead & 0x0F) );
+            cPipeLogic = convertAnyInt (cMiscNode.attribute ("pipelogic").value() );
+            cStubLogic = convertAnyInt (cMiscNode.attribute ("stublogic").value() );
+            cOr254 = convertAnyInt (cMiscNode.attribute ("or254").value() );
+            cTpgClock = convertAnyInt (cMiscNode.attribute ("tpgclock").value() );
+            cDll = convertAnyInt (cMiscNode.attribute ("dll").value() );
+            cAmuxValue = convertAnyInt (cMiscNode.attribute ("analogmux").value() );
 
-            os << "Misc Settings: " << " PipelineLogicSource (): " << cPipeLogic << ", StubLogicSource (): " << cStubLogic << ", OR254: " << cOr254 << ", TPG Clock: " << cTpgClock << ", DLL: " << cDll << std::endl;
+            if (cType == ChipType::CBC2)
+            {
+                uint8_t cAmuxRead = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
+                pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", (cAmuxRead & 0xE0 | (cAmuxValue & 0x1F) ) );
+                os << RED << "|\t|\t|\t|----Other settengs than Amux curerntly not supported for CBC2, please set manually!" << RESET << std::endl;
+
+            }
+            else if (cType == ChipType::CBC3)
+            {
+                pCbc->setReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | cDll & 0x1F) );
+                uint8_t cPtWidthRead = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
+                pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) >> 4) | cPtWidthRead & 0x0F) );
+
+                uint8_t cAmuxRead = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
+                pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", (cAmuxRead & 0xE0 | (cAmuxValue & 0x1F) ) );
+
+                os << GREEN << "|\t|\t|\t|----Misc Settings: " << " PipelineLogicSource: " << RED << +cPipeLogic << GREEN << ", StubLogicSource: " << RED << +cStubLogic << GREEN << ", OR254: " << RED << +cOr254 << GREEN << ", TPG Clock: " << RED << +cTpgClock << GREEN << ", DLL: " << RED << +cDll << RESET << std::endl;
+            }
+
+            os << GREEN << "|\t|\t|\t|----Analog Mux " << "value: " << RED << +cAmuxValue << " (0x" << std::hex << +cAmuxValue << std::dec << ", 0b" << std::bitset<5> (cAmuxValue) << ")" << RESET << std::endl;
         }
 
 
         // CHANNEL MASK
         pugi::xml_node cDisableNode = pCbcNode.child ("ChannelMask");
-        std::string cList = std::string (cDisableNode.attribute ("disable").value() );
-        std::string ctoken;
-        std::stringstream cStr (cList);
-        os << "List of disabled Channels: ";
 
-        //std::vector<uint8_t> cDisableVec;
-
-        while (std::getline (cStr, ctoken, ',') )
+        if (cDisableNode != nullptr)
         {
-            uint8_t cChannel = convertAnyInt (ctoken.c_str() );
-            //cDisableVec.push_back (cChannel);
+            std::string cList = std::string (cDisableNode.attribute ("disable").value() );
+            std::string ctoken;
+            std::stringstream cStr (cList);
+            os << GREEN << "|\t|\t|\t|----List of disabled Channels: ";
 
-            if (cChannel == 0 || cChannel > 254) LOG (ERROR) << "Error: channels for mask have to be between 1 and 254!";
-            else
+            //std::vector<uint8_t> cDisableVec;
+
+            int cIndex = 0;
+
+            while (std::getline (cStr, ctoken, ',') )
             {
-                //get the reigister string name from the map in Definition.h
-                uint8_t cRegisterIndex = (cChannel - 1) / 8;
-                //get the index of the bit to shift
-                uint8_t cBitShift = (cChannel - 1) % 8;
-                //get the original value of the register
-                uint8_t cReadValue;
+                if (cIndex != 0) os << GREEN << ", ";
 
-                if (cType == ChipType::CBC2)
-                {
-                    //get the original value of the register
-                    cReadValue = pCbc->getReg (ChannelMaskMapCBC2[cRegisterIndex]);
-                    //clear bit cBitShift
-                    cReadValue &= ~ (1 << cBitShift);
-                    //write the new value
-                    pCbc->SetReg (ChannelMaskMapCBC2[cRegisgterIndex], cReadValue);
-                    LOG (DEBUG) << ChannelMaskMapCBC3[cRegisterIndex] << " " << std::bitset<8> (cReadValue);
-                }
+                uint8_t cChannel = convertAnyInt (ctoken.c_str() );
+                //cDisableVec.push_back (cChannel);
+
+                if (cChannel == 0 || cChannel > 254) LOG (ERROR) << "Error: channels for mask have to be between 1 and 254!";
                 else
                 {
+                    //get the reigister string name from the map in Definition.h
+                    uint8_t cRegisterIndex = (cChannel - 1) / 8;
+                    //get the index of the bit to shift
+                    uint8_t cBitShift = (cChannel - 1) % 8;
                     //get the original value of the register
-                    cReadValue = pCbc->getReg (ChannelMaskMapCBC2[cRegisterIndex]);
-                    //clear bit cBitShift
-                    cReadValue &= ~ (1 << cBitShift);
-                    //write the new value
-                    pCbc->SetReg (ChannelMaskMapCBC2[cRegisgterIndex], cReadValue);
-                    LOG (DEBUG) << ChannelMaskMapCBC3[cRegisterIndex] << " " << std::bitset<8> (cReadValue);
+                    uint8_t cReadValue;
+
+                    if (cType == ChipType::CBC2)
+                    {
+                        //get the original value of the register
+                        cReadValue = pCbc->getReg (ChannelMaskMapCBC2[cRegisterIndex]);
+                        //clear bit cBitShift
+                        cReadValue &= ~ (1 << cBitShift);
+                        //write the new value
+                        pCbc->setReg (ChannelMaskMapCBC2[cRegisterIndex], cReadValue);
+                        LOG (DEBUG) << ChannelMaskMapCBC2[cRegisterIndex] << " " << std::bitset<8> (cReadValue);
+                    }
+                    else if (cType == ChipType::CBC3)
+                    {
+                        //get the original value of the register
+                        cReadValue = pCbc->getReg (ChannelMaskMapCBC3[cRegisterIndex]);
+                        //clear bit cBitShift
+                        cReadValue &= ~ (1 << cBitShift);
+                        //write the new value
+                        pCbc->setReg (ChannelMaskMapCBC3[cRegisterIndex], cReadValue);
+                        LOG (DEBUG) << ChannelMaskMapCBC3[cRegisterIndex] << " " << std::bitset<8> (cReadValue);
+                    }
+
+                    os << BOLDCYAN <<  +cChannel;
                 }
 
-                os << cChannel << ", ";
+                cIndex++;
             }
-        }
 
-        os << std::endl;
+            os << RESET << std::endl;
+        }
     }
 
     void FileParser::parseSettingsxml ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os)
