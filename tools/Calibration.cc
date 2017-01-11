@@ -396,7 +396,8 @@ void Calibration::clearVPlusMap()
 
 void Calibration::setOffset ( uint8_t pOffset, int  pGroup, bool pVPlus )
 {
-    // LOG(INFO) << "Setting offsets of Test Group " << pGroup << " to 0x" << std::hex << +pOffset << std::dec ;
+    LOG (INFO) << "Setting offsets of Test Group " << pGroup << " to 0x" << std::hex << +pOffset << std::dec ;
+
     for ( auto cBoard : fBoardVector )
     {
         for ( auto cFe : cBoard->fModuleVector )
@@ -474,6 +475,7 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                         // get the occupancy
                         int iBin = cOccHist->GetXaxis()->FindBin ( cChannel );
                         float cOccupancy = cOccHist->GetBinContent ( iBin );
+                        //LOG (DEBUG) << "Bit " << +pBit << " Offset " << +cOffset << " Occupancy " << +cOccupancy;
 
                         // only if the occupancy is too high I need to flip the bit back and write, if not, I can leave it
                         if ( cOccupancy > 0.57 * fEventsPerPoint )

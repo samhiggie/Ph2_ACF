@@ -110,6 +110,8 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
+        //need to set to 0 before configuring, otherwise NCbc will keep incrementing when I re-configure
+        fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         //OK, first we need to apply the configuration to the config part of the FW residing at address 0x40000100
@@ -182,6 +184,7 @@ namespace Ph2_HwInterface {
 
         //perform a global reset, just to be sure
         WriteReg ("cbc_system_ctrl.global.reset", 0x1);
+        this->FindPhase();
     }
 
     void Cbc3Fc7FWInterface::FindPhase()
@@ -278,7 +281,8 @@ namespace Ph2_HwInterface {
         //cVecReg.clear();
 
         //this could go into Configure() once it is more stable
-        this->FindPhase();
+        //TODO
+        //this->FindPhase();
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
@@ -322,7 +326,7 @@ namespace Ph2_HwInterface {
             std::this_thread::sleep_for (std::chrono::milliseconds (500) );
             //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
-            LOG (DEBUG) << cNWords;
+            //LOG (DEBUG) << cNWords;
         }
 
         pData = ReadBlockRegValue ("data", cNWords);
@@ -374,7 +378,8 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        this->FindPhase();
+        //TODO
+        //this->FindPhase();
 
 
         //then start the triggers

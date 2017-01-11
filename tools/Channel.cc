@@ -114,7 +114,7 @@ void Channel::initializeHist ( uint16_t pValue, TString pParameter )
     if ( fFit ) delete fFit;
 
     // TF1 *f1=gROOT->GetFunction("myfunc");
-    fFit = new TF1 ( fitname, MyErf, 0, 255, 2 );
+    fFit = new TF1 ( fitname, MyErf, 0, 1023, 2 );
 }
 
 

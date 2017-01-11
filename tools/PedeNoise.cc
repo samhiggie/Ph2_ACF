@@ -64,7 +64,7 @@ void PedeNoise::Initialise()
                 bookHistogram ( cCbc, "Cbc_Stripnoise", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Pedestal", cFe->getFeId(), cCbc->getCbcId() );
-                cHist = new TH1F ( cHistname, cHistname, 510, -0.5, 254.5 );
+                cHist = new TH1F ( cHistname, cHistname, 2048, -0.5, 1023.5 );
                 bookHistogram ( cCbc, "Cbc_Pedestal", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Noise_even", cFe->getFeId(), cCbc->getCbcId() );
@@ -245,7 +245,7 @@ void PedeNoise::measureNoise()
 
 void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
 {
-    LOG (INFO) << "Validation: Taking Data with " << fEventsPerPoint * 200 << " random triggers!" ;
+    LOG (INFO) << "Validation: Taking Data with " << fEventsPerPoint * 100 << " random triggers!" ;
 
     for ( auto cBoard : fBoardVector )
     {
@@ -255,7 +255,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
         setThresholdtoNSigma (cBoard, 5);
 
         //take data
-        ReadNEvents (cBoard, fEventsPerPoint * 200);
+        ReadNEvents (cBoard, fEventsPerPoint * 100);
 
         //analyze
         const std::vector<Event*>& events = GetEvents ( cBoard );
@@ -270,7 +270,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
             {
                 //get the histogram for the occupancy
                 TH1F* cHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_occupancy" ) );
-                cHist->Scale (1 / (fEventsPerPoint * 200.) );
+                cHist->Scale (1 / (fEventsPerPoint * 100.) );
                 TLine* line = new TLine (0, pNoiseStripThreshold * 0.001, NCHANNELS, pNoiseStripThreshold * 0.001);
 
                 //as we are at it, draw the plot
