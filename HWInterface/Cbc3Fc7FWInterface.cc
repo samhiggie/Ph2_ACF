@@ -374,6 +374,8 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
+        this->FindPhase();
+
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
@@ -555,7 +557,7 @@ namespace Ph2_HwInterface {
 
 
 
-    bool Cbc3Fc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback)
+    bool Cbc3Fc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts, bool pReadback)
     {
 
         uint8_t cMaxWriteAttempts = 5;

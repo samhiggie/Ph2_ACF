@@ -50,7 +50,7 @@ namespace Ph2_HwInterface {
         fEventCountCBC = 0;
         fTDC = (0xE0000000 & list.at (2) ) >> 29;
 
-        fBeId = (0x0FE00000 & list.at (0) ) >> 21;
+        fBeId = ( (0x0FE00000 & list.at (0) ) >> 21) - 1;
         fBeFWType = (0x001C0000 & list.at (0) ) >> 18;
         fCBCDataType = (0x00030000 & list.at (0) ) >> 16;
         fNCbc = (0x0000F000 & list.at (0) ) >> 12;
@@ -61,7 +61,8 @@ namespace Ph2_HwInterface {
         //now decode FEEvents
         uint8_t cBeId = pBoard->getBeId();
 
-        if (cBeId != fBeId) LOG (INFO) << "Warning, BeId from Event header and from Memory do not match! - check your configuration!";
+        //TODO
+        //if (cBeId != fBeId) LOG (INFO) << "Warning, BeId from Event header and from Memory do not match! - check your configuration!";
 
         uint32_t cNFe = static_cast<uint32_t> ( pBoard->getNFe() );
 
@@ -87,7 +88,7 @@ namespace Ph2_HwInterface {
                 uint16_t cCbcDataSize = list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x00000FFF;
 
                 //this ID i get from the header
-                if (fBeId != cBeId_Data) LOG (INFO) << "Warning, BeId in Data frame does not match what is expected! - check your configuration!";
+                if (fBeId + 1 != cBeId_Data) LOG (INFO) << "Warning, BeId in Data frame does not match what is expected! - check your configuration!";
 
                 //the cFeId is from memory, thus increment by 1
                 if (cFeId + 1 != cFeId_Data) LOG (INFO) << "Warning, FeId in Data frame does not match what is expected! - check your configuration!";
@@ -434,9 +435,9 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint8_t cBeId =  (cData->second.at (0) & 0x07F00000) >> 20;
-            uint8_t cFeId =  (cData->second.at (0) & 0x000E0000) >> 17;
-            uint8_t cCbcId = (cData->second.at (0) & 0x0001F000) >> 12;
+            uint8_t cBeId =  ( (cData->second.at (0) & 0x07F00000) >> 20) - 1;
+            uint8_t cFeId =  ( (cData->second.at (0) & 0x000E0000) >> 17) - 1;
+            uint8_t cCbcId = ( (cData->second.at (0) & 0x0001F000) >> 12) - 1;
             uint16_t cCbcDataSize = cData->second.at (0) & 0x00000FFF;
             os << GREEN << "CBC Header:" << std::endl;
             os << "BeId: " << +cBeId << " FeId: " << +cFeId << " CbcId: " << +cCbcId << " DataSize: " << cCbcDataSize << RESET << std::endl;
@@ -538,7 +539,7 @@ namespace Ph2_HwInterface {
             }
 
             for (int i = 0; i < LAST_LINE_WIDTH; i += 2)
-                os << data.substr ( FIRST_LINE_WIDTH + LINE_WIDTH * 7 + i , 2 ) << " ";
+                os << data.substr ( FIRST_LINE_WIDTH + LINE_WIDTH * 7 + i, 2 ) << " ";
 
             os << std::endl;
 
