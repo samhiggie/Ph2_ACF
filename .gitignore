@@ -13,6 +13,7 @@ logs/*
 *.raw
 Results/
 Results
+tags
 # just for G. Auzingers sanity
 Calibrations
 .run_number.txt

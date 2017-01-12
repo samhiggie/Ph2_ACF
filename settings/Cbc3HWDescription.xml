@@ -83,5 +83,5 @@
     <!--<Setting name="TestGroup" > 1 </Setting>-->
     <!--<Setting name="ChannelOffset" > 0x40 </Setting>-->
     <!--<Setting name="StepSize" > 15 </Setting>-->
-    <Setting name="FitSCurves" > 1 </Setting>
+    <Setting name="FitSCurves" > 0 </Setting>
 </Settings>
