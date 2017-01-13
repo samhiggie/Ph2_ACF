@@ -77,7 +77,7 @@
     <Setting name="HoleMode">0</Setting>
     <Setting name="VerificationLoop">1</Setting>
     <!--PulseShape-->
-    <Setting name="Nevents" > 200 </Setting>
+    <Setting name="Nevents" > 20 </Setting>
     <!--<Setting name="Vplus" > 0x50 </Setting>-->
     <!--<Setting name="TPAmplitude" > 0x0C </Setting>-->
     <!--<Setting name="TestGroup" > 1 </Setting>-->

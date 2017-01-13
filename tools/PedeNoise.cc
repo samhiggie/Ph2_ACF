@@ -243,7 +243,7 @@ void PedeNoise::measureNoise()
 }
 
 
-void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
+void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
 {
     LOG (INFO) << "Validation: Taking Data with " << fEventsPerPoint * 100 << " random triggers!" ;
 
@@ -255,12 +255,17 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
         setThresholdtoNSigma (cBoard, 5);
 
         //take data
-        ReadNEvents (cBoard, fEventsPerPoint * 100);
+        for (uint32_t cAcq = 0; cAcq < pMultiple; cAcq++)
+        {
+            if (cAcq % 10) fBeBoardInterface->FindPhase (cBoard);
 
-        //analyze
-        const std::vector<Event*>& events = GetEvents ( cBoard );
+            ReadNEvents (cBoard, fEventsPerPoint );
 
-        fillOccupancyHist (cBoard, events);
+            //analyze
+            const std::vector<Event*>& events = GetEvents ( cBoard );
+
+            fillOccupancyHist (cBoard, events);
+        }
 
         //now I've filled the histogram with the occupancy
         //let's say if there is more than 1% noise occupancy, we consider the strip as noise and thus set the offset to either 0 or FF

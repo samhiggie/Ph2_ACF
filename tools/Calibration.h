@@ -67,6 +67,8 @@ class Calibration : public Tool
 
     void bitwiseVplus ( int pTGroup );
 
+    void bitwiseVth ( int pTGroup );
+
     void bitwiseOffset ( int pTGroup );
 
     void setOffset ( uint8_t pOffset, int  pTGroupId, bool pVPlus = false );
@@ -92,17 +94,17 @@ class Calibration : public Tool
 
   private:
     // helper methods
-    void setRegBit ( uint8_t& pRegValue, uint8_t pPos, bool pValue )
+    void setRegBit ( uint16_t& pRegValue, uint8_t pPos, bool pValue )
     {
         pRegValue ^= ( -pValue ^ pRegValue ) & ( 1 << pPos );
     }
 
-    void toggleRegBit ( uint8_t& pRegValue, uint8_t pPos )
+    void toggleRegBit ( uint16_t& pRegValue, uint8_t pPos )
     {
         pRegValue ^= 1 << pPos;
     }
 
-    bool getBit ( uint8_t& pRegValue, uint8_t pPos )
+    bool getBit ( uint16_t& pRegValue, uint8_t pPos )
     {
         return ( pRegValue >> pPos ) & 1;
     }
@@ -114,7 +116,7 @@ class Calibration : public Tool
 
     // Containers
     TestGroupChannelMap fTestGroupChannelMap;
-    std::map<Cbc*, uint8_t> fVplusMap;
+    std::map<Cbc*, uint16_t> fVplusMap;
 
     // Counters
     uint32_t fNCbc;
@@ -128,6 +130,7 @@ class Calibration : public Tool
     uint16_t fTargetVcth;
     uint8_t fTargetOffset;
     bool fCheckLoop;
+    ChipType fType;
 
 };
 

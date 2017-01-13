@@ -151,7 +151,7 @@ namespace Ph2_HwInterface {
         * \param pVecReq : Block of words to write
         * \param pWriteAttempt : number of tries write was attempted
         */
-        virtual bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts , bool pReadback ) = 0;
+        virtual bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts, bool pReadback ) = 0;
         //r/w the Cbc registers
         /*!
         * \brief Write register blocks of a Cbc
@@ -171,6 +171,11 @@ namespace Ph2_HwInterface {
         */
         virtual void ConfigureBoard ( const BeBoard* pBoard ) = 0;
         /*!
+        * \brief Run the Phase Alignment for CBC3 FW
+        * \param pBoard
+        */
+        virtual void FindPhase() = 0;
+        /*!
          * \brief Send a CBC fast reset
          */
         virtual void CbcHardReset() = 0;
@@ -178,6 +183,10 @@ namespace Ph2_HwInterface {
          * \brief Send a CBC fast reset
          */
         virtual void CbcFastReset() = 0;
+        /*!
+         * \brief Send a CBC trigger
+         */
+        virtual void CbcTrigger() = 0;
         /*!
          * \brief Start an acquisition in a separate thread
          * \param pBoard Board running the acquisition
@@ -243,12 +252,12 @@ namespace Ph2_HwInterface {
 
         template<typename T, class BinaryPredicate>
         std::vector<typename std::iterator_traits<T>::value_type>
-        get_mismatches (T pWriteVector_begin, T pWriteVector_end , T pReadVector_begin, BinaryPredicate p)
+        get_mismatches (T pWriteVector_begin, T pWriteVector_end, T pReadVector_begin, BinaryPredicate p)
         {
             std::vector<typename std::iterator_traits<T>::value_type> pMismatchedWriteVector;
 
             for (std::pair<T, T> cPair = std::make_pair (pWriteVector_begin, pReadVector_begin);
-                    (cPair = std::mismatch (cPair.first, pWriteVector_end, cPair.second , p) ).first != pWriteVector_end;
+                    (cPair = std::mismatch (cPair.first, pWriteVector_end, cPair.second, p) ).first != pWriteVector_end;
                     ++cPair.first, ++cPair.second
                 )
                 pMismatchedWriteVector.push_back (*cPair.first);

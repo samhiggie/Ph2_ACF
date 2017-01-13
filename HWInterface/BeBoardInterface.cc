@@ -65,7 +65,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    void BeBoardInterface::WriteBoardMultReg ( BeBoard* pBoard, const std::vector < std::pair< std::string , uint32_t > >& pRegVec )
+    void BeBoardInterface::WriteBoardMultReg ( BeBoard* pBoard, const std::vector < std::pair< std::string, uint32_t > >& pRegVec )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
 
@@ -87,7 +87,7 @@ namespace Ph2_HwInterface {
         return cRegValue;
     }
 
-    void BeBoardInterface::ReadBoardMultReg ( BeBoard* pBoard, std::vector < std::pair< std::string , uint32_t > >& pRegVec )
+    void BeBoardInterface::ReadBoardMultReg ( BeBoard* pBoard, std::vector < std::pair< std::string, uint32_t > >& pRegVec )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
 
@@ -126,6 +126,12 @@ namespace Ph2_HwInterface {
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
         fBoardFW->ConfigureBoard ( pBoard );
+    }
+
+    void BeBoardInterface::FindPhase ( const BeBoard* pBoard )
+    {
+        setBoard ( pBoard->getBeBoardIdentifier() );
+        fBoardFW->FindPhase();
     }
 
     void BeBoardInterface::Start ( BeBoard* pBoard )
@@ -172,6 +178,12 @@ namespace Ph2_HwInterface {
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
         fBoardFW->CbcFastReset();
+    }
+
+    void BeBoardInterface::CbcTrigger ( const BeBoard* pBoard )
+    {
+        setBoard ( pBoard->getBeBoardIdentifier() );
+        fBoardFW->CbcTrigger();
     }
 
     void BeBoardInterface::CbcHardReset ( const BeBoard* pBoard )

@@ -71,7 +71,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
 {
     // Adaptive Loop to measure SCurves
 
-    LOG (INFO) << BOLDGREEN << "Measuring SCurves sweeping VCth ... " << RESET <<  std::endl;
+    LOG (INFO) << BOLDGREEN << "Measuring SCurves sweeping VCth ... " << RESET ;
 
     // Necessary variables
     bool cNonZero = false;
@@ -82,9 +82,11 @@ void SCurve::measureSCurves ( int  pTGrpId )
     uint8_t cIterationCount = 0;
 
     //figure out what kind of chips we are dealing with here
-    //not the nicest thing to do but assume it will work
+    //re-run the phase finding at least before every sweep
     for (BeBoard* cBoard : fBoardVector)
     {
+        fBeBoardInterface->FindPhase (cBoard);
+
         for (Module* cModule : cBoard->fModuleVector)
             fType = cModule->getChipType();
     }
@@ -214,6 +216,10 @@ void SCurve::measureSCurvesOffset ( int  pTGrpId )
         cStartValue = cValue = 0x00;
         cStep = 10;
     }
+
+    //re-run the phase finding at least before every sweep
+    for (BeBoard* cBoard : fBoardVector)
+        fBeBoardInterface->FindPhase (cBoard);
 
     // Adaptive VCth loop
     while ( 0x00 <= cValue && cValue <= 0xFF )

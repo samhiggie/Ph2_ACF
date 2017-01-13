@@ -11,7 +11,7 @@ void Calibration::Initialise ( bool pAllChan )
     cSetting = fSettingsMap.find ( "TargetVcth" );
     fTargetVcth = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x78;
     cSetting = fSettingsMap.find ( "TargetOffset" );
-    fTargetOffset = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x50;
+    fTargetOffset = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x80;
     cSetting = fSettingsMap.find ( "Nevents" );
     fEventsPerPoint = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 10;
     cSetting = fSettingsMap.find ( "TestPulseAmplitude" );
@@ -24,7 +24,7 @@ void Calibration::Initialise ( bool pAllChan )
 
 
     // Canvases
-    //fVplusCanvas = new TCanvas ( "VPlus", "VPlus", 515, 0, 500, 500 );
+    fVplusCanvas = new TCanvas ( "VPlus", "VPlus", 515, 0, 500, 500 );
     fOffsetCanvas = new TCanvas ( "Offset", "Offset", 10, 0, 500, 500 );
     fOccupancyCanvas = new TCanvas ( "Occupancy", "Occupancy", 10, 525, 500, 500 );
 
@@ -41,6 +41,7 @@ void Calibration::Initialise ( bool pAllChan )
         {
             uint32_t cFeId = cFe->getFeId();
             cFeCount++;
+            fType = cFe->getChipType();
 
             for ( auto cCbc : cFe->fCbcVector )
             {
@@ -56,7 +57,12 @@ void Calibration::Initialise ( bool pAllChan )
 
                 if ( cObj ) delete cObj;
 
-                TProfile* cHist = new TProfile ( cName, Form ( "Vplus Values for Test Groups FE%d CBC%d ; Test Group; Vplus", cFeId, cCbcId ), 9, -1.5, 7.5 );
+                TString cTitle;
+
+                if (fType == ChipType::CBC2) cTitle = Form ( "Vplus Values for Test Groups FE%d CBC%d ; Test Group; Vplus", cFeId, cCbcId );
+                else if (fType == ChipType::CBC3) cTitle = Form ( "Vth Values for Test Groups FE%d CBC%d ; Test Group; Vth", cFeId, cCbcId );
+
+                TProfile* cHist = new TProfile ( cName, cTitle, 9, -1.5, 7.5 );
                 cHist->SetMarkerStyle ( 20 );
                 // cHist->SetLineWidth( 2 );
                 bookHistogram ( cCbc, "Vplus", cHist );
@@ -90,17 +96,31 @@ void Calibration::Initialise ( bool pAllChan )
 
     uint32_t cPads = ( cCbcIdMax > cCbcCount ) ? cCbcIdMax : cCbcCount;
 
-    //fVplusCanvas->DivideSquare ( cPads );
+    fVplusCanvas->DivideSquare ( cPads );
     fOffsetCanvas->DivideSquare ( cPads );
     fOccupancyCanvas->DivideSquare ( cPads );
 
 
     LOG (INFO) << "Created Object Maps and parsed settings:" ;
-    LOG (INFO) << "	Hole Mode = " << fHoleMode ;
-    LOG (INFO) << "	Nevents = " << fEventsPerPoint ;
-    LOG (INFO) << "	TargetVcth = " << int ( fTargetVcth ) ;
-    LOG (INFO) << "	TargetOffset = " << int ( fTargetOffset ) ;
-    LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
+
+    if (fType == ChipType::CBC2)
+    {
+        LOG (INFO) << "	Nevents = " << fEventsPerPoint ;
+        LOG (INFO) << "	Hole Mode = " << fHoleMode ;
+        LOG (INFO) << "	TargetVcth = " << int ( fTargetVcth ) ;
+        LOG (INFO) << "	TargetOffset = " << int ( fTargetOffset ) ;
+        LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
+    }
+    else if (fType == ChipType::CBC3)
+    {
+        fHoleMode = 0;
+        fTargetOffset = 0x80;
+        fTargetVcth = 0x0000;
+        LOG (INFO) << "	Nevents = " << fEventsPerPoint ;
+        LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
+        LOG (INFO) << "  Target Vcth determined algorithmically for CBC3";
+        LOG (INFO) << "  Target Offset fixed to half range (0x80) for CBC3";
+    }
 }
 
 void Calibration::MakeTestGroups ( bool pAllChan )
@@ -156,11 +176,19 @@ void Calibration::FindVplus()
 
     // now all offsets are either off (0x00 in holes mode, 0xFF in electrons mode)
     // next a group needs to be enabled - therefore now the group loop
-    LOG (INFO) << BOLDBLUE << "Extracting Vplus ..." << RESET ;
+    if (fType == ChipType::CBC2) LOG (INFO) << BOLDBLUE << "Extracting Vplus ..." << RESET ;
+    else if (fType == ChipType::CBC3) LOG (INFO) << BOLDBLUE << "Extracting Target Vth ..." << RESET ;
+
+    uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
+    LOG (INFO) << "Disabling all channels by setting offsets to " << std::hex << "0x" << +cOffset << std::dec;
+    //do i need this?
+    setOffset (cOffset, -1, true);
 
     for ( auto& cTGroup : fTestGroupChannelMap )
     {
         if (cTGroup.first == -1)
+            //use this to loop over groups instead of doing all at once
+            //if (cTGroup.first != -1)
         {
             // start with a fresh <Cbc, Vplus> map
             clearVPlusMap();
@@ -170,10 +198,10 @@ void Calibration::FindVplus()
             setOffset ( fTargetOffset, cTGroup.first, true ); // takes the group ID
             //updateHists ( "Offsets" );
 
-            bitwiseVplus ( cTGroup.first );
+            if (fType == ChipType::CBC2) bitwiseVplus ( cTGroup.first );
+            else if (fType == ChipType::CBC3) bitwiseVth ( cTGroup.first );
 
             LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
-            uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
             setOffset ( cOffset, cTGroup.first, true );
 
             // done looping all the bits - I should now have the Vplus value that corresponds to 50% occupancy at the desired VCth and Offset for this test group mapped against CBC
@@ -183,78 +211,186 @@ void Calibration::FindVplus()
                 cTmpProfile->Fill ( cTGroup.first, cCbc.second ); // fill Vplus value for each test group
             }
 
-            //updateHists ( "Vplus" );
+            updateHists ( "Vplus" );
             //
         }
     }
 
     // done extracting reasonable Vplus values for all test groups, now find the mean
     // since I am lazy and do not want to iterate all boards, FEs etc, i Iterate fVplusMap
+    //
+    // instead of writing individual VPlus / Vcth to all chips, take the mean of all chips?
+    float cMeanValue = 0;
+
     for ( auto& cCbc : fVplusMap ) //this toggles bit i on Vplus for each
     {
         TProfile* cTmpProfile = static_cast<TProfile*> ( getHist ( cCbc.first, "Vplus" ) );
         cCbc.second = cTmpProfile->GetMean ( 2 );
+        cMeanValue += cCbc.second;
 
-        fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", cCbc.second );
-        LOG (INFO) << BOLDGREEN <<  "Mean Vplus value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
+        if (fType == ChipType::CBC2)
+        {
+            fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", static_cast<uint8_t> (cCbc.second ) );
+            LOG (INFO) << BOLDGREEN <<  "Mean Vplus value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
+        }
+        else if (fType == ChipType::CBC3)
+            LOG (INFO) << BOLDGREEN <<  "Mean Vth value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
     }
 
+    if (fType == ChipType::CBC2)
+        LOG (INFO) << BOLDBLUE << "Mean VPlus value of all chips is " << static_cast<uint16_t> (cMeanValue / fNCbc) << RESET;
+    else if (fType == ChipType::CBC3)
+    {
+        //threshold visitor to set target VCth on all CBCs, set fTargetVcth to the mean/fNCbc
+        fTargetVcth = static_cast<uint16_t> (cMeanValue / fNCbc);
+        cThresholdVisitor.setThreshold (fTargetVcth);
+        this->accept (cThresholdVisitor);
+        LOG (INFO) << BOLDBLUE << "Mean Vth value of all chips is " << static_cast<uint16_t> (cMeanValue / fNCbc) << " - using as TargetVcth value for all chips!" << RESET;
+    }
 }
 
 void Calibration::bitwiseVplus ( int pTGroup )
 {
-    // now go over the VPlus bits for each CBC, start with the MSB, flip it to one and measure the occupancy
-    for ( int iBit = 7; iBit >= 0; iBit-- )
+    if (fType == ChipType::CBC2)
     {
-        for ( auto& cCbc : fVplusMap ) //this toggles bit i on Vplus for each
+        //re-run the phase finding at least before every sweep
+        for (BeBoard* cBoard : fBoardVector)
+            fBeBoardInterface->FindPhase (cBoard);
+
+        // now go over the VPlus bits for each CBC, start with the MSB, flip it to one and measure the occupancy
+        for ( int iBit = 7; iBit >= 0; iBit-- )
         {
-            toggleRegBit ( cCbc.second, iBit );
-            fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", cCbc.second );
-            // LOG(INFO) << "IBIT " << +iBit << " DEBUG Setting Vplus for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<8>( cCbc.second ) << ")" ;
-        }
-
-        // now each CBC has the MSB Vplus Bit written
-        // now take data
-        measureOccupancy ( fEventsPerPoint, pTGroup );
-        //updateHists ( "Occupancy" );
-
-        // done taking data, now find the occupancy per CBC
-        for ( auto& cCbc : fVplusMap )
-        {
-            // if the occupancy is larger than 0.5 I need to flip the bit back to 0, else leave it
-            float cOccupancy = findCbcOccupancy ( cCbc.first, pTGroup, fEventsPerPoint );
-
-            //LOG(INFO) << "VPlus " << +cCbc.second << " = 0b" << std::bitset<8>( cCbc.second ) << " on CBC " << +cCbc.first->getCbcId() << " Occupancy : " << cOccupancy ;
-
-            if ( fHoleMode && cOccupancy > 0.56 )
+            for ( auto& cCbc : fVplusMap ) //this toggles bit i on Vplus for each
             {
-                toggleRegBit ( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
-                fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", cCbc.second );
-            }
-            else if ( !fHoleMode && cOccupancy < 0.45 )
-            {
-                toggleRegBit ( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
-                fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", cCbc.second );
+                toggleRegBit ( cCbc.second, iBit );
+                fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", static_cast<uint8_t> (cCbc.second ) );
+                // LOG(INFO) << "IBIT " << +iBit << " DEBUG Setting Vplus for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<8>( cCbc.second ) << ")" ;
             }
 
+            // now each CBC has the MSB Vplus Bit written
+            // now take data
+            measureOccupancy ( fEventsPerPoint, pTGroup );
+            //updateHists ( "Occupancy" );
 
-            // clear the occupancy histogram for the next bit
-            clearOccupancyHists ( cCbc.first );
+            // done taking data, now find the occupancy per CBC
+            for ( auto& cCbc : fVplusMap )
+            {
+                // if the occupancy is larger than 0.5 I need to flip the bit back to 0, else leave it
+                float cOccupancy = findCbcOccupancy ( cCbc.first, pTGroup, fEventsPerPoint );
+
+                //LOG(INFO) << "VPlus " << +cCbc.second << " = 0b" << std::bitset<8>( cCbc.second ) << " on CBC " << +cCbc.first->getCbcId() << " Occupancy : " << cOccupancy ;
+
+                if ( fHoleMode && cOccupancy > 0.56 )
+                {
+                    toggleRegBit ( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
+                    fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", static_cast<uint8_t> ( cCbc.second ) );
+                }
+                else if ( !fHoleMode && cOccupancy < 0.45 )
+                {
+                    toggleRegBit ( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
+                    fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", static_cast<uint8_t> (cCbc.second ) );
+                }
+
+
+                // clear the occupancy histogram for the next bit
+                clearOccupancyHists ( cCbc.first );
+            }
+
         }
 
-    }
-
-    if ( fCheckLoop )
-    {
-        measureOccupancy ( fEventsPerPoint, pTGroup );
-
-        for ( auto& cCbc : fVplusMap )
+        if ( fCheckLoop )
         {
-            float cOccupancy = findCbcOccupancy ( cCbc.first, pTGroup, fEventsPerPoint );
-            LOG (INFO) << BOLDBLUE << "Found Occupancy of " << BOLDRED << cOccupancy << BOLDBLUE << " for CBC " << +cCbc.first->getCbcId() << " , test Group " << pTGroup << " using VPlus " << BOLDRED << +cCbc.second << BOLDBLUE << " (= 0x" << std::hex << +cCbc.second << std::dec << "; 0b" << std::bitset<8> ( cCbc.second ) << ")" << RESET ;
-            clearOccupancyHists ( cCbc.first );
+            //re-run the phase finding at least before every sweep
+            for (BeBoard* cBoard : fBoardVector)
+                fBeBoardInterface->FindPhase (cBoard);
+
+            measureOccupancy ( fEventsPerPoint, pTGroup );
+
+            for ( auto& cCbc : fVplusMap )
+            {
+                float cOccupancy = findCbcOccupancy ( cCbc.first, pTGroup, fEventsPerPoint );
+                LOG (INFO) << BOLDBLUE << "Found Occupancy of " << BOLDRED << cOccupancy << BOLDBLUE << " for CBC " << +cCbc.first->getCbcId() << " , test Group " << pTGroup << " using VPlus " << BOLDRED << +cCbc.second << BOLDBLUE << " (= 0x" << std::hex << +cCbc.second << std::dec << "; 0b" << std::bitset<8> ( cCbc.second ) << ")" << RESET ;
+                clearOccupancyHists ( cCbc.first );
+            }
         }
     }
+    else LOG (ERROR) << "ERROR, this should never be called!";
+}
+
+void Calibration::bitwiseVth ( int pTGroup )
+{
+    if (fType == ChipType::CBC3)
+    {
+        //re-run the phase finding at least before every sweep
+        for (BeBoard* cBoard : fBoardVector)
+            fBeBoardInterface->FindPhase (cBoard);
+
+        ThresholdVisitor cThresholdVisitor (fCbcInterface, 0);
+
+        // now go over the VTh bits for each CBC, start with the MSB, flip it to one and measure the occupancy
+        // VTh is 10 bits on CBC3
+        for ( int iBit = 9; iBit >= 0; iBit-- )
+        {
+            for ( auto& cCbc : fVplusMap ) //this toggles bit i on Vplus for each
+            {
+                toggleRegBit ( cCbc.second, iBit );
+                cThresholdVisitor.setThreshold (cCbc.second);
+                cCbc.first->accept (cThresholdVisitor);
+                //LOG (DEBUG) << "IBIT " << +iBit << " DEBUG Setting VTh for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<10> ( cCbc.second ) << ")" ;
+            }
+
+            // now each CBC has the MSB VTh Bit written
+            // now take data
+            measureOccupancy ( fEventsPerPoint, pTGroup );
+            //updateHists ( "Occupancy" );
+
+            // done taking data, now find the occupancy per CBC
+            for ( auto& cCbc : fVplusMap )
+            {
+                // if the occupancy is larger than 0.5 I need to flip the bit back to 0, else leave it
+                float cOccupancy = findCbcOccupancy ( cCbc.first, pTGroup, fEventsPerPoint );
+
+                //LOG (INFO) << "VTh " << +cCbc.second << " = 0b" << std::bitset<10> ( cCbc.second ) << " on CBC " << +cCbc.first->getCbcId() << " Occupancy : " << cOccupancy ;
+
+                // hole mode does not make sense for CBC3!
+                //if ( fHoleMode && cOccupancy > 0.56 )
+                //{
+                //toggleRegBit ( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
+                //fCbcInterface->WriteCbcReg ( cCbc.first, "Vplus", static_cast<uint8_t> ( cCbc.second ) );
+                //}
+                //else if ( !fHoleMode && cOccupancy < 0.45 )
+                //if (cOccupancy < 0.45)
+                if (cOccupancy > 0.56)
+                {
+                    toggleRegBit ( cCbc.second, iBit ); //here could also use setRegBit to set to 0 explicitly
+                    cThresholdVisitor.setThreshold (cCbc.second);
+                    cCbc.first->accept (cThresholdVisitor);
+                }
+
+
+                // clear the occupancy histogram for the next bit
+                clearOccupancyHists ( cCbc.first );
+            }
+
+        }
+
+        if ( fCheckLoop )
+        {
+            //re-run the phase finding at least before every sweep
+            for (BeBoard* cBoard : fBoardVector)
+                fBeBoardInterface->FindPhase (cBoard);
+
+            measureOccupancy ( fEventsPerPoint, pTGroup );
+
+            for ( auto& cCbc : fVplusMap )
+            {
+                float cOccupancy = findCbcOccupancy ( cCbc.first, pTGroup, fEventsPerPoint );
+                LOG (INFO) << BOLDBLUE << "Found Occupancy of " << BOLDRED << cOccupancy << BOLDBLUE << " for CBC " << +cCbc.first->getCbcId() << " , test Group " << pTGroup << " using VTh " << BOLDRED << +cCbc.second << BOLDBLUE << " (= 0x" << std::hex << +cCbc.second << std::dec << "; 0b" << std::bitset<10> ( cCbc.second ) << ")" << RESET ;
+                clearOccupancyHists ( cCbc.first );
+            }
+        }
+    }
+    else LOG (ERROR) << "ERROR, this should never be called!";
 }
 
 void Calibration::FindOffsets()
@@ -298,10 +434,14 @@ void Calibration::FindOffsets()
 
 void Calibration::bitwiseOffset ( int pTGroup )
 {
+    //re-run the phase finding at least before every sweep
+    for (BeBoard* cBoard : fBoardVector)
+        fBeBoardInterface->FindPhase (cBoard);
+
     // loop over the bits
     for ( int iBit = 7; iBit >= 0; iBit-- )
     {
-        LOG (INFO) << "Searching for the correct offsets by flipping bit " << iBit ;
+        //LOG (INFO) << "Searching for the correct offsets by flipping bit " << iBit ;
         // now, for all the channels in the group and for each cbc, toggle the MSB of the offset from the map
         toggleOffset ( pTGroup, iBit, true );
 
@@ -455,7 +595,7 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                     if ( pBegin )
                     {
                         // get the offset
-                        uint8_t cOffset = cOffsetHist->GetBinContent ( cChannel );
+                        uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
 
                         // toggle Bit i
                         toggleRegBit ( cOffset, pBit );
@@ -464,13 +604,13 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                         cOffsetHist->SetBinContent ( cChannel, cOffset );
 
                         // push in a vector for CBC write transaction
-                        cRegVec.push_back ( {cRegName.Data(), cOffset} );
+                        cRegVec.push_back ( {cRegName.Data(), static_cast<uint8_t> (cOffset) } );
                     }
                     else  //here it is interesting since now I will check if the occupancy is smaller or larger 50% and decide wether to toggle or not to toggle
                     {
                         // if the occupancy is larger than 50%, flip the bit back, if it is smaller, don't do anything
                         // get the offset
-                        uint8_t cOffset = cOffsetHist->GetBinContent ( cChannel );
+                        uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
 
                         // get the occupancy
                         int iBin = cOccHist->GetXaxis()->FindBin ( cChannel );
@@ -482,7 +622,7 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                         {
                             toggleRegBit ( cOffset, pBit ); // toggle the bit back that was previously flipped
                             cOffsetHist->SetBinContent ( cChannel, cOffset );
-                            cRegVec.push_back ( {cRegName.Data(), cOffset} );
+                            cRegVec.push_back ( {cRegName.Data(), static_cast<uint16_t> (cOffset) } );
                         }
 
                         // since I extracted the info from the occupancy profile for this bit (this iteration), i need to clear the corresponding bins
@@ -509,10 +649,10 @@ void Calibration::updateHists ( std::string pHistname )
             // now cHist.second is the Histogram
             if ( pHistname == "Vplus" )
             {
-                //fVplusCanvas->cd ( cCbc.first->getCbcId() + 1 );
+                fVplusCanvas->cd ( cCbc.first->getCbcId() + 1 );
                 TProfile* cTmpProfile = static_cast<TProfile*> ( cHist->second );
                 cTmpProfile->DrawCopy ( "H P0 E" );
-                //fVplusCanvas->Update();
+                fVplusCanvas->Update();
             }
 
             if ( pHistname == "Offsets" )

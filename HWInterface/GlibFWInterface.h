@@ -105,6 +105,8 @@ namespace Ph2_HwInterface {
          * \param pBoard
          */
         void ConfigureBoard ( const BeBoard* pBoard ) override;
+        //not supported but for compatability
+        void FindPhase () override {}
         /*!
          * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
          */
@@ -229,7 +231,7 @@ namespace Ph2_HwInterface {
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts ,  bool pReadback ) override;
+        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts,  bool pReadback ) override;
         /*!
          * \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
@@ -245,6 +247,8 @@ namespace Ph2_HwInterface {
         void CbcHardReset();
 
         void CbcFastReset();
+
+        void CbcTrigger() {}
 
         ///////////////////////////////////////////////////////
         //      FPGA CONFIG                                 //

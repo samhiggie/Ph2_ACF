@@ -107,6 +107,12 @@ namespace Ph2_HwInterface {
          * \param pBoard
          */
         void ConfigureBoard ( const BeBoard* pBoard ) override;
+        //to find the correct idelay tap
+        /*!
+         * \brief Run the Phase Alignment
+         * \param pBoard
+         */
+        void FindPhase();
         /*!
          * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
          */
@@ -142,8 +148,6 @@ namespace Ph2_HwInterface {
 
       private:
         uint32_t computeEventSize ( BeBoard* pBoard );
-        //to find the correct idelay tap
-        void FindPhase();
         //I2C command sending implementation
         bool WriteI2C (  std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pWriteRead, bool pBroadcast );
         bool ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies);

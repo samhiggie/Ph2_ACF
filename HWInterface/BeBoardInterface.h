@@ -113,7 +113,7 @@ namespace Ph2_HwInterface {
          * \param pBoard
          * \param pRegVec : Vector of Register/Value pairs
          */
-        void WriteBoardMultReg ( BeBoard* pBoard, const std::vector < std::pair< std::string , uint32_t > >& pRegVec );
+        void WriteBoardMultReg ( BeBoard* pBoard, const std::vector < std::pair< std::string, uint32_t > >& pRegVec );
         /*!
         * \brief Update Config File with the value in the Board register
         * \param pBoard
@@ -132,7 +132,7 @@ namespace Ph2_HwInterface {
          * \param pBoard
          * \param pRegVec : Vector of Register/Value pairs
          */
-        void ReadBoardMultReg ( BeBoard* pBoard, std::vector < std::pair< std::string , uint32_t > >& pRegVec );
+        void ReadBoardMultReg ( BeBoard* pBoard, std::vector < std::pair< std::string, uint32_t > >& pRegVec );
         /*!
          * \brief Get the board infos
          * \param pBoard
@@ -151,6 +151,12 @@ namespace Ph2_HwInterface {
         void ConfigureBoard ( const BeBoard* pBoard );
 
         /*!
+         * \brief Run the Phase finding for CBC3
+         * \param pBoard
+         */
+        void FindPhase ( const BeBoard* pBoard );
+
+        /*!
          * \brief Hard reset of all Cbc
          * \param pCbc
          */
@@ -160,6 +166,11 @@ namespace Ph2_HwInterface {
          * \param pCbc
          */
         void CbcFastReset ( const BeBoard* pBoard );
+        /*!
+         * \brief Send Cbc Trigger
+         * \param pCbc
+         */
+        void CbcTrigger ( const BeBoard* pBoard );
 
         /*!
          * \brief Start a DAQ

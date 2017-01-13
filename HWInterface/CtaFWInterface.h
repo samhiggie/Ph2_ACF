@@ -114,6 +114,8 @@ namespace Ph2_HwInterface {
          * \param pBoard
          */
         void ConfigureBoard ( const BeBoard* pBoard ) override;
+        //not supported but for compatability
+        void FindPhase () override {}
         /*!
          * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
          */
@@ -253,6 +255,8 @@ namespace Ph2_HwInterface {
         void CbcHardReset();
 
         void CbcFastReset();
+
+        void CbcTrigger() {}
 
         void checkIfUploading();
         /*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration

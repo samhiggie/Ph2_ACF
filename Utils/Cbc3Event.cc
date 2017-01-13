@@ -99,6 +99,11 @@ namespace Ph2_HwInterface {
                 //-1 since the data size is 10 without the Cbc Header
                 if (cCbcDataSize != CBC_EVENT_SIZE_32_CBC3 - 1 ) LOG (INFO) << "Warning, CbcDataSize in Data frame (" << cCbcDataSize << ") does not match what is expected (" << CBC_EVENT_SIZE_32_CBC3 - 1 << ")! - check your configuration!";
 
+                //check the sync bit
+                uint8_t cSyncBit = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3 + 2) & 0x00000080) >> 7;
+
+                if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
+
                 uint16_t cKey = encodeId (cFeId, cCbcId);
 
                 //I still store the CBC header in the fEventDataMap

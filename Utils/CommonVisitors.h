@@ -186,8 +186,8 @@ struct CbcRegIncrementer : public HwDescriptionVisitor
         uint8_t currentValue = pCbc.getReg (fRegName);
         int targetValue = int (currentValue) + fRegIncrement;
 
-        if (targetValue > 255) LOG (ERROR) << "Error: cannot increment register above 255" << std::endl , targetValue = 255;
-        else if (targetValue < 0) LOG (ERROR) << "Error: cannot increment register below 0 " << std::endl , targetValue = 0;
+        if (targetValue > 255) LOG (ERROR) << "Error: cannot increment register above 255" << std::endl, targetValue = 255;
+        else if (targetValue < 0) LOG (ERROR) << "Error: cannot increment register below 0 " << std::endl, targetValue = 0;
 
         fInterface->WriteCbcReg ( &pCbc, fRegName, uint8_t (targetValue) );
     }
@@ -210,7 +210,7 @@ struct ThresholdVisitor : public HwDescriptionVisitor
         }
     }
     // Read constructor
-    ThresholdVisitor (CbcInterface* pInterface) : fInterface (pInterface) , fOption ('r')
+    ThresholdVisitor (CbcInterface* pInterface) : fInterface (pInterface), fOption ('r')
     {
     }
     // Copy constructor
@@ -260,13 +260,17 @@ struct ThresholdVisitor : public HwDescriptionVisitor
 
             if (fOption = 'w')
             {
-                std::vector<std::pair<std::string, uint8_t>> cRegVec;
-                // Vth1 holds bits 0-7 and Vth2 holds 8-9
-                uint8_t cVth1 = fThreshold & 0x00FF;
-                uint8_t cVth2 = (fThreshold & 0x0300) >> 8;
-                cRegVec.emplace_back ("Vth1", cVth1);
-                cRegVec.emplace_back ("Vth2", cVth2);
-                fInterface->WriteCbcMultReg (&pCbc, cRegVec);
+                if (fThreshold > 1023) LOG (ERROR) << "Error, Threshold for CBC3 can only be 10 bit max (1023)!";
+                else
+                {
+                    std::vector<std::pair<std::string, uint8_t>> cRegVec;
+                    // Vth1 holds bits 0-7 and Vth2 holds 8-9
+                    uint8_t cVth1 = fThreshold & 0x00FF;
+                    uint8_t cVth2 = (fThreshold & 0x0300) >> 8;
+                    cRegVec.emplace_back ("Vth1", cVth1);
+                    cRegVec.emplace_back ("Vth2", cVth2);
+                    fInterface->WriteCbcMultReg (&pCbc, cRegVec);
+                }
             }
             else
             {
