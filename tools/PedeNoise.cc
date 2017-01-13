@@ -245,7 +245,7 @@ void PedeNoise::measureNoise()
 
 void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
 {
-    LOG (INFO) << "Validation: Taking Data with " << fEventsPerPoint * 100 << " random triggers!" ;
+    LOG (INFO) << "Validation: Taking Data with " << fEventsPerPoint* pMultiple << " random triggers!" ;
 
     for ( auto cBoard : fBoardVector )
     {
@@ -257,7 +257,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
         //take data
         for (uint32_t cAcq = 0; cAcq < pMultiple; cAcq++)
         {
-            if (cAcq % 10) fBeBoardInterface->FindPhase (cBoard);
+            //if (cAcq % 10) fBeBoardInterface->FindPhase (cBoard);
 
             ReadNEvents (cBoard, fEventsPerPoint );
 
