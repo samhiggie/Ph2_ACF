@@ -102,8 +102,9 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     cKeController->SetLogFileName (cLogFile);
     cKeController->openLogFile();
     cKeController->Reset();
-    //is this safe?
-    std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
+    //are we measuring a voltage for the currents as well?
+    //std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
+    std::string cConfString = "VOLTAGE:DC";
     //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
     cKeController->Configure (cConfString, 0, 0.0001, true);
     cKeController->Autozero();
@@ -120,7 +121,11 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
     auto cAmuxValue = fAmuxSettings.find (pBias);
 
-    if (cAmuxValue == std::end (fAmuxSettings) ) LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
+    if (cAmuxValue == std::end (fAmuxSettings) )
+    {
+        LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
+        exit (1);
+    }
     else
     {
         cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second.fAmuxCode & 0x1F);
@@ -136,7 +141,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             cThresholdVisitor.setOption ('w');
             mypause();
 
-            for (uint16_t cThreshold = 1; cThreshold < 1024; cThreshold++)
+            for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold++)
             {
                 cThresholdVisitor.setThreshold (cThreshold);
                 pCbc->accept (cThresholdVisitor);
@@ -182,12 +187,13 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             {
                 cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
                 LOG (INFO) << "Origainal Register Value for bias " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << std::dec << " - saving for later!";
+                uint16_t cRange = (__builtin_popcount (cAmuxValue->second.fBitMask) == 4) ? 16 : 255;
 
-                for (uint8_t cBias = 1; cBias < 255; cBias++)
+                for (uint8_t cBias = 0; cBias < cRange; cBias++)
                 {
                     //make map string, pair<string, uint8_t> and use the string in pair for the bias
-                    uint8_t cRegValue = (cBias & cAmuxValue->second.fBitMask) << cAmuxValue->second.fBitShift;
-                    LOG (DEBUG) << +cBias << " " << std::hex <<  +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
+                    uint8_t cRegValue = (cBias) << cAmuxValue->second.fBitShift;
+                    //LOG (DEBUG) << +cBias << " " << std::hex <<  +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
                     fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cRegValue );
 
                     //std::this_thread::sleep_for (std::chrono::milliseconds (300) );
@@ -195,6 +201,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 #ifdef __USBINST__
                     cKeController->Measure();
                     cReading = cKeController->GetLatestReadValue();
+                    //cReading /= 10000;
 #endif
 
                     //now I have the value I set and the reading from the DMM
@@ -226,6 +233,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 #ifdef __USBINST__
                 cKeController->Measure();
                 cReading = cKeController->GetLatestReadValue();
+                //TODO
                 LOG (INFO) << "Measured bias " << cAmuxValue->first << " to be " << cReading;
 #endif
 

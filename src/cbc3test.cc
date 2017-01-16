@@ -93,7 +93,7 @@ int main ( int argc, char** argv )
         for (auto cBoard : cSweep.fBoardVector)
             for (auto cFe : cBoard->fModuleVector)
                 for (auto cCbc : cFe->fCbcVector)
-                    cSweep.SweepBias ("VPLUS1", cCbc);
+                    cSweep.SweepBias ("Ipa", cCbc);
 
         cTool.SaveResults();
         cTool.CloseResultFile();
