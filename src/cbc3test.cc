@@ -71,7 +71,8 @@ int main ( int argc, char** argv )
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
-    else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
+
+    //else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
     std::stringstream outp;
 
@@ -91,9 +92,16 @@ int main ( int argc, char** argv )
         cSweep.Inherit (&cTool);
 
         for (auto cBoard : cSweep.fBoardVector)
+        {
             for (auto cFe : cBoard->fModuleVector)
+            {
                 for (auto cCbc : cFe->fCbcVector)
+                {
                     cSweep.SweepBias ("Ipa", cCbc);
+                    cSweep.SweepBias ("Vth", cCbc);
+                }
+            }
+        }
 
         cTool.SaveResults();
         cTool.CloseResultFile();
