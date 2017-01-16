@@ -240,7 +240,7 @@ struct ThresholdVisitor : public HwDescriptionVisitor
         if (pCbc.getChipType() == ChipType::CBC2)
         {
 
-            if (fOption = 'w')
+            if (fOption == 'w')
             {
                 if (fThreshold > 255) LOG (ERROR) << "Error, Threshold for CBC2 can only be 8 bit max (255)!";
                 else
@@ -249,16 +249,18 @@ struct ThresholdVisitor : public HwDescriptionVisitor
                     fInterface->WriteCbcReg ( &pCbc, "VCth", cVCth );
                 }
             }
-            else
+            else if (fOption == 'r')
             {
                 fInterface->ReadCbcReg ( &pCbc, "VCth" );
                 fThreshold = (pCbc.getReg ("VCth") ) & 0x00FF;
             }
+            else
+                LOG (ERROR) << "Unknown option " << fOption;
         }
         else if (pCbc.getChipType() == ChipType::CBC3)
         {
 
-            if (fOption = 'w')
+            if (fOption == 'w')
             {
                 if (fThreshold > 1023) LOG (ERROR) << "Error, Threshold for CBC3 can only be 10 bit max (1023)!";
                 else
@@ -272,12 +274,16 @@ struct ThresholdVisitor : public HwDescriptionVisitor
                     fInterface->WriteCbcMultReg (&pCbc, cRegVec);
                 }
             }
-            else
+            else if (fOption == 'r')
             {
                 fInterface->ReadCbcReg (&pCbc, "Vth1");
                 fInterface->ReadCbcReg (&pCbc, "Vth2");
-                fThreshold = ( (pCbc.getReg ("Vth2") & 0x03) << 8) | (pCbc.getReg ("Vth1") & 0xFF);
+                uint8_t cVth2 = pCbc.getReg ("Vth2");
+                uint8_t cVth1 = pCbc.getReg ("Vth1");
+                fThreshold = ( ( (cVth2 & 0x03) << 8) | (cVth1 & 0xFF) );
             }
+            else
+                LOG (ERROR) << "Unknown option " << fOption;
         }
         else
             LOG (ERROR) << "Not a valid chip type!";
@@ -318,7 +324,7 @@ struct LatencyVisitor : public HwDescriptionVisitor
         if (pCbc.getChipType() == ChipType::CBC2)
         {
 
-            if (fOption = 'w')
+            if (fOption == 'w')
             {
 
                 if (fLatency > 255) LOG (ERROR) << "Error, Latency for CBC2 can only be 8 bit max (255)!";
@@ -336,7 +342,7 @@ struct LatencyVisitor : public HwDescriptionVisitor
         }
         else if (pCbc.getChipType() == ChipType::CBC3)
         {
-            if (fOption = 'w')
+            if (fOption == 'w')
             {
                 std::vector<std::pair<std::string, uint8_t>> cRegVec;
                 // TriggerLatency1 holds bits 0-7 and FeCtrl&TrgLate2 holds 8

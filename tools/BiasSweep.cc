@@ -70,6 +70,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     if ( cObj ) delete cObj;
 
     fSweepCanvas = new TCanvas (cName, Form ("Bias Sweep %s", pBias.c_str() ), 10, 0, 500, 500 );
+    fSweepCanvas->SetGrid();
     fSweepCanvas->cd();
 
     std::time_t cTime = std::time (nullptr);
@@ -80,9 +81,12 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
     TGraph* cGraph = new TGraph ();
     cGraph->SetName (cName);
-    cGraph->SetTitle (Form ("Bias Sweep %s", pBias.c_str() ) );
+    std::string cAxis = (pBias.find ("I") != std::string::npos) ? "I" : "V";
+    cGraph->SetTitle (Form ("Bias Sweep %s; %s ; %s", pBias.c_str(), pBias.c_str(), cAxis.c_str() ) );
     cGraph->SetLineWidth ( 2 );
-    cGraph->GetXaxis()->SetTitle (pBias.c_str() );
+    cGraph->SetLineColor (2);
+    cGraph->SetMarkerColor (2);
+    //cGraph->GetXaxis()->SetTitle (pBias.c_str() );
     bookHistogram ( pCbc, pBias, cGraph );
 
     LOG (INFO) << "Created Canvas and Graph for Sweep of " << pBias;
@@ -101,8 +105,9 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     //is this safe?
     std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
     //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
-    cKeController->Configure (cConfString, 0, 0.0001);
+    cKeController->Configure (cConfString, 0, 0.0001, true);
     cKeController->Autozero();
+    mypause();
     //now I am ready for a bias sweep
 #endif
 
@@ -110,7 +115,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     //in order to do this, read the current value and store it for later
 
     uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
-    LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (the Test pulse bits are not changed!)";
+    LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
     uint8_t cNewValue = cOriginalAmuxValue;
 
     auto cAmuxValue = fAmuxSettings.find (pBias);
@@ -120,21 +125,23 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     {
         cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second.fAmuxCode & 0x1F);
         fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
-        LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias;
+        LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias << " (setting to 0x" << std::hex << +cNewValue << std::dec << ")";
 
         if (cAmuxValue->first == "Vth")
         {
             ThresholdVisitor cThresholdVisitor (fCbcInterface);
             pCbc->accept (cThresholdVisitor);
             uint16_t cOriginalThreshold = cThresholdVisitor.getThreshold();
-            LOG (INFO) << "Original threshold set to " << cOriginalThreshold << "(0x)" << std::hex << cOriginalThreshold << std::dec << ") - saving for later!";
+            LOG (INFO) << "Original threshold set to " << cOriginalThreshold << " (0x" << std::hex << cOriginalThreshold << std::dec << ") - saving for later!";
             cThresholdVisitor.setOption ('w');
+            mypause();
 
-            for (uint16_t cThreshold = 0; cThreshold < 1024; cThreshold++)
+            for (uint16_t cThreshold = 1; cThreshold < 1024; cThreshold++)
             {
                 cThresholdVisitor.setThreshold (cThreshold);
                 pCbc->accept (cThresholdVisitor);
-                double cReading = 0;
+                //std::this_thread::sleep_for (std::chrono::milliseconds (300) );
+                double cReading;
 #ifdef __USBINST__
                 cKeController->Measure();
                 cReading = cKeController->GetLatestReadValue();
@@ -142,17 +149,20 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
                 //now I have the value I set and the reading from the DMM
                 cGraph->SetPoint (cGraph->GetN(), cThreshold, cReading);
-                LOG (INFO) << "Set bias to 0x" << std::hex << cThreshold << std::dec << " DAC units and read " << cReading << " on the DMM";
+
+                if (cThreshold % 10 == 0) LOG (INFO) << "Set bias to " << cThreshold << " (0x" << std::hex << cThreshold << std::dec << ") DAC units and read " << cReading << " on the DMM";
 
                 //update the canvas
-                if (cThreshold == 0) cGraph->Draw ("APL");
-                else fSweepCanvas->Modified();
-
-                fSweepCanvas->Update();
+                if (cThreshold == 1) cGraph->Draw ("APL");
+                else if (cThreshold % 10 == 0)
+                {
+                    fSweepCanvas->Modified();
+                    fSweepCanvas->Update();
+                }
             }
 
             //now set back the original value
-            LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x)" << std::hex << cOriginalThreshold << std::dec << ")";
+            LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x" << std::hex << cOriginalThreshold << std::dec << ")";
             cThresholdVisitor.setThreshold (cOriginalThreshold);
             pCbc->accept (cThresholdVisitor);
             this->writeResults();
@@ -171,13 +181,16 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             if (cChangeReg)
             {
                 cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
-                LOG (INFO) << "Origainal Register Value for bias " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << cOriginalBiasValue << std::dec << " - saving for later!";
+                LOG (INFO) << "Origainal Register Value for bias " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << std::dec << " - saving for later!";
 
-                for (uint8_t cBias = 0; cBias < 255; cBias++)
+                for (uint8_t cBias = 1; cBias < 255; cBias++)
                 {
                     //make map string, pair<string, uint8_t> and use the string in pair for the bias
-                    fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, (cBias & cAmuxValue->second.fBitMask) << cAmuxValue->second.fBitShift);
+                    uint8_t cRegValue = (cBias & cAmuxValue->second.fBitMask) << cAmuxValue->second.fBitShift;
+                    LOG (DEBUG) << +cBias << " " << std::hex <<  +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
+                    fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cRegValue );
 
+                    //std::this_thread::sleep_for (std::chrono::milliseconds (300) );
                     double cReading = 0;
 #ifdef __USBINST__
                     cKeController->Measure();
@@ -186,18 +199,21 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
                     //now I have the value I set and the reading from the DMM
                     cGraph->SetPoint (cGraph->GetN(), cBias, cReading);
-                    LOG (INFO) << "Set bias to 0x" << std::hex << cBias << std::dec << " DAC units and read " << cReading << " on the DMM";
+
+                    if (cBias % 10 == 0) LOG (INFO) << "Set bias to 0x" << std::hex << +cBias << std::dec << " DAC units and read " << cReading << " on the DMM";
 
                     //update the canvas
-                    if (cBias == 0) cGraph->Draw ("APL");
-                    else fSweepCanvas->Modified();
-
-                    fSweepCanvas->Update();
+                    if (cBias == 1) cGraph->Draw ("APL");
+                    else if (cBias % 10 == 0)
+                    {
+                        fSweepCanvas->Modified();
+                        fSweepCanvas->Update();
+                    }
                 }
 
                 // set the bias back to the original value
                 fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cOriginalBiasValue );
-                LOG (INFO) << "Re-setting " << cAmuxValue->second.fRegName << " to original value of 0x" << std::hex << cOriginalBiasValue << std::dec;
+                LOG (INFO) << "Re-setting " << cAmuxValue->second.fRegName << " to original value of 0x" << std::hex << +cOriginalBiasValue << std::dec;
                 this->writeResults();
                 LOG (INFO) << "Bias Sweep finished, results saved!";
 
@@ -216,7 +232,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             }
         }
 
-        LOG (INFO) << "Finished sweeping " << pBias << " - now setting Amux settings back to original value of 0x" << std::hex << cOriginalAmuxValue << std::dec;
+        LOG (INFO) << "Finished sweeping " << pBias << " - now setting Amux settings back to original value of 0x" << std::hex << +cOriginalAmuxValue << std::dec;
 
         //now set the Amux back to the original value
         fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cOriginalAmuxValue);
