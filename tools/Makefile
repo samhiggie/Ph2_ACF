@@ -1,5 +1,7 @@
 AntennaFlag = -D__ANTENNA__
 Amc13Flag     = -D__AMC13__
+USBINSTFlag = -D__USBINST__
+ZmqFlag = -D__ZMQ__
 
 ROOTVERSION := $(shell root-config --has-http)
 Objs            = Tool.o SCurve.o Calibration.o Channel.o HybridTester.o CMTester.o  LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o
@@ -52,6 +54,15 @@ ifneq ("$(wildcard $(USBINSTDIR))","")
 	Objs += BiasSweep.o
 else
 	USBINSTLIBINSTALLED = no
+endif
+##################################################
+## check if ZMQ library is available on this machine
+##################################################
+ifneq ("$(wildcard $(ZMQ_HEADER_PATH))","")
+	ExternalObjects += -lzmq $(ZmqFlag)
+	ZMQINSTALLED = yes
+else
+	ZMQINSTRUCTIONS = ZeroMQ library is required to build the lvSupervisor with the server option - get it with \'sudo yum install zeromq-devel\'
 endif
 
 CC              = g++

@@ -29,6 +29,17 @@ using namespace Ph2_System;
 using namespace Ph2_UsbInst;
 #endif
 
+class AmuxSetting
+{
+  public:
+    std::string fRegName;
+    uint8_t fAmuxCode;
+    uint8_t fBitMask;
+    uint8_t fBitShift;
+
+    AmuxSetting (std::string pRegName, uint8_t pAmuxCode, uint8_t pBitMask, uint8_t pBitShift) : fRegName (pRegName), fAmuxCode (pAmuxCode), fBitMask (pBitMask), fBitShift (pBitShift) {}
+};
+
 class BiasSweep : public Tool
 {
   public:
@@ -37,13 +48,14 @@ class BiasSweep : public Tool
     void SweepBias (std::string pBias, Cbc* pCbc);
 
   private:
+    void InitializeAmuxMap();
     //ChipType fChipType;
     TCanvas* fSweepCanvas;
 
-    static  std::map<std::string, uint8_t> fAmuxSettings;
+    ChipType fType;
+    std::map<std::string, AmuxSetting> fAmuxSettings;
 
     void writeResults();
-
 
 };
 

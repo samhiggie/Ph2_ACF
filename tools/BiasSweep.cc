@@ -1,26 +1,53 @@
 #include "BiasSweep.h"
 
-std::map<std::string, uint8_t> BiasSweep::fAmuxSettings =
+void BiasSweep::InitializeAmuxMap()
 {
-    {"none", 0x00},
-    {"Vplus", 0x01},
-    {"VCth", 0x02},
-    {"Vth", 0x02},
-    {"Ihyst", 0x03},
-    {"Icomp", 0x04},
-    {"TestPulseChargeMirrCascodeVolt", 0x05},
-    {"Ibias", 0x06},
-    {"Bandgap", 0x07},
-    {"TestPulseChargePumpCurrent", 0x08},
-    {"Ipre1", 0x09},
-    {"Ipre2", 0x0A},
-    {"Vpc", 0x0B},
-    {"Ipsf", 0x0C},
-    {"Ipaos", 0x0D},
-    {"Ipa", 0x0E},
-    {"Vpasf", 0x0F},
-    {"Vpafb", 0x10}
-};
+    fAmuxSettings.clear();
+
+    if (fType == ChipType::CBC2)
+    {
+        // key(BiasSweep, reg name, amux code, bit mask, bit shift
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("none"), std::make_tuple ("", 0x00, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vplus"), std::make_tuple ( "Vplus", 0x01, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VCth"), std::make_tuple ("VCth", 0x02, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ihyst"), std::make_tuple ("FrontEndControl", 0x03, 0x3C, 2) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Icomp"), std::make_tuple ("Icomp", 0x04, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_Vcas"), std::make_tuple ("TestPulseChargeMirrCascodeVolt", 0x05, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ibias"), std::make_tuple ("", 0x06, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Bandgap"), std::make_tuple ("", 0x07, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_I"), std::make_tuple ("TestPulseChargePumpCurrent", 0x08, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipre1"), std::make_tuple ("Ipre1", 0x09, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipre2"), std::make_tuple ("Ipre2", 0x0A, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vpc"), std::make_tuple ("Vpc", 0x0B, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipsf"), std::make_tuple ("Ipsf", 0x0C, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipaos"), std::make_tuple ("Ipaos", 0x0D, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipa"), std::make_tuple ("Ipa", 0x0E, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vpasf"), std::make_tuple ("", 0x0F, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vpafb"), std::make_tuple ("Vpafb", 0x10, 0xFF, 0) );
+    }
+    else if (fType == ChipType::CBC3)
+    {
+        // key(BiasSweep, reg name, amux code, bit mask, bit shift
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("none"),   std::make_tuple ("", 0x00, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipa"),    std::make_tuple ("Ipa", 0x01, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipre2"),  std::make_tuple ("Ipre2", 0x02, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_I"),  std::make_tuple ("CALIbias", 0x03, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ibias"),  std::make_tuple ("Ibias", 0x04, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vth"),    std::make_tuple ("", 0x05, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VBGbias"), std::make_tuple ("BandgapFuse", 0x06, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VBG_LDO"), std::make_tuple ("", 0x07, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vpafb"),  std::make_tuple ("", 0x08, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Nc50"),   std::make_tuple ("", 0x09, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipre1"),  std::make_tuple ("Ipre1", 0x0A, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipsf"),   std::make_tuple ("Ipsf", 0x0B, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipaos"),  std::make_tuple ("Ipaos", 0x0C, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Icomp"),  std::make_tuple ("Icomp", 0x0D, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ihyst"),  std::make_tuple ("FeCtrl&TrgLat2", 0x0E, 0x3C, 2) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_Vcasc"), std::make_tuple ("CALVcasc", 0x0F, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VPLUS2"), std::make_tuple ("Vplus1&2", 0x10, 0xF0, 4) ) ;
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VPLUS1"), std::make_tuple ("Vplus1&2", 0x11, 0x0F, 0) ) ;
+    }
+}
 
 BiasSweep::BiasSweep()
 {
@@ -32,6 +59,9 @@ BiasSweep::~BiasSweep()
 
 void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 {
+    fType = pCbc->getChipType();
+    //initialize the Amux Setting map by calling the corresponding method
+    this->InitializeAmuxMap();
     //since I want to have a simple class to just sweep a bias on 1 CBC, I create the Canvas and Graph inside the method
     //just create objects, sweep and fill and forget about them again!
     TString cName = Form ( "c_BiasSweep_Fe%dCbc%d", pCbc->getFeId(), pCbc->getCbcId() );
@@ -60,13 +90,20 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 #ifdef __USBINST__
     //create instance of Ke2110Controller
     std::string cLogFile = fDirectoryName + "/DMM_log.txt";
+    //create a controller, and immediately send a "pause" command to any running server applications
     Ke2110Controller* cKeController = new Ke2110Controller ();
+    cKeController->InitializeClient ("localhost", 8083);
+    cKeController->SendPause();
+    //then set up for local operation
     cKeController->SetLogFileName (cLogFile);
+    cKeController->openLogFile();
     cKeController->Reset();
+    //is this safe?
     std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
     //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
     cKeController->Configure (cConfString, 0, 0.0001);
     cKeController->Autozero();
+    //now I am ready for a bias sweep
 #endif
 
     //ok, now set the Analogmux to the value required to see the bias there
@@ -74,61 +111,124 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
     uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
     LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (the Test pulse bits are not changed!)";
+    uint8_t cNewValue = cOriginalAmuxValue;
 
     auto cAmuxValue = fAmuxSettings.find (pBias);
-
-    uint8_t cNewValue = cOriginalAmuxValue;
 
     if (cAmuxValue == std::end (fAmuxSettings) ) LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
     else
     {
-        cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second & 0x1F);
+        cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second.fAmuxCode & 0x1F);
         fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
         LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias;
-    }
 
-    // here start sweeping the bias!
-    // first, get the maximum necessary range (8 bits except for VTh of Cbc3)
-    uint16_t cMaxValue = (pCbc->getChipType() == ChipType::CBC3 && pBias == "Vth") ? 1023 : 255;
-    LOG (INFO) << "The selected Bias " << pBias << " requires a range of " << cMaxValue;
-
-    ThresholdVisitor cThresholdVisitor (fCbcInterface, 0);
-
-    for (uint16_t cBias = 0; cBias < cMaxValue; cBias++)
-    {
-        if (pBias == "VCth" || pBias == "Vth" )
+        if (cAmuxValue->first == "Vth")
         {
-            cThresholdVisitor.setThreshold (cBias);
+            ThresholdVisitor cThresholdVisitor (fCbcInterface);
             pCbc->accept (cThresholdVisitor);
-        }
-        else
-            fCbcInterface->WriteCbcReg (pCbc, pBias, cBias);
+            uint16_t cOriginalThreshold = cThresholdVisitor.getThreshold();
+            LOG (INFO) << "Original threshold set to " << cOriginalThreshold << "(0x)" << std::hex << cOriginalThreshold << std::dec << ") - saving for later!";
+            cThresholdVisitor.setOption ('w');
 
-        double cReading = 0;
+            for (uint16_t cThreshold = 0; cThreshold < 1024; cThreshold++)
+            {
+                cThresholdVisitor.setThreshold (cThreshold);
+                pCbc->accept (cThresholdVisitor);
+                double cReading = 0;
 #ifdef __USBINST__
-        cKeController->Measure();
-        cReading = cKeController->GetLatestReadValue();
+                cKeController->Measure();
+                cReading = cKeController->GetLatestReadValue();
 #endif
 
-        //now I have the value I set and the reading from the DMM
-        cGraph->SetPoint (cGraph->GetN(), cBias, cReading);
-        LOG (INFO) << "Set bias to 0x" << std::hex << cBias << std::dec << " DAC units and read " << cReading << " on the DMM";
+                //now I have the value I set and the reading from the DMM
+                cGraph->SetPoint (cGraph->GetN(), cThreshold, cReading);
+                LOG (INFO) << "Set bias to 0x" << std::hex << cThreshold << std::dec << " DAC units and read " << cReading << " on the DMM";
 
-        //update the canvas
-        if (cBias == 0) cGraph->Draw ("APL");
-        else fSweepCanvas->Modified();
+                //update the canvas
+                if (cThreshold == 0) cGraph->Draw ("APL");
+                else fSweepCanvas->Modified();
 
-        fSweepCanvas->Update();
+                fSweepCanvas->Update();
+            }
+
+            //now set back the original value
+            LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x)" << std::hex << cOriginalThreshold << std::dec << ")";
+            cThresholdVisitor.setThreshold (cOriginalThreshold);
+            pCbc->accept (cThresholdVisitor);
+            this->writeResults();
+            LOG (INFO) << "Bias Sweep finished, results saved!";
+
+        }
+
+        else
+        {
+            // here start sweeping the bias!
+            // now get the original bias value
+            bool cChangeReg = (cAmuxValue->second.fBitMask != 0x00) ? true : false;
+            // if the bias is sweepable, save the original value, do a full sweep, update the canvas etc;
+            uint8_t cOriginalBiasValue;
+
+            if (cChangeReg)
+            {
+                cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
+                LOG (INFO) << "Origainal Register Value for bias " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << cOriginalBiasValue << std::dec << " - saving for later!";
+
+                for (uint8_t cBias = 0; cBias < 255; cBias++)
+                {
+                    //make map string, pair<string, uint8_t> and use the string in pair for the bias
+                    fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, (cBias & cAmuxValue->second.fBitMask) << cAmuxValue->second.fBitShift);
+
+                    double cReading = 0;
+#ifdef __USBINST__
+                    cKeController->Measure();
+                    cReading = cKeController->GetLatestReadValue();
+#endif
+
+                    //now I have the value I set and the reading from the DMM
+                    cGraph->SetPoint (cGraph->GetN(), cBias, cReading);
+                    LOG (INFO) << "Set bias to 0x" << std::hex << cBias << std::dec << " DAC units and read " << cReading << " on the DMM";
+
+                    //update the canvas
+                    if (cBias == 0) cGraph->Draw ("APL");
+                    else fSweepCanvas->Modified();
+
+                    fSweepCanvas->Update();
+                }
+
+                // set the bias back to the original value
+                fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cOriginalBiasValue );
+                LOG (INFO) << "Re-setting " << cAmuxValue->second.fRegName << " to original value of 0x" << std::hex << cOriginalBiasValue << std::dec;
+                this->writeResults();
+                LOG (INFO) << "Bias Sweep finished, results saved!";
+
+            }
+            //else, if the bias is not sweepable just measure what is on the amux output and do what with the result?
+            else
+            {
+                LOG (INFO) << "Not an Amux setting that requires a sweep: " << cAmuxValue->first;
+                double cReading = 0;
+#ifdef __USBINST__
+                cKeController->Measure();
+                cReading = cKeController->GetLatestReadValue();
+                LOG (INFO) << "Measured bias " << cAmuxValue->first << " to be " << cReading;
+#endif
+
+            }
+        }
+
+        LOG (INFO) << "Finished sweeping " << pBias << " - now setting Amux settings back to original value of 0x" << std::hex << cOriginalAmuxValue << std::dec;
+
+        //now set the Amux back to the original value
+        fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cOriginalAmuxValue);
+        //to clean up, save everything
     }
 
-    LOG (INFO) << "Finished sweeping " << pBias << " - now setting Amux settings back to original value of 0x" << std::hex << cOriginalAmuxValue << std::dec;
-
-    //now set the Amux back to the original value
-    fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cOriginalAmuxValue);
-
-    //to clean up, save everything
-    this->writeResults();
-    LOG (INFO) << "Bias Sweep finished, results saved!";
+#ifdef __USBINST__
+    //close the log file
+    cKeController->closeLogFile();
+    //tell any server to resume the monitoring
+    cKeController->SendResume();
+#endif
 }
 
 void BiasSweep::writeResults()
