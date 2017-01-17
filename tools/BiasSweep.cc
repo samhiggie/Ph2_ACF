@@ -168,7 +168,6 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
         cKeController->Configure (cConfString, 0, 0.0001, true);
         cKeController->Autozero();
-        mypause();
         //now I am ready for a bias sweep
 #endif
 
@@ -191,7 +190,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             LOG (INFO) << "Original threshold set to " << cOriginalThreshold << " (0x" << std::hex << cOriginalThreshold << std::dec << ") - saving for later!";
             cThresholdVisitor.setOption ('w');
 
-            for (uint16_t cThreshold = 0; cThreshold < 1024; cThreshold++)
+            for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold++)
             {
                 cThresholdVisitor.setThreshold (cThreshold);
                 pCbc->accept (cThresholdVisitor);
@@ -239,7 +238,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                 cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
                 LOG (INFO) << "Origainal Register Value for bias " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << std::dec << " - saving for later!";
                 //TODO: check me!
-                uint16_t cRange = (__builtin_popcount (cAmuxValue->second.fBitMask) == 4) ? 16 : 256;
+                uint16_t cRange = (__builtin_popcount (cAmuxValue->second.fBitMask) == 4) ? 16 : 255;
 
                 for (uint8_t cBias = 0; cBias < cRange; cBias++)
                 {
@@ -259,7 +258,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                     //now I have the value I set and the reading from the DMM
                     cGraph->SetPoint (cGraph->GetN(), cBias, cReading);
 
-                    if (cBias % 10 == 0) LOG (INFO) << "Set bias to 0x" << std::hex << +cBias << std::dec << " DAC units and read " << cReading << " on the DMM";
+                    if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " on the DMM";
 
                     //update the canvas
                     if (cBias == 1) cGraph->Draw ("APL");
