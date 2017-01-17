@@ -14,8 +14,11 @@
 #define __BIASSWEEP_H__
 #include "Tool.h"
 #include <map>
+#include <vector>
 #include "TGraph.h"
+#include "TObject.h"
 #include "TAxis.h"
+#include "TTree.h"
 #include "TString.h"
 #include "Utils/CommonVisitors.h"
 
@@ -27,6 +30,10 @@ using namespace Ph2_System;
 #ifdef __USBINST__
 #include "Ke2110Controller.h"
 using namespace Ph2_UsbInst;
+#endif
+#ifdef __MAKECINT__
+#pragma link C++ class vector<float>+;
+#pragma link C++ class vector<uint16_t>+;
 #endif
 
 class AmuxSetting
@@ -40,20 +47,40 @@ class AmuxSetting
     AmuxSetting (std::string pRegName, uint8_t pAmuxCode, uint8_t pBitMask, uint8_t pBitShift) : fRegName (pRegName), fAmuxCode (pAmuxCode), fBitMask (pBitMask), fBitShift (pBitShift) {}
 };
 
+class BiasSweepData : public TObject
+{
+  public:
+    uint16_t fFeId;
+    uint16_t fCbcId;
+    std::string fBias;
+    long int fTimestamp;
+    std::vector<uint16_t> fXValues;
+    std::vector<float> fYValues;
+
+    BiasSweepData() : fFeId (0), fCbcId (0), fBias (""), fTimestamp (0)
+    {
+    }
+    ~BiasSweepData() {}
+
+    //ClassDef (BiasSweepData, 1); //The class title
+};
+
 class BiasSweep : public Tool
 {
   public:
     BiasSweep();
     ~BiasSweep();
+    void Initialize();
     void SweepBias (std::string pBias, Cbc* pCbc);
 
   private:
     void InitializeAmuxMap();
-    //ChipType fChipType;
     TCanvas* fSweepCanvas;
 
     ChipType fType;
     std::map<std::string, AmuxSetting> fAmuxSettings;
+    //for the TTree
+    BiasSweepData* fData;
 
     void writeResults();
 
