@@ -105,49 +105,49 @@ cbc3irrad: cbc3irrad.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
-cbc3test: cbc3test.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# cbc3test: cbc3test.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-integratedtester: integratedtester.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# integratedtester: integratedtester.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-systemtest: systemtest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# systemtest: systemtest.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-calibrate: calibrate.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# calibrate: calibrate.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-datatest: datatest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# datatest: datatest.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-configure: configure.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# configure: configure.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-hybridtest: hybridtest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# hybridtest: hybridtest.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-cmtest: cmtest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# cmtest: cmtest.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-commission: commission.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# commission: commission.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-fpgaconfig: fpgaconfig.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# fpgaconfig: fpgaconfig.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
-pulseshape: pulseshape.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
+# pulseshape: pulseshape.cc
+# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+# 	cp $@ ../bin
 
 clean:
 	rm -f $(binaries) *.o
