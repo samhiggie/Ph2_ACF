@@ -57,68 +57,59 @@ BiasSweep::~BiasSweep()
 {
 }
 
-void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
+void BiasSweep::Initialize()
 {
-    fType = pCbc->getChipType();
-    //initialize the Amux Setting map by calling the corresponding method
-    this->InitializeAmuxMap();
-    //since I want to have a simple class to just sweep a bias on 1 CBC, I create the Canvas and Graph inside the method
-    //just create objects, sweep and fill and forget about them again!
-    TString cName = Form ( "c_BiasSweep_Fe%dCbc%d", pCbc->getFeId(), pCbc->getCbcId() );
+    //gROOT->ProcessLine (“#include <vector>”);
+    gROOT->ProcessLine ("#include <vector>");
+    TString cName = "c_BiasSweep";
     TObject* cObj = gROOT->FindObject ( cName );
 
     if ( cObj ) delete cObj;
 
-    fSweepCanvas = new TCanvas (cName, Form ("Bias Sweep %s", pBias.c_str() ), 10, 0, 500, 500 );
+    fSweepCanvas = new TCanvas (cName, "Bias Sweep", 10, 0, 500, 500 );
     fSweepCanvas->SetGrid();
     fSweepCanvas->cd();
+    LOG (INFO) << "Created Canvas for Bias sweeps";
 
-    std::time_t cTime = std::time (nullptr);
-    cName = Form ("g_BiasSweep_%s_Fe%d_Cbc%d_TS%d", pBias.c_str(), pCbc->getFeId(), pCbc->getCbcId(), cTime );
-    cObj = gROOT->FindObject (cName);
+    //initialize empty bias sweep object
+    fData = new BiasSweepData();
 
-    if (cObj) delete cObj;
+    for (auto cBoard : fBoardVector)
+    {
+        for (auto cFe : cBoard->fModuleVector)
+        {
+            fType = cFe->getChipType();
 
-    TGraph* cGraph = new TGraph ();
-    cGraph->SetName (cName);
-    std::string cAxis = (pBias.find ("I") != std::string::npos) ? "I" : "V";
-    cGraph->SetTitle (Form ("Bias Sweep %s; %s ; %s", pBias.c_str(), pBias.c_str(), cAxis.c_str() ) );
-    cGraph->SetLineWidth ( 2 );
-    cGraph->SetLineColor (2);
-    cGraph->SetMarkerColor (2);
-    //cGraph->GetXaxis()->SetTitle (pBias.c_str() );
-    bookHistogram ( pCbc, pBias, cGraph );
+            for (auto cCbc : cFe->fCbcVector)
+            {
+                cName = Form ("BiasSweep_Fe%d_Cbc%d", cCbc->getFeId(), cCbc->getCbcId() );
+                cObj = gROOT->FindObject (cName);
 
-    LOG (INFO) << "Created Canvas and Graph for Sweep of " << pBias;
+                if (cObj) delete cObj;
 
-#ifdef __USBINST__
-    //create instance of Ke2110Controller
-    std::string cLogFile = fDirectoryName + "/DMM_log.txt";
-    //create a controller, and immediately send a "pause" command to any running server applications
-    Ke2110Controller* cKeController = new Ke2110Controller ();
-    cKeController->InitializeClient ("localhost", 8083);
-    cKeController->SendPause();
-    //then set up for local operation
-    cKeController->SetLogFileName (cLogFile);
-    cKeController->openLogFile();
-    cKeController->Reset();
-    //are we measuring a voltage for the currents as well?
-    //std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
-    std::string cConfString = "VOLTAGE:DC";
-    //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
-    cKeController->Configure (cConfString, 0, 0.0001, true);
-    cKeController->Autozero();
-    mypause();
-    //now I am ready for a bias sweep
-#endif
+                TTree* cTmpTree = new TTree (cName, cName);
+                //cTmpTree->Branch (Form ("BiasSweepData_Fe%d_Cbc%d", cCbc->getFeId(), cCbc->getCbcId() ), "BiasSweepData", &fData);
+                cTmpTree->Branch ("Bias", &fData->fBias);
+                cTmpTree->Branch ("Fe", &fData->fFeId, "Fe/s" );
+                cTmpTree->Branch ("Cbc", &fData->fCbcId, "Cbc/s" );
+                cTmpTree->Branch ("Time", &fData->fTimestamp, "Time/l" );
+                cTmpTree->Branch ("BiasValues", &fData->fXValues);
+                cTmpTree->Branch ("DMMValues", &fData->fYValues);
 
-    //ok, now set the Analogmux to the value required to see the bias there
-    //in order to do this, read the current value and store it for later
+                this->bookHistogram (cCbc, "DataTree", cTmpTree);
 
-    uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
-    LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
-    uint8_t cNewValue = cOriginalAmuxValue;
+                LOG (INFO) << "TTree for BiasSweep data for Fe " << +cCbc->getFeId() << " Cbc " << +cCbc->getCbcId() << " created!";
+            }
+        }
 
+    }
+
+    //initialize the Amux Setting map by calling the corresponding method
+    this->InitializeAmuxMap();
+}
+
+void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
+{
     auto cAmuxValue = fAmuxSettings.find (pBias);
 
     if (cAmuxValue == std::end (fAmuxSettings) )
@@ -128,6 +119,66 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     }
     else
     {
+        //since I want to have a simple class to just sweep a bias on 1 CBC, I create the Graph inside the method
+        //just create objects, sweep and fill and forget about them again!
+
+        std::time_t cTime = std::time (nullptr);
+        TString cName = Form ("g_BiasSweep_%s_Fe%d_Cbc%d_TS%d", pBias.c_str(), pCbc->getFeId(), pCbc->getCbcId(), cTime );
+
+        TObject* cObj = gROOT->FindObject (cName);
+
+        if (cObj) delete cObj;
+
+        TGraph* cGraph = new TGraph ();
+        cGraph->SetName (cName);
+        std::string cYAxis = (pBias.find ("I") != std::string::npos) ? "I [A]" : "V [V]";
+        std::string cXAxis = pBias + " [DAC]";
+        cGraph->SetTitle (Form ("Bias Sweep %s; %s ; %s", pBias.c_str(), cXAxis.c_str(), cYAxis.c_str() ) );
+        cGraph->SetLineWidth ( 2 );
+        cGraph->SetLineColor (2);
+        cGraph->SetMarkerColor (2);
+        //cGraph->GetXaxis()->SetTitle (pBias.c_str() );
+        bookHistogram ( pCbc, pBias, cGraph );
+
+        LOG (INFO) << "Created Graph for Sweep of " << pBias;
+
+        //now get the TTree for this CBC and fill the already known fields
+        TTree* cTmpTree = static_cast<TTree*> (getHist ( pCbc, "DataTree" ) );
+        fData->fBias = pBias.c_str();
+        fData->fTimestamp = static_cast<long int> (cTime);
+        fData->fFeId = pCbc->getFeId();
+        fData->fCbcId = pCbc->getCbcId();
+        fData->fXValues.clear();
+        fData->fYValues.clear();
+
+#ifdef __USBINST__
+        //create instance of Ke2110Controller
+        std::string cLogFile = fDirectoryName + "/DMM_log.txt";
+        //create a controller, and immediately send a "pause" command to any running server applications
+        Ke2110Controller* cKeController = new Ke2110Controller ();
+        cKeController->InitializeClient ("localhost", 8083);
+        cKeController->SendPause();
+        //then set up for local operation
+        cKeController->SetLogFileName (cLogFile);
+        cKeController->openLogFile();
+        cKeController->Reset();
+        //are we measuring a voltage for the currents as well?
+        //std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
+        std::string cConfString = "VOLTAGE:DC";
+        //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
+        cKeController->Configure (cConfString, 0, 0.0001, true);
+        cKeController->Autozero();
+        mypause();
+        //now I am ready for a bias sweep
+#endif
+
+        //ok, now set the Analogmux to the value required to see the bias there
+        //in order to do this, read the current value and store it for later
+
+        uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
+        LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
+        uint8_t cNewValue = cOriginalAmuxValue;
+
         cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second.fAmuxCode & 0x1F);
         fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
         LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias << " (setting to 0x" << std::hex << +cNewValue << std::dec << ")";
@@ -139,14 +190,13 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             uint16_t cOriginalThreshold = cThresholdVisitor.getThreshold();
             LOG (INFO) << "Original threshold set to " << cOriginalThreshold << " (0x" << std::hex << cOriginalThreshold << std::dec << ") - saving for later!";
             cThresholdVisitor.setOption ('w');
-            mypause();
 
-            for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold++)
+            for (uint16_t cThreshold = 0; cThreshold < 1024; cThreshold++)
             {
                 cThresholdVisitor.setThreshold (cThreshold);
                 pCbc->accept (cThresholdVisitor);
                 //std::this_thread::sleep_for (std::chrono::milliseconds (300) );
-                double cReading;
+                double cReading = 0;
 #ifdef __USBINST__
                 cKeController->Measure();
                 cReading = cKeController->GetLatestReadValue();
@@ -164,15 +214,16 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                     fSweepCanvas->Modified();
                     fSweepCanvas->Update();
                 }
+
+                //now set the values for the ttree
+                fData->fXValues.push_back (cThreshold);
+                fData->fYValues.push_back (cReading);
             }
 
             //now set back the original value
             LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x" << std::hex << cOriginalThreshold << std::dec << ")";
             cThresholdVisitor.setThreshold (cOriginalThreshold);
             pCbc->accept (cThresholdVisitor);
-            this->writeResults();
-            LOG (INFO) << "Bias Sweep finished, results saved!";
-
         }
 
         else
@@ -187,7 +238,8 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             {
                 cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
                 LOG (INFO) << "Origainal Register Value for bias " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << std::dec << " - saving for later!";
-                uint16_t cRange = (__builtin_popcount (cAmuxValue->second.fBitMask) == 4) ? 16 : 255;
+                //TODO: check me!
+                uint16_t cRange = (__builtin_popcount (cAmuxValue->second.fBitMask) == 4) ? 16 : 256;
 
                 for (uint8_t cBias = 0; cBias < cRange; cBias++)
                 {
@@ -216,13 +268,15 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                         fSweepCanvas->Modified();
                         fSweepCanvas->Update();
                     }
+
+                    //now set the values for the ttree
+                    fData->fXValues.push_back (cBias);
+                    fData->fYValues.push_back (cReading);
                 }
 
                 // set the bias back to the original value
                 fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cOriginalBiasValue );
                 LOG (INFO) << "Re-setting " << cAmuxValue->second.fRegName << " to original value of 0x" << std::hex << +cOriginalBiasValue << std::dec;
-                this->writeResults();
-                LOG (INFO) << "Bias Sweep finished, results saved!";
 
             }
             //else, if the bias is not sweepable just measure what is on the amux output and do what with the result?
@@ -233,10 +287,11 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 #ifdef __USBINST__
                 cKeController->Measure();
                 cReading = cKeController->GetLatestReadValue();
-                //TODO
                 LOG (INFO) << "Measured bias " << cAmuxValue->first << " to be " << cReading;
+                //now set the values for the ttree
+                fData->fXValues.push_back (0);
+                fData->fYValues.push_back (cReading);
 #endif
-
             }
         }
 
@@ -245,14 +300,17 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         //now set the Amux back to the original value
         fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cOriginalAmuxValue);
         //to clean up, save everything
-    }
 
 #ifdef __USBINST__
-    //close the log file
-    cKeController->closeLogFile();
-    //tell any server to resume the monitoring
-    cKeController->SendResume();
+        //close the log file
+        cKeController->closeLogFile();
+        //tell any server to resume the monitoring
+        cKeController->SendResume();
 #endif
+        cTmpTree->Fill();
+        this->writeResults();
+        LOG (INFO) << "Bias Sweep finished, results saved!";
+    }
 }
 
 void BiasSweep::writeResults()

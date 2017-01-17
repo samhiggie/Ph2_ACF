@@ -90,6 +90,7 @@ int main ( int argc, char** argv )
 
         BiasSweep cSweep;
         cSweep.Inherit (&cTool);
+        cSweep.Initialize();
 
         for (auto cBoard : cSweep.fBoardVector)
         {
