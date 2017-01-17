@@ -80,7 +80,7 @@ LibraryPaths = $(LibraryDirs:%=-L%)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 
-binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester cbc3test
+binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester cbc3test cbc3irrad
 binariesNoRoot=systemtest datatest fpgaconfig configure
 
 .PHONY: clean $(binaries)
@@ -100,6 +100,10 @@ print:
 	@echo 'Ph2_USBInstDriver installed:' $(USBINSTLIBINSTALLED)
 	@echo 'ZeroMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
+
+cbc3irrad: cbc3irrad.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
 
 cbc3test: cbc3test.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
