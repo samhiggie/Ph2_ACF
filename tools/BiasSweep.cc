@@ -108,6 +108,66 @@ void BiasSweep::Initialize()
     this->InitializeAmuxMap();
 }
 
+uint8_t BiasSweep::ConfigureAMUX (std::string pBias , Cbc* pCbc , double pSettlingTime_s  )
+{
+    // first read original value in Amux register and save for later 
+    uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
+    LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
+        
+    //ok, now set the Analogmux to the value required to see the bias there
+    auto cAmuxValue = fAmuxSettings.find (pBias);
+    if (cAmuxValue == std::end (fAmuxSettings) )
+    {
+        LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
+        return 0;
+    }
+    else
+    {
+        uint8_t cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second.fAmuxCode & 0x1F);
+        fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
+        LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias << " (setting to 0x" << std::hex << +cNewValue << std::dec << ")";
+        for( unsigned int i = 0 ; i < (int)(pSettlingTime_s/100e-3) ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
+        return cOriginalAmuxValue;
+    }
+}
+void BiasSweep::ResetAMUX(uint8_t pAmuxValue, Cbc* pCbc , double pSettlingTime_s  )
+{
+    LOG (INFO) << "Reseting Amux settings back to original value of 0x" << std::hex << +pAmuxValue;
+    fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", pAmuxValue);
+    for( unsigned int i = 0 ; i < (int)(pSettlingTime_s/100e-3) ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
+}
+void BiasSweep::ReadRegister(std::string pBias , Cbc* pCbc )
+{
+    auto cAmuxValue = fAmuxSettings.find (pBias);
+    if (cAmuxValue == std::end (fAmuxSettings) )
+    {
+        LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
+    }
+    else
+    {
+        uint8_t cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
+        LOG (DEBUG) << MAGENTA << "\n\nOriginal Register Value for bias : " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << " [bin] " << std::bitset<8>((int)(+cOriginalBiasValue)) << "." << RESET ;
+    }
+}
+void BiasSweep::WriteRegister(std::string pBias , uint8_t pRegValue ,  Cbc* pCbc )
+{
+    auto cAmuxValue = fAmuxSettings.find (pBias);
+    if (cAmuxValue == std::end (fAmuxSettings) )
+    {
+        LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
+    }
+    else
+    {
+        fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, pRegValue );
+        uint8_t cRegValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
+        if( cRegValue != pRegValue )
+        {
+            LOG (ERROR ) << "Error! Value written to register not the same as the one read back!.";
+        }
+        for( unsigned int i = 0 ; i < 40 ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
+    }
+}
+
 void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 {
     auto cAmuxValue = fAmuxSettings.find (pBias);
@@ -246,8 +306,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                     uint8_t cRegValue = (cBias) << cAmuxValue->second.fBitShift;
                     //LOG (DEBUG) << +cBias << " " << std::hex <<  +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
                     fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cRegValue );
-
-                    //std::this_thread::sleep_for (std::chrono::milliseconds (300) );
+                    std::this_thread::sleep_for (std::chrono::milliseconds (100) );
                     double cReading = 0;
 #ifdef __USBINST__
                     cKeController->Measure();
@@ -261,7 +320,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                     if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " on the DMM";
 
                     //update the canvas
-                    if (cBias == 1) cGraph->Draw ("APL");
+                    if (cBias == 10) cGraph->Draw ("APL");
                     else if (cBias % 10 == 0)
                     {
                         fSweepCanvas->Modified();
