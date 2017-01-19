@@ -29,12 +29,15 @@ using namespace Ph2_System;
 
 #ifdef __USBINST__
 #include "Ke2110Controller.h"
-using namespace Ph2_UsbInst;
+#include "HMP4040Client.h"
 #endif
+
 #ifdef __MAKECINT__
 #pragma link C++ class vector<float>+;
 #pragma link C++ class vector<uint16_t>+;
 #endif
+
+using namespace Ph2_UsbInst;
 
 class AmuxSetting
 {
@@ -54,6 +57,9 @@ class BiasSweepData : public TObject
     uint16_t fCbcId;
     std::string fBias;
     long int fTimestamp;
+    char fUnit[2];
+    uint16_t fInitialXValue;
+    float fInitialYValue;
     std::vector<uint16_t> fXValues;
     std::vector<float> fYValues;
 
@@ -90,6 +96,14 @@ class BiasSweep : public Tool
     std::map<std::string, AmuxSetting> fAmuxSettings;
     //for the TTree
     BiasSweepData* fData;
+
+    //settings
+    int fSweepTimeout, fKePort, fHMPPort;
+
+#ifdef __USBINST__
+    Ke2110Controller* fKeController;
+    HMP4040Client* fHMPClient;
+#endif
 
     void writeResults();
 

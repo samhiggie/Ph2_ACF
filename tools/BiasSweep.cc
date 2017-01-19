@@ -43,11 +43,13 @@ void BiasSweep::InitializeAmuxMap()
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipaos"),  std::make_tuple ("Ipaos", 0x0C, 0xFF, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Icomp"),  std::make_tuple ("Icomp", 0x0D, 0xFF, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ihyst"),  std::make_tuple ("FeCtrl&TrgLat2", 0x0E, 0x3C, 2) );
-        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_Vcasc"), std::make_tuple ("CALVcasc", 0x0F, 0x00, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_Vcasc"), std::make_tuple ("CALVcasc", 0x0F, 0xFF, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VPLUS2"), std::make_tuple ("Vplus1&2", 0x10, 0xF0, 4) ) ;
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VPLUS1"), std::make_tuple ("Vplus1&2", 0x11, 0x0F, 0) ) ;
     }
 }
+
+//cases: 1)Vth 2)Voltage & sweepable -> DMM 3) not sweepable: old code 4) current & sweepable: 1 reading on dmm with default setting, then sweep using PS
 
 BiasSweep::BiasSweep()
 {
@@ -59,7 +61,18 @@ BiasSweep::~BiasSweep()
 
 void BiasSweep::Initialize()
 {
-    //gROOT->ProcessLine (“#include <vector>”);
+    // now read the settings from the map
+    auto cSetting = fSettingsMap.find ( "SweepTimeout" );
+    fSweepTimeout = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0;
+    cSetting = fSettingsMap.find ( "KePort" );
+    fKePort = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 8083;
+    cSetting = fSettingsMap.find ( "HMPPort" );
+    fHMPPort = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 8082;
+
+    //create a controller
+    fKeController = new Ke2110Controller ();
+    fKeController->InitializeClient ("localhost", fKePort);
+
     gROOT->ProcessLine ("#include <vector>");
     TString cName = "c_BiasSweep";
     TObject* cObj = gROOT->FindObject ( cName );
@@ -93,6 +106,9 @@ void BiasSweep::Initialize()
                 cTmpTree->Branch ("Fe", &fData->fFeId, "Fe/s" );
                 cTmpTree->Branch ("Cbc", &fData->fCbcId, "Cbc/s" );
                 cTmpTree->Branch ("Time", &fData->fTimestamp, "Time/l" );
+                cTmpTree->Branch ("Unit", &fData->fUnit, "Unit/C" );
+                cTmpTree->Branch ("InitialBiasValue", &fData->fInitialXValue, "InitialDAC/s");
+                cTmpTree->Branch ("InitialDMMValue", &fData->fInitialYValue, "InitialDMM/F");
                 cTmpTree->Branch ("BiasValues", &fData->fXValues);
                 cTmpTree->Branch ("DMMValues", &fData->fYValues);
 
@@ -181,6 +197,8 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     }
     else
     {
+        //boolean variable to find out if current or not
+        bool cCurrent = (pBias.find ("I") != std::string::npos) ? true : false;
         //since I want to have a simple class to just sweep a bias on 1 CBC, I create the Graph inside the method
         //just create objects, sweep and fill and forget about them again!
 
@@ -193,7 +211,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
         TGraph* cGraph = new TGraph ();
         cGraph->SetName (cName);
-        std::string cYAxis = (pBias.find ("I") != std::string::npos) ? "I [A]" : "V [V]";
+        std::string cYAxis = (cCurrent) ? "I [A]" : "V [V]";
         std::string cXAxis = pBias + " [DAC]";
         cGraph->SetTitle (Form ("Bias Sweep %s; %s ; %s", pBias.c_str(), cXAxis.c_str(), cYAxis.c_str() ) );
         cGraph->SetLineWidth ( 2 );
@@ -210,32 +228,44 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         fData->fTimestamp = static_cast<long int> (cTime);
         fData->fFeId = pCbc->getFeId();
         fData->fCbcId = pCbc->getCbcId();
+        fData->fUnit[0] = (cCurrent) ? 'I' : 'V';
+        fData->fUnit[1] = 0;
+        fData->fInitialXValue = 0;
+        fData->fInitialYValue = 0;
         fData->fXValues.clear();
         fData->fYValues.clear();
 
 #ifdef __USBINST__
-        //create instance of Ke2110Controller
         std::string cLogFile = fDirectoryName + "/DMM_log.txt";
-        //create a controller, and immediately send a "pause" command to any running server applications
-        Ke2110Controller* cKeController = new Ke2110Controller ();
-        cKeController->InitializeClient ("localhost", 8083);
-        cKeController->SendPause();
+        //send pause command to any running Ke server
+        fKeController->SendPause();
         //then set up for local operation
-        cKeController->SetLogFileName (cLogFile);
-        cKeController->openLogFile();
-        cKeController->Reset();
-        //are we measuring a voltage for the currents as well?
-        //std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
+        fKeController->SetLogFileName (cLogFile);
+        fKeController->openLogFile();
+        fKeController->Reset();
         std::string cConfString = "VOLTAGE:DC";
-        //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
-        cKeController->Configure (cConfString, 0, 0.0001, true);
-        cKeController->Autozero();
-        //now I am ready for a bias sweep
+        //set up to either measure Voltage DC - params: configstring, range, resolution, autorange
+        fKeController->Configure (cConfString, 0, 0.0001, true);
+        fKeController->Autozero();
+
+        if (cCurrent)
+        {
+            //initialize the HMP4040Client to connect to the server
+            fHMPClient = new HMP4040Client ("localhost", fHMPPort);
+
+            if (fHMPClient->StopMonitoring() )
+                LOG (INFO) << "Monitoring Stop request sent successfully!";
+            else
+            {
+                LOG (ERROR) << "Monitoring Stop request did not go through! -aborting";
+                exit (1);
+            }
+        }
+
 #endif
 
         //ok, now set the Analogmux to the value required to see the bias there
         //in order to do this, read the current value and store it for later
-
         uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
         LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
         uint8_t cNewValue = cOriginalAmuxValue;
@@ -252,15 +282,24 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             LOG (INFO) << "Original threshold set to " << cOriginalThreshold << " (0x" << std::hex << cOriginalThreshold << std::dec << ") - saving for later!";
             cThresholdVisitor.setOption ('w');
 
+            //take one initial reading on the dmm
+            float cInitialReading = 0;
+#ifdef __USBINST__
+            fKeController->Measure();
+            cInitialReading = fKeController->GetLatestReadValue();
+#endif
+            fData->fInitialXValue = cOriginalThreshold;
+            fData->fInitialYValue = cInitialReading;
+
             for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold++)
             {
                 cThresholdVisitor.setThreshold (cThreshold);
                 pCbc->accept (cThresholdVisitor);
-                //std::this_thread::sleep_for (std::chrono::milliseconds (300) );
+                //std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
                 double cReading = 0;
 #ifdef __USBINST__
-                cKeController->Measure();
-                cReading = cKeController->GetLatestReadValue();
+                fKeController->Measure();
+                cReading = fKeController->GetLatestReadValue();
 #endif
 
                 //now I have the value I set and the reading from the DMM
@@ -286,20 +325,30 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             cThresholdVisitor.setThreshold (cOriginalThreshold);
             pCbc->accept (cThresholdVisitor);
         }
-
+        // the bias is not Vth
         else
         {
             // here start sweeping the bias!
             // now get the original bias value
-            bool cChangeReg = (cAmuxValue->second.fBitMask != 0x00) ? true : false;
             // if the bias is sweepable, save the original value, do a full sweep, update the canvas etc;
+            bool cChangeReg = (cAmuxValue->second.fBitMask != 0x00) ? true : false;
             uint8_t cOriginalBiasValue;
 
+            // the bias is sweepable
             if (cChangeReg)
             {
                 cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
                 LOG (INFO) << "Origainal Register Value for bias " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << std::dec << " - saving for later!";
-                //TODO: check me!
+
+                //take one initial reading on the dmm and save as the inital value in the tree
+                float cInitialReading = 0;
+#ifdef __USBINST__
+                fKeController->Measure();
+                cInitialReading = fKeController->GetLatestReadValue();
+#endif
+                fData->fInitialXValue = cOriginalBiasValue;
+                fData->fInitialYValue = cInitialReading;
+
                 uint16_t cRange = (__builtin_popcount (cAmuxValue->second.fBitMask) == 4) ? 16 : 255;
 
                 for (uint8_t cBias = 0; cBias < cRange; cBias++)
@@ -308,21 +357,51 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                     uint8_t cRegValue = (cBias) << cAmuxValue->second.fBitShift;
                     //LOG (DEBUG) << +cBias << " " << std::hex <<  +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
                     fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cRegValue );
-                    std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+
+                    std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
                     double cReading = 0;
 #ifdef __USBINST__
-                    cKeController->Measure();
-                    cReading = cKeController->GetLatestReadValue();
-                    //cReading /= 10000;
+
+                    if (!cCurrent)
+                    {
+                        fKeController->Measure();
+                        cReading = fKeController->GetLatestReadValue();
+
+                        if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " V on the DMM";
+                    }
+                    else if (cCurrent)
+                    {
+                        //read the LV PS instead
+                        bool cSuccess = false;
+                        int cTimeoutCounter = 0;
+
+                        while (!cSuccess)
+                        {
+                            cSuccess = fHMPClient->MeasureValues();
+
+                            if (cTimeoutCounter++ > 5)
+                                break;
+                        }
+
+                        if (cSuccess)
+                        {
+                            // request was successfull, so proceed
+                            cReading = fHMPClient->fValues.fCurrents.at (2);
+
+                            if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " A on the HMP4040";
+                        }
+                        else
+                            LOG (ERROR) << "Could not retreive the measurement values from the HMP4040!";
+                    }
+
 #endif
+
 
                     //now I have the value I set and the reading from the DMM
                     cGraph->SetPoint (cGraph->GetN(), cBias, cReading);
-
-                    if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " on the DMM";
-
                     //update the canvas
-                    if (cBias == 10) cGraph->Draw ("APL");
+                    //update the canvas
+                    if (cBias == 1) cGraph->Draw ("APL");
                     else if (cBias % 10 == 0)
                     {
                         fSweepCanvas->Modified();
@@ -339,19 +418,19 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                 LOG (INFO) << "Re-setting " << cAmuxValue->second.fRegName << " to original value of 0x" << std::hex << +cOriginalBiasValue << std::dec;
 
             }
-            //else, if the bias is not sweepable just measure what is on the amux output and do what with the result?
+            //else, the bias is not sweepable just measure what is on the amux output and put it in the initial value in the tree
             else
             {
                 LOG (INFO) << "Not an Amux setting that requires a sweep: " << cAmuxValue->first;
                 double cReading = 0;
 #ifdef __USBINST__
-                cKeController->Measure();
-                cReading = cKeController->GetLatestReadValue();
+                fKeController->Measure();
+                cReading = fKeController->GetLatestReadValue();
                 LOG (INFO) << "Measured bias " << cAmuxValue->first << " to be " << cReading;
-                //now set the values for the ttree
-                fData->fXValues.push_back (0);
-                fData->fYValues.push_back (cReading);
 #endif
+                //now set the values for the ttree
+                fData->fInitialXValue = 0;
+                fData->fInitialYValue = cReading;
             }
         }
 
@@ -363,9 +442,22 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
 #ifdef __USBINST__
         //close the log file
-        cKeController->closeLogFile();
+        fKeController->closeLogFile();
         //tell any server to resume the monitoring
-        cKeController->SendResume();
+        fKeController->SendResume();
+
+        if (cCurrent)
+        {
+            if (fHMPClient->StartMonitoring() )
+                LOG (INFO) << "Successfully restarted the monitoring";
+
+            else
+            {
+                LOG (ERROR) << "Monitoring restart request did not go through -aborting!";
+                exit (1);
+            }
+        }
+
 #endif
         cTmpTree->Fill();
         this->writeResults();
