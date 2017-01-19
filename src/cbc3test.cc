@@ -2,15 +2,28 @@
 #include "../Utils/CommonVisitors.h"
 #include "../Utils/argvparser.h"
 #include "../Utils/Timer.h"
+#include "../Utils/UsbUtilities.h"
+
 #include "../tools/BiasSweep.h"
 #include "TROOT.h"
 #include "TApplication.h"
+#include <sys/wait.h>
 
+#ifdef __USBINST__
+#include <zmq.hpp>
+//#include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
+#include "AppLock.cc"
+#include "HMP4040Controller.h"
+#include "HMP4040Client.h"
+#include "Ke2110Controller.h"
+using namespace Ph2_UsbInst;
+#endif
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 using namespace CommandLineProcessing;
 INITIALIZE_EASYLOGGINGPP
+
 
 
 int main ( int argc, char** argv )
@@ -34,8 +47,7 @@ int main ( int argc, char** argv )
 
     cmd.defineOption ( "output", "Output Directory . Default value: Results", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "output", "o" );
-    //cmd.defineOption ( "configure", "Configure HW", ArgvParser::NoOptionAttribute );
-    //cmd.defineOptionAlternative ( "configure", "c" );
+
     cmd.defineOption ( "sweep", "test the bias sweep tool", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "sweep", "s" );
 
@@ -67,6 +79,7 @@ int main ( int argc, char** argv )
 
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cSweep = ( cmd.foundOption ( "sweep" ) ) ? true : false;
+    bool cCurrents = true;
 
     TApplication cApp ( "Root Application", &argc, argv );
 
@@ -74,113 +87,150 @@ int main ( int argc, char** argv )
 
     //else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
-    std::stringstream outp;
+    //Start server to communicate with HMP404 instrument via usbtmc and SCPI
+    std::string cHostname = "localhost";
+    int cPowerSupplyHttpPortNumber = 8080;
+    int cPowerSupplyZmqPortNumber = 8090;
+    std::string cPowerSupplyHWFile = "HMP4040_cbc3.xml";
+    std::string cPowerSupplyOutputFile = cDirectory + "/Current_log.txt";
+    int cPowerSupplyInterval = 5;
+    std::pair<int, int> cPowerSupplyPortsInfo = std::pair<int, int> (cPowerSupplyZmqPortNumber, cPowerSupplyHttpPortNumber);
 
-    if (cSweep)
+    pid_t childPid;  // the child process that the execution will soon run inside of.
+    childPid = fork();
+
+    if (childPid < 0) // fork failed
     {
-        Tool cTool;
-        cTool.InitializeHw ( cHWFile, outp );
-        cTool.InitializeSettings ( cHWFile, outp );
-        LOG (INFO) << outp.str();
-        outp.str ("");
-        cTool.CreateResultDirectory ( cDirectory );
-        cTool.InitResultFile ( "BiasSweeps" );
-        cTool.StartHttpServer();
-        cTool.ConfigureHw ();
+        // log the error
+        exit (1);
+    }
+    else if (childPid == 0 && cCurrents) // fork succeeded
+    {
+        // launch HMP4040 server
+        LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor currents on the HMP4040" << RESET ;
+        launch_Server ( cPowerSupplyHWFile, cHostname, cPowerSupplyPortsInfo, cPowerSupplyInterval );
+        exit (0);
+    }
+    else  // Main (parent) process after fork succeeds
+    {
+        int returnStatus = -1 ;
+        waitpid (childPid, &returnStatus, 0); // Parent process waits here for child to terminate.
 
-        BiasSweep cSweep;
-        cSweep.Inherit (&cTool);
-        cSweep.Initialize();
-
-        for (auto cBoard : cSweep.fBoardVector)
+        if (returnStatus == 0 && cCurrents)  // Verify child process terminated without error.
         {
-            for (auto cFe : cBoard->fModuleVector)
+#ifdef __USBINST__
+            LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040" << RESET ;
+            HMP4040Client* cLVClient = new HMP4040Client (cHostname, cPowerSupplyZmqPortNumber);
+            cLVClient->StartMonitoring();
+
+            // make sure power supply is switched  on before doing anything else
+            LOG (INFO) << BOLDBLUE << "Switching on the power supply" << RESET ;
+            cLVClient->ToggleOutput (1);
+#endif
+            std::stringstream outp;
+
+            if (cSweep)
             {
-                for (auto cCbc : cFe->fCbcVector)
+                Tool cTool;
+                cTool.InitializeHw ( cHWFile, outp );
+                cTool.InitializeSettings ( cHWFile, outp );
+                LOG (INFO) << outp.str();
+                outp.str ("");
+                cTool.CreateResultDirectory ( cDirectory );
+                cTool.InitResultFile ( "BiasSweeps" );
+                cTool.StartHttpServer();
+                cTool.ConfigureHw ();
+
+                BiasSweep cSweep;
+                cSweep.Inherit (&cTool);
+                cSweep.Initialize();
+
+                for (auto cBoard : cSweep.fBoardVector)
                 {
-                    cSweep.SweepBias ("Ipa", cCbc);
-                    cSweep.SweepBias ("Vth", cCbc);
+                    for (auto cFe : cBoard->fModuleVector)
+                    {
+                        for (auto cCbc : cFe->fCbcVector)
+                        {
+                            cSweep.SweepBias ("Ipa", cCbc);
+                            cSweep.SweepBias ("Vth", cCbc);
+                        }
+                    }
                 }
+
+                cTool.SaveResults();
+                cTool.CloseResultFile();
+                cTool.Destroy();
+
             }
+            else
+            {
+
+                // from here
+                SystemController cSystemController;
+                cSystemController.InitializeHw ( cHWFile, outp );
+                cSystemController.InitializeSettings ( cHWFile, outp );
+
+                LOG (INFO) << outp.str();
+                outp.str ("");
+
+                cSystemController.ConfigureHw ();
+                mypause();
+
+                BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
+                uint32_t cN = 1;
+                uint32_t cNthAcq = 0;
+
+                const std::vector<Event*>* pEvents ;
+
+                //cSystemController.fBeBoardInterface->Start ( pBoard );
+
+                //while ( cN <= pEventsperVcth )
+                //{
+                //uint32_t cPacketSize = cSystemController.ReadData ( pBoard );
+
+                ThresholdVisitor cVisitor (cSystemController.fCbcInterface, 0);
+
+                if (cVcthset)
+                {
+                    cVisitor.setThreshold (cVcth);
+                    cSystemController.accept (cVisitor);
+                }
+
+                cSystemController.ReadNEvents (pBoard, pEventsperVcth);
+
+                pEvents = &cSystemController.GetEvents ( pBoard );
+
+                for ( auto& ev : *pEvents )
+                {
+                    LOG (INFO) << ">>> Event #" << cN++ << " Threshold: " << cVcth;
+                    outp.str ("");
+                    outp << *ev;
+                    LOG (INFO) << outp.str();
+                }
+
+                cNthAcq++;
+                //}
+                cSystemController.Destroy();
+            }
+
+#ifdef __USBINST__
+            LOG (INFO) << "Toggling Output off again, stopping the monitoring and exiting the server!";
+            cLVClient->ToggleOutput (0);
+            cLVClient->StopMonitoring();
+            cLVClient->Quit();
+            delete cLVClient;
+#endif
         }
-
-        cTool.SaveResults();
-        cTool.CloseResultFile();
-        cTool.Destroy();
-
-        if ( !batchMode ) cApp.Run();
-    }
-    else
-    {
-
-        // from here
-        SystemController cSystemController;
-        cSystemController.InitializeHw ( cHWFile, outp );
-        cSystemController.InitializeSettings ( cHWFile, outp );
-
-        LOG (INFO) << outp.str();
-        outp.str ("");
-
-        cSystemController.ConfigureHw ();
-        mypause();
-
-        BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
-        uint32_t cN = 1;
-        uint32_t cNthAcq = 0;
-
-        const std::vector<Event*>* pEvents ;
-
-        //cSystemController.fBeBoardInterface->Start ( pBoard );
-
-        //while ( cN <= pEventsperVcth )
-        //{
-        //uint32_t cPacketSize = cSystemController.ReadData ( pBoard );
-
-        ThresholdVisitor cVisitor (cSystemController.fCbcInterface, 0);
-
-        //for (uint16_t cVcth = 1023; cVcth > 0; cVcth-- )
-        //{
-        if (cVcthset)
+        else if (returnStatus == 1)
         {
-            cVisitor.setThreshold (cVcth);
-            cSystemController.accept (cVisitor);
+            LOG (INFO) << "The child process terminated with an error!." ;
+            exit (1);
         }
-
-        //LOG (DEBUG) << "I get here!";
-
-        cSystemController.ReadNEvents (pBoard, pEventsperVcth);
-        //LOG (DEBUG) << "I get here too!";
-
-        //LOG (DEBUG) << "Read " << cPacketSize << " events in this acquistion";
-
-
-        //if ( cN + cPacketSize > pEventsperVcth )
-        //cSystemController.fBeBoardInterface->Stop ( pBoard );
-
-        pEvents = &cSystemController.GetEvents ( pBoard );
-
-        for ( auto& ev : *pEvents )
-        {
-            LOG (INFO) << ">>> Event #" << cN++ << " Threshold: " << cVcth;
-            outp.str ("");
-            outp << *ev;
-            LOG (INFO) << outp.str();
-        }
-
-        cNthAcq++;
-        //}
-
-        //}
-
-        //Timer t;
-        //t.start();
-
-        //t.stop();
-        //t.show("Time to loop VCth from 0 to ff with broadcast:");
-
-        LOG (INFO) << "*** End of the System test ***" ;
-        cSystemController.Destroy();
     }
+
+    LOG (INFO) << "*** End of the System test ***" ;
+
+    if ( !batchMode ) cApp.Run();
 
     return 0;
 }

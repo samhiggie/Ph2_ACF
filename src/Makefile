@@ -66,7 +66,7 @@ endif
 ##################################################
 ifneq ("$(wildcard $(USBINSTDIR))","")
 	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 #$(USBINSTDIR)/Utils 
-	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110# $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
+	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
 	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 $(USBINSTFlag) -lPh2_Drivers -lPh2_USBUtils 
 	USBINSTLIBINSTALLED = yes
 else
@@ -101,53 +101,43 @@ print:
 	@echo 'ZeroMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
 
+integratedtester: integratedtester.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+systemtest: systemtest.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+calibrate: calibrate.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+datatest: datatest.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+configure: configure.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+hybridtest: hybridtest.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+cmtest: cmtest.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+commission: commission.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+fpgaconfig: fpgaconfig.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+pulseshape: pulseshape.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+cbc3test: cbc3test.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
 cbc3irrad: cbc3irrad.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
-# cbc3test: cbc3test.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# integratedtester: integratedtester.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# systemtest: systemtest.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# calibrate: calibrate.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# datatest: datatest.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# configure: configure.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# hybridtest: hybridtest.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# cmtest: cmtest.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# commission: commission.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# fpgaconfig: fpgaconfig.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-# pulseshape: pulseshape.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
 clean:
 	rm -f $(binaries) *.o
+

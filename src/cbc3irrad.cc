@@ -1,10 +1,10 @@
-#include <cstring>
+//#include <cstring>
 #include <iostream>
-#include <unistd.h>
-#include <limits.h>
-#include <signal.h>
-#include <chrono>
-#include <thread>
+//#include <unistd.h>
+//#include <limits.h>
+//#include <signal.h>
+//#include <chrono>
+//#include <thread>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include "boost/tokenizer.hpp"
@@ -13,28 +13,29 @@
 #include <boost/spirit/include/qi_parse.hpp>
 #include <boost/spirit/include/qi_numeric.hpp>
 
-#include "../HWDescription/Cbc.h"
-#include "../HWDescription/Module.h"
-#include "../HWDescription/BeBoard.h"
-#include "../HWInterface/CbcInterface.h"
-#include "../HWInterface/BeBoardInterface.h"
-#include "../HWDescription/Definition.h"
-#include "../tools/HybridTester.h"
-#include "../tools/RegisterTester.h"
-#include "../tools/ShortFinder.h"
-#include "../tools/AntennaTester.h"
+//#include "../HWDescription/Cbc.h"
+//#include "../HWDescription/Module.h"
+//#include "../HWDescription/BeBoard.h"
+//#include "../HWInterface/CbcInterface.h"
+//#include "../HWInterface/BeBoardInterface.h"
+//#include "../HWDescription/Definition.h"
+//#include "../tools/HybridTester.h"
+//#include "../tools/RegisterTester.h"
+//#include "../tools/ShortFinder.h"
+//#include "../tools/AntennaTester.h"
 #include "../tools/Calibration.h"
 #include "../tools/BiasSweep.h"
 #include "../tools/PedeNoise.h"
 #include "../Utils/argvparser.h"
 #include "../Utils/UsbUtilities.h"
+#include "../Utils/Timer.h"
+
 #include "TROOT.h"
 #include "TApplication.h"
-#include "../Utils/Timer.h"
 
 #ifdef __USBINST__
 #include <zmq.hpp>
-#include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
+//#include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
 #include "../Utils/AppLock.cc"
 #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Controller.h"
 #include "../../Ph2_USBInstDriver/HMP4040/HMP4040Client.h"
@@ -46,9 +47,8 @@ using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 using namespace CommandLineProcessing;
+
 INITIALIZE_EASYLOGGINGPP
-
-
 
 // need this to reset terminal output
 const std::string rst ("\033[0m");
@@ -56,150 +56,153 @@ const std::string rst ("\033[0m");
 // Typedefs for Containers
 typedef std::map<std::string, double> HMP4040_currents;
 typedef std::map<std::string, double> HMP4040_voltages;
-typedef std::pair< time_t , HMP4040_currents> HMP4040_measurement;
-typedef std::pair<double, double> InstMeasurement; 
+typedef std::pair< time_t, HMP4040_currents> HMP4040_measurement;
+typedef std::pair<double, double> InstMeasurement;
 
 
 //start monitoring the voltages and currents on the HMP4040
-void startMonitoring_HMP4040(   std::string pHostname  , PortsInfo pPortsInfo , int pMeasureInterval_s)
+void startMonitoring_HMP4040 (   std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s)
 {
-    #ifdef __USBINST__
-        HMP4040Client* cClient = new HMP4040Client (pHostname, pPortsInfo.first);
-        cClient->StartMonitoring();
-        std::this_thread::sleep_for (std::chrono::seconds (pMeasureInterval_s * 2) );
-        delete cClient;
-    #endif
+#ifdef __USBINST__
+    HMP4040Client* cClient = new HMP4040Client (pHostname, pPortsInfo.first);
+    cClient->StartMonitoring();
+    std::this_thread::sleep_for (std::chrono::seconds (pMeasureInterval_s * 2) );
+    delete cClient;
+#endif
 }
-// turn on HMP4040 
-void toggle_HMP4040(   std::string pHostname  , PortsInfo pPortsInfo  , int pMeasureInterval_s, int cState = 0 )
+// turn on HMP4040
+void toggle_HMP4040 (   std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s, int cState = 0 )
 {
-    #ifdef __USBINST__
-        HMP4040Client* cClient = new HMP4040Client (pHostname, pPortsInfo.first);
-        // make sure that the power supply is configured first 
-        cClient->ToggleOutput( cState );
-        delete cClient;
-        std::this_thread::sleep_for (std::chrono::seconds (pMeasureInterval_s * 2) );
-    #endif
+#ifdef __USBINST__
+    HMP4040Client* cClient = new HMP4040Client (pHostname, pPortsInfo.first);
+    // make sure that the power supply is configured first
+    cClient->ToggleOutput ( cState );
+    delete cClient;
+    std::this_thread::sleep_for (std::chrono::seconds (pMeasureInterval_s * 2) );
+#endif
 }
-// measure current consumption on 4 power supply rails : LVDS + VREG + VDDA + VDDD 
-HMP4040_measurement get_HMP4040currents ( std::string pHostname = "localhost" , int pZmqPortNumber = 8081 , int pHttpPortNumber = 8080  )
+// measure current consumption on 4 power supply rails : LVDS + VREG + VDDA + VDDD
+HMP4040_measurement get_HMP4040currents ( std::string pHostname = "localhost", int pZmqPortNumber = 8081, int pHttpPortNumber = 8080  )
 {
     HMP4040_measurement cMeasurement;
     HMP4040_currents cCurrents ;
-    std::vector<std::string> cChannelList{ "LVDS" , "Vreg" , "Vdda" , "Vddd"};
+    std::vector<std::string> cChannelList{ "LVDS", "Vreg", "Vdda", "Vddd"};
 
-    #ifdef __USBINST__
-        HMP4040Client* cClient = new HMP4040Client (pHostname, pZmqPortNumber);
+#ifdef __USBINST__
+    HMP4040Client* cClient = new HMP4040Client (pHostname, pZmqPortNumber);
 
-        int iterations = 0 ;
-        // instead force a measurement 
-        // and get the latest reading from the logged using the HMP4040 monitoring function.
-        cClient->MeasureValues();
-        cClient->GetLatestReadValues();
-        
-        MeasurementValues cValues = cClient->fValues;
-        cMeasurement.first = cValues.fTimestamp;
+    int iterations = 0 ;
+    // instead force a measurement
+    // and get the latest reading from the logged using the HMP4040 monitoring function.
+    cClient->MeasureValues();
+    cClient->GetLatestReadValues();
 
-        for ( int i = 0 ; i < 4 ; i += 1 )
-        {
-            cCurrents.insert ( std::pair<std::string, double> ( cChannelList[i] , cValues.fCurrents.at (i) * 1e3 ) );
-            //auto search = cVoltages.find (cValues.fVoltages.at (i) );
-            //if (search != cVoltages.end() )
-            //    cCurrents.insert (std::pair<std::string, double> (search->second , cValues.fCurrents.at (i) * 1e3 ) );
-        }
-        cMeasurement.second = cCurrents;
-        delete cClient;
-    #endif
+    MeasurementValues cValues = cClient->fValues;
+    cMeasurement.first = cValues.fTimestamp;
+
+    for ( int i = 0 ; i < 4 ; i += 1 )
+    {
+        cCurrents.insert ( std::pair<std::string, double> ( cChannelList[i], cValues.fCurrents.at (i) * 1e3 ) );
+        //auto search = cVoltages.find (cValues.fVoltages.at (i) );
+        //if (search != cVoltages.end() )
+        //    cCurrents.insert (std::pair<std::string, double> (search->second , cValues.fCurrents.at (i) * 1e3 ) );
+    }
+
+    cMeasurement.second = cCurrents;
+    delete cClient;
+#endif
     return cMeasurement;
 }
-double read_HMP4040analogueRail(std::string pHostname = "localhost" , int pPowerSupplyZmqPortNumber = 8081 , int pPowerSupplyHttpPortNumber = 8080)
+double read_HMP4040analogueRail (std::string pHostname = "localhost", int pPowerSupplyZmqPortNumber = 8081, int pPowerSupplyHttpPortNumber = 8080)
 {
-    HMP4040_measurement m = get_HMP4040currents ( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber );
-    HMP4040_currents cCurrents = m.second; 
+    HMP4040_measurement m = get_HMP4040currents ( pHostname, pPowerSupplyZmqPortNumber, pPowerSupplyHttpPortNumber );
+    HMP4040_currents cCurrents = m.second;
     auto search = cCurrents.find ( "Vdda");
+
     if (search != cCurrents.end() )
     {
-        //LOG (DEBUG) << "Current on Vdda == " << search->second  << " mA." ; 
+        //LOG (DEBUG) << "Current on Vdda == " << search->second  << " mA." ;
         return search->second;
     }
     else
     {
-        LOG (ERROR) << "Could not find Vdda supply voltage on HMP4040."; 
+        LOG (ERROR) << "Could not find Vdda supply voltage on HMP4040.";
         return -6666;
     }
 }
 void config_KeithleyDmm()
 {
-    #ifdef __USBINST__
-        //create a controller, and immediately send a "pause" command to any running server applications
-        Ke2110Controller* cKeController = new Ke2110Controller ();
-        cKeController->InitializeClient ("localhost", 8083);
-        
-        //tell any server to pause the monitoring
-        cKeController->SendPause();
-        //are we measuring a voltage for the currents as well?
-        //std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
-        std::string cConfString = "VOLTAGE:DC";
-        //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
-        cKeController->Configure (cConfString, 0, 0.0001, true);
-        cKeController->Autozero();
-        //tell any server to resume the monitoring
-        cKeController->SendResume();
-    #endif
+#ifdef __USBINST__
+    //create a controller, and immediately send a "pause" command to any running server applications
+    Ke2110Controller* cKeController = new Ke2110Controller ();
+    cKeController->InitializeClient ("localhost", 8083);
+
+    //tell any server to pause the monitoring
+    cKeController->SendPause();
+    //are we measuring a voltage for the currents as well?
+    //std::string cConfString = (pBias.find ("I") != std::string::npos) ? "CURRENT:DC" : "VOLTAGE:DC";
+    std::string cConfString = "VOLTAGE:DC";
+    //set up to either measure Current or Voltage, autorange, 10^-4 resolution and autozero
+    cKeController->Configure (cConfString, 0, 0.0001, true);
+    cKeController->Autozero();
+    //tell any server to resume the monitoring
+    cKeController->SendResume();
+#endif
 }
 double read_KeithleyDmm()
 {
     double cReading = 0.;
-    #ifdef __USBINST__
-        //create a controller, and immediately send a "pause" command to any running server applications
-        Ke2110Controller* cKeController = new Ke2110Controller ();
-        cKeController->InitializeClient ("localhost", 8083);
-        
-        //tell any server to pause the monitoring
-        cKeController->SendPause();
-        // configure
-        cKeController->Measure();
-        cReading = cKeController->GetLatestReadValue();
-        //tell any server to resume the monitoring
-        cKeController->SendResume();
-    #endif
+#ifdef __USBINST__
+    //create a controller, and immediately send a "pause" command to any running server applications
+    Ke2110Controller* cKeController = new Ke2110Controller ();
+    cKeController->InitializeClient ("localhost", 8083);
+
+    //tell any server to pause the monitoring
+    cKeController->SendPause();
+    // configure
+    cKeController->Measure();
+    cReading = cKeController->GetLatestReadValue();
+    //tell any server to resume the monitoring
+    cKeController->SendResume();
+#endif
     return cReading;
 }
-// want to measure DMM and power supply at the same time ... so 
+// want to measure DMM and power supply at the same time ... so
 
 
-// check settling time AMUX reading 
-void check_AMUX(Tool* pTool , std::string pRegName , std::string pHostname = "localhost" , int pPowerSupplyZmqPortNumber = 8081 , int pPowerSupplyHttpPortNumber = 8080,  double pSettlingTime_s = 0.5 )
+// check settling time AMUX reading
+void check_AMUX (Tool* pTool, std::string pRegName, std::string pHostname = "localhost", int pPowerSupplyZmqPortNumber = 8081, int pPowerSupplyHttpPortNumber = 8080,  double pSettlingTime_s = 0.5 )
 {
-    int cNumReadings_perMeasurement = 5; 
-    #ifdef __USBINST__
-        Ke2110Controller* cKeController = new Ke2110Controller ();
-        //create a controller, and immediately send a "pause" command to any running server applications
-        cKeController->InitializeClient ("localhost", 8083);
-    #endif
+    int cNumReadings_perMeasurement = 5;
+#ifdef __USBINST__
+    Ke2110Controller* cKeController = new Ke2110Controller ();
+    //create a controller, and immediately send a "pause" command to any running server applications
+    cKeController->InitializeClient ("localhost", 8083);
+#endif
 
     double cCurrentVdda;
-    double cReading , cReadingMean , cReadingSqSum , cReadingUnc ; 
+    double cReading, cReadingMean, cReadingSqSum, cReadingUnc ;
     InstMeasurement cMeasurement;
-    std::vector<double> cReadings , cReadingsPS ;
+    std::vector<double> cReadings, cReadingsPS ;
 
 
     BiasSweep cSweep;
     cSweep.Inherit (pTool);
 
-    cSweep.ConfigureHw(); 
+    cSweep.ConfigureHw();
     cSweep.Initialize();
+
     for (auto cBoard : cSweep.fBoardVector)
     {
         for (auto cFe : cBoard->fModuleVector)
         {
             for (auto cCbc : cFe->fCbcVector)
             {
-                // // Trying to understand AMUX reg + bias sweep 
+                // // Trying to understand AMUX reg + bias sweep
                 // // can remove later
                 //cSweep.ReadRegister(pRegName, cCbc);
-                
-                // read value at start-up 
+
+                // read value at start-up
                 // #ifdef __USBINST__
                 //     cKeController->SendPause();
                 //     cReadings.clear();
@@ -212,66 +215,69 @@ void check_AMUX(Tool* pTool , std::string pRegName , std::string pHostname = "lo
                 //     cMeasurement.first  = std::accumulate(cReadings.begin(), cReadings.end(), 0.0)/cReadings.size();
                 //     cMeasurement.second = std::sqrt( std::inner_product(cReadings.begin(), cReadings.end(), cReadings.begin(), 0.0)/cReadings.size() - std::pow(cMeasurement.first,2.0) );
                 // #endif
-                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                cCurrentVdda = read_HMP4040analogueRail ( pHostname, pPowerSupplyZmqPortNumber, pPowerSupplyHttpPortNumber);
                 double cCuurent_orig = cCurrentVdda;
                 // //InstMeasurement cAMUX_origReading = cMeasurement;
-                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ before switching AMUX ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
+                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ before switching AMUX ] = " << (cCurrentVdda / 254) * 1e3 <<  " uA/channel ." << RESET ;
                 // //LOG (DEBUG) << BOLDMAGENTA << "\t\t DMM Reading [ before switching AMUX ] = " << (cAMUX_origReading.first)*1e3 << " ± "  << cAMUX_origReading.second*1e3 <<  " mV." << RESET ;
-                
-                // // // configure AMUX register and read DMM 
+
+                // // // configure AMUX register and read DMM
                 // LOG (DEBUG) << BOLDMAGENTA << "Configuring AMUX register" << RESET ;
-                uint8_t cOriginalRegValue = cSweep.ReadRegister(pRegName, cCbc);
-                uint8_t cOriginalAmuxValue =  cSweep.ConfigureAMUX(pRegName, cCbc, pSettlingTime_s);
-                LOG (INFO) << "Original mux value =  0x" << std::hex << +cOriginalAmuxValue << std::dec << " --- " << pRegName << " set to : 0x" <<  std::hex << +cOriginalRegValue  ; 
-                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                uint8_t cOriginalRegValue = cSweep.ReadRegister (pRegName, cCbc);
+                uint8_t cOriginalAmuxValue =  cSweep.ConfigureAMUX (pRegName, cCbc, pSettlingTime_s);
+                LOG (INFO) << "Original mux value =  0x" << std::hex << +cOriginalAmuxValue << std::dec << " --- " << pRegName << " set to : 0x" <<  std::hex << +cOriginalRegValue  ;
+                cCurrentVdda = read_HMP4040analogueRail ( pHostname, pPowerSupplyZmqPortNumber, pPowerSupplyHttpPortNumber);
                 // // InstMeasurement cAMUX_reading1 = cMeasurement;
-                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after configuring AMUX ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
+                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after configuring AMUX ] = " << (cCurrentVdda / 254) * 1e3 <<  " uA/channel ." << RESET ;
                 // // LOG (DEBUG) << BOLDMAGENTA << "\t\t DMM Reading [ after configuring AMUX ] = " << (cAMUX_reading1.first)*1e3 << " ± "  << cAMUX_reading1.second*1e3 <<  " mV." << RESET ;
-                
+
                 uint16_t cRange  = 16;//255
                 double cCurrent_pWrite;
+
                 for (uint8_t cRegValue = 0; cRegValue <= cRange; cRegValue++)
                 {
-                    if( cRegValue%2 == 0 )
+                    if ( cRegValue % 2 == 0 )
                     {
                         //uint8_t cRegValue = (0) ;
-                        cSweep.WriteRegister(pRegName , cRegValue , cCbc, pSettlingTime_s);
-                        cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                        cSweep.WriteRegister (pRegName, cRegValue, cCbc, pSettlingTime_s);
+                        cCurrentVdda = read_HMP4040analogueRail ( pHostname, pPowerSupplyZmqPortNumber, pPowerSupplyHttpPortNumber);
                         cCurrent_pWrite = cCurrentVdda;
-                        LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after setting register to " << std::hex << +cRegValue << " ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
+                        LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after setting register to " << std::hex << +cRegValue << " ] = " << (cCurrentVdda / 254) * 1e3 <<  " uA/channel ." << RESET ;
                     }
                 }
+
                 // LOG (DEBUG) << "\t\t DMM Reading [ setting to 0 ] = " << (cAMUX_reading1)*1e3 << " mV.";
-                
+
                 // re-set AMUX register to original value and read DMM again
                 LOG (DEBUG) << BOLDMAGENTA << "Resetting " << pRegName << " to original value." << RESET ;
-                cSweep.WriteRegister(pRegName , cOriginalRegValue , cCbc, pSettlingTime_s);
-                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
-                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after re-setting register value ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
-                
+                cSweep.WriteRegister (pRegName, cOriginalRegValue, cCbc, pSettlingTime_s);
+                cCurrentVdda = read_HMP4040analogueRail ( pHostname, pPowerSupplyZmqPortNumber, pPowerSupplyHttpPortNumber);
+                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after re-setting register value ] = " << (cCurrentVdda / 254) * 1e3 <<  " uA/channel ." << RESET ;
+
                 LOG (DEBUG) << BOLDMAGENTA << "Resetting AMUX register" << RESET ;
-                cSweep.ResetAMUX( cOriginalAmuxValue , cCbc, pSettlingTime_s);
-                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                cSweep.ResetAMUX ( cOriginalAmuxValue, cCbc, pSettlingTime_s);
+                cCurrentVdda = read_HMP4040analogueRail ( pHostname, pPowerSupplyZmqPortNumber, pPowerSupplyHttpPortNumber);
                 // // InstMeasurement cAMUX_reading2 = cMeasurement ;
-                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after resetting AMUX ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
+                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after resetting AMUX ] = " << (cCurrentVdda / 254) * 1e3 <<  " uA/channel ." << RESET ;
                 // // LOG (DEBUG) << BOLDMAGENTA << "\t\t DMM Reading [ after resetting AMUX ] = " << (cAMUX_reading2.first)*1e3 << " ± "  << cAMUX_reading2.second*1e3 << " mV."  << RESET ;
                 // //LOG (INFO) << MAGENTA << "DMM Reading [ after configuration/after switching AMUX/after resetting AMUX ] :\n\t\t\t" << cAMUX_origReading << "\t" << cAMUX_reading1 << "\t" << cAMUX_reading2 << " ." << RESET ;
-                
-                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ initially ] = " <<  (cCuurent_orig/254)*1e3 << " --->  "  << (cCurrent_pWrite/254)*1e3 << " after write."  << RESET ;
-                
+
+                LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ initially ] = " <<  (cCuurent_orig / 254) * 1e3 << " --->  "  << (cCurrent_pWrite / 254) * 1e3 << " after write."  << RESET ;
+
             }
         }
     }
-    #ifdef __USBINST__
-        cKeController->SendResume();
-    #endif
+
+#ifdef __USBINST__
+    cKeController->SendResume();
+#endif
 
     cSweep.SaveResults();
 }
 // sweep bias settings on CBC3
-void perform_BiasSweep(Tool* pTool)
+void perform_BiasSweep (Tool* pTool)
 {
-    std::vector<std::string> RegToSweep{"Icomp","Ipa","Ipaos","Ipre1","Ipre2", "Ipsf","CAL_Vcasc" , "Vth" , "Vplus1"}; 
+    std::vector<std::string> RegToSweep{"Icomp", "Ipa", "Ipaos", "Ipre1", "Ipre2", "Ipsf", "CAL_Vcasc", "Vth", "Vplus1"};
 
     std::string cRegName = "CAL_I";
     LOG (INFO) << "Starting bias sweep for CBC3." ;
@@ -279,24 +285,25 @@ void perform_BiasSweep(Tool* pTool)
     BiasSweep cSweep;
     cSweep.Inherit (pTool);
 
-    cSweep.ConfigureHw(); 
+    cSweep.ConfigureHw();
     cSweep.Initialize();
+
     for (auto cBoard : cSweep.fBoardVector)
     {
         for (auto cFe : cBoard->fModuleVector)
         {
             for (auto cCbc : cFe->fCbcVector)
             {
-                for( unsigned int i = 0 ; i < RegToSweep.size(); i++ )
-                {
+                for ( unsigned int i = 0 ; i < RegToSweep.size(); i++ )
                     cSweep.SweepBias (RegToSweep[i], cCbc);
-                }
+
                 //cSweep.ReadRegister("Icomp", cCbc);
                 //cSweep.SweepBias (cRegName, cCbc);
                 //cSweep.SweepBias ("Vth", cCbc);
             }
         }
     }
+
     cSweep.SaveResults();
 }
 
@@ -363,9 +370,9 @@ int main ( int argc, char* argv[] )
     std::string pOptionDescription;
     pOptionDescription = "Configure AMUX register on CBC3 to monitor a given register and read value on Keithley DMM.<value> is the name of a valid AMUX register.";
     pOptionDescription += "\nValid registers : [none, Ipa, Ipre2, CAL_I, Ibias, Vth, VBGbias, VBG_LDO, Vpafb, Nc50, Ipre1, Ipsf, Ipaos, Icomp, Ihyst, CAL_Vcasc, VPLUS2, VPLUS1].";
-    cmd.defineOption ( "AMUX", pOptionDescription , ArgvParser::OptionRequiresValue );
+    cmd.defineOption ( "AMUX", pOptionDescription, ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "AMUX", "a" );
-    
+
     // cmd.defineOption ( "checkRegisters", "Check WRITE/READ to and from registers on DUT.", ArgvParser::NoOptionAttribute );
 
     // cmd.defineOption ( "calibrate", "Calibration CBCs' Vplus/Voffset on DUT.", ArgvParser::NoOptionAttribute );
@@ -390,33 +397,33 @@ int main ( int argc, char* argv[] )
     std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/Cbc3HWDescription.xml";
     std::string cDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/Irrad_Xrays";
     //int cNumCBCs = ( cmd.foundOption ( "numCBCs" ) ) ? atoi (cmd.optionValue ( "numCBCs" ).c_str() ) : 2;
-    
+
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
 
     // configure the power supply monitor (HMP4040)
-    // hard code the options for now 
+    // hard code the options for now
     std::string cHostname = "localhost";
     int cPowerSupplyHttpPortNumber = 8080;
     //TODO
     // get from settings file
-    int cPowerSupplyZmqPortNumber = 8090; 
+    int cPowerSupplyZmqPortNumber = 8090;
     std::string cPowerSupplyHWFile = "HMP4040_cbc3.xml";
     std::string cPowerSupplyOutputFile = cDirectory + "/Current_log.txt";
     int cPowerSupplyInterval = 1;
-    PortsInfo cPowerSupplyPortsInfo = std::pair<int,int> (cPowerSupplyZmqPortNumber, cPowerSupplyHttpPortNumber); 
-            
+    PortsInfo cPowerSupplyPortsInfo = std::pair<int, int> (cPowerSupplyZmqPortNumber, cPowerSupplyHttpPortNumber);
 
-    // check for AMUX monitor tester 
+
+    // check for AMUX monitor tester
     std::string cAmuxRegName = (cmd.foundOption ("AMUX") ) ? cmd.optionValue ("AMUX") : "";
-    
-    // comment out for now 
+
+    // comment out for now
     // std::string cHostname = (cmd.foundOption ("hostname") ) ? cmd.optionValue ("hostname") : "localhost";
     // int httpPortNumber = ( cmd.foundOption ( "hport" ) ) ? atoi (cmd.optionValue ( "hport" ).c_str() ) : 8080;
     // int zmqPortNumber = ( cmd.foundOption ( "cport" ) ) ? atoi (cmd.optionValue ( "cport" ).c_str() ) : 8081;
     // std::string cPowerSupplyHWFile = ( cmd.foundOption ( "settingsHMP4040" ) ) ? cmd.optionValue ( "settingsHMP4040" ) : "../Ph2_USBInstDriver/settings/HMP4040.xml";
     // std::string cPowerSupplyOutputFile = ( cmd.foundOption ( "logHMP4040" ) ) ? cmd.optionValue ( "logHMP4040" ) : "LV_log.txt";
     // int cInterval = ( cmd.foundOption ( "interval" ) ) ? atoi (cmd.optionValue ( "interval" ).c_str() ) : 2;
-    
+
     bool cCurrents = ( cmd.foundOption ( "Currents" ) ) ? true : false;
     bool cBiasSweep = ( cmd.foundOption ( "Sweep" ) ) ? true : false;
     bool cAmuxTest = ( cmd.foundOption ( "AMUX" ) ) ? true : false;
@@ -429,7 +436,7 @@ int main ( int argc, char* argv[] )
 
     bool cAll = ( cmd.foundOption ( "all" ) ) ? true : false;
 
-    
+
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
@@ -452,21 +459,21 @@ int main ( int argc, char* argv[] )
     pid_t childPid;  // the child process that the execution will soon run inside of.
     childPid = fork();
 
-     if (childPid < 0) // fork failed
-     {
-         // log the error
-         exit (1);
-     }
-     else if (childPid == 0) // fork succeeded
-     {
+    if (childPid < 0) // fork failed
+    {
+        // log the error
+        exit (1);
+    }
+    else if (childPid == 0) // fork succeeded
+    {
         // launch HMP4040 server
         if ( cCurrents )
         {
-            LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor currents on the HMP4040" << RESET ; 
-            launch_Server( cPowerSupplyHWFile , cHostname , cPowerSupplyPortsInfo , cPowerSupplyInterval );
+            LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor currents on the HMP4040" << RESET ;
+            launch_Server ( cPowerSupplyHWFile, cHostname, cPowerSupplyPortsInfo, cPowerSupplyInterval );
             exit (0);
         }
-     }
+    }
     else  // Main (parent) process after fork succeeds
     {
         int returnStatus = -1 ;
@@ -476,22 +483,22 @@ int main ( int argc, char* argv[] )
         {
             if ( cCurrents )
             {
-                LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040" << RESET ; 
-                startMonitoring_HMP4040( cHostname , cPowerSupplyPortsInfo , cPowerSupplyInterval );
+                LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040" << RESET ;
+                startMonitoring_HMP4040 ( cHostname, cPowerSupplyPortsInfo, cPowerSupplyInterval );
             }
 
             // make sure power supply is switched  on before doing anything else
-            LOG (INFO) << BOLDBLUE << "Switching on the power supply" << RESET ; 
-            toggle_HMP4040( cHostname , cPowerSupplyPortsInfo , cPowerSupplyInterval , 1 );
-            
+            LOG (INFO) << BOLDBLUE << "Switching on the power supply" << RESET ;
+            toggle_HMP4040 ( cHostname, cPowerSupplyPortsInfo, cPowerSupplyInterval, 1 );
+
             Timer tGlobal;
             tGlobal.start();
             Timer t;
-            
+
             // LOG (INFO) << "I'm trying to sleep...." ;
             // std::this_thread::sleep_for(std::chrono::milliseconds( 10000 ));
             // LOG (INFO) << "I'm awake again...." ;
-            
+
             std::stringstream outp;
             char line[120];
 
@@ -508,7 +515,7 @@ int main ( int argc, char* argv[] )
             cTool.ConfigureHw ();
             cTool.CreateReport();
 
-            // // this is where I do stuff.... 
+            // // this is where I do stuff....
             if ( cAmuxTest )
             {
                 LOG (INFO) << MAGENTA << "Performing test/monitor on AMUX register using " << cAmuxRegName << RESET ;
@@ -517,12 +524,13 @@ int main ( int argc, char* argv[] )
                 //check_AMUX( &cTool , cAmuxRegName , cHostname , cPowerSupplyZmqPortNumber , cPowerSupplyHttpPortNumber , 0.2 );
                 t.stop();
                 LOG (INFO) << MAGENTA << "AMUX register monitor/tester finished." << RESET ;
-                sprintf (line, "# %.3f s required to read defaul value of %s using the AMUX register on CBC3.", cAmuxRegName.c_str() , t.getElapsedTime() );
+                sprintf (line, "# %.3f s required to read defaul value of %s using the AMUX register on CBC3.", cAmuxRegName.c_str(), t.getElapsedTime() );
                 cTool.AmmendReport ( line);
                 t.show ( "Bias sweep of the CBC3");
 
             }
-            // first perform bias sweep 
+
+            // first perform bias sweep
             if ( cBiasSweep )
             {
                 LOG (INFO) << MAGENTA << "Performing sweep of bias settings on CBC3." ;
@@ -553,5 +561,6 @@ int main ( int argc, char* argv[] )
             exit (1);
         }
     }
+
     return 0;
 }
