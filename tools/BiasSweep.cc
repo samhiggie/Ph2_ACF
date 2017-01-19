@@ -136,20 +136,22 @@ void BiasSweep::ResetAMUX(uint8_t pAmuxValue, Cbc* pCbc , double pSettlingTime_s
     fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", pAmuxValue);
     for( unsigned int i = 0 ; i < (int)(pSettlingTime_s/100e-3) ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
 }
-void BiasSweep::ReadRegister(std::string pBias , Cbc* pCbc )
+uint8_t BiasSweep::ReadRegister(std::string pBias , Cbc* pCbc )
 {
     auto cAmuxValue = fAmuxSettings.find (pBias);
     if (cAmuxValue == std::end (fAmuxSettings) )
     {
         LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
+        return 0;
     }
     else
     {
         uint8_t cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
         LOG (DEBUG) << MAGENTA << "\n\nOriginal Register Value for bias : " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << " [bin] " << std::bitset<8>((int)(+cOriginalBiasValue)) << "." << RESET ;
+        return cOriginalBiasValue;
     }
 }
-void BiasSweep::WriteRegister(std::string pBias , uint8_t pRegValue ,  Cbc* pCbc )
+void BiasSweep::WriteRegister(std::string pBias , uint8_t pRegValue ,  Cbc* pCbc ,  double pSettlingTime_s  )
 {
     auto cAmuxValue = fAmuxSettings.find (pBias);
     if (cAmuxValue == std::end (fAmuxSettings) )
@@ -164,7 +166,7 @@ void BiasSweep::WriteRegister(std::string pBias , uint8_t pRegValue ,  Cbc* pCbc
         {
             LOG (ERROR ) << "Error! Value written to register not the same as the one read back!.";
         }
-        for( unsigned int i = 0 ; i < 40 ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
+        for( unsigned int i = 0 ; i < (int)(pSettlingTime_s/100e-3) ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
     }
 }
 

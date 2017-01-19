@@ -21,6 +21,7 @@
 #include "../HWDescription/Definition.h"
 #include <iostream>
 #include <bitset>
+#include <vector>
 
 /*!
  * \brief Get time took since the start
@@ -58,5 +59,8 @@ uint32_t convertAnyInt ( const char* pRegValue );
 //uint8_t convertAnyInt ( const char* pRegValue );
 
 uint8_t reverseBits (const uint8_t cValue);
+
+// tokenize string
+void tokenize ( const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters );
 
 #endif

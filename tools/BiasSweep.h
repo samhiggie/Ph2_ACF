@@ -75,8 +75,8 @@ class BiasSweep : public Tool
     // ******
     uint8_t ConfigureAMUX  (std::string pBias , Cbc* pCbc , double pSettlingTime_s = 100.0e-3);
     void ResetAMUX (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 100.0e-3);
-    void ReadRegister(std::string pBias , Cbc* pCbc );
-    void WriteRegister(std::string pBias , uint8_t cRegValue ,  Cbc* pCbc );
+    void WriteRegister(std::string pBias , uint8_t cRegValue ,  Cbc* pCbc , double pSettlingTime_s = 100.0e-3);
+    uint8_t ReadRegister(std::string pBias , Cbc* pCbc );
     // *******
     void SweepBias (std::string pBias, Cbc* pCbc);
 
