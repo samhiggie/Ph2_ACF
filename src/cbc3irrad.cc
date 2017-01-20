@@ -35,11 +35,9 @@
 
 #ifdef __USBINST__
 #include <zmq.hpp>
-//#include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
-#include "../Utils/AppLock.cc"
-#include "../../Ph2_USBInstDriver/HMP4040/HMP4040Controller.h"
-#include "../../Ph2_USBInstDriver/HMP4040/HMP4040Client.h"
-#include "../../Ph2_USBInstDriver/Ke2110/Ke2110Controller.h"
+#include "AppLock.cc"
+#include "HMP4040Client.h"
+#include "Ke2110Controller.h"
 using namespace Ph2_UsbInst;
 #endif
 

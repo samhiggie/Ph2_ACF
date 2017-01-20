@@ -1,17 +1,16 @@
-#include "../System/SystemController.h"
-#include "../Utils/CommonVisitors.h"
-#include "../Utils/argvparser.h"
-#include "../Utils/Timer.h"
-#include "../Utils/UsbUtilities.h"
+#include "SystemController.h"
+#include "CommonVisitors.h"
+#include "argvparser.h"
+#include "Timer.h"
+#include "UsbUtilities.h"
 
-#include "../tools/BiasSweep.h"
+#include "BiasSweep.h"
 #include "TROOT.h"
 #include "TApplication.h"
 #include <sys/wait.h>
 
 #ifdef __USBINST__
 #include <zmq.hpp>
-//#include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
 #include "AppLock.cc"
 #include "HMP4040Controller.h"
 #include "HMP4040Client.h"
@@ -91,7 +90,7 @@ int main ( int argc, char** argv )
     std::string cHostname = "localhost";
     int cPowerSupplyHttpPortNumber = 8080;
     int cPowerSupplyZmqPortNumber = 8090;
-    std::string cPowerSupplyHWFile = "HMP4040_cbc3.xml";
+    std::string cPowerSupplyHWFile = "HMP4040.xml";
     std::string cPowerSupplyOutputFile = cDirectory + "/Current_log.txt";
     int cPowerSupplyInterval = 5;
     std::pair<int, int> cPowerSupplyPortsInfo = std::pair<int, int> (cPowerSupplyZmqPortNumber, cPowerSupplyHttpPortNumber);
@@ -119,9 +118,9 @@ int main ( int argc, char** argv )
         if (returnStatus == 0 && cCurrents)  // Verify child process terminated without error.
         {
 #ifdef __USBINST__
-            LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040" << RESET ;
             HMP4040Client* cLVClient = new HMP4040Client (cHostname, cPowerSupplyZmqPortNumber);
             cLVClient->StartMonitoring();
+            LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040" << RESET ;
 
             // make sure power supply is switched  on before doing anything else
             LOG (INFO) << BOLDBLUE << "Switching on the power supply" << RESET ;

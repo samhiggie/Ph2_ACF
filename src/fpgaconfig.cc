@@ -6,7 +6,8 @@
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
-#include "../HWInterface/FpgaConfig.h"
+//#include "../HWInterface/FpgaConfig.h"
+#include "FpgaConfig.h"
 //#include "../tools/Calibration.h"
 #include "../Utils/Timer.h"
 //#include <TApplication.h>

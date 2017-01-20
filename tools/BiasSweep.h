@@ -30,6 +30,7 @@ using namespace Ph2_System;
 #ifdef __USBINST__
 #include "Ke2110Controller.h"
 #include "HMP4040Client.h"
+#include "ArdNanoController.h"
 #endif
 
 #ifdef __MAKECINT__
@@ -77,12 +78,6 @@ class BiasSweep : public Tool
     BiasSweep();
     ~BiasSweep();
     void Initialize();
-    // added for debugging - S.
-    // ******
-    uint8_t ConfigureAMUX  (std::string pBias , Cbc* pCbc , double pSettlingTime_s = 100.0e-3);
-    void ResetAMUX (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 100.0e-3);
-    void WriteRegister(std::string pBias , uint8_t cRegValue ,  Cbc* pCbc , double pSettlingTime_s = 100.0e-3);
-    uint8_t ReadRegister(std::string pBias , Cbc* pCbc );
     // *******
     void SweepBias (std::string pBias, Cbc* pCbc);
 
@@ -90,6 +85,12 @@ class BiasSweep : public Tool
 
   private:
     void InitializeAmuxMap();
+    uint8_t configureAmux (std::map<std::string, AmuxSetting>::iterator pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 0);
+    void resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 0  );
+    void sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxValue, TGraph* pGraph, Cbc* pCbc, bool pCurrent);
+    void measureSingle (std::map<std::string, AmuxSetting>::iterator pAmuxMap, Cbc* pCbc);
+    void sweepVth (TGraph* pGraph, Cbc* pCbc);
+
     TCanvas* fSweepCanvas;
 
     ChipType fType;
@@ -103,6 +104,7 @@ class BiasSweep : public Tool
 #ifdef __USBINST__
     Ke2110Controller* fKeController;
     HMP4040Client* fHMPClient;
+    ArdNanoController* fArdNanoController;
 #endif
 
     void writeResults();
