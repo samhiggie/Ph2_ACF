@@ -81,8 +81,8 @@ void BiasSweep::Initialize()
     //create a controller
     fKeController = new Ke2110Controller ();
     fKeController->InitializeClient ("localhost", fKePort);
-    //fArdNanoController = new ArdNanoController();
-    fArdNanoControlle = nullptr;
+    fArdNanoController = new ArdNanoController();
+    //fArdNanoControlle = nullptr;
 #endif
 
     gROOT->ProcessLine ("#include <vector>");
@@ -218,26 +218,14 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         //ok, now set the Analogmux to the value required to see the bias there
         //in order to do this, read the current value and store it for later
         uint8_t cOriginalAmuxValue = this->configureAmux (cAmuxValue, pCbc, 1);
-        //ok, now set the Analogmux to the value required to see the bias there
-        //in order to do this, read the current value and store it for later
-        //uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
-        //LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
-        //uint8_t cNewValue = cOriginalAmuxValue;
-
-        //cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second.fAmuxCode & 0x1F);
-        //fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
-        //LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias << " (setting to 0x" << std::hex << +cNewValue << std::dec << ")";
 
         if (cAmuxValue->first == "Vth")
             this->sweepVth (cGraph, pCbc);
-        //else if (cAmuxValue->first == "VDDA")
-        //this->measureVDDA();
-        // the bias is not Vth or VDDA
+        // the bias is not Vth
         else
         {
             // here start sweeping the bias!
             bool cChangeReg = (cAmuxValue->second.fBitMask != 0x00) ? true : false;
-            //uint8_t cOriginalBiasValue;
 
             // the bias is sweepable
             if (cChangeReg)
@@ -248,11 +236,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                 this->measureSingle (cAmuxValue, pCbc);
         }
 
-        //LOG (INFO) << "Finished sweeping " << pBias << " - now setting Amux settings back to original value of 0x" << std::hex << +cOriginalAmuxValue << std::dec;
-
-        ////now set the Amux back to the original value
-        //fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cOriginalAmuxValue);
-        ////to clean up, save everything
+        //to clean up, save everything
         this->resetAmux (cOriginalAmuxValue, pCbc, 1);
 
 #ifdef __USBINST__
@@ -294,16 +278,16 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
         LOG (INFO) << "Bias setting is " << pAmuxValue->first << " -this is not routed via the Amux, thus leaving settings at original value!";
         //need to switch the Arduino nano controller to VDDA
 #ifdef __USBINST__
-        //fArdNanoController->ControlLED (1);
-        //LOG (INFO) << "Setting Arduino Nano relay to " << pAmuxValue->first;
+        fArdNanoController->ControlLED (1);
+        LOG (INFO) << "Setting Arduino Nano relay to " << pAmuxValue->first;
 #endif
         return cOriginalAmuxValue;
     }
     else
     {
 #ifdef __USBINST__
-        //fArdNanoController->ControlLED (0);
-        //LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
+        fArdNanoController->ControlLED (0);
+        LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
 #endif
 
         uint8_t cNewValue = (cOriginalAmuxValue & 0xE0) | (pAmuxValue->second.fAmuxCode & 0x1F);
@@ -319,8 +303,8 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
 void BiasSweep::resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s  )
 {
 #ifdef __USBINST__
-    //fArdNanoController->ControlLED (0);
-    //LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
+    fArdNanoController->ControlLED (0);
+    LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
 #endif
     LOG (INFO) << "Reseting Amux settings back to original value of 0x" << std::hex << +pAmuxValue;
     fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", pAmuxValue);
