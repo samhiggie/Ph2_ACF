@@ -39,8 +39,13 @@
 using namespace Ph2_UsbInst;
 #endif
 
+
+
 typedef std::map<std::string, std::string> InstrMaps ;
 typedef std::pair<int,int> PortsInfo; 
+
+// some constants to make the code more legible
+const PortsInfo defaultPorts{8081, 8082};
 
 // Generic functions to get base directory
 std::string return_InstDriverHomeDirectory();

@@ -1,8 +1,14 @@
+#include <iostream>
+#include <unistd.h>
+#include <limits.h>
+#include <signal.h>
+
 #include "../System/SystemController.h"
 #include "../Utils/CommonVisitors.h"
 #include "../Utils/argvparser.h"
 #include "../Utils/Timer.h"
 #include "../tools/BiasSweep.h"
+#include "../tools/StubSweep.h"
 #include "TROOT.h"
 #include "TApplication.h"
 
@@ -39,6 +45,8 @@ int main ( int argc, char** argv )
     cmd.defineOption ( "sweep", "test the bias sweep tool", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "sweep", "s" );
 
+    cmd.defineOption ( "stubs", "test the stub sweep tool", ArgvParser::NoOptionAttribute );
+   
     cmd.defineOption ( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "events", "e" );
 
@@ -63,21 +71,23 @@ int main ( int argc, char** argv )
     bool cVcthset = cmd.foundOption ("vcth");
     uint16_t cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 200;
     std::string cDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/";
-    cDirectory += "BiasSweep";
-
+    
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cSweep = ( cmd.foundOption ( "sweep" ) ) ? true : false;
+    bool cStubSweep = ( cmd.foundOption ( "stubs" ) ) ? true : false;
 
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
 
-    //else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
+    else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
     std::stringstream outp;
 
     if (cSweep)
     {
+        cDirectory += "BiasSweep";
+
         Tool cTool;
         cTool.InitializeHw ( cHWFile, outp );
         cTool.InitializeSettings ( cHWFile, outp );
@@ -109,6 +119,31 @@ int main ( int argc, char** argv )
         cTool.Destroy();
 
         if ( !batchMode ) cApp.Run();
+    }
+    
+    if ( cStubSweep )
+    {
+        cDirectory += "StubSweep";
+
+         Tool cTool;
+        cTool.InitializeHw ( cHWFile, outp );
+        cTool.InitializeSettings ( cHWFile, outp );
+        LOG (INFO) << outp.str();
+        outp.str ("");
+        cTool.CreateResultDirectory ( cDirectory );
+        cTool.InitResultFile ( "StubSweeps" );
+        cTool.StartHttpServer();
+        cTool.ConfigureHw ();
+
+        StubSweep cSweep;
+        cSweep.Inherit (&cTool);
+        cSweep.Initialize();
+
+        cSweep.SweepStubs(1);
+        
+        cTool.SaveResults();
+        cTool.CloseResultFile();
+        cTool.Destroy();
     }
     else
     {
@@ -181,6 +216,8 @@ int main ( int argc, char** argv )
         LOG (INFO) << "*** End of the System test ***" ;
         cSystemController.Destroy();
     }
+
+    if ( !batchMode ) cApp.Run();
 
     return 0;
 }

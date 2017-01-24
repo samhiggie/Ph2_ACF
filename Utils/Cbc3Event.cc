@@ -321,6 +321,32 @@ namespace Ph2_HwInterface {
     }
 
 
+    std::string Cbc3Event::HitsBitString( uint8_t pFeId , uint8_t pCbcId ) const
+    {
+        std::ostringstream os;
+        std::vector<uint32_t> cHits = this->GetHits (pFeId, pCbcId);
+
+        if (cHits.size() == 254) os << "All channels firing!" << std::endl;
+        else
+        {
+            int cCounter = 0;
+
+            for (auto& cHit : cHits )
+            {
+                os << std::setw (3) << cHit << " ";
+                cCounter++;
+
+                if (cCounter == 10)
+                {
+                    os << std::endl;
+                    cCounter = 0;
+                }
+
+            }
+        }
+        return os.str();
+
+    }
     std::string Cbc3Event::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         std::ostringstream os;

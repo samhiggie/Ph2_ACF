@@ -53,6 +53,7 @@ INITIALIZE_EASYLOGGINGPP
 // need this to reset terminal output
 const std::string rst ("\033[0m");
 
+
 // Typedefs for Containers
 typedef std::map<std::string, double> HMP4040_currents;
 typedef std::map<std::string, double> HMP4040_voltages;
@@ -81,15 +82,16 @@ void toggle_HMP4040(   std::string pHostname  , PortsInfo pPortsInfo  , int pMea
         std::this_thread::sleep_for (std::chrono::seconds (pMeasureInterval_s * 2) );
     #endif
 }
+
 // measure current consumption on 4 power supply rails : LVDS + VREG + VDDA + VDDD 
-HMP4040_measurement get_HMP4040currents ( std::string pHostname = "localhost" , int pZmqPortNumber = 8081 , int pHttpPortNumber = 8080  )
+HMP4040_measurement get_HMP4040currents ( std::string pHostname  , PortsInfo pPortsInfo  )
 {
     HMP4040_measurement cMeasurement;
     HMP4040_currents cCurrents ;
     std::vector<std::string> cChannelList{ "LVDS" , "Vreg" , "Vdda" , "Vddd"};
 
     #ifdef __USBINST__
-        HMP4040Client* cClient = new HMP4040Client (pHostname, pZmqPortNumber);
+        HMP4040Client* cClient = new HMP4040Client (pHostname, pPortsInfo.first);
 
         int iterations = 0 ;
         // instead force a measurement 
@@ -99,27 +101,23 @@ HMP4040_measurement get_HMP4040currents ( std::string pHostname = "localhost" , 
         
         MeasurementValues cValues = cClient->fValues;
         cMeasurement.first = cValues.fTimestamp;
-
         for ( int i = 0 ; i < 4 ; i += 1 )
         {
             cCurrents.insert ( std::pair<std::string, double> ( cChannelList[i] , cValues.fCurrents.at (i) * 1e3 ) );
-            //auto search = cVoltages.find (cValues.fVoltages.at (i) );
-            //if (search != cVoltages.end() )
-            //    cCurrents.insert (std::pair<std::string, double> (search->second , cValues.fCurrents.at (i) * 1e3 ) );
         }
         cMeasurement.second = cCurrents;
         delete cClient;
     #endif
     return cMeasurement;
 }
-double read_HMP4040analogueRail(std::string pHostname = "localhost" , int pPowerSupplyZmqPortNumber = 8081 , int pPowerSupplyHttpPortNumber = 8080)
+double read_HMP4040analogueRail( std::string pHostname  , PortsInfo pPortsInfo )
 {
-    HMP4040_measurement m = get_HMP4040currents ( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber );
+    HMP4040_measurement m = get_HMP4040currents ( pHostname , pPortsInfo );
     HMP4040_currents cCurrents = m.second; 
     auto search = cCurrents.find ( "Vdda");
     if (search != cCurrents.end() )
     {
-        //LOG (DEBUG) << "Current on Vdda == " << search->second  << " mA." ; 
+        LOG (DEBUG) << "Current on Vdda == " << search->second  << " mA." ; 
         return search->second;
     }
     else
@@ -169,7 +167,7 @@ double read_KeithleyDmm()
 
 
 // check settling time AMUX reading 
-void check_AMUX(Tool* pTool , std::string pRegName , std::string pHostname = "localhost" , int pPowerSupplyZmqPortNumber = 8081 , int pPowerSupplyHttpPortNumber = 8080,  double pSettlingTime_s = 0.5 )
+void check_AMUX(Tool* pTool , std::string pRegName , std::string pHostname = "localhost" , PortsInfo pPowerSupplyPortsInfo = defaultPorts ,  double pSettlingTime_s = 0.5 )
 {
     int cNumReadings_perMeasurement = 5; 
     #ifdef __USBINST__
@@ -212,7 +210,7 @@ void check_AMUX(Tool* pTool , std::string pRegName , std::string pHostname = "lo
                 //     cMeasurement.first  = std::accumulate(cReadings.begin(), cReadings.end(), 0.0)/cReadings.size();
                 //     cMeasurement.second = std::sqrt( std::inner_product(cReadings.begin(), cReadings.end(), cReadings.begin(), 0.0)/cReadings.size() - std::pow(cMeasurement.first,2.0) );
                 // #endif
-                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyPortsInfo);
                 double cCuurent_orig = cCurrentVdda;
                 // //InstMeasurement cAMUX_origReading = cMeasurement;
                 LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ before switching AMUX ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
@@ -223,7 +221,7 @@ void check_AMUX(Tool* pTool , std::string pRegName , std::string pHostname = "lo
                 uint8_t cOriginalRegValue = cSweep.ReadRegister(pRegName, cCbc);
                 uint8_t cOriginalAmuxValue =  cSweep.ConfigureAMUX(pRegName, cCbc, pSettlingTime_s);
                 LOG (INFO) << "Original mux value =  0x" << std::hex << +cOriginalAmuxValue << std::dec << " --- " << pRegName << " set to : 0x" <<  std::hex << +cOriginalRegValue  ; 
-                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyPortsInfo);
                 // // InstMeasurement cAMUX_reading1 = cMeasurement;
                 LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after configuring AMUX ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
                 // // LOG (DEBUG) << BOLDMAGENTA << "\t\t DMM Reading [ after configuring AMUX ] = " << (cAMUX_reading1.first)*1e3 << " ± "  << cAMUX_reading1.second*1e3 <<  " mV." << RESET ;
@@ -236,7 +234,7 @@ void check_AMUX(Tool* pTool , std::string pRegName , std::string pHostname = "lo
                     {
                         //uint8_t cRegValue = (0) ;
                         cSweep.WriteRegister(pRegName , cRegValue , cCbc, pSettlingTime_s);
-                        cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                        cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyPortsInfo);
                         cCurrent_pWrite = cCurrentVdda;
                         LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after setting register to " << std::hex << +cRegValue << " ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
                     }
@@ -246,12 +244,12 @@ void check_AMUX(Tool* pTool , std::string pRegName , std::string pHostname = "lo
                 // re-set AMUX register to original value and read DMM again
                 LOG (DEBUG) << BOLDMAGENTA << "Resetting " << pRegName << " to original value." << RESET ;
                 cSweep.WriteRegister(pRegName , cOriginalRegValue , cCbc, pSettlingTime_s);
-                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyPortsInfo);
                 LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after re-setting register value ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
                 
                 LOG (DEBUG) << BOLDMAGENTA << "Resetting AMUX register" << RESET ;
                 cSweep.ResetAMUX( cOriginalAmuxValue , cCbc, pSettlingTime_s);
-                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyZmqPortNumber , pPowerSupplyHttpPortNumber);
+                cCurrentVdda = read_HMP4040analogueRail( pHostname , pPowerSupplyPortsInfo);
                 // // InstMeasurement cAMUX_reading2 = cMeasurement ;
                 LOG (DEBUG) << BOLDMAGENTA << "\t\t HMP4040 Reading [ after resetting AMUX ] = " << (cCurrentVdda/254)*1e3 <<  " uA/channel ." << RESET ;
                 // // LOG (DEBUG) << BOLDMAGENTA << "\t\t DMM Reading [ after resetting AMUX ] = " << (cAMUX_reading2.first)*1e3 << " ± "  << cAMUX_reading2.second*1e3 << " mV."  << RESET ;
