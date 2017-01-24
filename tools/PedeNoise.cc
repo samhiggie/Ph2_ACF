@@ -534,7 +534,7 @@ void PedeNoise::setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma)
             int cDiff = fHoleMode ? pNSigma * cNoise : -pNSigma * cNoise;
             uint8_t cValue = cPedestal + cDiff;
 
-            if (pNSigma > 0) LOG (INFO) << "Changing Threshold on CBC " << +cCbcId << " by " << cDiff << " to " << cPedestal + cDiff << " VCth units to supress noise!" ;
+            if (pNSigma > 0) LOG (INFO) << "Changing Threshold on CBC " << +cCbcId << " by " << cDiff << " to " << +cValue << " VCth units to supress noise!" ;
             else LOG (INFO) << "Changing Threshold on CBC " << +cCbcId << " back to the pedestal at " << +cPedestal ;
 
             fCbcInterface->WriteCbcReg (cCbc, "VCth", cValue);
