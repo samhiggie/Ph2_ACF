@@ -46,6 +46,7 @@ void BiasSweep::InitializeAmuxMap()
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_Vcasc"), std::make_tuple ("CALVcasc", 0x0F, 0xFF, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VPLUS2"), std::make_tuple ("Vplus1&2", 0x10, 0xF0, 4) ) ;
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VPLUS1"), std::make_tuple ("Vplus1&2", 0x11, 0x0F, 0) ) ;
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VDDA"), std::make_tuple ("", 0x00, 0x00, 0) ) ;
     }
 }
 
@@ -57,6 +58,13 @@ BiasSweep::BiasSweep()
 
 BiasSweep::~BiasSweep()
 {
+#ifdef __USBINST__
+
+    if (fKeController) delete fKeController;
+
+    if (fArdNanoController) delete fArdNanoController;
+
+#endif
 }
 
 void BiasSweep::Initialize()
@@ -69,9 +77,13 @@ void BiasSweep::Initialize()
     cSetting = fSettingsMap.find ( "HMPPort" );
     fHMPPort = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 8082;
 
+#ifdef __USBINST__
     //create a controller
     fKeController = new Ke2110Controller ();
     fKeController->InitializeClient ("localhost", fKePort);
+    fArdNanoController = new ArdNanoController();
+    //fArdNanoControlle = nullptr;
+#endif
 
     gROOT->ProcessLine ("#include <vector>");
     TString cName = "c_BiasSweep";
@@ -124,67 +136,6 @@ void BiasSweep::Initialize()
     this->InitializeAmuxMap();
 }
 
-uint8_t BiasSweep::ConfigureAMUX (std::string pBias , Cbc* pCbc , double pSettlingTime_s  )
-{
-    // first read original value in Amux register and save for later 
-    uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
-    LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
-        
-    //ok, now set the Analogmux to the value required to see the bias there
-    auto cAmuxValue = fAmuxSettings.find (pBias);
-    if (cAmuxValue == std::end (fAmuxSettings) )
-    {
-        LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
-        return 0;
-    }
-    else
-    {
-        uint8_t cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second.fAmuxCode & 0x1F);
-        fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
-        LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias << " (setting to 0x" << std::hex << +cNewValue << std::dec << ")";
-        for( unsigned int i = 0 ; i < (int)(pSettlingTime_s/100e-3) ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
-        return cOriginalAmuxValue;
-    }
-}
-void BiasSweep::ResetAMUX(uint8_t pAmuxValue, Cbc* pCbc , double pSettlingTime_s  )
-{
-    LOG (INFO) << "Reseting Amux settings back to original value of 0x" << std::hex << +pAmuxValue;
-    fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", pAmuxValue);
-    for( unsigned int i = 0 ; i < (int)(pSettlingTime_s/100e-3) ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
-}
-uint8_t BiasSweep::ReadRegister(std::string pBias , Cbc* pCbc )
-{
-    auto cAmuxValue = fAmuxSettings.find (pBias);
-    if (cAmuxValue == std::end (fAmuxSettings) )
-    {
-        LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
-        return 0;
-    }
-    else
-    {
-        uint8_t cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
-        LOG (DEBUG) << MAGENTA << "\n\nOriginal Register Value for bias : " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << " [bin] " << std::bitset<8>((int)(+cOriginalBiasValue)) << "." << RESET ;
-        return cOriginalBiasValue;
-    }
-}
-void BiasSweep::WriteRegister(std::string pBias , uint8_t pRegValue ,  Cbc* pCbc ,  double pSettlingTime_s  )
-{
-    auto cAmuxValue = fAmuxSettings.find (pBias);
-    if (cAmuxValue == std::end (fAmuxSettings) )
-    {
-        LOG (ERROR) << "Error: the bias " << pBias << " is not part of the known Amux settings - check spelling! - value will be left at the original";
-    }
-    else
-    {
-        fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, pRegValue );
-        uint8_t cRegValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
-        if( cRegValue != pRegValue )
-        {
-            LOG (ERROR ) << "Error! Value written to register not the same as the one read back!.";
-        }
-        for( unsigned int i = 0 ; i < (int)(pSettlingTime_s/100e-3) ; i++) { std::this_thread::sleep_for(std::chrono::milliseconds( 100 )); }
-    }
-}
 
 void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 {
@@ -266,179 +217,27 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
         //ok, now set the Analogmux to the value required to see the bias there
         //in order to do this, read the current value and store it for later
-        uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
-        LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
-        uint8_t cNewValue = cOriginalAmuxValue;
-
-        cNewValue = (cOriginalAmuxValue & 0xE0) | (cAmuxValue->second.fAmuxCode & 0x1F);
-        fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
-        LOG (INFO) << "Analog MUX setting modified to connect " <<  pBias << " (setting to 0x" << std::hex << +cNewValue << std::dec << ")";
+        uint8_t cOriginalAmuxValue = this->configureAmux (cAmuxValue, pCbc, 1);
 
         if (cAmuxValue->first == "Vth")
-        {
-            ThresholdVisitor cThresholdVisitor (fCbcInterface);
-            pCbc->accept (cThresholdVisitor);
-            uint16_t cOriginalThreshold = cThresholdVisitor.getThreshold();
-            LOG (INFO) << "Original threshold set to " << cOriginalThreshold << " (0x" << std::hex << cOriginalThreshold << std::dec << ") - saving for later!";
-            cThresholdVisitor.setOption ('w');
-
-            //take one initial reading on the dmm
-            float cInitialReading = 0;
-#ifdef __USBINST__
-            fKeController->Measure();
-            cInitialReading = fKeController->GetLatestReadValue();
-#endif
-            fData->fInitialXValue = cOriginalThreshold;
-            fData->fInitialYValue = cInitialReading;
-
-            for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold++)
-            {
-                cThresholdVisitor.setThreshold (cThreshold);
-                pCbc->accept (cThresholdVisitor);
-                //std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
-                double cReading = 0;
-#ifdef __USBINST__
-                fKeController->Measure();
-                cReading = fKeController->GetLatestReadValue();
-#endif
-
-                //now I have the value I set and the reading from the DMM
-                cGraph->SetPoint (cGraph->GetN(), cThreshold, cReading);
-
-                if (cThreshold % 10 == 0) LOG (INFO) << "Set bias to " << cThreshold << " (0x" << std::hex << cThreshold << std::dec << ") DAC units and read " << cReading << " on the DMM";
-
-                //update the canvas
-                if (cThreshold == 1) cGraph->Draw ("APL");
-                else if (cThreshold % 10 == 0)
-                {
-                    fSweepCanvas->Modified();
-                    fSweepCanvas->Update();
-                }
-
-                //now set the values for the ttree
-                fData->fXValues.push_back (cThreshold);
-                fData->fYValues.push_back (cReading);
-            }
-
-            //now set back the original value
-            LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x" << std::hex << cOriginalThreshold << std::dec << ")";
-            cThresholdVisitor.setThreshold (cOriginalThreshold);
-            pCbc->accept (cThresholdVisitor);
-        }
+            this->sweepVth (cGraph, pCbc);
         // the bias is not Vth
         else
         {
             // here start sweeping the bias!
-            // now get the original bias value
-            // if the bias is sweepable, save the original value, do a full sweep, update the canvas etc;
             bool cChangeReg = (cAmuxValue->second.fBitMask != 0x00) ? true : false;
-            uint8_t cOriginalBiasValue;
 
             // the bias is sweepable
             if (cChangeReg)
-            {
-                cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, cAmuxValue->second.fRegName);
-                LOG (INFO) << "Origainal Register Value for bias " << cAmuxValue->first << "(" << cAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << std::dec << " - saving for later!";
-
-                //take one initial reading on the dmm and save as the inital value in the tree
-                float cInitialReading = 0;
-#ifdef __USBINST__
-                fKeController->Measure();
-                cInitialReading = fKeController->GetLatestReadValue();
-#endif
-                fData->fInitialXValue = cOriginalBiasValue;
-                fData->fInitialYValue = cInitialReading;
-
-                uint16_t cRange = (__builtin_popcount (cAmuxValue->second.fBitMask) == 4) ? 16 : 255;
-
-                for (uint8_t cBias = 0; cBias < cRange; cBias++)
-                {
-                    //make map string, pair<string, uint8_t> and use the string in pair for the bias
-                    uint8_t cRegValue = (cBias) << cAmuxValue->second.fBitShift;
-                    //LOG (DEBUG) << +cBias << " " << std::hex <<  +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
-                    fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cRegValue );
-
-                    std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
-                    double cReading = 0;
-#ifdef __USBINST__
-
-                    if (!cCurrent)
-                    {
-                        fKeController->Measure();
-                        cReading = fKeController->GetLatestReadValue();
-
-                        if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " V on the DMM";
-                    }
-                    else if (cCurrent)
-                    {
-                        //read the LV PS instead
-                        bool cSuccess = false;
-                        int cTimeoutCounter = 0;
-
-                        while (!cSuccess)
-                        {
-                            cSuccess = fHMPClient->MeasureValues();
-
-                            if (cTimeoutCounter++ > 5)
-                                break;
-                        }
-
-                        if (cSuccess)
-                        {
-                            // request was successfull, so proceed
-                            cReading = fHMPClient->fValues.fCurrents.at (2);
-
-                            if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " A on the HMP4040";
-                        }
-                        else
-                            LOG (ERROR) << "Could not retreive the measurement values from the HMP4040!";
-                    }
-
-#endif
-
-
-                    //now I have the value I set and the reading from the DMM
-                    cGraph->SetPoint (cGraph->GetN(), cBias, cReading);
-                    //update the canvas
-                    //update the canvas
-                    if (cBias == 1) cGraph->Draw ("APL");
-                    else if (cBias % 10 == 0)
-                    {
-                        fSweepCanvas->Modified();
-                        fSweepCanvas->Update();
-                    }
-
-                    //now set the values for the ttree
-                    fData->fXValues.push_back (cBias);
-                    fData->fYValues.push_back (cReading);
-                }
-
-                // set the bias back to the original value
-                fCbcInterface->WriteCbcReg (pCbc, cAmuxValue->second.fRegName, cOriginalBiasValue );
-                LOG (INFO) << "Re-setting " << cAmuxValue->second.fRegName << " to original value of 0x" << std::hex << +cOriginalBiasValue << std::dec;
-
-            }
+                // if the bias is sweepable, save the original value, do a full sweep, update the canvas etc;
+                this->sweep8Bit (cAmuxValue, cGraph, pCbc, cCurrent);
             //else, the bias is not sweepable just measure what is on the amux output and put it in the initial value in the tree
             else
-            {
-                LOG (INFO) << "Not an Amux setting that requires a sweep: " << cAmuxValue->first;
-                double cReading = 0;
-#ifdef __USBINST__
-                fKeController->Measure();
-                cReading = fKeController->GetLatestReadValue();
-                LOG (INFO) << "Measured bias " << cAmuxValue->first << " to be " << cReading;
-#endif
-                //now set the values for the ttree
-                fData->fInitialXValue = 0;
-                fData->fInitialYValue = cReading;
-            }
+                this->measureSingle (cAmuxValue, pCbc);
         }
 
-        LOG (INFO) << "Finished sweeping " << pBias << " - now setting Amux settings back to original value of 0x" << std::hex << +cOriginalAmuxValue << std::dec;
-
-        //now set the Amux back to the original value
-        fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cOriginalAmuxValue);
         //to clean up, save everything
+        this->resetAmux (cOriginalAmuxValue, pCbc, 1);
 
 #ifdef __USBINST__
         //close the log file
@@ -456,6 +255,8 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                 LOG (ERROR) << "Monitoring restart request did not go through -aborting!";
                 exit (1);
             }
+
+            delete fHMPClient;
         }
 
 #endif
@@ -463,6 +264,204 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         this->writeResults();
         LOG (INFO) << "Bias Sweep finished, results saved!";
     }
+}
+
+uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator pAmuxValue, Cbc* pCbc, double pSettlingTime_s  )
+{
+    // first read original value in Amux register and save for later
+    uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
+    LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
+
+    //ok, now set the Analogmux to the value required to see the bias there
+    if (pAmuxValue->first == "VDDA")
+    {
+        LOG (INFO) << "Bias setting is " << pAmuxValue->first << " -this is not routed via the Amux, thus leaving settings at original value!";
+        //need to switch the Arduino nano controller to VDDA
+#ifdef __USBINST__
+        fArdNanoController->ControlLED (1);
+        LOG (INFO) << "Setting Arduino Nano relay to " << pAmuxValue->first;
+#endif
+        return cOriginalAmuxValue;
+    }
+    else
+    {
+#ifdef __USBINST__
+        fArdNanoController->ControlLED (0);
+        LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
+#endif
+
+        uint8_t cNewValue = (cOriginalAmuxValue & 0xE0) | (pAmuxValue->second.fAmuxCode & 0x1F);
+        fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
+        LOG (INFO) << "Analog MUX setting modified to connect " <<  pAmuxValue->first << " (setting to 0x" << std::hex << +cNewValue << std::dec << ")";
+
+        for ( unsigned int i = 0 ; i < (int) (pSettlingTime_s / 100e-3) ; i++)
+            std::this_thread::sleep_for (std::chrono::milliseconds ( 100 ) );
+
+        return cOriginalAmuxValue;
+    }
+}
+void BiasSweep::resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s  )
+{
+#ifdef __USBINST__
+    fArdNanoController->ControlLED (0);
+    LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
+#endif
+    LOG (INFO) << "Reseting Amux settings back to original value of 0x" << std::hex << +pAmuxValue;
+    fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", pAmuxValue);
+
+    for ( unsigned int i = 0 ; i < (int) (pSettlingTime_s / 100e-3) ; i++)
+        std::this_thread::sleep_for (std::chrono::milliseconds ( 100 ) );
+}
+
+void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxValue, TGraph* pGraph, Cbc* pCbc, bool pCurrent)
+{
+
+    uint8_t cOriginalBiasValue = fCbcInterface->ReadCbcReg (pCbc, pAmuxValue->second.fRegName);
+    LOG (INFO) << "Origainal Register Value for bias " << pAmuxValue->first << "(" << pAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << std::dec << " - saving for later!";
+
+    //take one initial reading on the dmm and save as the inital value in the tree
+    float cInitialReading = 0;
+#ifdef __USBINST__
+    fKeController->Measure();
+    cInitialReading = fKeController->GetLatestReadValue();
+#endif
+    fData->fInitialXValue = cOriginalBiasValue;
+    fData->fInitialYValue = cInitialReading;
+
+    uint16_t cRange = (__builtin_popcount (pAmuxValue->second.fBitMask) == 4) ? 16 : 255;
+
+    for (uint8_t cBias = 0; cBias < cRange; cBias++)
+    {
+        //make map string, pair<string, uint8_t> and use the string in pair for the bias
+        uint8_t cRegValue = (cBias) << pAmuxValue->second.fBitShift;
+        //LOG (DEBUG) << +cBias << " " << std::hex <<  +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
+        fCbcInterface->WriteCbcReg (pCbc, pAmuxValue->second.fRegName, cRegValue );
+
+        std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
+        double cReading = 0;
+#ifdef __USBINST__
+
+        if (!pCurrent)
+        {
+            fKeController->Measure();
+            cReading = fKeController->GetLatestReadValue();
+
+            if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " V on the DMM";
+        }
+        else if (pCurrent)
+        {
+            //read the LV PS instead
+            bool cSuccess = false;
+            int cTimeoutCounter = 0;
+
+            while (!cSuccess)
+            {
+                cSuccess = fHMPClient->MeasureValues();
+
+                if (cTimeoutCounter++ > 5)
+                    break;
+            }
+
+            if (cSuccess)
+            {
+                // request was successfull, so proceed
+                cReading = fHMPClient->fValues.fCurrents.at (2);
+
+                if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " A on the HMP4040";
+            }
+            else
+                LOG (ERROR) << "Could not retreive the measurement values from the HMP4040!";
+        }
+
+#endif
+
+
+        //now I have the value I set and the reading from the DMM
+        pGraph->SetPoint (pGraph->GetN(), cBias, cReading);
+
+        //update the canvas
+        //update the canvas
+        if (cBias == 1) pGraph->Draw ("APL");
+        else if (cBias % 10 == 0)
+        {
+            fSweepCanvas->Modified();
+            fSweepCanvas->Update();
+        }
+
+        //now set the values for the ttree
+        fData->fXValues.push_back (cBias);
+        fData->fYValues.push_back (cReading);
+    }
+
+    // set the bias back to the original value
+    fCbcInterface->WriteCbcReg (pCbc, pAmuxValue->second.fRegName, cOriginalBiasValue );
+    LOG (INFO) << "Re-setting " << pAmuxValue->second.fRegName << " to original value of 0x" << std::hex << +cOriginalBiasValue << std::dec;
+}
+
+void BiasSweep::measureSingle (std::map<std::string, AmuxSetting>::iterator pAmuxValue, Cbc* pCbc)
+{
+    LOG (INFO) << "Not an Amux setting that requires a sweep: " << pAmuxValue->first;
+    double cReading = 0;
+#ifdef __USBINST__
+    fKeController->Measure();
+    cReading = fKeController->GetLatestReadValue();
+    LOG (INFO) << "Measured bias " << pAmuxValue->first << " to be " << cReading;
+#endif
+    //now set the values for the ttree
+    fData->fInitialXValue = 0;
+    fData->fInitialYValue = cReading;
+}
+
+void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
+{
+    ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    pCbc->accept (cThresholdVisitor);
+    uint16_t cOriginalThreshold = cThresholdVisitor.getThreshold();
+    LOG (INFO) << "Original threshold set to " << cOriginalThreshold << " (0x" << std::hex << cOriginalThreshold << std::dec << ") - saving for later!";
+    cThresholdVisitor.setOption ('w');
+
+    //take one initial reading on the dmm
+    float cInitialReading = 0;
+#ifdef __USBINST__
+    fKeController->Measure();
+    cInitialReading = fKeController->GetLatestReadValue();
+#endif
+    fData->fInitialXValue = cOriginalThreshold;
+    fData->fInitialYValue = cInitialReading;
+
+    for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold++)
+    {
+        cThresholdVisitor.setThreshold (cThreshold);
+        pCbc->accept (cThresholdVisitor);
+        //std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
+        double cReading = 0;
+#ifdef __USBINST__
+        fKeController->Measure();
+        cReading = fKeController->GetLatestReadValue();
+#endif
+
+        //now I have the value I set and the reading from the DMM
+        pGraph->SetPoint (pGraph->GetN(), cThreshold, cReading);
+
+        if (cThreshold % 10 == 0) LOG (INFO) << "Set bias to " << cThreshold << " (0x" << std::hex << cThreshold << std::dec << ") DAC units and read " << cReading << " on the DMM";
+
+        //update the canvas
+        if (cThreshold == 1) pGraph->Draw ("APL");
+        else if (cThreshold % 10 == 0)
+        {
+            fSweepCanvas->Modified();
+            fSweepCanvas->Update();
+        }
+
+        //now set the values for the ttree
+        fData->fXValues.push_back (cThreshold);
+        fData->fYValues.push_back (cReading);
+    }
+
+    //now set back the original value
+    LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x" << std::hex << cOriginalThreshold << std::dec << ")";
+    cThresholdVisitor.setThreshold (cOriginalThreshold);
+    pCbc->accept (cThresholdVisitor);
 }
 
 void BiasSweep::writeResults()

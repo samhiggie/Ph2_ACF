@@ -48,6 +48,8 @@ all: print $(Objs) ../HWDescription/Definition.h
 print:
 	@echo '****************************'
 	@echo 'Building Utils'
+	@echo 'Using zmq library:'$(ZMQINSTALLED)
+	@echo 'Using zmq Ph2_USBInstDriver:'$(USBINSTLIBINSTALLED)
 	@echo '****************************'
 clean:
 	rm -f *.o

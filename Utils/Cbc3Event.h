@@ -157,7 +157,7 @@ namespace Ph2_HwInterface {
          */
         std::string StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const override;
 
-        std::string HitsBitString ( uint8_t pFeId, uint8_t pCbcId ) const override;
+        //std::string HitsBitString ( uint8_t pFeId, uint8_t pCbcId ) const override;
         /*!
         * \brief Function to get Stub bit
         * \param pFeId : FE Id

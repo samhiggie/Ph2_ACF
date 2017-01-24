@@ -42,7 +42,7 @@ using namespace Ph2_UsbInst;
 
 
 typedef std::map<std::string, std::string> InstrMaps ;
-typedef std::pair<int,int> PortsInfo; 
+typedef std::pair<int, int> PortsInfo;
 
 // some constants to make the code more legible
 const PortsInfo defaultPorts{8081, 8082};
@@ -50,20 +50,20 @@ const PortsInfo defaultPorts{8081, 8082};
 // Generic functions to get base directory
 std::string return_InstDriverHomeDirectory();
 
-// Generic functions to launch/query servers 
+// Generic functions to launch/query servers
 
 // function returns port information <zmqPort,httpPort> from server that is running [ pInfo is the return value of AppLock::get_info() ]
-PortsInfo parse_ServerInfo( std::string pInfo );
+PortsInfo parse_ServerInfo ( std::string pInfo );
 
-// function checks if the server is alreadt running using the lock file, if not it launches the server in a tmux session 
-void query_Server( std::string pConfigFile, std::string pInstrumentName , std::string pHostname , int pMeasureInterval_s);
+// function checks if the server is alreadt running using the lock file, if not it launches the server in a tmux session
+void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::string pHostname, int pMeasureInterval_s);
 
-// launches server 
-int launch_Server ( std::string pConfigFile, std::string pHostname , PortsInfo& pPortsInfo , int pMeasureInterval_s );
+// launches server
+int launch_Server ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s );
 
 
 // Device specific functions
-void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile , std::string pHostname , PortsInfo pPortsInfo , int pMeasureInterval_s  );
-void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile , std::string pHostname , PortsInfo pPortsInfo , int pMeasureInterval_s  );
+void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s  );
+void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s  );
 
 #endif
