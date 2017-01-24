@@ -242,7 +242,7 @@ void PedeNoise::measureNoise()
 }
 
 
-void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
+void PedeNoise::Validate ( double pNoiseStripThreshold )
 {
     LOG (INFO) << "Validation: Taking Data with " << fEventsPerPoint * 200 << " random triggers!" ;
 
@@ -262,7 +262,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
         fillOccupancyHist (cBoard, events);
 
         //now I've filled the histogram with the occupancy
-        //let's say if there is more than 1% noise occupancy, we consider the strip as noise and thus set the offset to either 0 or FF
+        //let's say if there is more than pNoiseStripThreshold noise occupancy, we consider the strip as noisy and thus set the offset to either 0 or FF
         for ( auto cFe : cBoard->fModuleVector )
         {
             for ( auto cCbc : cFe->fCbcVector )
@@ -270,7 +270,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
                 //get the histogram for the occupancy
                 TH1F* cHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_occupancy" ) );
                 cHist->Scale (1 / (fEventsPerPoint * 200.) );
-                TLine* line = new TLine (0, pNoiseStripThreshold * 0.001, NCHANNELS, pNoiseStripThreshold * 0.001);
+                TLine* line = new TLine (0, pNoiseStripThreshold, NCHANNELS, pNoiseStripThreshold);
 
                 //as we are at it, draw the plot
                 fNoiseCanvas->cd ( cCbc->getCbcId() + 1 );
@@ -284,7 +284,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold )
 
                 for (uint32_t iChan = 0; iChan < NCHANNELS; iChan++)
                 {
-                    if (cHist->GetBinContent (iChan) > double ( pNoiseStripThreshold * 0.001 ) ) // consider it noisy
+                    if (cHist->GetBinContent (iChan) > pNoiseStripThreshold) // consider it noisy
                     {
                         TString cRegName = Form ( "Channel%03d", iChan + 1 );
                         uint8_t cValue = fHoleMode ? 0x00 : 0xFF;
