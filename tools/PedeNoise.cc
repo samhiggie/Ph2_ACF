@@ -68,20 +68,20 @@ void PedeNoise::Initialise()
                 bookHistogram ( cCbc, "Cbc_Pedestal", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Noise_even", cFe->getFeId(), cCbc->getCbcId() );
-                cHist = new TH1F ( cHistname, cHistname, 128, -0.5, 127.5 );
+                cHist = new TH1F ( cHistname, cHistname, 127, -0.5, 126.5 );
                 cHist->SetMaximum (10);
                 cHist->SetMinimum (0);
                 bookHistogram ( cCbc, "Cbc_Noise_even", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Noise_odd", cFe->getFeId(), cCbc->getCbcId() );
-                cHist = new TH1F ( cHistname, cHistname, 128, -0.5, 127.5 );
+                cHist = new TH1F ( cHistname, cHistname, 127, -0.5, 126.5 );
                 cHist->SetLineColor ( 2 );
                 cHist->SetMaximum (10);
                 cHist->SetMinimum (0);
                 bookHistogram ( cCbc, "Cbc_noise_odd", cHist );
 
                 cHistname = Form ( "Fe%dCBC%d_Occupancy", cFe->getFeId(), cCbc->getCbcId() );
-                cHist = new TH1F ( cHistname, cHistname, 254, 0, 253 );
+                cHist = new TH1F ( cHistname, cHistname, 254, -0.5, 253.5 );
                 cHist->SetLineColor ( 31 );
                 cHist->SetMaximum (1);
                 cHist->SetMinimum (0);
