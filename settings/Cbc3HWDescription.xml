@@ -16,7 +16,7 @@
         <!--<CBC Id="0" configfile="CBC3_default.txt" />-->
         <!--experimental-->
         <CBC Id="0" configfile="CBC3_default.txt" >
-            <Settings threshold="550" latency="199"/>
+            <Settings threshold="610" latency="199"/>
             <TestPulse enable="1" polarity="0" amplitude="0x0C" channelgroup="0" delay="0" groundothers="1"/>
             <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
             <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" dll="4"/>
@@ -47,9 +47,9 @@
                 <!--Kirkia sets this node to 7, so enables everything but fast_reset-->
                 <Register name="enable">
                     <Register name="fast_reset"> 0 </Register>
-                    <Register name="trigger"> 0 </Register>
+                    <Register name="trigger"> 1 </Register>
                     <Register name="test_pulse"> 1 </Register>
-                    <Register name="orbit_reset"> 0 </Register>
+                    <Register name="orbit_reset"> 1 </Register>
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
                 <Register name="Ncycle"> 0 </Register>
@@ -71,7 +71,7 @@
 </HwDescription>
 
 <Settings>
-    <Setting name="TargetVcth">550</Setting>
+    <!-- <Setting name="TargetVcth">550</Setting> -->
     <!--<Setting name="TargetOffset">0x50</Setting>-->
     <!--<Setting name="TestPulsePotentiometer">0x00</Setting>-->
     <Setting name="HoleMode">0</Setting>

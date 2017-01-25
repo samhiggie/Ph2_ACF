@@ -69,7 +69,7 @@ int main ( int argc, char** argv )
     TApplication cApp ( "Root Application", &argc, argv );
     
     if ( batchMode ) gROOT->SetBatch ( true );
-    //else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
+    else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
     //Start server to communicate with HMP404 instrument via usbtmc and SCPI
     
     std::string cHostname = "localhost";
@@ -162,7 +162,7 @@ int main ( int argc, char** argv )
                 cSweep.Inherit (&cTool);
                 cSweep.Initialize();
 
-                cSweep.SweepStubs(1);
+                cSweep.SweepStubs(10);
                 
                 cTool.SaveResults();
                 cTool.CloseResultFile();
