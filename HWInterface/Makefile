@@ -2,21 +2,17 @@ Objs            = RegManager.o BeBoardFWInterface.o GlibFWInterface.o ICGlibFWIn
 CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC  
-#DevFlags                   = -D__CBCDAQ_DEV__
-DevFlags	=
 
 .PHONY: clean print
 
-
-IncludeDirs     =  /opt/cactus/include ../ .
-
-IncludePaths            = $(IncludeDirs:%=-I%)
+IncludeDirs  = $(CACTUSINCLUDE) ../ .
+IncludePaths = $(IncludeDirs:%=-I%)
 
 %.o: %.cc %.h
-	$(CXX) -std=c++0x  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
+	$(CXX) -std=c++0x $(CCFlags) $(IncludePaths) -c -o $@ $<
 
 all: print $(Objs) ../HWDescription/Definition.h
-	$(CC) -std=c++0x -shared -o libPh2_Interface.so $(Objs) -pthread
+	$(CC) -std=c++0x -shared -pthread -o libPh2_Interface.so $(Objs)
 	mv libPh2_Interface.so ../lib
 
 print:

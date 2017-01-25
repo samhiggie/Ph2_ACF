@@ -11,7 +11,6 @@
 #ifndef __BEBOARDFWINTERFACE_H__
 #define __BEBOARDFWINTERFACE_H__
 
-#include <boost/thread.hpp>
 #include <uhal/uhal.hpp>
 #include "RegManager.h"
 #include "../Utils/Event.h"

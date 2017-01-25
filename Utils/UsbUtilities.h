@@ -21,22 +21,18 @@
 #include <istream>
 #include <limits>
 #include <boost/lexical_cast.hpp>
-#include "../Utils/pugixml.hpp"
-#include "../Utils/Utilities.h"
+#include "pugixml.hpp"
+#include "Utilities.h"
+#include "ConsoleColor.h"
 #include "../HWDescription/Definition.h"
 #include <iostream>
+#include <fstream>
 #include <bitset>
 #include <sys/stat.h>
 #include <vector>
 
 #ifdef __USBINST__
-#include <zmq.hpp>
-#include "../../Ph2_USBInstDriver/Utils/zmqutils.h"
-#include "../../Ph2_USBInstDriver/Utils/AppLock.cc"
-#include "../../Ph2_USBInstDriver/HMP4040/HMP4040Controller.h"
-#include "../../Ph2_USBInstDriver/HMP4040/HMP4040Client.h"
-#include "../../Ph2_USBInstDriver/Ke2110/Ke2110Controller.h"
-using namespace Ph2_UsbInst;
+#include "AppLock.cc"
 #endif
 
 

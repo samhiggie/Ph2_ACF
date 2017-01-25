@@ -342,13 +342,6 @@ namespace Ph2_HwInterface {
          */
         virtual std::string StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
         /*!
-         * \brief Function to get Hits string
-         * \param pFeId : FE Id
-         * \param pCbcId : Cbc Id
-         * \return stub bit?
-         */
-        //virtual std::string HitsBitString ( uint8_t pFeId, uint8_t pCbcId ) const = 0;
-        /*!
         * \brief Function to get Stub bit
         * \param pFeId : FE Id
         * \param pCbcId : Cbc Id

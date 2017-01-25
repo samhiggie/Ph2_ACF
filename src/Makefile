@@ -1,25 +1,15 @@
-ZMQ_HEADER_PATH = /usr/include/zmq.hpp
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
 CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTVERSION := $(shell root-config --has-http)
 
-HttpFlag = -D__HTTP__
-ZmqFlag = -D__ZMQ__
-USBINSTFlag     = -D__USBINST__
-Amc13Flag     = -D__AMC13__
-AntennaFlag = -D__ANTENNA__
-
-DevFlags        =
-
-RootLibraryDirs = /usr/local/lib/root
+RootLibraryDirs = $(ROOTLIB)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
-LibraryDirs = /opt/cactus/lib ../lib 
-IncludeDirs     =  /opt/cactus/include ../ ../System/ ../Utils ../HWDescripion ../HWInterface ../tools 
-#ExternalObjects= $(LibraryPaths) -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Tools 
-ExternalObjects= -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Tools 
+LibraryDirs = $(BOOST_LIB) ../lib
+IncludeDirs     = $(BOOST_INCLUDE) ../ ../HWInterface ../System ../Utils ../tools
+ExternalObjects= -lpthread -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lboost_thread -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Tools 
 
 ##################################################
 ## check if the Root has THttp
@@ -35,8 +25,7 @@ endif
 ##################################################
 ifneq ("$(wildcard ../$(ANTENNADIR))","")
 	IncludeDirs += $(ANTENNADIR)
-	LibraryDirs += $(ANTENNADIR)/lib /usr/lib64/ 
-	#ExternalObjects += -lboost_thread -lPh2_Antenna $(AntennaFlag) 
+	LibraryDirs += $(ANTENNALIB) /usr/lib64/ 
 	ExternalObjects += -lPh2_Antenna $(AntennaFlag) 
 	ANTENNAINSTALLED = yes
 else
@@ -68,9 +57,9 @@ endif
 ## check if the Ph2_USBInstDriver drivers are installed
 ##################################################
 ifneq ("$(wildcard $(USBINSTDIR))","")
-	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano $(USBINSTDIR)/Drivers $(USBINSTDIR)/Utils 
-	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
-	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano -lPh2_Drivers -lPh2_USBUtils $(USBINSTFlag)
+	LibraryDirs += $(USBINSTLIB)
+	IncludeDirs += $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano $(USBINSTDIR)/Utils
+	ExternalObjects += -lboost_filesystem -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano -lPh2_Drivers -lPh2_USBUtils $(USBINSTFlag)
 	USBINSTLIBINSTALLED = yes
 else
 	USBINSTLIBINSTALLED = no
@@ -85,6 +74,7 @@ binariesNoRoot=systemtest datatest fpgaconfig configure
 
 .PHONY: clean $(binaries)
 all: rootflags clean $(binaries) 
+
 rootflags:
 	$(eval CCFlags += $(CCFlagsRoot))
 	$(eval ExternalObjects += $(ExtObjectsRoot))
@@ -100,14 +90,6 @@ print:
 	@echo 'Ph2_USBInstDriver installed:' $(USBINSTLIBINSTALLED)
 	@echo 'ZeroMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
-
-# cbc3irrad: cbc3irrad.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-cbc3test: cbc3test.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
 
 integratedtester: integratedtester.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
@@ -151,9 +133,9 @@ pulseshape: pulseshape.cc
 cbc3test: cbc3test.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
-cbc3irrad: cbc3irrad.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-	cp $@ ../bin
+#cbc3irrad: cbc3irrad.cc
+	#$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+	#cp $@ ../bin
 arduinotest: Arduino.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
