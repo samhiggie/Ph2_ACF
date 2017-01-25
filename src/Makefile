@@ -101,56 +101,54 @@ print:
 	@echo 'ZeroMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
 
-# integratedtester: integratedtester.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ integratedtester: integratedtester.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# systemtest: systemtest.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ systemtest: systemtest.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# calibrate: calibrate.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ calibrate: calibrate.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# datatest: datatest.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ datatest: datatest.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# configure: configure.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ configure: configure.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# hybridtest: hybridtest.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ hybridtest: hybridtest.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# cmtest: cmtest.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ cmtest: cmtest.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# commission: commission.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ commission: commission.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# fpgaconfig: fpgaconfig.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ fpgaconfig: fpgaconfig.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
 
-# pulseshape: pulseshape.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
-
-cbc3test: cbc3test.cc
+ pulseshape: pulseshape.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
-# cbc3irrad: cbc3irrad.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
-# arduinotest: Arduino.cc
-# 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-# 	cp $@ ../bin
+ cbc3test: cbc3test.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+	cp $@ ../bin
+ cbc3irrad: cbc3irrad.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+	cp $@ ../bin
+ arduinotest: Arduino.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+	cp $@ ../bin
 
 clean:
 	rm -f $(binaries) *.o
-
