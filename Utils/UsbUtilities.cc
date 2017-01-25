@@ -20,7 +20,7 @@ void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile
     // // create bash script to launch HMP4040 sessions
     sprintf (buffer, "%s/%s", baseDirectory.c_str(), pInitScript.c_str() );
     std::cout << BOLDBLUE << "Creating launch script : " << buffer << " ." << RESET << std::endl;
-    ofstream starterScript ( buffer );
+    std::ofstream starterScript ( buffer );
     starterScript << "#!/bin/bash" << std::endl;
 
     starterScript << "SESSION_NAME=HMP4040_Server" << std::endl <<  std::endl ;
@@ -44,7 +44,7 @@ void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile,
     // // create bash script to launch HMP4040 sessions
     sprintf (buffer, "%s/%s", baseDirectory.c_str(), pInitScript.c_str() );
     std::cout << BOLDBLUE << "Creating launch script : " << buffer << " ." << RESET << std::endl;
-    ofstream starterScript ( buffer );
+    std::ofstream starterScript ( buffer );
     starterScript << "#!/bin/bash" << std::endl;
 
     starterScript << "SESSION_NAME=Ke2110_Server" << std::endl <<  std::endl ;

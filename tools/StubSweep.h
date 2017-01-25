@@ -23,38 +23,10 @@
 #include "TTree.h"
 #include "TString.h"
 #include "Utils/CommonVisitors.h"
-#include "PulseShape.h"
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
-
-#ifdef __USBINST__
-#include "Ke2110Controller.h"
-#include "HMP4040Client.h"
-#include "ArdNanoController.h"
-#endif
-
-#ifdef __MAKECINT__
-#pragma link C++ class vector<float>+;
-#pragma link C++ class vector<uint16_t>+;
-#endif
-
-using namespace Ph2_UsbInst;
-
-class StubSweepData : public TObject
-{
-  public:
-    uint16_t fFeId;
-    uint16_t fCbcId;
-    long int fTimestamp;
-    
-
-    StubSweepData() : fFeId (0), fCbcId (0), fTimestamp (0)
-    {
-    }
-    ~StubSweepData() {}
-};
 
 class StubSweep : public Tool
 {
@@ -65,7 +37,6 @@ class StubSweep : public Tool
 
     // added for debugging - S.
     // ******
-    
     // *******
     void SweepStubs (uint32_t pNEvents = 1 );
 
@@ -75,28 +46,26 @@ class StubSweep : public Tool
     TCanvas* fSweepCanvas;
 
     ChipType fType;
-    //for the TTree
-    StubSweepData* fData;
-
-    //settings
-    uint8_t fDelay; 
-    uint8_t fReadBackAttempts; 
+	//settings
+    uint8_t fDelay;
+    uint8_t fReadBackAttempts;
 
     // methods to fill/update histograms
     void updateHists ( std::string pHistname );
-    void fillStubBendHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair , uint8_t pStubBend );
-    void fillStubSweepHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair , uint8_t pStubPosition );
-    
+    void fillStubBendHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair, uint8_t pStubBend );
+    void fillStubSweepHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair, uint8_t pStubPosition );
+
     // method to mask all channels on the CBC
-    void maskAllChannels(Cbc* pCbc);
+    void maskAllChannels (Cbc* pCbc);
     // method to return the position of the first stub in a CBC event
-    uint8_t getStubPosition(std::vector<Event*> pEvents , uint32_t pFeId , uint32_t pCbcId , uint32_t pNEvents);
+    uint8_t getStubPosition (std::vector<Event*> pEvents, uint32_t pFeId, uint32_t pCbcId, uint32_t pNEvents);
 
     /*!
-    * \brief return mask for a given channel 
+    * \brief return mask for a given channel
     * \param pTestGroup: the  channel number [ between 1 and 254 ]
     */
-    uint8_t getChanelMask( Cbc* pCbc , uint8_t pChannel );
+    uint8_t getChanelMask ( Cbc* pCbc, uint8_t pChannel );
+
     /*!
     * \brief find the channels of a test group
     * \param pTestGroup: the number of the test group
@@ -129,21 +98,21 @@ class StubSweep : public Tool
         //std::cout << std::bitset<8>( cValue ) << " cGroup " << +pGroup << " " << std::bitset<8>( pGroup ) << " pDelay " << +pDelay << " " << std::bitset<8>( pDelay ) << std::endl;
         return cValue;
     }
-     unsigned char fLookup[16] =
+	unsigned char fLookup[16] =
     {
         0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe,
         0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf,
     }; /*!< Lookup table for reverce the endianness */
 
-    std::map<double , uint8_t> fWindowOffsetMapCBC3 = 
+    std::map<double, uint8_t> fWindowOffsetMapCBC3 =
     {
-        {0.0 , 0x00 } , { 0.5,0x01} , { 1.0 , 0x02} , { 1.5, 0x03} , { 2.0, 0x04} , { 2.5, 0x05} , { 3.0, 0x06},
-                        {-0.5,0x0f} , {-1.0 , 0x0e} , {-1.5, 0x0d} , {-2.0, 0x0c} , {-2.5, 0x0b} , {-3.0, 0x0a}
+        {0.0, 0x00 }, { 0.5, 0x01}, { 1.0, 0x02}, { 1.5, 0x03}, { 2.0, 0x04}, { 2.5, 0x05}, { 3.0, 0x06},
+        {-0.5, 0x0f}, {-1.0, 0x0e}, {-1.5, 0x0d}, {-2.0, 0x0c}, {-2.5, 0x0b}, {-3.0, 0x0a}
         // { -3.0 , 0x06}, {-2.5, 0x05 } , {-2.0 , 0x04} , {-1.5, 0x03} , {-1.0, 0x02} , {-0.5,0x01} , {0,0x00},
         // { 3.0  , 0x0a} , {2.5 , 0x0b} , {2.0 , 0x0c } , {1.5,0x0d}, {1.0,0x0e}  , {0.5, 0x0f}
     };
 
-    void setCorrelationWinodwOffsets( Cbc* pCbc, double pOffsetR1 , double pOffsetR2 , double pOffsetR3 , double pOffsetR4 );
+    void setCorrelationWinodwOffsets ( Cbc* pCbc, double pOffsetR1, double pOffsetR2, double pOffsetR3, double pOffsetR4 );
 
     std::map<uint8_t, std::string> fChannelMaskMapCBC2 =
     {

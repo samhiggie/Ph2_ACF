@@ -35,9 +35,6 @@ void StubSweep::Initialize()
     fSweepCanvas->cd();
     LOG (INFO) << "Created Canvas for Bias sweeps";
 
-    //initialize empty bias sweep object
-    fData = new StubSweepData();
-
     uint32_t cCbcCount = 0;
     uint32_t cCbcIdMax = 0;
     uint32_t cFeCount = 0;

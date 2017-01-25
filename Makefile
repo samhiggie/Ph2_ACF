@@ -18,7 +18,6 @@ else
 endif
 
 ifneq ("$(wildcard $(USBINSTDIR))","")
-	#DEPENDENCIES := ../Ph2_USBInstDriver $(DEPENDENCIES)
 	USBINSTINSTALLED = yes
 	USBINSTINSTRUCTIONS = 
 else
@@ -64,7 +63,6 @@ print:
 
 
 clean:
-	#$(MAKE) -C System clean 
 	(cd System; make clean)
 	(cd Utils; make clean)
 	(cd HWInterface; make clean)
@@ -74,5 +72,4 @@ clean:
 	(cd miniDAQ; make clean)
 	(cd Tracker; make clean)
 	(cd AMC13; make clean)
-	 #(cd doc; make clean)
 	(rm -f lib/* bin/*)

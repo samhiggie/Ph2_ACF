@@ -88,9 +88,8 @@ void BiasSweep::Initialize()
     //create a controller
     fKeController = new Ke2110Controller ();
     fKeController->InitializeClient ("localhost", fKePort);
-    fArdNanoController = new ArdNanoController();
+    //fArdNanoController = new ArdNanoController();
     //fArdNanoController->ControlLED (1);
-    //fArdNanoController = nullptr;
 #endif
 
     gROOT->ProcessLine ("#include <vector>");
@@ -286,7 +285,7 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
         LOG (INFO) << "Bias setting is " << pAmuxValue->first << " -this is not routed via the Amux, thus leaving settings at original value!";
         //need to switch the Arduino nano controller to VDDA
 #ifdef __USBINST__
-        fArdNanoController->ControlRelay (1);
+        //fArdNanoController->ControlRelay (1);
         LOG (INFO) << "Setting Arduino Nano relay to " << pAmuxValue->first;
 #endif
         return cOriginalAmuxValue;
@@ -294,7 +293,7 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
     else
     {
 #ifdef __USBINST__
-        fArdNanoController->ControlRelay (0);
+        //fArdNanoController->ControlRelay (0);
         LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
 #endif
 
@@ -311,7 +310,7 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
 void BiasSweep::resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s  )
 {
 #ifdef __USBINST__
-    fArdNanoController->ControlRelay (0);
+    //fArdNanoController->ControlRelay (0);
     LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
 #endif
     LOG (INFO) << "Reseting Amux settings back to original value of 0x" << std::hex << +pAmuxValue;

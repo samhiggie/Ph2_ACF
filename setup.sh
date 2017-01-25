@@ -13,6 +13,7 @@ export BOOST_INCLUDE=/opt/cactus/include
 
 #ROOT
 #source /usr/local/bin/thisroot.sh
+export ROOTLIB=usr/local/lib/root
 
 #Ph2_ACF
 export BASE_DIR=$(pwd)
@@ -29,4 +30,14 @@ export USBINSTLIB=$USBINSTDIR/lib
 
 
 export PATH=$BASE_DIR/bin:$PATH
-export LD_LIBRARY_PATH=$USBINSTLIB:$ANTENNALIB:$BASE_DIR/RootWeb/lib:/opt/cactus/lib:$BASE_DIR/lib:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=$USBINSTLIB:$ANTENNALIB:$BASE_DIR/RootWeb/lib:$CACTUSLIB:$BASE_DIR/lib:${LD_LIBRARY_PATH}
+
+
+export HttpFlag='-D__HTTP__'
+export ZmqFlag='-D__ZMQ__'
+export USBINSTFlag='-D__USBINST__'
+export Amc13Flag='-D__AMC13__'
+export AntennaFlag='-D__ANTENNA__'
+export DevFlags='-D__DEV__'
+
+
