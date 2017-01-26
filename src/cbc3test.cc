@@ -73,69 +73,114 @@ int main ( int argc, char** argv )
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cSweep = ( cmd.foundOption ( "sweep" ) ) ? true : false;
     bool cStubSweep = ( cmd.foundOption ( "stubs" ) ) ? true : false;
-    bool cCurrents = true;
+
+    std::string cResultfile;
+
+    if (cSweep && !cStubSweep) cDirectory += "BiasSweep", cResultfile = "BiasSweep";
+    else if (cStubSweep && ! cSweep) cDirectory += "StubSweep", cResultfile = "StubSweep";
+    else if (cStubSweep && cSweep) cDirectory += "Cbc3Test", cResultfile = "Cbc3Test";
 
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
 
     //else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
-    //Start server to communicate with HMP404 instrument via usbtmc and SCPI
 
+    //Start server to communicate with HMP404 instrument via usbtmc and SCPI
     std::string cHostname = "localhost";
     int cPowerSupplyHttpPortNumber = 8080;
-    int cPowerSupplyZmqPortNumber = 8090;
+    int cPowerSupplyZmqPortNumber = 8081;
     std::string cPowerSupplyHWFile = "HMP4040.xml";
     std::string cPowerSupplyOutputFile = cDirectory + "/Current_log.txt";
     int cPowerSupplyInterval = 5;
     std::pair<int, int> cPowerSupplyPortsInfo = std::pair<int, int> (cPowerSupplyZmqPortNumber, cPowerSupplyHttpPortNumber);
-    pid_t childPid;  // the child process that the execution will soon run inside of.
-    childPid = fork();
+    pid_t cHMPPid;  // the child process that the execution will soon run inside of.
+    cHMPPid = fork();
+    bool cPSStatus = false;
 
-    if (childPid < 0) // fork failed
-    {
-        // log the error
+    if (cHMPPid < 0) // fork failed
         exit (1);
-    }
-    else if (childPid == 0 && cCurrents) // fork succeeded
+    else if (cHMPPid == 0) // fork succeeded
     {
         // launch HMP4040 server
         LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor currents on the HMP4040" << RESET ;
-        launch_Server ( cPowerSupplyHWFile, cHostname, cPowerSupplyPortsInfo, cPowerSupplyInterval );
+        launch_HMPServer ( cPowerSupplyHWFile, cHostname, cPowerSupplyPortsInfo, cPowerSupplyInterval );
         exit (0);
     }
     else  // Main (parent) process after fork succeeds
     {
         int returnStatus = -1 ;
-        waitpid (childPid, &returnStatus, 0); // Parent process waits here for child to terminate.
+        waitpid (cHMPPid, &returnStatus, 0);
 
-        if (returnStatus == 0 && cCurrents)  // Verify child process terminated without error.
+        if (returnStatus == 0 ) cPSStatus = true; //child process terminated without error
+        else if (returnStatus == 1)
         {
-#ifdef __USBINST__
-            HMP4040Client* cLVClient = new HMP4040Client (cHostname, cPowerSupplyZmqPortNumber);
-            cLVClient->StartMonitoring();
-            LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040" << RESET ;
-            // make sure power supply is switched  on before doing anything else
-            LOG (INFO) << BOLDBLUE << "Switching on the power supply" << RESET ;
-            cLVClient->ToggleOutput (1);
-#endif
-            std::stringstream outp;
+            LOG (INFO) << "The PS child process terminated with an error!." ;
+            exit (1);
+        }
+    }
 
+    int cDMMHttpPort = 8082;
+    int cDMMZMQPort = 8083;
+    std::string cDMMOutputFile = cDirectory + "/Temperature_log.txt";
+    int cDMMInterval = 2;
+    std::pair<int, int> cDMMPortsInfo = std::pair<int, int> (cDMMZMQPort, cDMMHttpPort);
+    pid_t cDMMPid;
+    cDMMPid = fork();
+    bool cDMMStatus = false;
+
+    if (cDMMPid < 0) //fork failed
+        exit (1);
+    else if (cDMMPid == 0 ) // fork succeeded
+    {
+        //launch DMM server
+        LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor Temperature with the Ke2110" << RESET ;
+        launch_DMMServer ( cHostname, cDMMPortsInfo, cDMMInterval );
+        exit (0);
+    }
+    else //Main (parent) process after fork succeeds
+    {
+        int returnStatus = -1;
+        waitpid (cDMMPid, &returnStatus, 0); // Parent process waits here for child to terminate.
+
+        if (returnStatus == 0 ) cDMMStatus = true; //child process terminated without error
+        else if (returnStatus == 1)
+        {
+            LOG (INFO) << "The DMM child process terminated with an error!." ;
+            exit (1);
+        }
+    }
+
+    std::this_thread::sleep_for (std::chrono::seconds (3) );
+
+    if ( cPSStatus && cDMMStatus )  // Verify child process terminated without error.
+    {
+#ifdef __USBINST__
+        HMP4040Client* cLVClient = new HMP4040Client (cHostname, cPowerSupplyZmqPortNumber);
+        cLVClient->StartMonitoring();
+        LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040" << RESET ;
+        // make sure power supply is switched  on before doing anything else
+        LOG (INFO) << BOLDBLUE << "Switching on the power supply" << RESET ;
+        cLVClient->ToggleOutput (1);
+#endif
+        std::stringstream outp;
+
+        if (cSweep || cStubSweep)
+        {
             Tool cTool;
             cTool.InitializeHw ( cHWFile, outp );
             cTool.InitializeSettings ( cHWFile, outp );
             LOG (INFO) << outp.str();
             outp.str ("");
-            cTool.StartHttpServer();
+            cTool.CreateResultDirectory ( cDirectory );
+            cTool.InitResultFile (cResultfile);
+            cTool.StartHttpServer (8084);
             cTool.ConfigureHw ();
 
             if (cSweep)
             {
                 BiasSweep cSweep;
                 cSweep.Inherit (&cTool);
-                cDirectory += "BiasSweep";
-                cSweep.CreateResultDirectory ( cDirectory );
-                cSweep.InitResultFile ( "BiasSweeps" );
                 cSweep.Initialize();
 
                 for (auto cBoard : cSweep.fBoardVector)
@@ -149,12 +194,9 @@ int main ( int argc, char** argv )
                         }
                     }
                 }
-
-                cSweep.SaveResults();
-                cSweep.CloseResultFile();
-                cSweep.Destroy();
             }
-            else if (cStubSweep)
+
+            if (cStubSweep)
             {
 #ifdef __USBINST__
                 LOG (INFO) << BOLDBLUE << "Resetting the power to the CBC3 before attempting a stub sweep." << RESET ;
@@ -162,64 +204,68 @@ int main ( int argc, char** argv )
                 cLVClient->ToggleOutput (1);
 #endif
 
-                StubSweep cSweep;
-                cSweep.Inherit (&cTool);
-                cDirectory += "StubSweep";
-                cSweep.CreateResultDirectory ( cDirectory );
-                cSweep.InitResultFile ( "StubSweeps" );
-                cSweep.Initialize();
-                cSweep.SweepStubs (1);
-
-                cSweep.SaveResults();
-                cSweep.CloseResultFile();
-                cSweep.Destroy();
-            }
-            else
-            {
-                // from here
-                BeBoard* pBoard = cTool.fBoardVector.at ( 0 );
-                uint32_t cN = 1;
-                uint32_t cNthAcq = 0;
-                const std::vector<Event*>* pEvents ;
-
-                ThresholdVisitor cVisitor (cTool.fCbcInterface, 0);
-
-                if (cVcthset)
-                {
-                    cVisitor.setThreshold (cVcth);
-                    cTool.accept (cVisitor);
-                }
-
-                cTool.ReadNEvents (pBoard, pEventsperVcth);
-                pEvents = &cTool.GetEvents ( pBoard );
-
-                for ( auto& ev : *pEvents )
-                {
-                    LOG (INFO) << ">>> Event #" << cN++ << " Threshold: " << cVcth;
-                    outp.str ("");
-                    outp << *ev;
-                    LOG (INFO) << outp.str();
-                }
-
-                cNthAcq++;
+                StubSweep cStubSweep;
+                cStubSweep.Inherit (&cTool);
+                cStubSweep.Initialize();
+                cStubSweep.SweepStubs (1);
             }
 
+            cTool.SaveResults();
+            cTool.CloseResultFile();
             cTool.Destroy();
+        }
+
+        if (!cSweep && !cStubSweep)
+        {
+            SystemController cSystemController;
+            cSystemController.InitializeHw ( cHWFile, outp );
+            cSystemController.InitializeSettings ( cHWFile, outp );
+            LOG (INFO) << outp.str();
+            outp.str ("");
+            // from here
+            BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
+            uint32_t cN = 1;
+            uint32_t cNthAcq = 0;
+            const std::vector<Event*>* pEvents ;
+
+            ThresholdVisitor cVisitor (cSystemController.fCbcInterface, 0);
+
+            if (cVcthset)
+            {
+                cVisitor.setThreshold (cVcth);
+                cSystemController.accept (cVisitor);
+            }
+
+            cSystemController.ReadNEvents (pBoard, pEventsperVcth);
+            pEvents = &cSystemController.GetEvents ( pBoard );
+
+            for ( auto& ev : *pEvents )
+            {
+                LOG (INFO) << ">>> Event #" << cN++ << " Threshold: " << cVcth;
+                outp.str ("");
+                outp << *ev;
+                LOG (INFO) << outp.str();
+            }
+
+            cNthAcq++;
+            cSystemController.Destroy();
+        }
 
 #ifdef __USBINST__
-            LOG (INFO) << "Toggling Output off again, stopping the monitoring and exiting the server!";
-            cLVClient->ToggleOutput (0);
-            cLVClient->StopMonitoring();
-            cLVClient->Quit();
-            delete cLVClient;
+        LOG (INFO) << YELLOW << "Toggling Output off again, stopping the monitoring and exiting the server!" << RESET;
+        cLVClient->ToggleOutput (0);
+        cLVClient->StopMonitoring();
+        cLVClient->Quit();
+        delete cLVClient;
+
+        Ke2110Controller cKeController;
+        cKeController.InitializeClient ("localhost", cDMMZMQPort);
+        cKeController.SendQuit();
+        LOG (INFO) << YELLOW << "Stopping Temperatue monitoring and exiting the server!" << RESET;
 #endif
-        }
-        else if (returnStatus == 1)
-        {
-            LOG (INFO) << "The child process terminated with an error!." ;
-            exit (1);
-        }
     }
+    else
+        LOG (ERROR) << "Either PowerSupply or DMM server did not start up correctly!";
 
     LOG (INFO) << "*** End of the System test ***" ;
 

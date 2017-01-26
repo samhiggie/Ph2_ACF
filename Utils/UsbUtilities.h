@@ -55,7 +55,8 @@ PortsInfo parse_ServerInfo ( std::string pInfo );
 void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::string pHostname, int pMeasureInterval_s);
 
 // launches server
-int launch_Server ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s );
+int launch_HMPServer ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s );
+int  launch_DMMServer ( std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s );
 
 
 // Device specific functions

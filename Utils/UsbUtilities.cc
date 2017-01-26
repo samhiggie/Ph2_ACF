@@ -41,7 +41,7 @@ void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile,
     std::string currentDir = getcwd (buffer, sizeof (buffer) );
     std::string baseDirectory  = return_InstDriverHomeDirectory() + "/Ph2_USBInstDriver";
 
-    // // create bash script to launch HMP4040 sessions
+    // // create bash script to launch Ke2110 sessions
     sprintf (buffer, "%s/%s", baseDirectory.c_str(), pInitScript.c_str() );
     std::cout << BOLDBLUE << "Creating launch script : " << buffer << " ." << RESET << std::endl;
     std::ofstream starterScript ( buffer );
@@ -55,7 +55,7 @@ void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile,
     // set-up environment for Ph2_USB_InstDriver
     starterScript << "tmux send-keys -t $SESSION_NAME \". ./setup.sh\" Enter" << std::endl;
     // TODO - change to configure DMM supervisor
-    //sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"lvSupervisor -f %s -r %d -p %d -i %d -S\" Enter" , pConfigFile.c_str() , pPortsInfo.first, pPortsInfo.second , pMeasureInterval_s ) ;
+    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"dmmSupervisor -r %d -p %d -i %d -s\" Enter", pPortsInfo.first, pPortsInfo.second, pMeasureInterval_s ) ;
     starterScript << buffer << std::endl;
     starterScript.close();
 }
@@ -156,7 +156,7 @@ void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::s
 #endif
 }
 
-int  launch_Server ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s )
+int  launch_HMPServer ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s )
 {
 #if __ZMQ__
     char buffer[256];
@@ -175,12 +175,27 @@ int  launch_Server ( std::string pConfigFile, std::string pHostname, PortsInfo& 
         std::string cInstrtName = std::string (cDoc.child ("InstrumentDescription").first_child() .name() );
 
         //Now server stuff  - is it open? on which ports?
-        query_Server ( cHWfile, cInstrtName, "localhost", pPortsInfo, 2 );
+        query_Server ( cHWfile, cInstrtName, "localhost", pPortsInfo, pMeasureInterval_s );
         return 1;
     }
     else
         std::cout << BOLDRED << "Configuration file not found." << RESET << std::endl;
 
+#endif
+    return 0 ;
+}
+
+int  launch_DMMServer ( std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s )
+{
+#if __ZMQ__
+    char buffer[256];
+    std::string currentDir = getcwd (buffer, sizeof (buffer) );
+    std::string baseDirectory  = return_InstDriverHomeDirectory() + "/Ph2_USBInstDriver";
+
+    std::string cHWfile = "";
+    std::string cInstrtName = "Ke2110";
+
+    query_Server ( cHWfile, cInstrtName, "localhost", pPortsInfo, pMeasureInterval_s );
 #endif
     return 0 ;
 }

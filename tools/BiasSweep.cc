@@ -196,6 +196,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 #ifdef __USBINST__
         std::string cLogFile = fDirectoryName + "/DMM_log.txt";
         //send pause command to any running Ke server
+        LOG (INFO) << YELLOW << "Sending request to pause Temperature monitoring" << RESET;
         fKeController->SendPause();
         //then set up for local operation
         fKeController->SetLogFileName (cLogFile);
@@ -211,13 +212,19 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
             //initialize the HMP4040Client to connect to the server
             fHMPClient = new HMP4040Client ("localhost", fHMPPort);
 
-            if (fHMPClient->StopMonitoring() )
-                LOG (INFO) << "Monitoring Stop request sent successfully!";
-            else
+            int cCounter = 0;
+            LOG (INFO) << YELLOW <<  "Trying to pause monitoring with HMP4040!" << RESET;
+
+            while (!fHMPClient->StopMonitoring() )
             {
-                LOG (ERROR) << "Monitoring Stop request did not go through! -aborting";
-                exit (1);
+                if (cCounter++ > 5)
+                {
+                    LOG (ERROR) << RED << "HMP4040 Monitoring pause failed!" << RESET;
+                    exit (1);
+                }
             }
+
+            LOG (INFO) << YELLOW << "HMP4040 Monitoring Pause request sent successfully!" << RESET;
         }
 
 #endif
@@ -250,18 +257,24 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         //close the log file
         fKeController->closeLogFile();
         //tell any server to resume the monitoring
+        LOG (INFO) << YELLOW << "Sending request to resume Temperatue monitoring" << RESET;
         fKeController->SendResume();
 
         if (cCurrent)
         {
-            if (fHMPClient->StartMonitoring() )
-                LOG (INFO) << "Successfully restarted the monitoring";
+            int cCounter = 0;
+            LOG (INFO) << YELLOW << "Trying to resume monitoring with HMP4040!" << RESET;
 
-            else
+            while (!fHMPClient->StartMonitoring() )
             {
-                LOG (ERROR) << "Monitoring restart request did not go through -aborting!";
-                exit (1);
+                if (cCounter++ > 5)
+                {
+                    LOG (ERROR) << RED <<  "HMP4040 Monitoring resume failed!" << RESET;
+                    exit (1);
+                }
             }
+
+            LOG (INFO) << YELLOW << "HMP4040 Monitoring Resume request sent successfully!" << RESET;
 
             delete fHMPClient;
         }
