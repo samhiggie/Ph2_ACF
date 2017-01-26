@@ -4,7 +4,15 @@ CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC
 CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTVERSION := $(shell root-config --has-http)
 
-RootLibraryDirs = $(ROOTLIB)
+HttpFlag = -D__HTTP__
+ZmqFlag = -D__ZMQ__
+USBINSTFlag     = -D__USBINST__
+Amc13Flag     = -D__AMC13__
+AntennaFlag = -D__ANTENNA__
+
+DevFlags        =
+
+RootLibraryDirs = /usr/local/lib/root
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 LibraryDirs = $(BOOST_LIB) ../lib
@@ -25,7 +33,8 @@ endif
 ##################################################
 ifneq ("$(wildcard ../$(ANTENNADIR))","")
 	IncludeDirs += $(ANTENNADIR)
-	LibraryDirs += $(ANTENNALIB) /usr/lib64/ 
+	LibraryDirs += $(ANTENNADIR)/lib /usr/lib64/ 
+	#ExternalObjects += -lboost_thread -lPh2_Antenna $(AntennaFlag) 
 	ExternalObjects += -lPh2_Antenna $(AntennaFlag) 
 	ANTENNAINSTALLED = yes
 else
@@ -95,14 +104,6 @@ integratedtester: integratedtester.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
 
-systemtest: systemtest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-	cp $@ ../bin
-
-calibrate: calibrate.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-	cp $@ ../bin
-
 datatest: datatest.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
@@ -130,12 +131,15 @@ fpgaconfig: fpgaconfig.cc
 pulseshape: pulseshape.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
+
 cbc3test: cbc3test.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
-#cbc3irrad: cbc3irrad.cc
-	#$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
-	#cp $@ ../bin
+
+cbc3irrad: cbc3irrad.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+	cp $@ ../bin
+
 arduinotest: Arduino.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin

@@ -320,7 +320,7 @@ namespace Ph2_HwInterface {
         return "";
     }
 
-    std::string Cbc3Event::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
+	std::string Cbc3Event::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         std::ostringstream os;
 
@@ -373,6 +373,7 @@ namespace Ph2_HwInterface {
             uint8_t bend1 = (cData->second.at (1) & 0x0F000000) >> 24;
             uint8_t bend2 = (cData->second.at (1) & 0xF0000000) >> 28;
             uint8_t bend3 = (cData->second.at (2) & 0x0000000F);
+            //LOG (DEBUG)  << "\t" << MAGENTA << std::bitset<32> (cData->second.at (2)) << "|" << std::bitset<32> (cData->second.at (1)) << " " << RED << std::bitset<8> (bend1)  << GREEN << " " <<  std::bitset<8> (bend2) << BLUE << " " <<  std::bitset<8> (bend3) << RESET;
 
             cStubVec.emplace_back (pos1, bend1) ;
             cStubVec.emplace_back (pos2, bend2) ;

@@ -23,7 +23,6 @@
 #include "TTree.h"
 #include "TString.h"
 #include "Utils/CommonVisitors.h"
-//#include "PulseShape.h"
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
@@ -38,7 +37,6 @@ class StubSweep : public Tool
 
     // added for debugging - S.
     // ******
-
     // *******
     void SweepStubs (uint32_t pNEvents = 1 );
 
@@ -48,8 +46,7 @@ class StubSweep : public Tool
     TCanvas* fSweepCanvas;
 
     ChipType fType;
-
-    //settings
+	//settings
     uint8_t fDelay;
     uint8_t fReadBackAttempts;
 
@@ -68,6 +65,7 @@ class StubSweep : public Tool
     * \param pTestGroup: the  channel number [ between 1 and 254 ]
     */
     uint8_t getChanelMask ( Cbc* pCbc, uint8_t pChannel );
+
     /*!
     * \brief find the channels of a test group
     * \param pTestGroup: the number of the test group
@@ -100,7 +98,7 @@ class StubSweep : public Tool
         //std::cout << std::bitset<8>( cValue ) << " cGroup " << +pGroup << " " << std::bitset<8>( pGroup ) << " pDelay " << +pDelay << " " << std::bitset<8>( pDelay ) << std::endl;
         return cValue;
     }
-    unsigned char fLookup[16] =
+	unsigned char fLookup[16] =
     {
         0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe,
         0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf,

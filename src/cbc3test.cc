@@ -83,7 +83,6 @@ int main ( int argc, char** argv )
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
-
     //else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
     //Start server to communicate with HMP404 instrument via usbtmc and SCPI
@@ -198,17 +197,20 @@ int main ( int argc, char** argv )
 
             if (cStubSweep)
             {
-#ifdef __USBINST__
-                LOG (INFO) << BOLDBLUE << "Resetting the power to the CBC3 before attempting a stub sweep." << RESET ;
-                cLVClient->ToggleOutput (0);
-                cLVClient->ToggleOutput (1);
-#endif
+                #ifdef __USBINST__
+                    LOG (INFO) << BOLDBLUE << "Resetting the power to the CBC3 before attempting a stub sweep." << RESET ;
+                    cLVClient->ToggleOutput (0);
+                    cLVClient->ToggleOutput (1);
+                #endif
 
-                StubSweep cStubSweep;
-                cStubSweep.Inherit (&cTool);
-                cStubSweep.Initialize();
-                cStubSweep.SweepStubs (1);
-            }
+                StubSweep cSweep;
+                cSweep.Inherit (&cTool);
+                cDirectory += "StubSweep";
+                cSweep.CreateResultDirectory ( cDirectory );
+                cSweep.InitResultFile ( "StubSweeps" );
+                cSweep.Initialize();
+                cSweep.SweepStubs (1);
+           }
 
             cTool.SaveResults();
             cTool.CloseResultFile();
