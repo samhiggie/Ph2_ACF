@@ -1,20 +1,7 @@
 #include <iostream>
-//#include <unistd.h>
-//#include <limits.h>
-//#include <signal.h>
-//#include "easylogging++.h"
-#include "../Utils/argvparser.h"
-//#include "../../Ph2_USBInstDriver/Utils/AppLock.cc"
+#include "Utilities.h"
+#include "argvparser.h"
 #include "ArdNanoController.h"
-//#include "boost/tokenizer.hpp"
-//#include "Messages.h"
-#ifdef __HTTP__
-//#include "THttpServer.h"
-#endif
-#ifdef __ZMQ__
-//#include <zmq.hpp>
-//#include "../Utils/zmqutils.h"
-#endif
 
 using namespace Ph2_UsbInst;
 using namespace CommandLineProcessing;
@@ -62,30 +49,41 @@ int main (int argc, char** argv)
     bool cRelay = ( cmd.foundOption ( "relay" ) ) ? true : false;
     std::string cSerialCommand = ( cmd.foundOption ( "send" ) ) ? cmd.optionValue ( "send" ) : "";
 
-    ArdNanoController* cController = new ArdNanoController();
-
-    if ( !cSerialCommand.empty() )
-        cController->Write (cSerialCommand.c_str() );
-
-    if ( cBlink )
+    bool cAsync = true;
+    bool cMultex = false; 
+    ArdNanoController* cController = new ArdNanoController(cAsync,cMultex);
+    bool cState = cController->CheckArduinoState();
+    //mypause(); // here so I can start sniffer...
+    
+    
+    if( cState) 
     {
-        for ( unsigned int i = 0 ; i < atoi ( cmd.optionValue ("blink").c_str() ) * 2 ; i++ )
+        if( !cSerialCommand.empty() )
         {
-            cController->ControlLED ( (i % 2) );
-            std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+            cController->Write(cSerialCommand.c_str());
         }
-    }
+        if ( cBlink )
+        {
+            //mypause(); // here so I can start sniffer...
+            for ( unsigned int i = 0 ; i < atoi ( cmd.optionValue ("blink").c_str() )  ; i++ )
+            {
+                cController->ControlLED(1); //cController->Write("");
+                std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
+                cController->ControlLED(0); //cController->Write("");
+                std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
+            }
+        }
+        if( cRelay )
+        {
+            uint8_t cRelayState = ( cmd.optionValue ( "relay" ) == "on" || cmd.optionValue ( "relay" ) == "ON" || cmd.optionValue ( "relay" ) == "On") ? 1 : 0;   
+            LOG (INFO) << "Controling relay connected to Arduino nano .... switching it : " << BOLDGREEN << cmd.optionValue ( "relay" ) <<  RESET << " !!";
+            cController->ControlRelay(cRelayState);
+            
+            std::string cReply = ( cController->GetRelayState() == 1 ) ? "On" : "Off" ;
+            LOG (INFO) << "Relay now.... " << cReply;
+          
+        }
 
-    if ( cRelay )
-    {
-        uint8_t cRelayState = ( cmd.optionValue ( "relay" ) == "on" || cmd.optionValue ( "relay" ) == "ON" || cmd.optionValue ( "relay" ) == "On") ? 1 : 0;
-        LOG (INFO) << "Controling relay connected to Arduino nano .... switching it : " << BOLDGREEN << cmd.optionValue ( "relay" ) <<  RESET << " !!";
-        cController->ControlRelay (cRelayState);
-
-        cRelayState = cController->GetRelayState();
-        std::string cReply = ( cRelayState == 1 ) ? "On" : "Off" ;
-        LOG (INFO) << "Relay now.... " << cReply;
-    }
-
+    }  
     delete cController;
 }
