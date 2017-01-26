@@ -49,7 +49,7 @@ endif
 ifneq ("$(wildcard $(USBINSTDIR))","")
 	LibraryDirs += $(BOOST_LIB) $(USBINSTLIB)
 	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano
-	ExternalObjects += -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano $(USBINSTFlag)
+	ExternalObjects += -lPh2_Drivers -lPh2_USBUtils -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano $(USBINSTFlag)
 	USBINSTLIBINSTALLED = yes
 	Objs += BiasSweep.o
 else
