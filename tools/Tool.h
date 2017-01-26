@@ -53,6 +53,7 @@ class Tool : public SystemController
 
     void Destroy()
     {
+        LOG (INFO) << BOLDRED << "Destroying memory objects" << RESET;
         SystemController::Destroy();
 #ifdef __HTTP__
         delete fHttpServer;
@@ -99,8 +100,19 @@ class Tool : public SystemController
         fModuleHistMap = pTool->fModuleHistMap;
     }
 
-    void CreateReport(){ std::ofstream report; report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);  report.close(); };
-    void AmmendReport(std::string pString ){ std::ofstream report; report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app); report << pString << std::endl; report.close(); };
+    void CreateReport()
+    {
+        std::ofstream report;
+        report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);
+        report.close();
+    };
+    void AmmendReport (std::string pString )
+    {
+        std::ofstream report;
+        report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);
+        report << pString << std::endl;
+        report.close();
+    };
 
     void bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject );
 
@@ -121,11 +133,13 @@ class Tool : public SystemController
     void InitResultFile ( const std::string& pFilename );
     void CloseResultFile()
     {
+        LOG (INFO) << BOLDRED << "closing result file!" << RESET;
+
         if (fResultFile)
             fResultFile->Close();
     }
 
-    void StartHttpServer ( const int pPort = 8082, bool pReadonly = true );
+    void StartHttpServer ( const int pPort = 8080, bool pReadonly = true );
     void ProcessRequests()
     {
 #ifdef __HTTP__
