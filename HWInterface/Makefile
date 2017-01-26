@@ -1,7 +1,7 @@
 Objs            = RegManager.o BeBoardFWInterface.o GlibFWInterface.o ICGlibFWInterface.o CtaFWInterface.o ICFc7FWInterface.o Cbc3Fc7FWInterface.o  BeBoardInterface.o FpgaConfig.o GlibFpgaConfig.o CtaFpgaConfig.o CbcInterface.o MmcPipeInterface.o Firmware.o
 CC              = g++
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -fPIC  
+CCFlags         = -g -O1 -w -Wall -pthread -pedantic -fPIC  
 
 .PHONY: clean print
 

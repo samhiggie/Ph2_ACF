@@ -15,10 +15,9 @@ DevFlags        =
 RootLibraryDirs = /usr/local/lib/root
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
-LibraryDirs = /opt/cactus/lib ../lib 
-IncludeDirs     =  /opt/cactus/include ../ ../System/ ../Utils ../HWDescripion ../HWInterface ../tools 
-#ExternalObjects= $(LibraryPaths) -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Tools 
-ExternalObjects= -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system  -lpthread -lboost_thread -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Tools 
+LibraryDirs = $(BOOST_LIB) ../lib
+IncludeDirs     = $(BOOST_INCLUDE) ../ ../HWInterface ../System ../Utils ../tools
+ExternalObjects= -lboost_system -lboost_thread -lcactus_uhal_uhal -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lPh2_Utils -lPh2_Description -lPh2_Tracker -lPh2_Interface -lPh2_System -lPh2_Tools 
 
 ##################################################
 ## check if the Root has THttp
@@ -67,9 +66,9 @@ endif
 ## check if the Ph2_USBInstDriver drivers are installed
 ##################################################
 ifneq ("$(wildcard $(USBINSTDIR))","")
-	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano $(USBINSTDIR)/Drivers $(USBINSTDIR)/Utils 
-	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
-	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano -lPh2_Drivers -lPh2_USBUtils $(USBINSTFlag)
+	LibraryDirs += $(USBINSTLIB)
+	IncludeDirs += $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano $(USBINSTDIR)/Utils
+	ExternalObjects +=  -lPh2_Drivers -lPh2_USBUtils -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano $(USBINSTFlag)
 	USBINSTLIBINSTALLED = yes
 else
 	USBINSTLIBINSTALLED = no

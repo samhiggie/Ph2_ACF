@@ -1,6 +1,6 @@
 CC              = g++
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` 
+CCFlags         = -g -O1 -w -Wall -pedantic -pthread -fPIC `root-config --cflags --evelibs` 
 
 Objs            = Tool.o SCurve.o Calibration.o Channel.o HybridTester.o CMTester.o LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o StubSweep.o #BiasSweep.o
 
@@ -10,7 +10,7 @@ RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 IncludeDirs = $(CACTUSINCLUDE) ../
 LibraryDirs = ../lib 
-ExternalObjects = -lpthread -lboost_thread -lboost_filesystem -lPh2_System -lPh2_Description -lPh2_Interface -lPh2_Utils
+ExternalObjects = -lboost_thread -lboost_filesystem -lPh2_System -lPh2_Description -lPh2_Interface -lPh2_Utils
 
 ##################################################
 ## check if Root has Http
