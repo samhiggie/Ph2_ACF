@@ -1,18 +1,10 @@
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
+
 CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTVERSION := $(shell root-config --has-http)
-
-HttpFlag = -D__HTTP__
-ZmqFlag = -D__ZMQ__
-USBINSTFlag     = -D__USBINST__
-Amc13Flag     = -D__AMC13__
-AntennaFlag = -D__ANTENNA__
-
-DevFlags        =
-
-RootLibraryDirs = /usr/local/lib/root
+RootLibraryDirs = $(ROOTLIB)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 LibraryDirs = $(BOOST_LIB) ../lib
@@ -33,8 +25,7 @@ endif
 ##################################################
 ifneq ("$(wildcard ../$(ANTENNADIR))","")
 	IncludeDirs += $(ANTENNADIR)
-	LibraryDirs += $(ANTENNADIR)/lib /usr/lib64/ 
-	#ExternalObjects += -lboost_thread -lPh2_Antenna $(AntennaFlag) 
+	LibraryDirs += $(ANTENNALIB) /usr/lib64/ 
 	ExternalObjects += -lPh2_Antenna $(AntennaFlag) 
 	ANTENNAINSTALLED = yes
 else

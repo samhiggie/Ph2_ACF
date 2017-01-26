@@ -320,7 +320,7 @@ namespace Ph2_HwInterface {
         return "";
     }
 
-	std::string Cbc3Event::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
+    std::string Cbc3Event::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         std::ostringstream os;
 
