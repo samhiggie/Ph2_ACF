@@ -197,13 +197,12 @@ int main ( int argc, char** argv )
 
             if (cStubSweep)
             {
-#ifdef __USBINST__
-                LOG (INFO) << BOLDBLUE << "Resetting the power to the CBC3 before attempting a stub sweep." << RESET ;
-                cLVClient->ToggleOutput (0);
-                cLVClient->ToggleOutput (1);
-#endif
+                #ifdef __USBINST__
+                    LOG (INFO) << BOLDBLUE << "Resetting the power to the CBC3 before attempting a stub sweep." << RESET ;
+                    cLVClient->ToggleOutput (0);
+                    cLVClient->ToggleOutput (1);
+                #endif
 
-<<<<<<< HEAD
                 StubSweep cSweep;
                 cSweep.Inherit (&cTool);
                 cDirectory += "StubSweep";
@@ -211,16 +210,7 @@ int main ( int argc, char** argv )
                 cSweep.InitResultFile ( "StubSweeps" );
                 cSweep.Initialize();
                 cSweep.SweepStubs (1);
-
-				cSweep.CloseResultFile();
-                cSweep.Destroy();
-=======
-                StubSweep cStubSweep;
-                cStubSweep.Inherit (&cTool);
-                cStubSweep.Initialize();
-                cStubSweep.SweepStubs (1);
->>>>>>> 1797657f535d74320f00e929f66da624cbf44ce0
-            }
+           }
 
             cTool.SaveResults();
             cTool.CloseResultFile();
