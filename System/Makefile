@@ -1,7 +1,7 @@
 Objs            = FileParser.o SystemController.o
 CC              = g++
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -fPIC 
+CCFlags         = -g -O1 -w -Wall -pthread -pedantic -fPIC 
 
 .PHONY: clean print
 

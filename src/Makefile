@@ -9,7 +9,7 @@ RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 LibraryDirs = $(BOOST_LIB) ../lib
 IncludeDirs     = $(BOOST_INCLUDE) ../ ../HWInterface ../System ../Utils ../tools
-ExternalObjects= -lpthread -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lboost_thread -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lPh2_Tools 
+ExternalObjects= -lboost_system -lboost_thread -lcactus_uhal_uhal -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lPh2_Utils -lPh2_Description -lPh2_Tracker -lPh2_Interface -lPh2_System -lPh2_Tools 
 
 ##################################################
 ## check if the Root has THttp
@@ -59,7 +59,7 @@ endif
 ifneq ("$(wildcard $(USBINSTDIR))","")
 	LibraryDirs += $(USBINSTLIB)
 	IncludeDirs += $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano $(USBINSTDIR)/Utils
-	ExternalObjects += -lboost_filesystem -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano -lPh2_Drivers -lPh2_USBUtils $(USBINSTFlag)
+	ExternalObjects +=  -lPh2_Drivers -lPh2_USBUtils -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano $(USBINSTFlag)
 	USBINSTLIBINSTALLED = yes
 else
 	USBINSTLIBINSTALLED = no

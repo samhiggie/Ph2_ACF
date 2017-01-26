@@ -25,7 +25,7 @@ endif
 ifneq ("$(wildcard $(USBINSTDIR))","")
 	LibraryDirs += $(USBINSTLIB) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils 
 	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
-	ExternalObjects +=  -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_Drivers $(USBINSTFlag) 
+	ExternalObjects +=  -pthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_Drivers $(USBINSTFlag) 
 	USBINSTLIBINSTALLED = yes
 else
 	USBINSTLIBINSTALLED = no
