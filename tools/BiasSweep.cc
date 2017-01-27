@@ -94,7 +94,7 @@ void BiasSweep::Initialize()
     LOG (INFO) << "\t\tStepSize    : " << fStepSize;
     LOG (INFO) << "\t\tPauseHMP    : " << fPause;
     LOG (INFO) << "\t\tHMPPort     : " << fHMPPort;
-    LOG (INFO) << "\t\tDMMPort     : " << fDMMPort;
+    LOG (INFO) << "\t\tKePort     : " << fKePort;
 
 #ifdef __USBINST__
     //create a controller
