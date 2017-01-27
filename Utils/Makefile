@@ -23,9 +23,9 @@ endif
 ## check if the Ph2_USBInstDriver drivers are installed
 ##################################################
 ifneq ("$(wildcard $(USBINSTDIR))","")
-	LibraryDirs += $(USBINSTLIB) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils 
+	LibraryDirs += $(BOOST_LIB) $(USBINSTLIB) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils 
 	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
-	ExternalObjects +=  -pthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_Drivers $(USBINSTFlag) 
+	ExternalObjects +=  -pthread -lboost_thread -lPh2_Drivers -lPh2_HMP4040 -lPh2_Ke2110 $(USBINSTFlag) 
 	USBINSTLIBINSTALLED = yes
 else
 	USBINSTLIBINSTALLED = no
@@ -37,7 +37,7 @@ LibraryPaths = $(LibraryDirs:%=-L%)
 .PHONY: clean print
 
 all: print $(Objs) $(ObjsExt).o ../HWDescription/Definition.h
-	$(CC) -std=c++11 -pthread -shared -L/usr/lib64/ -o libPh2_Utils.so $(Objs) $(ObjsExt).o
+	$(CC) -std=c++11 -pthread -shared $(LibraryPaths) $(IncludePaths) $(ExternalObjects) -L/usr/lib64/ -o libPh2_Utils.so $(Objs) $(ObjsExt).o
 	mv libPh2_Utils.so ../lib
 
 %.o: %.cc %.h 

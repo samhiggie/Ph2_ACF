@@ -83,8 +83,14 @@ int main ( int argc, char** argv )
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
+    else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
-    //else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
+#ifdef __USBINST__
+    //controller and clients should be in main
+    Ke2110Controller* cKeController = nullptr;
+    HMP4040Client* cLVClient = nullptr;
+#endif
+
 
     //Start server to communicate with HMP404 instrument via usbtmc and SCPI
     std::string cHostname = "localhost";
@@ -156,7 +162,7 @@ int main ( int argc, char** argv )
     if ( cPSStatus && cDMMStatus )  // Verify child process terminated without error.
     {
 #ifdef __USBINST__
-        HMP4040Client* cLVClient = new HMP4040Client (cHostname, cPowerSupplyZmqPortNumber);
+        cLVClient = new HMP4040Client (cHostname, cPowerSupplyZmqPortNumber);
         cLVClient->StartMonitoring();
         LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040" << RESET ;
         // make sure power supply is switched  on before doing anything else
@@ -194,6 +200,8 @@ int main ( int argc, char** argv )
                         }
                     }
                 }
+
+                LOG (DEBUG) << "I get here!";
             }
 
             if (cStubSweep)
@@ -213,6 +221,7 @@ int main ( int argc, char** argv )
             cTool.SaveResults();
             cTool.CloseResultFile();
             cTool.Destroy();
+            LOG (DEBUG) << "Get here!";
         }
 
         if (!cSweep && !cStubSweep)
@@ -251,17 +260,21 @@ int main ( int argc, char** argv )
             cSystemController.Destroy();
         }
 
+        LOG (DEBUG) << "But not here!";
+
 #ifdef __USBINST__
-        LOG (INFO) << YELLOW << "Toggling Output off again, stopping the monitoring and exiting the server!" << RESET;
+        LOG (INFO) << YELLOW << "Toggling HMP Output off again, stopping the monitoring and exiting the server!" << RESET;
         cLVClient->ToggleOutput (0);
         cLVClient->StopMonitoring();
         cLVClient->Quit();
-        delete cLVClient;
 
-        Ke2110Controller cKeController;
-        cKeController.InitializeClient ("localhost", cDMMZMQPort);
-        cKeController.SendQuit();
+
+        cKeController = new Ke2110Controller();
+        cKeController->InitializeClient ("localhost", cDMMZMQPort);
+        cKeController->SendQuit();
         LOG (INFO) << YELLOW << "Stopping Temperatue monitoring and exiting the server!" << RESET;
+
+
 #endif
     }
     else
@@ -269,7 +282,21 @@ int main ( int argc, char** argv )
 
     LOG (INFO) << "*** End of the System test ***" ;
 
-    if ( !batchMode ) cApp.Run();
+    if ( !batchMode )
+    {
+        cApp.Run();
+
+        if (cLVClient) delete cLVClient;
+
+        if (cKeController) delete cKeController;
+    }
+
+    else
+    {
+        if (cLVClient) delete cLVClient;
+
+        if (cKeController) delete cKeController;
+    }
 
     return 0;
 }

@@ -24,8 +24,8 @@ export BASE_DIR=$(pwd)
 #External Plugins
 export ANTENNADIR=$BASE_DIR/CMSPh2_AntennaDriver
 export AMC13DIR=/opt/cactus/include/amc13
-#export USBINSTDIR=$BASE_DIR/../Ph2_USBInstDriver
-export USBINSTDIR=~/Ph2_USBInstDriver
+export USBINSTDIR=$BASE_DIR/../Ph2_USBInstDriver
+#export USBINSTDIR=~/Ph2_USBInstDriver
 
 #ANTENNA
 export ANTENNALIB=$ANTENNADIR/lib

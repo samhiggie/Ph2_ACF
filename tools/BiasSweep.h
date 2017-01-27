@@ -99,7 +99,8 @@ class BiasSweep : public Tool
     BiasSweepData* fData;
 
     //settings
-    int fSweepTimeout, fKePort, fHMPPort;
+    int fSweepTimeout, fKePort, fHMPPort, fStepSize;
+    bool fPause;
 
 #ifdef __USBINST__
     Ke2110Controller* fKeController;

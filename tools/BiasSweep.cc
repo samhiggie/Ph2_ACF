@@ -69,6 +69,8 @@ BiasSweep::~BiasSweep()
 
     if (fKeController) delete fKeController;
 
+    if (fHMPClient) delete fHMPClient;
+
     if (fArdNanoController) delete fArdNanoController;
 
 #endif
@@ -83,6 +85,16 @@ void BiasSweep::Initialize()
     fKePort = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 8083;
     cSetting = fSettingsMap.find ( "HMPPort" );
     fHMPPort = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 8082;
+    cSetting = fSettingsMap.find ( "StepSize" );
+    fStepSize = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 1;
+    cSetting = fSettingsMap.find ( "PauseHMP" );
+    fPause = ( cSetting != std::end ( fSettingsMap ) ) ? static_cast<bool> (cSetting->second) : true;
+    LOG (INFO) << "\tSettings for BiasSweep parsed:";
+    LOG (INFO) << "\t\tSweepTimeout: " << fSweepTimeout;
+    LOG (INFO) << "\t\tStepSize    : " << fStepSize;
+    LOG (INFO) << "\t\tPauseHMP    : " << fPause;
+    LOG (INFO) << "\t\tHMPPort     : " << fHMPPort;
+    LOG (INFO) << "\t\tDMMPort     : " << fDMMPort;
 
 #ifdef __USBINST__
     //create a controller
@@ -90,17 +102,31 @@ void BiasSweep::Initialize()
     fKeController->InitializeClient ("localhost", fKePort);
     // first is async, second is multex??
     LOG (INFO) << BOLDRED << "Attempting to connect to arduino nano!" << RESET;
-    fArdNanoController = new ArdNanoController (false, false);
-    bool cArduinoReady = fArdNanoController->CheckArduinoState();
+    fArdNanoController = new ArdNanoController (true, false);
 
-    if (!cArduinoReady)
+    int cSeconds = 3;
+    LOG (INFO) << "Waiting for " << cSeconds << " seconds ...";
+
+    for (int i = 0; i < cSeconds; i++)
+        std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
+
+    int cCounter = 0;
+
+    while (!fArdNanoController->CheckArduinoState() )
     {
-        fKeController->SendQuit();
-        exit (1);
-        //here quit the KeControler too
+        if (cCounter++ > 5)
+        {
+            fKeController->SendQuit();
+            //here quit the KeControler too
+            fHMPClient = new HMP4040Client ("localhost", fHMPPort);
+            fHMPClient->Quit();
+
+            //if (fHMPClient) delete fHMPClient;
+
+            exit (1);
+        }
     }
 
-    fArdNanoController->ControlLED (1);
 #endif
 
     gROOT->ProcessLine ("#include <vector>");
@@ -218,7 +244,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         fKeController->Configure (cConfString, 0, 0.0001, true);
         fKeController->Autozero();
 
-        if (cCurrent)
+        if (cCurrent && fPause)
         {
             //initialize the HMP4040Client to connect to the server
             fHMPClient = new HMP4040Client ("localhost", fHMPPort);
@@ -267,11 +293,12 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 #ifdef __USBINST__
         //close the log file
         fKeController->closeLogFile();
+
         //tell any server to resume the monitoring
         LOG (INFO) << YELLOW << "Sending request to resume Temperatue monitoring" << RESET;
         fKeController->SendResume();
 
-        if (cCurrent)
+        if (cCurrent && fPause)
         {
             int cCounter = 0;
             LOG (INFO) << YELLOW << "Trying to resume monitoring with HMP4040!" << RESET;
@@ -287,7 +314,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
             LOG (INFO) << YELLOW << "HMP4040 Monitoring Resume request sent successfully!" << RESET;
 
-            delete fHMPClient;
+            //if (fHMPClient) delete fHMPClient;
         }
 
 #endif
@@ -361,7 +388,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
 
     uint16_t cRange = (__builtin_popcount (pAmuxValue->second.fBitMask) == 4) ? 16 : 255;
 
-    for (uint8_t cBias = 0; cBias < cRange; cBias++)
+    for (uint8_t cBias = 0; cBias < cRange; cBias += fStepSize)
     {
         //make map string, pair<string, uint8_t> and use the string in pair for the bias
         uint8_t cRegValue = (cBias) << pAmuxValue->second.fBitShift;
@@ -412,7 +439,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
 
         //update the canvas
         //update the canvas
-        if (cBias == 1) pGraph->Draw ("APL");
+        if (cBias == fStepSize) pGraph->Draw ("APL");
         else if (cBias % 10 == 0)
         {
             fSweepCanvas->Modified();
@@ -422,6 +449,8 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
         //now set the values for the ttree
         fData->fXValues.push_back (cBias);
         fData->fYValues.push_back (cReading);
+
+        if (static_cast<uint16_t> (cBias) + fStepSize > 255) break;
     }
 
     // set the bias back to the original value
@@ -460,7 +489,7 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
     fData->fInitialXValue = cOriginalThreshold;
     fData->fInitialYValue = cInitialReading;
 
-    for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold++)
+    for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold += fStepSize)
     {
         cThresholdVisitor.setThreshold (cThreshold);
         pCbc->accept (cThresholdVisitor);
@@ -477,7 +506,7 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
         if (cThreshold % 10 == 0) LOG (INFO) << "Set bias to " << cThreshold << " (0x" << std::hex << cThreshold << std::dec << ") DAC units and read " << cReading << " on the DMM";
 
         //update the canvas
-        if (cThreshold == 1) pGraph->Draw ("APL");
+        if (cThreshold == fStepSize) pGraph->Draw ("APL");
         else if (cThreshold % 10 == 0)
         {
             fSweepCanvas->Modified();
@@ -497,9 +526,9 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
 
 void BiasSweep::writeResults()
 {
-    //to clean up, just use Tool::SaveResults in here!
-    this->SaveResults();
     //save the canvas too!
     fResultFile->cd();
     fSweepCanvas->Write ( fSweepCanvas->GetName(), TObject::kOverwrite );
+    //to clean up, just use Tool::SaveResults in here!
+    this->SaveResults();
 }
