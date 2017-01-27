@@ -88,13 +88,22 @@ void BiasSweep::Initialize()
     cSetting = fSettingsMap.find ( "StepSize" );
     fStepSize = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 1;
     cSetting = fSettingsMap.find ( "PauseHMP" );
-    fPause = ( cSetting != std::end ( fSettingsMap ) ) ? static_cast<bool> (cSetting->second) : true;
+
+    if ( cSetting != std::end ( fSettingsMap ) )
+    {
+        if (cSetting->second == 1) fPause = true;
+
+        if (cSetting->second == 0) fPause = false;
+    }
+    else
+        fPause = true;
+
     LOG (INFO) << "\tSettings for BiasSweep parsed:";
     LOG (INFO) << "\t\tSweepTimeout: " << fSweepTimeout;
     LOG (INFO) << "\t\tStepSize    : " << fStepSize;
     LOG (INFO) << "\t\tPauseHMP    : " << fPause;
     LOG (INFO) << "\t\tHMPPort     : " << fHMPPort;
-    LOG (INFO) << "\t\tKePort     : " << fKePort;
+    LOG (INFO) << "\t\tKePort      : " << fKePort;
 
 #ifdef __USBINST__
     //create a controller
