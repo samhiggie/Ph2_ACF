@@ -3,8 +3,12 @@
 #include "argvparser.h"
 #include "Timer.h"
 #include "UsbUtilities.h"
+
 #include "BiasSweep.h"
 #include "StubSweep.h"
+#include "Calibration.h"
+#include "PedeNoise.h"
+
 #include "TROOT.h"
 #include "TApplication.h"
 #include <sys/wait.h>
@@ -41,16 +45,19 @@ int main ( int argc, char** argv )
     cmd.defineOption ( "output", "Output Directory . Default value: Results", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "output", "o" );
 
-    cmd.defineOption ( "sweep", "test the bias sweep tool", ArgvParser::NoOptionAttribute );
-    cmd.defineOptionAlternative ( "sweep", "s" );
+    //cmd.defineOption ( "sweep", "test the bias sweep tool", ArgvParser::NoOptionAttribute );
+    //cmd.defineOptionAlternative ( "sweep", "s" );
 
-    cmd.defineOption ( "stubs", "test the stub sweep tool", ArgvParser::NoOptionAttribute );
+    //cmd.defineOption ( "stubs", "test the stub sweep tool", ArgvParser::NoOptionAttribute );
 
     cmd.defineOption ( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "events", "e" );
 
     cmd.defineOption ( "vcth", "Threshold in VCth units (hex (including 0x) or decimal) . Default values from HW description .XML file", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "vcth", "v" );
+
+    cmd.defineOption ( "dqm", "Print every i-th event.  ", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "dqm", "d" );
 
     cmd.defineOption ( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "batch", "b" );
@@ -71,14 +78,16 @@ int main ( int argc, char** argv )
     uint16_t cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 200;
     std::string cDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/";
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
-    bool cSweep = ( cmd.foundOption ( "sweep" ) ) ? true : false;
-    bool cStubSweep = ( cmd.foundOption ( "stubs" ) ) ? true : false;
+    //bool cSweep = ( cmd.foundOption ( "sweep" ) ) ? true : false;
+    //bool cStubSweep = ( cmd.foundOption ( "stubs" ) ) ? true : false;
 
     std::string cResultfile;
+    std::string cResultfile = "Cbc3RadiationCycle";
+    cDirectory += "Cbc3RadiationCycle";
 
-    if (cSweep && !cStubSweep) cDirectory += "BiasSweep", cResultfile = "BiasSweep";
-    else if (cStubSweep && ! cSweep) cDirectory += "StubSweep", cResultfile = "StubSweep";
-    else if (cStubSweep && cSweep) cDirectory += "Cbc3Test", cResultfile = "Cbc3Test";
+    //if (cSweep && !cStubSweep) cDirectory += "BiasSweep", cResultfile = "BiasSweep";
+    //else if (cStubSweep && ! cSweep) cDirectory += "StubSweep", cResultfile = "StubSweep";
+    //else if (cStubSweep && cSweep) cDirectory += "Cbc3Test", cResultfile = "Cbc3Test";
 
     TApplication cApp ( "Root Application", &argc, argv );
 
@@ -171,96 +180,172 @@ int main ( int argc, char** argv )
 #endif
         std::stringstream outp;
 
-        if (cSweep || cStubSweep)
+        //if (cSweep || cStubSweep)
+        //{
+        Tool cTool;
+        cTool.InitializeHw ( cHWFile, outp );
+        cTool.InitializeSettings ( cHWFile, outp );
+        LOG (INFO) << outp.str();
+        outp.str ("");
+        cTool.CreateResultDirectory ( cDirectory );
+        cTool.InitResultFile (cResultfile);
+        cTool.StartHttpServer (8084);
+        cTool.ConfigureHw ();
+
+        //first, run offset tuning
+        Calibration cCalibration;
+        cCalibration.Inherit (&cTool);
+        cCalibration.Initialise (false);
+        cCalibration.FindVplus();
+        cCalibration.FindOffsets();
+        cCalibration.SaveResults();
+        cCalibration.dumpConfigFiles();
+
+        //now run a noise scan
+        PedeNoise cPedeNoise;
+        cPedeNoise.Inherit (&cTool);
+        cPedeNoise.ConfigureHw();
+        cPedeNoise.Initialise();
+        cPedeNoise.mesureNoise();
+        cPedeNoise.Validate();
+        cPedeNoise.SaveResults();
+
+        //sweep the stubs, just to be safe
+        StubSweep cSweep;
+        cSweep.Inherit (&cTool);
+        cSweep.Initialize();
+        cSweep.SweepStubs (1);
+
+        //then sweep a bunch of biases
+        BiasSweep cSweep;
+        cSweep.Inherit (&cTool);
+        cSweep.Initialize();
+
+        for (auto cBoard : cSweep.fBoardVector)
         {
-            Tool cTool;
-            cTool.InitializeHw ( cHWFile, outp );
-            cTool.InitializeSettings ( cHWFile, outp );
-            LOG (INFO) << outp.str();
-            outp.str ("");
-            cTool.CreateResultDirectory ( cDirectory );
-            cTool.InitResultFile (cResultfile);
-            cTool.StartHttpServer (8084);
-            cTool.ConfigureHw ();
-
-            if (cSweep)
+            for (auto cFe : cBoard->fModuleVector)
             {
-                BiasSweep cSweep;
-                cSweep.Inherit (&cTool);
-                cSweep.Initialize();
-
-                for (auto cBoard : cSweep.fBoardVector)
+                for (auto cCbc : cFe->fCbcVector)
                 {
-                    for (auto cFe : cBoard->fModuleVector)
+                    //first the sweepable Voltages because it it fast
+                    cSweep.SweepBias ("Vth", cCbc);
+                    cSweep.SweepBias ("CAL_Vcasc", cCbc);
+                    cSweep.SweepBias ("VPLUS1", cCbc);
+                    cSweep.SweepBias ("VPLUS2", cCbc);
+                    cSweep.SweepBias ("VBGbias", cCbc);
+
+                    //now the non sweepable voltages
+                    cSweep.SweepBias ("VBG_LDO", cCbc);
+                    cSweep.SweepBias ("Vpafb", cCbc);
+                    cSweep.SweepBias ("VDDA", cCbc);
+                    cSweep.SweepBias ("Nc50", cCbc);
+
+                    //now the currents
+                    cSweep.SweepBias ("Ipa", cCbc);
+                    cSweep.SweepBias ("Ipre2", cCbc);
+                    cSweep.SweepBias ("Ipre1", cCbc);
+                    cSweep.SweepBias ("CAL_I", cCbc);
+                    cSweep.SweepBias ("Ibias", cCbc);
+                    cSweep.SweepBias ("Ipsf", cCbc);
+                    cSweep.SweepBias ("Ipaos", cCbc);
+                    cSweep.SweepBias ("Icomp", cCbc);
+                    cSweep.SweepBias ("Ihyst", cCbc);
+                }
+            }
+        }
+
+
+        //now take some data and save the binary files
+        std::string cBinaryDataFileName = cDirectory + "/DAQ_data.raw";
+        cTool.addFileHandler (cBinaryDataFileName, 'w');
+        cTool.ConfigureHw();
+        BeBoard* pBoard = cTool.fBoardVector.at ( 0 );
+        uint32_t cN = 1;
+        uint32_t cNthAcq = 0;
+        uint32_t count = 0;
+
+        ThresholdVisitor cVisitor (cSystemController.fCbcInterface, 0);
+
+        if (cVcthset)
+        {
+            cVisitor.setThreshold (cVcth);
+            cSystemController.accept (cVisitor);
+        }
+
+        cTool.fBeBoardInterface->Start ( pBoard );
+
+        while ( cN <= pEventsperVcth )
+        {
+            uint32_t cPacketSize = cSystemController.ReadData ( pBoard );
+
+            if ( cN + cPacketSize >= pEventsperVcth )
+                cTool.fBeBoardInterface->Stop ( pBoard );
+
+            const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
+
+            for ( auto& ev : events )
+            {
+                count++;
+                cN++;
+
+                if ( cmd.foundOption ( "dqm" ) )
+                {
+                    if ( count % atoi ( cmd.optionValue ( "dqm" ).c_str() ) == 0 )
                     {
-                        for (auto cCbc : cFe->fCbcVector)
-                        {
-                            cSweep.SweepBias ("Ipa", cCbc);
-                            cSweep.SweepBias ("Vth", cCbc);
-                        }
+                        LOG (INFO) << ">>> Event #" << count ;
+                        outp.str ("");
+                        outp << *ev << std::endl;
+                        LOG (INFO) << outp.str();
                     }
                 }
 
-                LOG (DEBUG) << "I get here!";
-            }
-
-            if (cStubSweep)
-            {
-#ifdef __USBINST__
-                LOG (INFO) << BOLDBLUE << "Resetting the power to the CBC3 before attempting a stub sweep." << RESET ;
-                cLVClient->ToggleOutput (0);
-                cLVClient->ToggleOutput (1);
-#endif
-
-                StubSweep cSweep;
-                cSweep.Inherit (&cTool);
-                cSweep.Initialize();
-                cSweep.SweepStubs (1);
-            }
-
-            cTool.SaveResults();
-            cTool.CloseResultFile();
-            cTool.Destroy();
-            LOG (DEBUG) << "Get here!";
-        }
-
-        if (!cSweep && !cStubSweep)
-        {
-            SystemController cSystemController;
-            cSystemController.InitializeHw ( cHWFile, outp );
-            cSystemController.InitializeSettings ( cHWFile, outp );
-            LOG (INFO) << outp.str();
-            outp.str ("");
-            // from here
-            BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
-            uint32_t cN = 1;
-            uint32_t cNthAcq = 0;
-            const std::vector<Event*>* pEvents ;
-
-            ThresholdVisitor cVisitor (cSystemController.fCbcInterface, 0);
-
-            if (cVcthset)
-            {
-                cVisitor.setThreshold (cVcth);
-                cSystemController.accept (cVisitor);
-            }
-
-            cSystemController.ReadNEvents (pBoard, pEventsperVcth);
-            pEvents = &cSystemController.GetEvents ( pBoard );
-
-            for ( auto& ev : *pEvents )
-            {
-                LOG (INFO) << ">>> Event #" << cN++ << " Threshold: " << cVcth;
-                outp.str ("");
-                outp << *ev;
-                LOG (INFO) << outp.str();
+                if ( count % 100  == 0 )
+                    LOG (INFO) << ">>> Recorded Event #" << count ;
             }
 
             cNthAcq++;
-            cSystemController.Destroy();
         }
 
-        LOG (DEBUG) << "But not here!";
+        cTool.SaveResults();
+        cTool.CloseResultFile();
+        cTool.Destroy();
+        //}
+
+        //if (!cSweep && !cStubSweep)
+        //{
+        //SystemController cSystemController;
+        //cSystemController.InitializeHw ( cHWFile, outp );
+        //cSystemController.InitializeSettings ( cHWFile, outp );
+        //LOG (INFO) << outp.str();
+        //outp.str ("");
+        //// from here
+        //BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
+        //uint32_t cN = 1;
+        //uint32_t cNthAcq = 0;
+        //const std::vector<Event*>* pEvents ;
+
+        //ThresholdVisitor cVisitor (cSystemController.fCbcInterface, 0);
+
+        //if (cVcthset)
+        //{
+        //cVisitor.setThreshold (cVcth);
+        //cSystemController.accept (cVisitor);
+        //}
+
+        //cSystemController.ReadNEvents (pBoard, pEventsperVcth);
+        //pEvents = &cSystemController.GetEvents ( pBoard );
+
+        //for ( auto& ev : *pEvents )
+        //{
+        //LOG (INFO) << ">>> Event #" << cN++ << " Threshold: " << cVcth;
+        //outp.str ("");
+        //outp << *ev;
+        //LOG (INFO) << outp.str();
+        //}
+
+        //cNthAcq++;
+        //cSystemController.Destroy();
+        //}
 
 #ifdef __USBINST__
         LOG (INFO) << YELLOW << "Toggling HMP Output off again, stopping the monitoring and exiting the server!" << RESET;
