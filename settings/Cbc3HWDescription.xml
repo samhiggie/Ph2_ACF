@@ -16,7 +16,7 @@
         <!--<CBC Id="0" configfile="CBC3_default.txt" />-->
         <!--experimental-->
         <CBC Id="0" configfile="CBC3_default.txt" >
-            <Settings threshold="500" latency="199"/>
+            <Settings threshold="610" latency="199"/>
             <TestPulse enable="0" polarity="0" amplitude="0x0C" channelgroup="0" delay="0" groundothers="1"/>
             <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
             <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" dll="4"/>

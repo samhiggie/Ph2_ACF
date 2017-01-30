@@ -34,7 +34,7 @@ void BiasSweep::InitializeAmuxMap()
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_I"),  std::make_tuple ("CALIbias", 0x03, 0xFF, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ibias"),  std::make_tuple ("Ibias", 0x04, 0x00, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vth"),    std::make_tuple ("", 0x05, 0xFF, 0) );
-        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VBGbias"), std::make_tuple ("BandgapFuse", 0x06, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VBGbias"), std::make_tuple ("BandgapFuse", 0x06, 0x3F, 0) );//read this on the VDDA line?
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VBG_LDO"), std::make_tuple ("", 0x07, 0x00, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vpafb"),  std::make_tuple ("", 0x08, 0x00, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Nc50"),   std::make_tuple ("", 0x09, 0x00, 0) );
@@ -111,30 +111,24 @@ void BiasSweep::Initialize()
     fKeController->InitializeClient ("localhost", fKePort);
     // first is async, second is multex??
     LOG (INFO) << BOLDRED << "Attempting to connect to arduino nano!" << RESET;
-    fArdNanoController = new ArdNanoController (true, false);
+    //fArdNanoController = new ArdNanoController (true, false);
 
-    int cSeconds = 3;
-    LOG (INFO) << "Waiting for " << cSeconds << " seconds ...";
+    //int cCounter = 0;
 
-    for (int i = 0; i < cSeconds; i++)
-        std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
+    //while (!fArdNanoController->CheckArduinoState() )
+    //{
+    //if (cCounter++ > 5)
+    //{
+    //fKeController->SendQuit();
+    ////here quit the KeControler too
+    //fHMPClient = new HMP4040Client ("localhost", fHMPPort);
+    //fHMPClient->Quit();
 
-    int cCounter = 0;
+    ////if (fHMPClient) delete fHMPClient;
 
-    while (!fArdNanoController->CheckArduinoState() )
-    {
-        if (cCounter++ > 5)
-        {
-            fKeController->SendQuit();
-            //here quit the KeControler too
-            fHMPClient = new HMP4040Client ("localhost", fHMPPort);
-            fHMPClient->Quit();
-
-            //if (fHMPClient) delete fHMPClient;
-
-            exit (1);
-        }
-    }
+    //exit (1);
+    //}
+    //}
 
 #endif
 
@@ -201,8 +195,12 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     }
     else
     {
+        LOG (INFO) << BOLDBLUE << "Measuring bias: " << BOLDRED << pBias << RESET;
         //boolean variable to find out if current or not
         bool cCurrent = (pBias.find ("I") != std::string::npos) ? true : false;
+
+        if (pBias == "CAL_I") cCurrent = false;
+
         //since I want to have a simple class to just sweep a bias on 1 CBC, I create the Graph inside the method
         //just create objects, sweep and fill and forget about them again!
 
@@ -337,15 +335,15 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
 {
     // first read original value in Amux register and save for later
     uint8_t cOriginalAmuxValue = fCbcInterface->ReadCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux");
-    LOG (INFO) << "Analog mux set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") originally (the Test pulse bits are not changed!)";
+    LOG (INFO) << "Analog mux originally set to: " << std::hex << (cOriginalAmuxValue & 0x1F) << std::dec << " (full register is 0x" << std::hex << +cOriginalAmuxValue << std::dec << ") (the Test pulse bits are not changed!)";
 
     //ok, now set the Analogmux to the value required to see the bias there
-    if (pAmuxValue->first == "VDDA")
+    if (pAmuxValue->first == "VDDA" )
     {
         LOG (INFO) << "Bias setting is " << pAmuxValue->first << " -this is not routed via the Amux, thus leaving settings at original value!";
         //need to switch the Arduino nano controller to VDDA
 #ifdef __USBINST__
-        fArdNanoController->ControlRelay (1);
+        //fArdNanoController->ControlRelay (1);
         LOG (INFO) << "Setting Arduino Nano relay to " << pAmuxValue->first;
 #endif
         return cOriginalAmuxValue;
@@ -353,7 +351,7 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
     else
     {
 #ifdef __USBINST__
-        fArdNanoController->ControlRelay (0);
+        //fArdNanoController->ControlRelay (0);
         LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
 #endif
 
@@ -373,7 +371,7 @@ void BiasSweep::resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s
     //fArdNanoController->ControlRelay (0);
     LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
 #endif
-    LOG (INFO) << "Reseting Amux settings back to original value of 0x" << std::hex << +pAmuxValue;
+    LOG (INFO) << "Reseting Amux settings back to original value of 0x" << std::hex << +pAmuxValue << std::dec;
     fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", pAmuxValue);
 
     for ( unsigned int i = 0 ; i < (int) (pSettlingTime_s / 100e-3) ; i++)
@@ -389,19 +387,35 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
     //take one initial reading on the dmm and save as the inital value in the tree
     float cInitialReading = 0;
 #ifdef __USBINST__
-    fKeController->Measure();
-    cInitialReading = fKeController->GetLatestReadValue();
+
+    while (cInitialReading == 0)
+    {
+        fKeController->Measure();
+        cInitialReading = fKeController->GetLatestReadValue();
+    }
+
 #endif
     fData->fInitialXValue = cOriginalBiasValue;
     fData->fInitialYValue = cInitialReading;
 
-    uint16_t cRange = (__builtin_popcount (pAmuxValue->second.fBitMask) == 4) ? 16 : 255;
+    uint8_t cBits = __builtin_popcount (pAmuxValue->second.fBitMask);
+    uint16_t cRange;
+
+    if (cBits == 4) cRange = 16;
+    //VBG_bias
+    else if (cBits == 6) cRange = 64;
+    else cRange = 255;
+
 
     for (uint8_t cBias = 0; cBias < cRange; cBias += fStepSize)
     {
         //make map string, pair<string, uint8_t> and use the string in pair for the bias
         uint8_t cRegValue = (cBias) << pAmuxValue->second.fBitShift;
-        //LOG (DEBUG) << +cBias << " " << std::hex <<  +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
+
+        //VBG_bias
+        if (cBits == 6) cRegValue |= (0x2 << 6);
+
+        //LOG (DEBUG) << +cBias << " " << std::hex << +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
         fCbcInterface->WriteCbcReg (pCbc, pAmuxValue->second.fRegName, cRegValue );
 
         std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
@@ -410,8 +424,11 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
 
         if (!pCurrent)
         {
-            fKeController->Measure();
-            cReading = fKeController->GetLatestReadValue();
+            while (cReading == 0)
+            {
+                fKeController->Measure();
+                cReading = fKeController->GetLatestReadValue();
+            }
 
             if (cBias % 10 == 0) LOG (INFO) << "Set bias to " << +cBias << " (0x" << std::hex << +cBias << std::dec << ") DAC units and read " << cReading << " V on the DMM";
         }
@@ -472,8 +489,13 @@ void BiasSweep::measureSingle (std::map<std::string, AmuxSetting>::iterator pAmu
     LOG (INFO) << "Not an Amux setting that requires a sweep: " << pAmuxValue->first;
     double cReading = 0;
 #ifdef __USBINST__
-    fKeController->Measure();
-    cReading = fKeController->GetLatestReadValue();
+
+    while (cReading == 0)
+    {
+        fKeController->Measure();
+        cReading = fKeController->GetLatestReadValue();
+    }
+
     LOG (INFO) << "Measured bias " << pAmuxValue->first << " to be " << cReading;
 #endif
     //now set the values for the ttree
@@ -505,8 +527,13 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
         //std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
         double cReading = 0;
 #ifdef __USBINST__
-        fKeController->Measure();
-        cReading = fKeController->GetLatestReadValue();
+
+        while (cReading == 0)
+        {
+            fKeController->Measure();
+            cReading = fKeController->GetLatestReadValue();
+        }
+
 #endif
 
         //now I have the value I set and the reading from the DMM

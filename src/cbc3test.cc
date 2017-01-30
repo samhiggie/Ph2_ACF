@@ -73,7 +73,7 @@ int main ( int argc, char** argv )
     // now query the parsing results
     std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/Cbc3HWDescription.xml";
     //bool cConfigure = ( cmd.foundOption ( "configure" ) ) ? true : false;
-    uint32_t pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10;
+    uint32_t pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
     bool cVcthset = cmd.foundOption ("vcth");
     uint16_t cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 200;
     std::string cDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/";
@@ -81,7 +81,7 @@ int main ( int argc, char** argv )
     //bool cSweep = ( cmd.foundOption ( "sweep" ) ) ? true : false;
     //bool cStubSweep = ( cmd.foundOption ( "stubs" ) ) ? true : false;
 
-    std::string cResultfile;
+    //std::string cResultfile;
     std::string cResultfile = "Cbc3RadiationCycle";
     cDirectory += "Cbc3RadiationCycle";
 
@@ -119,7 +119,7 @@ int main ( int argc, char** argv )
     {
         // launch HMP4040 server
         LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor currents on the HMP4040" << RESET ;
-        launch_HMPServer ( cPowerSupplyHWFile, cHostname, cPowerSupplyPortsInfo, cPowerSupplyInterval );
+        launch_HMPServer ( cPowerSupplyHWFile, cHostname, cPowerSupplyPortsInfo, cPowerSupplyInterval, cPowerSupplyOutputFile );
         exit (0);
     }
     else  // Main (parent) process after fork succeeds
@@ -150,7 +150,7 @@ int main ( int argc, char** argv )
     {
         //launch DMM server
         LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor Temperature with the Ke2110" << RESET ;
-        launch_DMMServer ( cHostname, cDMMPortsInfo, cDMMInterval );
+        launch_DMMServer ( cHostname, cDMMPortsInfo, cDMMInterval, cDMMOutputFile );
         exit (0);
     }
     else //Main (parent) process after fork succeeds
@@ -192,68 +192,67 @@ int main ( int argc, char** argv )
         cTool.StartHttpServer (8084);
         cTool.ConfigureHw ();
 
-        //first, run offset tuning
-        Calibration cCalibration;
-        cCalibration.Inherit (&cTool);
-        cCalibration.Initialise (false);
-        cCalibration.FindVplus();
-        cCalibration.FindOffsets();
-        cCalibration.SaveResults();
-        cCalibration.dumpConfigFiles();
-
-        //now run a noise scan
-        PedeNoise cPedeNoise;
-        cPedeNoise.Inherit (&cTool);
-        cPedeNoise.ConfigureHw();
-        cPedeNoise.Initialise();
-        cPedeNoise.mesureNoise();
-        cPedeNoise.Validate();
-        cPedeNoise.SaveResults();
-
-        //sweep the stubs, just to be safe
-        StubSweep cSweep;
-        cSweep.Inherit (&cTool);
-        cSweep.Initialize();
-        cSweep.SweepStubs (1);
-
         //then sweep a bunch of biases
-        BiasSweep cSweep;
-        cSweep.Inherit (&cTool);
-        cSweep.Initialize();
+        BiasSweep cBiasSweep;
+        cBiasSweep.Inherit (&cTool);
+        cBiasSweep.Initialize();
 
-        for (auto cBoard : cSweep.fBoardVector)
+        for (auto cBoard : cBiasSweep.fBoardVector)
         {
             for (auto cFe : cBoard->fModuleVector)
             {
                 for (auto cCbc : cFe->fCbcVector)
                 {
                     //first the sweepable Voltages because it it fast
-                    cSweep.SweepBias ("Vth", cCbc);
-                    cSweep.SweepBias ("CAL_Vcasc", cCbc);
-                    cSweep.SweepBias ("VPLUS1", cCbc);
-                    cSweep.SweepBias ("VPLUS2", cCbc);
-                    cSweep.SweepBias ("VBGbias", cCbc);
+                    cBiasSweep.SweepBias ("Vth", cCbc);
+                    cBiasSweep.SweepBias ("CAL_Vcasc", cCbc);
+                    cBiasSweep.SweepBias ("VPLUS1", cCbc);
+                    cBiasSweep.SweepBias ("VPLUS2", cCbc);
+                    cBiasSweep.SweepBias ("VBGbias", cCbc);
 
                     //now the non sweepable voltages
-                    cSweep.SweepBias ("VBG_LDO", cCbc);
-                    cSweep.SweepBias ("Vpafb", cCbc);
-                    cSweep.SweepBias ("VDDA", cCbc);
-                    cSweep.SweepBias ("Nc50", cCbc);
+                    cBiasSweep.SweepBias ("VBG_LDO", cCbc);
+                    cBiasSweep.SweepBias ("Vpafb", cCbc);
+                    cBiasSweep.SweepBias ("VDDA", cCbc);
+                    cBiasSweep.SweepBias ("Nc50", cCbc);
 
                     //now the currents
-                    cSweep.SweepBias ("Ipa", cCbc);
-                    cSweep.SweepBias ("Ipre2", cCbc);
-                    cSweep.SweepBias ("Ipre1", cCbc);
-                    cSweep.SweepBias ("CAL_I", cCbc);
-                    cSweep.SweepBias ("Ibias", cCbc);
-                    cSweep.SweepBias ("Ipsf", cCbc);
-                    cSweep.SweepBias ("Ipaos", cCbc);
-                    cSweep.SweepBias ("Icomp", cCbc);
-                    cSweep.SweepBias ("Ihyst", cCbc);
+                    //cBiasSweep.SweepBias ("Ipa", cCbc);
+                    //cBiasSweep.SweepBias ("Ipre2", cCbc);
+                    //cBiasSweep.SweepBias ("Ipre1", cCbc);
+                    //cBiasSweep.SweepBias ("CAL_I", cCbc);
+                    cBiasSweep.SweepBias ("Ibias", cCbc);
+                    //cBiasSweep.SweepBias ("Ipsf", cCbc);
+                    //cBiasSweep.SweepBias ("Ipaos", cCbc);
+                    //cBiasSweep.SweepBias ("Icomp", cCbc);
+                    //cBiasSweep.SweepBias ("Ihyst", cCbc);
                 }
             }
         }
 
+        //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
+        //StubSweep cStubSweep;
+        //cStubSweep.Inherit (&cTool);
+        //cStubSweep.Initialize();
+        //cStubSweep.SweepStubs (1);
+
+        ////first, run offset tuning
+        //Calibration cCalibration;
+        //cCalibration.Inherit (&cTool);
+        //cCalibration.Initialise (false);
+        //cCalibration.FindVplus();
+        //cCalibration.FindOffsets();
+        //cCalibration.SaveResults();
+        //cCalibration.dumpConfigFiles();
+
+        ////now run a noise scan
+        //PedeNoise cPedeNoise;
+        //cPedeNoise.Inherit (&cTool);
+        //cPedeNoise.ConfigureHw();
+        //cPedeNoise.Initialise();
+        //cPedeNoise.measureNoise();
+        //cPedeNoise.Validate();
+        //cPedeNoise.SaveResults();
 
         //now take some data and save the binary files
         std::string cBinaryDataFileName = cDirectory + "/DAQ_data.raw";
@@ -264,19 +263,19 @@ int main ( int argc, char** argv )
         uint32_t cNthAcq = 0;
         uint32_t count = 0;
 
-        ThresholdVisitor cVisitor (cSystemController.fCbcInterface, 0);
+        ThresholdVisitor cVisitor (cTool.fCbcInterface, 0);
 
         if (cVcthset)
         {
             cVisitor.setThreshold (cVcth);
-            cSystemController.accept (cVisitor);
+            cTool.accept (cVisitor);
         }
 
         cTool.fBeBoardInterface->Start ( pBoard );
 
         while ( cN <= pEventsperVcth )
         {
-            uint32_t cPacketSize = cSystemController.ReadData ( pBoard );
+            uint32_t cPacketSize = cTool.ReadData ( pBoard );
 
             if ( cN + cPacketSize >= pEventsperVcth )
                 cTool.fBeBoardInterface->Stop ( pBoard );
@@ -299,7 +298,7 @@ int main ( int argc, char** argv )
                     }
                 }
 
-                if ( count % 100  == 0 )
+                if ( count % 1000  == 0 )
                     LOG (INFO) << ">>> Recorded Event #" << count ;
             }
 
