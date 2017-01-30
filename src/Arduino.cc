@@ -2,6 +2,7 @@
 #include "Utilities.h"
 #include "argvparser.h"
 #include "ArdNanoController.h"
+#include "StubSweep.h"
 
 using namespace Ph2_UsbInst;
 using namespace CommandLineProcessing;
@@ -49,7 +50,7 @@ int main (int argc, char** argv)
     bool cRelay = ( cmd.foundOption ( "relay" ) ) ? true : false;
     std::string cSerialCommand = ( cmd.foundOption ( "send" ) ) ? cmd.optionValue ( "send" ) : "";
 
-    bool cAsync = true;
+    bool cAsync = false;
     bool cMultex = false; 
     ArdNanoController* cController = new ArdNanoController(cAsync,cMultex);
     bool cState = cController->CheckArduinoState();

@@ -62,14 +62,12 @@ void StubSweep::Initialize()
                 // stub sweep
                 TProfile* cStubSweepHist = new TProfile ( cName, Form ( "Stub Sweep FE%d CBC%d ; Test Pulse Channel [1-254]; Stub Address", cFeId, cCbcId ), 254, -0.5, 254.5 );
                 cStubSweepHist->SetMarkerStyle ( 20 );
-                cStubSweepHist->SetStats (0);
-                cStubSweepHist->SetMarkerStyle (4);
-                cStubSweepHist->SetMarkerSize (0.5);
-                cStubSweepHist->SetLineColor (kBlue);
-                cStubSweepHist->SetMarkerColor (kBlue);
-                cStubSweepHist->GetYaxis()->SetTitleOffset (1.3);
-                cStubSweepHist->GetYaxis()->SetRangeUser (0, 255);
-                cStubSweepHist->GetXaxis()->SetRangeUser (0, 255);
+                cStubSweepHist->SetStats(0);
+                cStubSweepHist->SetMarkerStyle(4); cStubSweepHist->SetMarkerSize(0.5); 
+                cStubSweepHist->SetLineColor(kBlue); cStubSweepHist->SetMarkerColor(kBlue);
+                cStubSweepHist->GetYaxis()->SetTitleOffset(1.3);
+                cStubSweepHist->GetYaxis()->SetRangeUser(0,255);
+                cStubSweepHist->GetXaxis()->SetRangeUser(0,255);
 
                 bookHistogram ( cCbc, "StubAddresses", cStubSweepHist );
 
@@ -94,9 +92,6 @@ void StubSweep::Initialize()
 
                 // mask all channels on the CBC here
                 maskAllChannels ( cCbc );
-
-                // TODO
-                // add enable test pulse here
             }
         }
 
@@ -106,8 +101,18 @@ void StubSweep::Initialize()
     updateHists ( "StubBends" );
 
 }
-
-void StubSweep::SweepStubs (uint32_t pNEvents )
+void StubSweep::configureTestPulse(Cbc* pCbc, uint8_t pPulseState)
+{
+    // get value of TestPulse control register 
+    uint8_t cOrigValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux" );
+    uint8_t cRegValue = cOrigValue |  (pPulseState << 6);
+    
+    fCbcInterface->WriteCbcReg ( pCbc , "MiscTestPulseCtrl&AnalogMux",  cRegValue  ); 
+    cRegValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux" );
+    //LOG (DEBUG) << "Test pulse register 0x" << std::hex << +cOrigValue << " - " << std::bitset<8> (cOrigValue)  << " - now set to: 0x" << std::hex << +cRegValue << " - " << std::bitset<8> (cRegValue) ;
+}
+    
+void StubSweep::SweepStubs(uint32_t pNEvents )
 {
     std::stringstream outp;
 
@@ -121,10 +126,12 @@ void StubSweep::SweepStubs (uint32_t pNEvents )
             {
                 uint32_t cCbcId = cCbc->getCbcId();
 
-                for ( uint8_t  cTestGroup = 0 ; cTestGroup < 8 ; cTestGroup++)
+                // before you do anything else make sure that the test pulse is enabled
+                configureTestPulse(cCbc,1);
+                for( uint8_t  cTestGroup = 0 ; cTestGroup < 8 ; cTestGroup++)
                 {
-                    //re-run the phase finding at least at the end of each group
-                    // without this it looks like I loose sync with the FC7
+                    //re-run the phase finding at least at the end of each group 
+                    // without this it looks like I loose sync with the FC7 
                     // [ get un-correlated stubs showing up in the CBC event]
                     fBeBoardInterface->FindPhase (cBoard);
 
@@ -235,6 +242,8 @@ void StubSweep::SweepStubs (uint32_t pNEvents )
                         updateHists ( "StubAddresses" );
                     }
                 }
+                // and before you leave make sure that the test pulse is disabled
+                configureTestPulse(cCbc,0);
             }
         }
     }
