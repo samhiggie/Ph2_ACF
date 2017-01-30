@@ -173,9 +173,7 @@ void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::s
 {
 #if __ZMQ__
     std::string baseDirectory  = return_InstDriverHomeDirectory() + "/Ph2_USBInstDriver";
-    LOG (DEBUG) << "Querying server - " << baseDirectory;
-
-
+    //LOG (DEBUG) << "Querying server - " << baseDirectory;
     InstrMaps cServerList = { { "HMP4040", "lvSupervisor"},  {"Ke2110", "DMMSupervisor"} };
     InstrMaps cLaunchScriptsList = { { "HMP4040", "start_HMP4040.sh"},  {"Ke2110", "start_Ke2110.sh"} };
 
