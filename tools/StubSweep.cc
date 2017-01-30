@@ -90,9 +90,6 @@ void StubSweep::Initialize()
 
                 // mask all channels on the CBC here
                 maskAllChannels( cCbc );
-
-                // TODO 
-                // add enable test pulse here
             }
         }
 
@@ -101,7 +98,17 @@ void StubSweep::Initialize()
     updateHists ( "StubBends" );
 
 }
-
+void StubSweep::configureTestPulse(Cbc* pCbc, uint8_t pPulseState)
+{
+    // get value of TestPulse control register 
+    uint8_t cOrigValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux" );
+    uint8_t cRegValue = cOrigValue |  (pPulseState << 6);
+    
+    fCbcInterface->WriteCbcReg ( pCbc , "MiscTestPulseCtrl&AnalogMux",  cRegValue  ); 
+    cRegValue = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux" );
+    //LOG (DEBUG) << "Test pulse register 0x" << std::hex << +cOrigValue << " - " << std::bitset<8> (cOrigValue)  << " - now set to: 0x" << std::hex << +cRegValue << " - " << std::bitset<8> (cRegValue) ;
+}
+    
 void StubSweep::SweepStubs(uint32_t pNEvents )
 {
     std::stringstream outp;
@@ -115,6 +122,8 @@ void StubSweep::SweepStubs(uint32_t pNEvents )
             {
                 uint32_t cCbcId = cCbc->getCbcId();
                
+                // before you do anything else make sure that the test pulse is enabled
+                configureTestPulse(cCbc,1);
                 for( uint8_t  cTestGroup = 0 ; cTestGroup < 8 ; cTestGroup++)
                 {
                     //re-run the phase finding at least at the end of each group 
@@ -221,6 +230,8 @@ void StubSweep::SweepStubs(uint32_t pNEvents )
                         updateHists ( "StubAddresses" );
                     }
                 }
+                // and before you leave make sure that the test pulse is disabled
+                configureTestPulse(cCbc,0);
             }
         }
     }

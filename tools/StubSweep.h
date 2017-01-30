@@ -55,6 +55,9 @@ class StubSweep : public Tool
     void fillStubBendHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair, uint8_t pStubBend );
     void fillStubSweepHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair, uint8_t pStubPosition );
 
+    // method to configure test pulse on the CBC 
+    void configureTestPulse(Cbc* pCbc, uint8_t pPulseState);
+
     // method to mask all channels on the CBC
     void maskAllChannels (Cbc* pCbc);
     // method to return the position of the first stub in a CBC event

@@ -69,7 +69,7 @@ IncludePaths = $(IncludeDirs:%=-I%)
 LibraryPaths = $(LibraryDirs:%=-L%) 
 
 
-binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester cbc3test arduinotest #cbc3irrad
+binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester cbc3test arduinotest cbc3irrad
 binariesNoRoot=systemtest datatest fpgaconfig configure
 
 .PHONY: clean $(binaries)
