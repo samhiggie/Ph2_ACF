@@ -11,7 +11,68 @@ Support :                      mail to : Sarah.Storey@cern.ch
 
 #include "../Utils/UsbUtilities.h"
 
-void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s  )
+bool InitializeMonitoring(std::string pHostname ,  std::string pInstrumentName , PortsInfo& pPortsInfo,  int pMonitorInterval , std::string pLogFile )
+{
+    
+    InstrPorts cHttpInstrPorts = { { "HMP4040", 8080 },  {"Ke2110", 8082} };
+    InstrPorts cZmqInstrPorts = { { "HMP4040", 8081 },  {"Ke2110", 8083} };
+
+    uint8_t cValue = 0; 
+    auto cHttpSearch = cHttpInstrPorts.find (pInstrumentName);
+    bool cStatus = false;  
+    if (cHttpSearch != cHttpInstrPorts.end() )
+    {
+        int cHttpPortNumber = cHttpSearch->second; 
+        auto cZmqSearch = cZmqInstrPorts.find (pInstrumentName);
+        if (cZmqSearch != cZmqInstrPorts.end() )
+        {
+            int cZmqPortNumber = cZmqSearch->second; 
+            pPortsInfo = std::pair<int, int> (cZmqPortNumber, cHttpPortNumber);
+            pid_t cPid;  // the child process that the execution will soon run inside of.
+            
+            cPid = fork();
+            if (cPid < 0) // fork failed
+                 exit (1);
+            else if (cPid == 0) // fork succeeded
+            {
+                // launch server
+                if( pInstrumentName.compare("HMP4040")==0)
+                {
+                    LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor currents on the HMP4040" << RESET ;
+                    if( launch_HMPServer ( "HMP4040.xml", pHostname, pPortsInfo, pMonitorInterval , pLogFile ) == 1 )  exit (0);
+                }
+                else if( pInstrumentName.compare("Ke2110")==0)
+                {
+                    LOG (INFO) << BOLDBLUE << "Trying to launch server to monitor Temperature with the Ke2110" << RESET ;
+                    if( launch_DMMServer ( pHostname, pPortsInfo, pMonitorInterval , pLogFile) == 1 ) ; exit (0);
+                }
+            }
+            else  // Main (parent) process after fork succeeds
+            {
+                int returnStatus = -1 ;
+                waitpid (cPid, &returnStatus, 0);
+
+                if (returnStatus == 0 ) cStatus = true; //child process terminated without error
+                else if (returnStatus == 1)
+                {
+                    if( pInstrumentName.compare("HMP4040")==0)
+                    {
+                        LOG (INFO) << "The PS child process terminated with an error!." ;
+                    }
+                    else if( pInstrumentName.compare("Ke2110")==0)
+                    {
+                        LOG (INFO) << "The DMM child process terminated with an error!." ;
+                    }
+                    exit (1);
+                }
+            }
+
+            
+        }
+    }
+    return cStatus;
+}
+void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s , std::string pLogFile )
 {
     char buffer[256];
     std::string currentDir = getcwd (buffer, sizeof (buffer) );
@@ -31,11 +92,12 @@ void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile
     // set-up environment for Ph2_USB_InstDriver
     starterScript << "tmux send-keys -t $SESSION_NAME \". ./setup.sh\" Enter" << std::endl;
     // launch HMP4040 server
-    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"lvSupervisor -f %s -r %d -p %d -i %d -S\" Enter", pConfigFile.c_str(), pPortsInfo.first, pPortsInfo.second, pMeasureInterval_s ) ;
+    if( pLogFile.empty() ) pLogFile = "./Current_log.txt";
+    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"lvSupervisor -f %s -r %d -p %d -i %d -S -o %s\" Enter", pConfigFile.c_str(), pPortsInfo.first, pPortsInfo.second, pMeasureInterval_s  , pLogFile.c_str() ) ;
     starterScript << buffer << std::endl;
     starterScript.close();
 }
-void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s  )
+void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s  , std::string pLogFile )
 {
     char buffer[256];
     std::string currentDir = getcwd (buffer, sizeof (buffer) );
@@ -55,7 +117,8 @@ void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile,
     // set-up environment for Ph2_USB_InstDriver
     starterScript << "tmux send-keys -t $SESSION_NAME \". ./setup.sh\" Enter" << std::endl;
     // TODO - change to configure DMM supervisor
-    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"dmmSupervisor -r %d -p %d -i %d -s\" Enter", pPortsInfo.first, pPortsInfo.second, pMeasureInterval_s ) ;
+    if( pLogFile.empty() ) pLogFile = "./Temperature_log.txt";
+    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"dmmSupervisor -r %d -p %d -s -o %s\" Enter", pPortsInfo.first, pPortsInfo.second , pLogFile.c_str() ) ;
     starterScript << buffer << std::endl;
     starterScript.close();
 }
@@ -106,11 +169,14 @@ PortsInfo parse_ServerInfo ( std::string pInfo )
     return std::pair<int, int> (cZmqPortNumber, cHttpPortNumber);
 }
 
-void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s)
+void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s, std::string pLogFile )
 {
 #if __ZMQ__
     std::string baseDirectory  = return_InstDriverHomeDirectory() + "/Ph2_USBInstDriver";
-    InstrMaps cServerList = { { "HMP4040", "lvSupervisor"},  {"Ke2110", "dmmSupervisor"} };
+    LOG (DEBUG) << "Querying server - " << baseDirectory;
+
+
+    InstrMaps cServerList = { { "HMP4040", "lvSupervisor"},  {"Ke2110", "DMMSupervisor"} };
     InstrMaps cLaunchScriptsList = { { "HMP4040", "start_HMP4040.sh"},  {"Ke2110", "start_Ke2110.sh"} };
 
     int cZmqPortNumber, cHttpPortNumber ;
@@ -129,6 +195,7 @@ void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::s
             std::cout << BOLDBLUE <<  "Port information from the " << cLockFileName << " lock file:\n\t" << cInfo << RESET << std::endl ;
 
             pPortsInfo = parse_ServerInfo ( cInfo );
+            delete cLock;
         }
         else
         {
@@ -139,24 +206,23 @@ void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::s
                 std::cout << BOLDBLUE <<  pInstrumentName << " server not running .... nothing to query." << RESET << std::endl ;
 
                 if ( cLaunchScript->first == "HMP4040")
-                    HMP4040server_tmuxSession (cLaunchScript->second, pConfigFile, pHostname, pPortsInfo,  pMeasureInterval_s  );
+                    HMP4040server_tmuxSession (cLaunchScript->second, pConfigFile, pHostname, pPortsInfo,  pMeasureInterval_s  , pLogFile );
                 else if ( cLaunchScript->first == "Ke2110")
-                    Ke2110server_tmuxSession (cLaunchScript->second, pConfigFile, pHostname, pPortsInfo,  pMeasureInterval_s  );
+                    Ke2110server_tmuxSession (cLaunchScript->second, pConfigFile, pHostname, pPortsInfo,  pMeasureInterval_s  , pLogFile );
 
                 char cmd[120];
                 sprintf (cmd, ". %s/%s",  baseDirectory.c_str(), (cLaunchScript->second).c_str() );
-                std::cout << BOLDBLUE << "Launching server using set-up script : " << cLaunchScript->second << " ." << RESET << std::endl ;
+                LOG (INFO) << BOLDBLUE << "Launching server using set-up script : " << cLaunchScript->second << " ." << RESET ;
+                delete cLock;
                 system (cmd);
             }
         }
-
-        delete cLock;
     }
 
 #endif
 }
 
-int  launch_HMPServer ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s )
+int  launch_HMPServer ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s , std::string pLogFile )
 {
 #if __ZMQ__
     char buffer[256];
@@ -175,17 +241,16 @@ int  launch_HMPServer ( std::string pConfigFile, std::string pHostname, PortsInf
         std::string cInstrtName = std::string (cDoc.child ("InstrumentDescription").first_child() .name() );
 
         //Now server stuff  - is it open? on which ports?
-        query_Server ( cHWfile, cInstrtName, "localhost", pPortsInfo, pMeasureInterval_s );
+        query_Server ( cHWfile, cInstrtName, "localhost", pPortsInfo, pMeasureInterval_s , pLogFile );
         return 1;
     }
     else
         std::cout << BOLDRED << "Configuration file not found." << RESET << std::endl;
-
 #endif
     return 0 ;
 }
 
-int  launch_DMMServer ( std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s )
+int  launch_DMMServer ( std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s , std::string pLogFile)
 {
 #if __ZMQ__
     char buffer[256];
@@ -195,7 +260,7 @@ int  launch_DMMServer ( std::string pHostname, PortsInfo& pPortsInfo, int pMeasu
     std::string cHWfile = "";
     std::string cInstrtName = "Ke2110";
 
-    query_Server ( cHWfile, cInstrtName, "localhost", pPortsInfo, pMeasureInterval_s );
+    query_Server ( cHWfile, cInstrtName, "localhost", pPortsInfo, pMeasureInterval_s , pLogFile);
 #endif
     return 0 ;
 }
