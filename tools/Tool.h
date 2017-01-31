@@ -42,9 +42,13 @@ class Tool : public SystemController
 #ifdef __HTTP__
     THttpServer* fHttpServer;
 #endif
+
     Tool()
     {
         fResultFile = nullptr;
+#ifdef __HTTP__
+        fHttpServer = nullptr;
+#endif
     }
 
     ~Tool()
@@ -145,7 +149,9 @@ class Tool : public SystemController
     void ProcessRequests()
     {
 #ifdef __HTTP__
-        fHttpServer->ProcessRequests();
+
+        if (fHttpServer) fHttpServer->ProcessRequests();
+
 #endif
     }
     void dumpConfigFiles();

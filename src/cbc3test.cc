@@ -112,6 +112,7 @@ int main ( int argc, char** argv )
     pid_t cHMPPid;  // the child process that the execution will soon run inside of.
     cHMPPid = fork();
     bool cPSStatus = false;
+    //bool cPSStatus = true;
 
     if (cHMPPid < 0) // fork failed
         exit (1);
@@ -143,6 +144,7 @@ int main ( int argc, char** argv )
     pid_t cDMMPid;
     cDMMPid = fork();
     bool cDMMStatus = false;
+    //bool cDMMStatus = true;
 
     if (cDMMPid < 0) //fork failed
         exit (1);
@@ -166,7 +168,6 @@ int main ( int argc, char** argv )
         }
     }
 
-    std::this_thread::sleep_for (std::chrono::seconds (3) );
 
     if ( cPSStatus && cDMMStatus )  // Verify child process terminated without error.
     {
@@ -189,37 +190,31 @@ int main ( int argc, char** argv )
         outp.str ("");
         cTool.CreateResultDirectory ( cDirectory );
         cTool.InitResultFile (cResultfile);
-        cTool.StartHttpServer (8084);
+        //cTool.StartHttpServer (8084);
         cTool.ConfigureHw ();
 
         Timer t;
         t.start();
         //then sweep a bunch of biases
-        BiasSweep cBiasSweep;
-        cBiasSweep.Inherit (&cTool);
-        cBiasSweep.Initialize();
-        std::vector<std::string> cBiases{"Vth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
+        //BiasSweep cBiasSweep;
+        //cBiasSweep.Inherit (&cTool);
+        //cBiasSweep.Initialize();
+        //std::vector<std::string> cBiases{"Vth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
 
-        for (auto cBoard : cBiasSweep.fBoardVector)
-        {
-            for (auto cFe : cBoard->fModuleVector)
-            {
-                for (auto cCbc : cFe->fCbcVector)
-                {
-                    for (auto cBias : cBiases)
-                        cBiasSweep.SweepBias (cBias, cCbc);
-                }
-            }
-        }
+        //for (auto cBoard : cBiasSweep.fBoardVector)
+        //{
+        //for (auto cFe : cBoard->fModuleVector)
+        //{
+        //for (auto cCbc : cFe->fCbcVector)
+        //{
+        //for (auto cBias : cBiases)
+        //cBiasSweep.SweepBias (cBias, cCbc);
+        //}
+        //}
+        //}
 
         t.stop();
         t.show ( "Time to sweep all biases" );
-
-        //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
-        StubSweep cStubSweep;
-        cStubSweep.Inherit (&cTool);
-        cStubSweep.Initialize();
-        cStubSweep.SweepStubs (1);
 
         ////first, run offset tuning
         Calibration cCalibration;
@@ -238,6 +233,12 @@ int main ( int argc, char** argv )
         cPedeNoise.measureNoise();
         //cPedeNoise.Validate();
         cPedeNoise.SaveResults();
+
+        //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
+        StubSweep cStubSweep;
+        cStubSweep.Inherit (&cTool);
+        cStubSweep.Initialize();
+        cStubSweep.SweepStubs (1);
 
         //now take some data and save the binary files
         std::string cBinaryDataFileName = cDirectory + "/DAQ_data.raw";

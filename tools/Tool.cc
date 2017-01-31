@@ -34,7 +34,9 @@ void Tool::bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject )
 
     cCbcHistMap->second[pName] = pObject;
 #ifdef __HTTP__
-    fHttpServer->Register ("/", pObject);
+
+    if (fHttpServer) fHttpServer->Register ("/", pObject);
+
 #endif
 }
 
@@ -59,7 +61,9 @@ void Tool::bookHistogram ( Module* pModule, std::string pName, TObject* pObject 
 
     cModuleHistMap->second[pName] = pObject;
 #ifdef __HTTP__
-    fHttpServer->Register ("/", pObject);
+
+    if (fHttpServer) fHttpServer->Register ("/", pObject);
+
 #endif
 }
 
@@ -192,6 +196,10 @@ void Tool::InitResultFile ( const std::string& pFilename )
 void Tool::StartHttpServer ( const int pPort, bool pReadonly )
 {
 #ifdef __HTTP__
+
+    if (fHttpServer)
+        delete fHttpServer;
+
     fHttpServer = new THttpServer ( Form ( "http:%d", pPort ) );
     fHttpServer->SetReadOnly ( pReadonly );
     //fHttpServer->SetTimer ( pRefreshTime, kTRUE );

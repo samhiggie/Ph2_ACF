@@ -210,9 +210,6 @@ void PedeNoise::measureNoise()
                 cPedeHist->DrawCopy();
                 fNoiseCanvas->Update();
                 fPedestalCanvas->Update();
-#ifdef __HTTP__
-                fHttpServer->ProcessRequests();
-#endif
                 // here add the CBC histos to the module histos
                 cTmpHist->Add ( cNoiseHist );
 
@@ -232,9 +229,6 @@ void PedeNoise::measureNoise()
             fFeSummaryCanvas->cd ( fNFe + cFeId + 1 );
             cTmpProfile->DrawCopy();
             fFeSummaryCanvas->Update();
-#ifdef __HTTP__
-            fHttpServer->ProcessRequests();
-#endif
         }
     }
 
@@ -442,12 +436,7 @@ void PedeNoise::processSCurvesNoise ( TString pParameter, uint16_t pValue, bool 
         }
 
         if ( pDraw )
-        {
             fNoiseCanvas->Update();
-#ifdef __HTTP__
-            fHttpServer->ProcessRequests();
-#endif
-        }
     }
 
 }

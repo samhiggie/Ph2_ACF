@@ -684,9 +684,6 @@ void Calibration::updateHists ( std::string pHistname )
         else LOG (INFO) << "Error, could not find Histogram with name " << pHistname ;
     }
 
-#ifdef __HTTP__
-    //fHttpServer->ProcessRequests();
-#endif
 }
 
 void Calibration::setRegValues()

@@ -301,7 +301,7 @@ void PulseShape::setDelayAndTesGroup ( uint32_t pDelay )
     for (auto& cBoard : fBoardVector)
     {
         //potentially have to reset the IC FW commissioning cycle state machine?
-        fBeBoardInterface->WriteBoardReg (cBoard, getDelAfterTPString (cBoard->getBoardType() ) , cCoarseDelay);
+        fBeBoardInterface->WriteBoardReg (cBoard, getDelAfterTPString (cBoard->getBoardType() ), cCoarseDelay);
     }
 
     CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", to_reg ( cFineDelay, fTestGroup ) );
@@ -528,9 +528,6 @@ void PulseShape::updateHists ( std::string pHistName, bool pFinal )
         cCanvas.second->Update();
     }
 
-    //#ifdef __HTTP__
-    //fHttpServer->ProcessRequests();
-    //#endif
 }
 
 double pulseshape ( double* x, double* par )

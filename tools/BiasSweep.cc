@@ -331,6 +331,10 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         cTmpTree->Fill();
         this->writeResults();
         LOG (INFO) << "Bias Sweep finished, results saved!";
+
+        //if (cGraph) delete cGraph;
+
+        //if (cTmpTree) delete cTmpTree;
     }
 }
 
@@ -421,7 +425,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
         //LOG (DEBUG) << +cBias << " " << std::hex << +cRegValue << std::dec << " " << std::bitset<8> (cRegValue);
         fCbcInterface->WriteCbcReg (pCbc, pAmuxValue->second.fRegName, cRegValue );
 
-        std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
+        //std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
         double cReading = 0;
 #ifdef __USBINST__
 

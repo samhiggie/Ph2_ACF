@@ -11,8 +11,9 @@ export BOOST_LIB=/opt/cactus/lib
 export BOOST_INCLUDE=/opt/cactus/include
 
 #ROOT
-#source /usr/local/bin/thisroot.sh
+source /usr/local/bin/thisroot.sh
 export ROOTLIB=/usr/local/lib/root
+#export ROOTSYS=/usr/local/lib/root
 
 
 #ZMQ
