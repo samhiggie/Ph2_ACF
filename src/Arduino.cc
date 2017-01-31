@@ -51,40 +51,41 @@ int main (int argc, char** argv)
     std::string cSerialCommand = ( cmd.foundOption ( "send" ) ) ? cmd.optionValue ( "send" ) : "";
 
     bool cAsync = false;
-    bool cMultex = false; 
-    ArdNanoController* cController = new ArdNanoController(cAsync,cMultex);
+    bool cMultex = false;
+    ArdNanoController* cController = new ArdNanoController (cAsync, cMultex);
     bool cState = cController->CheckArduinoState();
     //mypause(); // here so I can start sniffer...
-    
-    
-    if( cState) 
+
+
+    if ( cState)
     {
-        if( !cSerialCommand.empty() )
-        {
-            cController->Write(cSerialCommand.c_str());
-        }
+        if ( !cSerialCommand.empty() )
+            cController->Write (cSerialCommand.c_str() );
+
         if ( cBlink )
         {
             //mypause(); // here so I can start sniffer...
             for ( unsigned int i = 0 ; i < atoi ( cmd.optionValue ("blink").c_str() )  ; i++ )
             {
-                cController->ControlLED(1); //cController->Write("");
+                cController->ControlLED (1); //cController->Write("");
                 std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
-                cController->ControlLED(0); //cController->Write("");
+                cController->ControlLED (0); //cController->Write("");
                 std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
             }
         }
-        if( cRelay )
+
+        if ( cRelay )
         {
-            uint8_t cRelayState = ( cmd.optionValue ( "relay" ) == "on" || cmd.optionValue ( "relay" ) == "ON" || cmd.optionValue ( "relay" ) == "On") ? 1 : 0;   
+            uint8_t cRelayState = ( cmd.optionValue ( "relay" ) == "on" || cmd.optionValue ( "relay" ) == "ON" || cmd.optionValue ( "relay" ) == "On") ? 1 : 0;
             LOG (INFO) << "Controling relay connected to Arduino nano .... switching it : " << BOLDGREEN << cmd.optionValue ( "relay" ) <<  RESET << " !!";
-            cController->ControlRelay(cRelayState);
-            
+            cController->ControlRelay (cRelayState);
+
             std::string cReply = ( cController->GetRelayState() == 1 ) ? "On" : "Off" ;
             LOG (INFO) << "Relay now.... " << cReply;
-          
+
         }
 
-    }  
-    delete cController;
+    }
+
+    if (cController) delete cController;
 }

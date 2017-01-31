@@ -32,23 +32,25 @@ namespace Ph2_System {
         {
             if (fFileHandler->file_open() ) fFileHandler->closeFile();
 
-            delete fFileHandler;
+            if (fFileHandler) delete fFileHandler;
         }
 
-        delete fBeBoardInterface;
-        delete fCbcInterface;
+        if (fBeBoardInterface) delete fBeBoardInterface;
+
+        if (fCbcInterface) delete fCbcInterface;
+
         fBeBoardFWMap.clear();
         fSettingsMap.clear();
 
         for ( auto& el : fBoardVector )
-            delete el;
+            if (el) delete el;
 
         fBoardVector.clear();
 
         if (fData) delete fData;
     }
 
-    void SystemController::addFileHandler ( const std::string& pFilename , char pOption )
+    void SystemController::addFileHandler ( const std::string& pFilename, char pOption )
     {
         //if the opion is read, create a handler object and use it to read the
         //file in the method below!

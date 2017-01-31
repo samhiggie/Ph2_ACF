@@ -202,7 +202,8 @@ void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::s
             std::cout << BOLDBLUE <<  "Port information from the " << cLockFileName << " lock file:\n\t" << cInfo << RESET << std::endl ;
 
             pPortsInfo = parse_ServerInfo ( cInfo );
-            delete cLock;
+
+            if (cLock) delete cLock;
         }
         else
         {
@@ -220,7 +221,9 @@ void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::s
                 char cmd[120];
                 sprintf (cmd, ". %s/%s",  baseDirectory.c_str(), (cLaunchScript->second).c_str() );
                 LOG (INFO) << BOLDBLUE << "Launching server using set-up script : " << cLaunchScript->second << " ." << RESET ;
-                delete cLock;
+
+                if (cLock) delete cLock;
+
                 system (cmd);
             }
         }

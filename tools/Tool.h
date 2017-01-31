@@ -56,14 +56,16 @@ class Tool : public SystemController
         LOG (INFO) << BOLDRED << "Destroying memory objects" << RESET;
         SystemController::Destroy();
 #ifdef __HTTP__
-        delete fHttpServer;
+
+        if (fHttpServer) delete fHttpServer;
+
 #endif
 
         if (fResultFile != nullptr)
         {
             if (fResultFile->IsOpen() ) fResultFile->Close();
 
-            delete fResultFile;
+            if (fResultFile) delete fResultFile;
         }
     }
 

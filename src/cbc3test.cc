@@ -192,10 +192,13 @@ int main ( int argc, char** argv )
         cTool.StartHttpServer (8084);
         cTool.ConfigureHw ();
 
+        Timer t;
+        t.start();
         //then sweep a bunch of biases
         BiasSweep cBiasSweep;
         cBiasSweep.Inherit (&cTool);
         cBiasSweep.Initialize();
+        std::vector<std::string> cBiases{"Vth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
 
         for (auto cBoard : cBiasSweep.fBoardVector)
         {
@@ -203,56 +206,38 @@ int main ( int argc, char** argv )
             {
                 for (auto cCbc : cFe->fCbcVector)
                 {
-                    //first the sweepable Voltages because it it fast
-                    cBiasSweep.SweepBias ("Vth", cCbc);
-                    cBiasSweep.SweepBias ("CAL_Vcasc", cCbc);
-                    cBiasSweep.SweepBias ("VPLUS1", cCbc);
-                    cBiasSweep.SweepBias ("VPLUS2", cCbc);
-                    cBiasSweep.SweepBias ("VBGbias", cCbc);
-
-                    //now the non sweepable voltages
-                    cBiasSweep.SweepBias ("VBG_LDO", cCbc);
-                    cBiasSweep.SweepBias ("Vpafb", cCbc);
-                    cBiasSweep.SweepBias ("VDDA", cCbc);
-                    cBiasSweep.SweepBias ("Nc50", cCbc);
-
-                    //now the currents
-                    //cBiasSweep.SweepBias ("Ipa", cCbc);
-                    //cBiasSweep.SweepBias ("Ipre2", cCbc);
-                    //cBiasSweep.SweepBias ("Ipre1", cCbc);
-                    //cBiasSweep.SweepBias ("CAL_I", cCbc);
-                    cBiasSweep.SweepBias ("Ibias", cCbc);
-                    //cBiasSweep.SweepBias ("Ipsf", cCbc);
-                    //cBiasSweep.SweepBias ("Ipaos", cCbc);
-                    //cBiasSweep.SweepBias ("Icomp", cCbc);
-                    //cBiasSweep.SweepBias ("Ihyst", cCbc);
+                    for (auto cBias : cBiases)
+                        cBiasSweep.SweepBias (cBias, cCbc);
                 }
             }
         }
 
+        t.stop();
+        t.show ( "Time to sweep all biases" );
+
         //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
-        //StubSweep cStubSweep;
-        //cStubSweep.Inherit (&cTool);
-        //cStubSweep.Initialize();
-        //cStubSweep.SweepStubs (1);
+        StubSweep cStubSweep;
+        cStubSweep.Inherit (&cTool);
+        cStubSweep.Initialize();
+        cStubSweep.SweepStubs (1);
 
         ////first, run offset tuning
-        //Calibration cCalibration;
-        //cCalibration.Inherit (&cTool);
-        //cCalibration.Initialise (false);
-        //cCalibration.FindVplus();
-        //cCalibration.FindOffsets();
-        //cCalibration.SaveResults();
-        //cCalibration.dumpConfigFiles();
+        Calibration cCalibration;
+        cCalibration.Inherit (&cTool);
+        cCalibration.Initialise (false);
+        cCalibration.FindVplus();
+        cCalibration.FindOffsets();
+        cCalibration.SaveResults();
+        cCalibration.dumpConfigFiles();
 
         ////now run a noise scan
-        //PedeNoise cPedeNoise;
-        //cPedeNoise.Inherit (&cTool);
-        //cPedeNoise.ConfigureHw();
-        //cPedeNoise.Initialise();
-        //cPedeNoise.measureNoise();
+        PedeNoise cPedeNoise;
+        cPedeNoise.Inherit (&cTool);
+        cPedeNoise.ConfigureHw();
+        cPedeNoise.Initialise();
+        cPedeNoise.measureNoise();
         //cPedeNoise.Validate();
-        //cPedeNoise.SaveResults();
+        cPedeNoise.SaveResults();
 
         //now take some data and save the binary files
         std::string cBinaryDataFileName = cDirectory + "/DAQ_data.raw";

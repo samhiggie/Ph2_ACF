@@ -48,7 +48,7 @@ namespace Ph2_HwDescription {
         ~Module()
         {
             for ( auto& pCbc : fCbcVector )
-                delete pCbc;
+                if (pCbc) delete pCbc;
 
             fCbcVector.clear();
         };

@@ -195,7 +195,10 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
     }
     else
     {
+        LOG (INFO) << std::endl;
+        LOG (INFO) << BOLDBLUE << "*****************************************" << RESET;
         LOG (INFO) << BOLDBLUE << "Measuring bias: " << BOLDRED << pBias << RESET;
+        LOG (INFO) << BOLDBLUE << "*****************************************" << RESET;
         //boolean variable to find out if current or not
         bool cCurrent = (pBias.find ("I") != std::string::npos) ? true : false;
 
@@ -275,7 +278,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
         //ok, now set the Analogmux to the value required to see the bias there
         //in order to do this, read the current value and store it for later
-        uint8_t cOriginalAmuxValue = this->configureAmux (cAmuxValue, pCbc, 1);
+        uint8_t cOriginalAmuxValue = this->configureAmux (cAmuxValue, pCbc, fSweepTimeout);
 
         if (cAmuxValue->first == "Vth")
             this->sweepVth (cGraph, pCbc);
@@ -295,7 +298,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         }
 
         //to clean up, save everything
-        this->resetAmux (cOriginalAmuxValue, pCbc, 1);
+        this->resetAmux (cOriginalAmuxValue, pCbc, fSweepTimeout);
 
 #ifdef __USBINST__
         //close the log file
@@ -343,7 +346,7 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
         LOG (INFO) << "Bias setting is " << pAmuxValue->first << " -this is not routed via the Amux, thus leaving settings at original value!";
         //need to switch the Arduino nano controller to VDDA
 #ifdef __USBINST__
-        fArdNanoController->ControlRelay (0);
+        fArdNanoController->ControlRelay (1);
         LOG (INFO) << "Setting Arduino Nano relay to " << pAmuxValue->first;
 #endif
         return cOriginalAmuxValue;
@@ -351,7 +354,7 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
     else
     {
 #ifdef __USBINST__
-        fArdNanoController->ControlRelay (1);
+        fArdNanoController->ControlRelay (0);
         LOG (INFO) << "Setting Arduino Nano relay to Amux (default)";
 #endif
 
@@ -359,8 +362,8 @@ uint8_t BiasSweep::configureAmux (std::map<std::string, AmuxSetting>::iterator p
         fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", cNewValue);
         LOG (INFO) << "Analog MUX setting modified to connect " <<  pAmuxValue->first << " (setting to 0x" << std::hex << +cNewValue << std::dec << ")";
 
-        for ( unsigned int i = 0 ; i < (int) (pSettlingTime_s / 100e-3) ; i++)
-            std::this_thread::sleep_for (std::chrono::milliseconds ( 100 ) );
+        for ( unsigned int i = 0 ; i < pSettlingTime_s; i++)
+            std::this_thread::sleep_for (std::chrono::milliseconds ( 1000 ) );
 
         return cOriginalAmuxValue;
     }
@@ -374,8 +377,8 @@ void BiasSweep::resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s
     LOG (INFO) << "Reseting Amux settings back to original value of 0x" << std::hex << +pAmuxValue << std::dec;
     fCbcInterface->WriteCbcReg (pCbc, "MiscTestPulseCtrl&AnalogMux", pAmuxValue);
 
-    for ( unsigned int i = 0 ; i < (int) (pSettlingTime_s / 100e-3) ; i++)
-        std::this_thread::sleep_for (std::chrono::milliseconds ( 100 ) );
+    for ( unsigned int i = 0 ; i < pSettlingTime_s; i++)
+        std::this_thread::sleep_for (std::chrono::milliseconds ( 1000 ) );
 }
 
 void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxValue, TGraph* pGraph, Cbc* pCbc, bool pCurrent)

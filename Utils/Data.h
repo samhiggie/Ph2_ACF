@@ -106,7 +106,7 @@ namespace Ph2_HwInterface {
         ~Data()
         {
             for ( auto pevt : fEventList )
-                delete pevt;
+                if (pevt) delete pevt;
 
             fEventList.clear();
         }

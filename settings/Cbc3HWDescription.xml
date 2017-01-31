@@ -16,7 +16,7 @@
         <!--<CBC Id="0" configfile="CBC3_default.txt" />-->
         <!--experimental-->
         <CBC Id="0" configfile="CBC3_default.txt" >
-            <Settings threshold="610" latency="199"/>
+            <Settings threshold="500" latency="199"/>
             <TestPulse enable="0" polarity="0" amplitude="0x0C" channelgroup="0" delay="0" groundothers="1"/>
             <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
             <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" dll="4"/>
@@ -48,7 +48,7 @@
                 <Register name="enable">
                     <Register name="fast_reset"> 0 </Register>
                     <Register name="trigger"> 1 </Register>
-					<Register name="test_pulse"> 0 </Register>
+					<Register name="test_pulse"> 1 </Register>
                     <Register name="orbit_reset"> 0 </Register>
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
@@ -81,8 +81,8 @@
     <!--<Setting name="TestPulsePotentiometer">0x00</Setting>-->
 
     <!--BiasSweep-->
-    <Setting name="SweepTimeout">0</Setting>
-    <Setting name="StepSize">1</Setting>
+    <Setting name="SweepTimeout">2</Setting>
+    <Setting name="StepSize">2</Setting>
     <Setting name="KePort">8083</Setting>
     <Setting name="HMPPort">8081</Setting>
     <Setting name="PauseHMP">1</Setting>

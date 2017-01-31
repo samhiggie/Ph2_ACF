@@ -63,7 +63,7 @@ namespace Ph2_HwDescription {
         ~BeBoard()
         {
             for ( auto& pModule : fModuleVector )
-                delete pModule;
+                if (pModule) delete pModule;
 
             fModuleVector.clear();
         }
