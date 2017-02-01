@@ -493,7 +493,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
         //update the canvas
         //update the canvas
         if (cBias == fStepSize) pGraph->Draw ("APL");
-        else if (cBias % 10 == 0)
+        else if (cBias % 10 == 0 || static_cast<uint16_t> (cBias) + fStepSize > 255)
         {
             fSweepCanvas->Modified();
             fSweepCanvas->Update();
@@ -503,7 +503,8 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
         fData->fXValues.push_back (cBias);
         fData->fYValues.push_back (cReading);
 
-        if (static_cast<uint16_t> (cBias) + fStepSize > 255) break;
+        if (static_cast<uint16_t> (cBias) + fStepSize > 255)
+            break;
     }
 
     // set the bias back to the original value
@@ -583,7 +584,7 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
 
         //update the canvas
         if (cThreshold == fStepSize) pGraph->Draw ("APL");
-        else if (cThreshold % 10 == 0)
+        else if (cThreshold % 10 == 0 || cThreshold == 1022)
         {
             fSweepCanvas->Modified();
             fSweepCanvas->Update();

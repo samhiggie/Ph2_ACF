@@ -83,7 +83,7 @@ int main ( int argc, char** argv )
 
     //std::string cResultfile;
     std::string cResultfile = "Cbc3RadiationCycle";
-    cDirectory += "Cbc3RadiationCycle_";
+    cDirectory += "Cbc3RadiationCycle";
     cDirectory += currentDateTime();
 
     //if (cSweep && !cStubSweep) cDirectory += "BiasSweep", cResultfile = "BiasSweep";

@@ -79,7 +79,7 @@ bool InitializeMonitoring (std::string pHostname,  std::string pInstrumentName, 
 }
 void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s, std::string pLogFile )
 {
-    char buffer[256];
+    char buffer[512];
     std::string currentDir = getcwd (buffer, sizeof (buffer) );
     std::string baseDirectory  = return_InstDriverHomeDirectory() + "/Ph2_USBInstDriver";
 
@@ -106,7 +106,7 @@ void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile
 }
 void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s, std::string pLogFile )
 {
-    char buffer[256];
+    char buffer[512];
     std::string currentDir = getcwd (buffer, sizeof (buffer) );
     std::string baseDirectory  = return_InstDriverHomeDirectory() + "/Ph2_USBInstDriver";
 
@@ -127,7 +127,7 @@ void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile,
     // TODO - change to configure DMM supervisor
     if ( pLogFile.empty() ) pLogFile = "./Temperature_log.txt";
 
-    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"dmmSupervisor -r %d -p %d -s -o %s\" Enter", pPortsInfo.first, pPortsInfo.second, pLogFile.c_str() ) ;
+    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"dmmSupervisor -r %d -p %d -o %s\" Enter", pPortsInfo.first, pPortsInfo.second, pLogFile.c_str() ) ;
     starterScript << buffer << std::endl;
     starterScript.close();
 }
