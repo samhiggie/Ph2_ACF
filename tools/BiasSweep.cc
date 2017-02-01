@@ -316,9 +316,12 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         //close the log file
         fKeController->closeLogFile();
 
-        //tell any server to resume the monitoring
-        LOG (INFO) << YELLOW << "Sending request to resume Temperatue monitoring" << RESET;
-        fKeController->SendResume();
+        //tell any server to resume the monitoring except for when it is a current, because then the sweep already sent resume
+        if (!cCurrent)
+        {
+            LOG (INFO) << YELLOW << "Sending request to resume Temperatue monitoring" << RESET;
+            fKeController->SendResume();
+        }
 
         if (cCurrent && fPause)
         {
@@ -418,6 +421,8 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
     }
 
     LOG (INFO) << GREEN << "Initial Reading on AMUX with original bias value " << +cOriginalBiasValue << " : " << cInitialReading << RESET;
+
+    if (pCurrent) fKeController->SendResume();
 
 #endif
     fData->fInitialXValue = cOriginalBiasValue;
