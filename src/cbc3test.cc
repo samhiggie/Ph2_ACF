@@ -83,7 +83,8 @@ int main ( int argc, char** argv )
 
     //std::string cResultfile;
     std::string cResultfile = "Cbc3RadiationCycle";
-    cDirectory += "Cbc3RadiationCycle";
+    cDirectory += "Cbc3RadiationCycle_";
+    cDirectory += currentDateTime();
 
     //if (cSweep && !cStubSweep) cDirectory += "BiasSweep", cResultfile = "BiasSweep";
     //else if (cStubSweep && ! cSweep) cDirectory += "StubSweep", cResultfile = "StubSweep";
@@ -178,6 +179,8 @@ int main ( int argc, char** argv )
         // make sure power supply is switched  on before doing anything else
         LOG (INFO) << BOLDBLUE << "Switching on the power supply" << RESET ;
         cLVClient->ToggleOutput (1);
+        cKeController = new Ke2110Controller();
+        cKeController->InitializeClient (cHostname, cDMMZMQPort);
 #endif
         std::stringstream outp;
 
@@ -188,7 +191,7 @@ int main ( int argc, char** argv )
         cTool.InitializeSettings ( cHWFile, outp );
         LOG (INFO) << outp.str();
         outp.str ("");
-        cTool.CreateResultDirectory ( cDirectory );
+        cTool.CreateResultDirectory ( cDirectory, false, false );
         cTool.InitResultFile (cResultfile);
         //cTool.StartHttpServer (8084);
         cTool.ConfigureHw ();
@@ -196,22 +199,22 @@ int main ( int argc, char** argv )
         Timer t;
         t.start();
         //then sweep a bunch of biases
-        //BiasSweep cBiasSweep;
-        //cBiasSweep.Inherit (&cTool);
-        //cBiasSweep.Initialize();
-        //std::vector<std::string> cBiases{"Vth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
+        BiasSweep cBiasSweep (cLVClient, cKeController);
+        cBiasSweep.Inherit (&cTool);
+        cBiasSweep.Initialize();
+        std::vector<std::string> cBiases{"Vth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
 
-        //for (auto cBoard : cBiasSweep.fBoardVector)
-        //{
-        //for (auto cFe : cBoard->fModuleVector)
-        //{
-        //for (auto cCbc : cFe->fCbcVector)
-        //{
-        //for (auto cBias : cBiases)
-        //cBiasSweep.SweepBias (cBias, cCbc);
-        //}
-        //}
-        //}
+        for (auto cBoard : cBiasSweep.fBoardVector)
+        {
+            for (auto cFe : cBoard->fModuleVector)
+            {
+                for (auto cCbc : cFe->fCbcVector)
+                {
+                    for (auto cBias : cBiases)
+                        cBiasSweep.SweepBias (cBias, cCbc);
+                }
+            }
+        }
 
         t.stop();
         t.show ( "Time to sweep all biases" );
@@ -243,6 +246,7 @@ int main ( int argc, char** argv )
         //now take some data and save the binary files
         std::string cBinaryDataFileName = cDirectory + "/DAQ_data.raw";
         cTool.addFileHandler (cBinaryDataFileName, 'w');
+        cTool.initializeFileHandler();
         cTool.ConfigureHw();
         BeBoard* pBoard = cTool.fBoardVector.at ( 0 );
         uint32_t cN = 1;
@@ -339,8 +343,8 @@ int main ( int argc, char** argv )
         cLVClient->Quit();
 
 
-        cKeController = new Ke2110Controller();
-        cKeController->InitializeClient ("localhost", cDMMZMQPort);
+        //cKeController = new Ke2110Controller();
+        //cKeController->InitializeClient ("localhost", cDMMZMQPort);
         cKeController->SendQuit();
         LOG (INFO) << YELLOW << "Stopping Temperatue monitoring and exiting the server!" << RESET;
 

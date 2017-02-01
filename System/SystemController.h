@@ -108,7 +108,7 @@ namespace Ph2_System {
             else return nullptr;
         }
 
-      private:
+      public:
         /*!
         * \brief issues a FileHandler for writing files to every BeBoardFWInterface if addFileHandler was called
         */

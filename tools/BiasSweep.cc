@@ -52,11 +52,13 @@ void BiasSweep::InitializeAmuxMap()
 
 //cases: 1)Vth 2)Voltage & sweepable -> DMM 3) not sweepable: old code 4) current & sweepable: 1 reading on dmm with default setting, then sweep using PS
 
-BiasSweep::BiasSweep()
+BiasSweep::BiasSweep (HMP4040Client* pClient, Ke2110Controller* pController)
 {
 #ifdef __USBINST__
 
-    fKeController = nullptr;
+    fKeController = pController;
+
+    fHMPClient = pClient;
 
     fArdNanoController = nullptr;
 
@@ -67,9 +69,9 @@ BiasSweep::~BiasSweep()
 {
 #ifdef __USBINST__
 
-    if (fKeController) delete fKeController;
+    //if (fKeController) delete fKeController;
 
-    if (fHMPClient) delete fHMPClient;
+    //if (fHMPClient) delete fHMPClient;
 
     if (fArdNanoController) delete fArdNanoController;
 
@@ -106,11 +108,17 @@ void BiasSweep::Initialize()
     LOG (INFO) << "\t\tKePort      : " << fKePort;
 
 #ifdef __USBINST__
+
     //create a controller
-    fKeController = new Ke2110Controller ();
-    fKeController->InitializeClient ("localhost", fKePort);
+    if (fKeController == nullptr) fKeController = new Ke2110Controller ();
+
+    if (!fKeController->ClientInitialized() ) fKeController->InitializeClient ("localhost", fKePort);
+
+    //initialize the HMP4040Client to connect to the server
+    if (fHMPClient == nullptr) fHMPClient = new HMP4040Client ("localhost", fHMPPort);
+
     // first is async, second is multex??
-    LOG (INFO) << BOLDRED << "Attempting to connect to arduino nano!" << RESET;
+    LOG (INFO) << YELLOW << "Attempting to connect to arduino nano!" << RESET;
     fArdNanoController = new ArdNanoController (true, false);
 
     int cCounter = 0;
@@ -119,12 +127,14 @@ void BiasSweep::Initialize()
     {
         if (cCounter++ > 5)
         {
+            LOG (ERROR) << RED << "Failed to initialize ArduinoNano Controller - quitting!" << RESET;
             fKeController->SendQuit();
             //here quit the KeControler too
-            fHMPClient = new HMP4040Client ("localhost", fHMPPort);
             fHMPClient->Quit();
 
-            //if (fHMPClient) delete fHMPClient;
+            if (fHMPClient) delete fHMPClient;
+
+            if (fKeController) delete fKeController;
 
             exit (1);
         }
@@ -256,9 +266,6 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
         if (cCurrent && fPause)
         {
-            //initialize the HMP4040Client to connect to the server
-            fHMPClient = new HMP4040Client ("localhost", fHMPPort);
-
             int cCounter = 0;
             LOG (INFO) << YELLOW <<  "Trying to pause monitoring with HMP4040!" << RESET;
 
@@ -267,6 +274,11 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                 if (cCounter++ > 5)
                 {
                     LOG (ERROR) << RED << "HMP4040 Monitoring pause failed!" << RESET;
+
+                    if (fHMPClient) delete fHMPClient;
+
+                    if (fKeController) delete fKeController;
+
                     exit (1);
                 }
             }
@@ -318,13 +330,16 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
                 if (cCounter++ > 5)
                 {
                     LOG (ERROR) << RED <<  "HMP4040 Monitoring resume failed!" << RESET;
+
+                    if (fKeController) delete fKeController;
+
+                    if (fHMPClient) delete fHMPClient;
+
                     exit (1);
                 }
             }
 
             LOG (INFO) << YELLOW << "HMP4040 Monitoring Resume request sent successfully!" << RESET;
-
-            //if (fHMPClient) delete fHMPClient;
         }
 
 #endif
@@ -398,8 +413,11 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
     while (cInitialReading == 0)
     {
         fKeController->Measure();
+        //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
         cInitialReading = fKeController->GetLatestReadValue();
     }
+
+    LOG (INFO) << GREEN << "Initial Reading on AMUX with original bias value " << +cOriginalBiasValue << " : " << cInitialReading << RESET;
 
 #endif
     fData->fInitialXValue = cOriginalBiasValue;
@@ -413,6 +431,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
     else if (cBits == 6) cRange = 64;
     else cRange = 255;
 
+    std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
 
     for (uint8_t cBias = 0; cBias < cRange; cBias += fStepSize)
     {
@@ -434,6 +453,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
             while (cReading == 0)
             {
                 fKeController->Measure();
+                //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
                 cReading = fKeController->GetLatestReadValue();
             }
 
@@ -500,6 +520,7 @@ void BiasSweep::measureSingle (std::map<std::string, AmuxSetting>::iterator pAmu
     while (cReading == 0)
     {
         fKeController->Measure();
+        //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
         cReading = fKeController->GetLatestReadValue();
     }
 
@@ -521,23 +542,35 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
     //take one initial reading on the dmm
     float cInitialReading = 0;
 #ifdef __USBINST__
-    fKeController->Measure();
-    cInitialReading = fKeController->GetLatestReadValue();
+
+    while (cInitialReading == 0)
+    {
+        fKeController->Measure();
+        //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+        cInitialReading = fKeController->GetLatestReadValue();
+    }
+
 #endif
+    LOG (INFO) << GREEN << "Initial Reading on AMUX with original threshold " << +cOriginalThreshold << " : " << cInitialReading << RESET;
     fData->fInitialXValue = cOriginalThreshold;
     fData->fInitialYValue = cInitialReading;
+
+    std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
 
     for (uint16_t cThreshold = 0; cThreshold < 1023; cThreshold += fStepSize)
     {
         cThresholdVisitor.setThreshold (cThreshold);
         pCbc->accept (cThresholdVisitor);
-        //std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
+
+        if (cThreshold == 0) std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
+
         double cReading = 0;
 #ifdef __USBINST__
 
         while (cReading == 0)
         {
             fKeController->Measure();
+            //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cReading = fKeController->GetLatestReadValue();
         }
 

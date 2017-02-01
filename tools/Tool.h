@@ -130,7 +130,7 @@ class Tool : public SystemController
 
     void SaveResults();
 
-    void CreateResultDirectory ( const std::string& pDirname, bool pDate = true );
+    void CreateResultDirectory ( const std::string& pDirname, bool pMode = true, bool pDate = true );
 
     /*!
      * \brief Initialize the result Root file

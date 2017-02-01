@@ -104,9 +104,10 @@ void Tool::SaveResults()
         TString cDirName = Form ( "FE%d", cFe.first->getFeId() );
         TObject* cObj = gROOT->FindObject ( cDirName );
 
-        if ( cObj ) delete cObj;
+        //if ( cObj ) delete cObj;
 
-        fResultFile->mkdir ( cDirName );
+        if (!cObj) fResultFile->mkdir ( cDirName );
+
         fResultFile->cd ( cDirName );
 
         for ( const auto& cHist : cFe.second )
@@ -120,9 +121,10 @@ void Tool::SaveResults()
         TString cDirName = Form ( "FE%dCBC%d", cCbc.first->getFeId(), cCbc.first->getCbcId() );
         TObject* cObj = gROOT->FindObject ( cDirName );
 
-        if ( cObj ) delete cObj;
+        //if ( cObj ) delete cObj;
 
-        fResultFile->mkdir ( cDirName );
+        if (!cObj) fResultFile->mkdir ( cDirName );
+
         fResultFile->cd ( cDirName );
 
         for ( const auto& cHist : cCbc.second )
@@ -145,7 +147,7 @@ void Tool::SaveResults()
     LOG (INFO) << "Results saved!" ;
 }
 
-void Tool::CreateResultDirectory ( const std::string& pDirname, bool pDate )
+void Tool::CreateResultDirectory ( const std::string& pDirname, bool pMode, bool pDate )
 {
     bool cCheck;
     bool cHoleMode;
@@ -167,7 +169,7 @@ void Tool::CreateResultDirectory ( const std::string& pDirname, bool pDate )
 
     std::string nDirname = pDirname;
 
-    if ( cCheck ) nDirname +=  cMode;
+    if ( cCheck && pMode ) nDirname +=  cMode;
 
     if ( pDate ) nDirname +=  currentDateTime();
 
