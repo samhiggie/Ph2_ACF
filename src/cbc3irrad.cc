@@ -93,11 +93,13 @@ int main ( int argc, char* argv[] )
     cDirectory += "Cbc3RadiationCycle";
     cDirectory += currentDateTime();
 
+    LOG (INFO)  << "Creating directory: " << cDirectory;
+    std::string cCommand = "mkdir -p " + cDirectory;
+    system ( cCommand.c_str() );
+
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
-
-    // commented out to make sure application does not close if the canvas is closed ( useful for running multiple tests with opening/closing canvases)
     else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
     //prepare the LVClient and the KeController
