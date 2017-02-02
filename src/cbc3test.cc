@@ -202,7 +202,7 @@ int main ( int argc, char** argv )
         BiasSweep cBiasSweep (cLVClient, cKeController);
         cBiasSweep.Inherit (&cTool);
         cBiasSweep.Initialize();
-        std::vector<std::string> cBiases{"Vth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
+        std::vector<std::string> cBiases{"VCth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
 
         for (auto cBoard : cBiasSweep.fBoardVector)
         {
@@ -225,7 +225,7 @@ int main ( int argc, char** argv )
         cCalibration.Initialise (false);
         cCalibration.FindVplus();
         cCalibration.FindOffsets();
-        cCalibration.SaveResults();
+        cCalibration.writeObjects();
         cCalibration.dumpConfigFiles();
 
         ////now run a noise scan
@@ -235,7 +235,7 @@ int main ( int argc, char** argv )
         cPedeNoise.Initialise();
         cPedeNoise.measureNoise();
         //cPedeNoise.Validate();
-        cPedeNoise.SaveResults();
+        cPedeNoise.writeObjects();
 
         //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
         StubSweep cStubSweep;

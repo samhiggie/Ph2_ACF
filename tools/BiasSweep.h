@@ -89,7 +89,8 @@ class BiasSweep : public Tool
     void resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 0  );
     void sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxValue, TGraph* pGraph, Cbc* pCbc, bool pCurrent);
     void measureSingle (std::map<std::string, AmuxSetting>::iterator pAmuxMap, Cbc* pCbc);
-    void sweepVth (TGraph* pGraph, Cbc* pCbc);
+    void sweepVCth (TGraph* pGraph, Cbc* pCbc);
+    void cleanup();
 
     TCanvas* fSweepCanvas;
 
@@ -100,7 +101,6 @@ class BiasSweep : public Tool
 
     //settings
     int fSweepTimeout, fKePort, fHMPPort, fStepSize;
-    bool fPause;
 
 #ifdef __USBINST__
     Ke2110Controller* fKeController;
@@ -108,7 +108,7 @@ class BiasSweep : public Tool
     ArdNanoController* fArdNanoController;
 #endif
 
-    void writeResults();
+    void writeObjects();
 
 };
 

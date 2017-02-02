@@ -102,7 +102,7 @@ int main ( int argc, char* argv[] )
 
     std::stringstream outp;
     Tool cTool;
-    cTool.InitializeHw ( cHWFile , outp);
+    cTool.InitializeHw ( cHWFile, outp);
     cTool.InitializeSettings ( cHWFile, outp );
     LOG (INFO) << outp.str();
     cTool.CreateResultDirectory ( cDirectory );
@@ -138,7 +138,7 @@ int main ( int argc, char* argv[] )
         cPedeNoise.Initialise(); // canvases etc. for fast calibration
         cPedeNoise.measureNoise();
         cPedeNoise.Validate();
-        cPedeNoise.SaveResults( );
+        cPedeNoise.writeObjects( );
         cPedeNoise.dumpConfigFiles();
     }
 

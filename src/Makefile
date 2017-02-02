@@ -99,6 +99,14 @@ datatest: datatest.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
 
+systemtest: systemtest.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+	cp $@ ../bin
+
+calibrate: calibrate.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+	cp $@ ../bin
+	
 configure: configure.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
@@ -108,6 +116,10 @@ hybridtest: hybridtest.cc
 	cp $@ ../bin
 
 cmtest: cmtest.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+	cp $@ ../bin
+
+configure: configure.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
 

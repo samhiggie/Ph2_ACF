@@ -266,21 +266,21 @@ struct ThresholdVisitor : public HwDescriptionVisitor
                 else
                 {
                     std::vector<std::pair<std::string, uint8_t>> cRegVec;
-                    // Vth1 holds bits 0-7 and Vth2 holds 8-9
-                    uint8_t cVth1 = fThreshold & 0x00FF;
-                    uint8_t cVth2 = (fThreshold & 0x0300) >> 8;
-                    cRegVec.emplace_back ("Vth1", cVth1);
-                    cRegVec.emplace_back ("Vth2", cVth2);
+                    // VCth1 holds bits 0-7 and VCth2 holds 8-9
+                    uint8_t cVCth1 = fThreshold & 0x00FF;
+                    uint8_t cVCth2 = (fThreshold & 0x0300) >> 8;
+                    cRegVec.emplace_back ("VCth1", cVCth1);
+                    cRegVec.emplace_back ("VCth2", cVCth2);
                     fInterface->WriteCbcMultReg (&pCbc, cRegVec);
                 }
             }
             else if (fOption == 'r')
             {
-                fInterface->ReadCbcReg (&pCbc, "Vth1");
-                fInterface->ReadCbcReg (&pCbc, "Vth2");
-                uint8_t cVth2 = pCbc.getReg ("Vth2");
-                uint8_t cVth1 = pCbc.getReg ("Vth1");
-                fThreshold = ( ( (cVth2 & 0x03) << 8) | (cVth1 & 0xFF) );
+                fInterface->ReadCbcReg (&pCbc, "VCth1");
+                fInterface->ReadCbcReg (&pCbc, "VCth2");
+                uint8_t cVCth2 = pCbc.getReg ("VCth2");
+                uint8_t cVCth1 = pCbc.getReg ("VCth1");
+                fThreshold = ( ( (cVCth2 & 0x03) << 8) | (cVCth1 & 0xFF) );
             }
             else
                 LOG (ERROR) << "Unknown option " << fOption;

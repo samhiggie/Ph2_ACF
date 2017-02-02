@@ -1290,7 +1290,7 @@ void HybridTester::SaveTestingResults (std::string pHybridId)
     myfile.close();
     LOG (INFO) << std::endl << "Summary testing report written to: " << std::endl << filename ;
 }
-void HybridTester::SaveResults()
+void HybridTester::writeObjects()
 {
     fResultFile->cd();
     fHistTop->Write ( fHistTop->GetName(), TObject::kOverwrite );
@@ -1316,4 +1316,7 @@ void HybridTester::SaveResults()
         cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";
         fSCurveCanvas->SaveAs ( cPdfName.c_str() );
     }
+
+    this->SaveResults();
+    fResultFile->Flush();
 }

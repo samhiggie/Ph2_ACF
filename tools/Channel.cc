@@ -197,8 +197,9 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
 
         fScurve->SetDirectory ( cDir );
         // fFit->SetDirectory( cDir );
+        fScurve->Write (fScurve->GetName(), TObject::kOverwrite);
         fFit->Write ( fFit->GetName(), TObject::kOverwrite );
-        // pResultfile->Flush();
+        pResultfile->Flush();
 
         pResultfile->cd();
     }
@@ -286,8 +287,9 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
 
         fScurve->SetDirectory ( cDir );
         fDerivative->SetDirectory ( cDir );
-        // fDerivative->Write( fDerivative->GetName(), TObject::kOverwrite );
-        // pResultfile->Flush();
+        fScurve->Write (fScurve->GetName(), TObject::kOverwrite);
+        fDerivative->Write ( fDerivative->GetName(), TObject::kOverwrite );
+        pResultfile->Flush();
 
         pResultfile->cd();
     }

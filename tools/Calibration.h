@@ -55,11 +55,12 @@ class Calibration : public Tool
     void FindVplus();
     // offsets are found by taking pMultiple*fEvents triggers
     void FindOffsets();
-    void SaveResults()
-    {
-        writeGraphs();
-        //dumpConfigFiles();
-    }
+    void writeObjects();
+    //void SaveResults()
+    //{
+    //writeGraphs();
+    //dumpConfigFiles();
+    //}
 
 
   protected:
@@ -67,7 +68,7 @@ class Calibration : public Tool
 
     void bitwiseVplus ( int pTGroup );
 
-    void bitwiseVth ( int pTGroup );
+    void bitwiseVCth ( int pTGroup );
 
     void bitwiseOffset ( int pTGroup );
 
@@ -89,7 +90,6 @@ class Calibration : public Tool
 
     void updateHists ( std::string pHistname );
 
-    void writeGraphs();
 
 
   private:

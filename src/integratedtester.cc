@@ -320,7 +320,7 @@ void perform_Calibration (Tool* pTool)
 
     cCalibration.FindVplus();
     cCalibration.FindOffsets();
-    cCalibration.SaveResults();
+    cCalibration.writeObjects();
     cCalibration.dumpConfigFiles();
 }
 // find the shorts on the DUT
@@ -336,6 +336,7 @@ bool check_Shorts (Tool* pTool,  uint32_t cMaxNumShorts)
 
     cShortFinder.Initialize();
     cShortFinder.FindShorts();
+    //cShortFinder.writeObjects();
     cShortFinder.SaveResults();
     uint32_t cNShorts = cShortFinder.GetNShorts() ;
     char line[120];
@@ -369,7 +370,7 @@ void perform_OccupancyMeasurment (Tool* pTool )
     cHybridTester.DisplayDeadChannels();
 
     // save results
-    cHybridTester.SaveResults();
+    cHybridTester.writeObjects();
 
     char line[120];
     sprintf (line, "# Top Pad Occupancy = %.2f ± %.3f", cHybridTester.GetMeanOccupancyTop(), cHybridTester.GetRMSOccupancyTop() );
@@ -397,7 +398,7 @@ void perform_AntennaOccupancyMeasurement (Tool* pTool )
     cAntennaTester.Measure();
 
     // save results
-    cAntennaTester.SaveResults();
+    cAntennaTester.writeObjects();
     //char line[120];
     //sprintf(line, "# Top Pad Occupancy = %.2f ± %.3f" , cHybridTester.GetMeanOccupancyTop() , cHybridTester.GetRMSOccupancyTop() );
     //cHybridTester.AmmendReport(line);

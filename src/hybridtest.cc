@@ -137,6 +137,7 @@ int main ( int argc, char* argv[] )
         cHybridTester.Measure();
     }
 
+    cHybridTester.writeObjects();
     cHybridTester.SaveResults();
     cHybridTester.CloseResultFile();
     cHybridTester.Destroy();

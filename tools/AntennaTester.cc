@@ -81,7 +81,7 @@ void AntennaTester::InitializeHists()
 
     if ( fHistTopMerged ) delete fHistTopMerged;
 
-    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy measured w/ Antenna [%]", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy measured w/ Antenna [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
     fHistTopMerged->SetFillColor ( 4 );
     fHistTopMerged->SetFillStyle ( 3001 );
 
@@ -90,7 +90,7 @@ void AntennaTester::InitializeHists()
 
     if ( fHistBottomMerged ) delete fHistBottomMerged;
 
-    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy measured w/ Antenna [%]", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy measured w/ Antenna [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
     fHistBottomMerged->SetFillColor ( 4 );
     fHistBottomMerged->SetFillStyle ( 3001 );
     UpdateHists();
@@ -127,9 +127,9 @@ void AntennaTester::ReconfigureCBCRegisters (std::string pDirectoryName )
                 char buffer[120];
 
                 if ( pDirectoryName.empty() )
-                    sprintf (buffer, "%s/FE%dCBC%d.txt" , fDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                    sprintf (buffer, "%s/FE%dCBC%d.txt", fDirectoryName.c_str(), cCbc->getFeId(), cCbc->getCbcId() );
                 else
-                    sprintf (buffer, "%s/FE%dCBC%d.txt" , pDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                    sprintf (buffer, "%s/FE%dCBC%d.txt", pDirectoryName.c_str(), cCbc->getFeId(), cCbc->getCbcId() );
 
                 pRegFile = buffer;
                 cCbc->loadfRegMap (pRegFile);
@@ -143,12 +143,7 @@ void AntennaTester::ReconfigureCBCRegisters (std::string pDirectoryName )
     }
 }
 
-void AntennaTester::writeGraphs()
-{
-    fResultFile->cd();
-    UpdateHistsMerged();
-}
-void AntennaTester::SaveResults()
+void AntennaTester::writeObjects()
 {
     //writeGraphs();
     fResultFile->cd();
@@ -158,6 +153,9 @@ void AntennaTester::SaveResults()
     fHistBottom->Write ( fHistBottom->GetName(), TObject::kOverwrite );
     fDataCanvas->Write ( fDataCanvas->GetName(), TObject::kOverwrite );
     LOG (INFO)  << BOLDBLUE << "Results of Antenna scan written to " << fDirectoryName + "/Summary.root" << RESET;
+
+    this->SaveResults();
+    fResultFile->Flush();
 }
 
 

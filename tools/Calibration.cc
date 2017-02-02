@@ -60,7 +60,7 @@ void Calibration::Initialise ( bool pAllChan )
                 TString cTitle;
 
                 if (fType == ChipType::CBC2) cTitle = Form ( "Vplus Values for Test Groups FE%d CBC%d ; Test Group; Vplus", cFeId, cCbcId );
-                else if (fType == ChipType::CBC3) cTitle = Form ( "Vth Values for Test Groups FE%d CBC%d ; Test Group; Vth", cFeId, cCbcId );
+                else if (fType == ChipType::CBC3) cTitle = Form ( "VCth Values for Test Groups FE%d CBC%d ; Test Group; Vth", cFeId, cCbcId );
 
                 TProfile* cHist = new TProfile ( cName, cTitle, 9, -1.5, 7.5 );
                 cHist->SetMarkerStyle ( 20 );
@@ -180,7 +180,7 @@ void Calibration::FindVplus()
     // now all offsets are either off (0x00 in holes mode, 0xFF in electrons mode)
     // next a group needs to be enabled - therefore now the group loop
     if (fType == ChipType::CBC2) LOG (INFO) << BOLDBLUE << "Extracting Vplus ..." << RESET ;
-    else if (fType == ChipType::CBC3) LOG (INFO) << BOLDBLUE << "Extracting Target Vth ..." << RESET ;
+    else if (fType == ChipType::CBC3) LOG (INFO) << BOLDBLUE << "Extracting Target VCth ..." << RESET ;
 
     uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
     LOG (INFO) << "Disabling all channels by setting offsets to " << std::hex << "0x" << +cOffset << std::dec;
@@ -202,7 +202,7 @@ void Calibration::FindVplus()
             //updateHists ( "Offsets" );
 
             if (fType == ChipType::CBC2) bitwiseVplus ( cTGroup.first );
-            else if (fType == ChipType::CBC3) bitwiseVth ( cTGroup.first );
+            else if (fType == ChipType::CBC3) bitwiseVCth ( cTGroup.first );
 
             LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
             setOffset ( cOffset, cTGroup.first, true );
@@ -237,7 +237,7 @@ void Calibration::FindVplus()
             LOG (INFO) << BOLDGREEN <<  "Mean Vplus value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
         }
         else if (fType == ChipType::CBC3)
-            LOG (INFO) << BOLDGREEN <<  "Mean Vth value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
+            LOG (INFO) << BOLDGREEN <<  "Mean VCth value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
     }
 
     if (fType == ChipType::CBC2)
@@ -248,7 +248,7 @@ void Calibration::FindVplus()
         fTargetVcth = static_cast<uint16_t> (cMeanValue / fNCbc);
         cThresholdVisitor.setThreshold (fTargetVcth);
         this->accept (cThresholdVisitor);
-        LOG (INFO) << BOLDBLUE << "Mean Vth value of all chips is " << static_cast<uint16_t> (cMeanValue / fNCbc) << " - using as TargetVcth value for all chips!" << RESET;
+        LOG (INFO) << BOLDBLUE << "Mean VCth value of all chips is " << static_cast<uint16_t> (cMeanValue / fNCbc) << " - using as TargetVcth value for all chips!" << RESET;
     }
 }
 
@@ -320,7 +320,7 @@ void Calibration::bitwiseVplus ( int pTGroup )
     else LOG (ERROR) << "ERROR, this should never be called!";
 }
 
-void Calibration::bitwiseVth ( int pTGroup )
+void Calibration::bitwiseVCth ( int pTGroup )
 {
     if (fType == ChipType::CBC3)
     {
@@ -713,8 +713,9 @@ void Calibration::setRegValues()
     }
 }
 
-void Calibration::writeGraphs()
+void Calibration::writeObjects()
 {
+    this->SaveResults();
     fResultFile->cd();
     // Save hist maps for CBCs
 
@@ -724,4 +725,5 @@ void Calibration::writeGraphs()
     //fVplusCanvas->Write ( fVplusCanvas->GetName(), TObject::kOverwrite );
     fOffsetCanvas->Write ( fOffsetCanvas->GetName(), TObject::kOverwrite );
     fOccupancyCanvas->Write ( fOccupancyCanvas->GetName(), TObject::kOverwrite );
+    fResultFile->Flush();
 }

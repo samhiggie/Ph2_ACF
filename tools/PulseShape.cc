@@ -243,6 +243,7 @@ void PulseShape::fitGraph ( int pLow )
             cChannel->fPulse->Write ( cChannel->fPulse->GetName(), TObject::kOverwrite );
             cPulseFit->Write ( cPulseFit->GetName(), TObject::kOverwrite );
             fResultFile->cd();
+            fResultFile->Flush();
         }
 
     }

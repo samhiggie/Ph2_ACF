@@ -33,7 +33,7 @@ void BiasSweep::InitializeAmuxMap()
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ipre2"),  std::make_tuple ("Ipre2", 0x02, 0xFF, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("CAL_I"),  std::make_tuple ("CALIbias", 0x03, 0xFF, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Ibias"),  std::make_tuple ("Ibias", 0x04, 0x00, 0) );
-        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vth"),    std::make_tuple ("", 0x05, 0xFF, 0) );
+        fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VCth"),    std::make_tuple ("", 0x05, 0xFF, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VBGbias"), std::make_tuple ("BandgapFuse", 0x06, 0x3F, 0) );//read this on the VDDA line?
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("VBG_LDO"), std::make_tuple ("", 0x07, 0x00, 0) );
         fAmuxSettings.emplace (std::piecewise_construct, std::make_tuple ("Vpafb"),  std::make_tuple ("", 0x08, 0x00, 0) );
@@ -50,7 +50,7 @@ void BiasSweep::InitializeAmuxMap()
     }
 }
 
-//cases: 1)Vth 2)Voltage & sweepable -> DMM 3) not sweepable: old code 4) current & sweepable: 1 reading on dmm with default setting, then sweep using PS
+//cases: 1)VCth 2)Voltage & sweepable -> DMM 3) not sweepable: old code 4) current & sweepable: 1 reading on dmm with default setting, then sweep using PS
 
 BiasSweep::BiasSweep (HMP4040Client* pClient, Ke2110Controller* pController)
 {
@@ -89,21 +89,10 @@ void BiasSweep::Initialize()
     fHMPPort = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 8082;
     cSetting = fSettingsMap.find ( "StepSize" );
     fStepSize = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 1;
-    cSetting = fSettingsMap.find ( "PauseHMP" );
-
-    if ( cSetting != std::end ( fSettingsMap ) )
-    {
-        if (cSetting->second == 1) fPause = true;
-
-        if (cSetting->second == 0) fPause = false;
-    }
-    else
-        fPause = true;
 
     LOG (INFO) << "\tSettings for BiasSweep parsed:";
     LOG (INFO) << "\t\tSweepTimeout: " << fSweepTimeout;
     LOG (INFO) << "\t\tStepSize    : " << fStepSize;
-    LOG (INFO) << "\t\tPauseHMP    : " << fPause;
     LOG (INFO) << "\t\tHMPPort     : " << fHMPPort;
     LOG (INFO) << "\t\tKePort      : " << fKePort;
 
@@ -128,14 +117,7 @@ void BiasSweep::Initialize()
         if (cCounter++ > 5)
         {
             LOG (ERROR) << RED << "Failed to initialize ArduinoNano Controller - quitting!" << RESET;
-            fKeController->SendQuit();
-            //here quit the KeControler too
-            fHMPClient->Quit();
-
-            if (fHMPClient) delete fHMPClient;
-
-            if (fKeController) delete fKeController;
-
+            this->cleanup();
             exit (1);
         }
     }
@@ -254,31 +236,45 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         std::string cLogFile = fDirectoryName + "/DMM_log.txt";
         //send pause command to any running Ke server
         LOG (INFO) << YELLOW << "Sending request to pause Temperature monitoring" << RESET;
-        fKeController->SendPause();
+        int counter = 0;
+
+        while (!fKeController->SendPause() )
+        {
+            if (counter++ > 5)
+            {
+                LOG (ERROR) << "Failed to pause Temperature monitoring - quiting";
+                this->cleanup();
+                exit (1);
+            }
+        };
+
         //then set up for local operation
         fKeController->SetLogFileName (cLogFile);
+
         fKeController->openLogFile();
+
         fKeController->Reset();
+
         std::string cConfString = "VOLTAGE:DC";
+
         //set up to either measure Voltage DC - params: configstring, range, resolution, autorange
         fKeController->Configure (cConfString, 0, 0.0001, true);
+
         fKeController->Autozero();
 
-        if (cCurrent && fPause)
+        if (cCurrent )
         {
             int cCounter = 0;
             LOG (INFO) << YELLOW <<  "Trying to pause monitoring with HMP4040!" << RESET;
 
-            while (!fHMPClient->StopMonitoring() )
+            while (!fHMPClient->PauseMonitoring() )
             {
+                LOG (DEBUG) << "trying " << cCounter << " times!";
+
                 if (cCounter++ > 5)
                 {
                     LOG (ERROR) << RED << "HMP4040 Monitoring pause failed!" << RESET;
-
-                    if (fHMPClient) delete fHMPClient;
-
-                    if (fKeController) delete fKeController;
-
+                    this->cleanup();
                     exit (1);
                 }
             }
@@ -292,9 +288,9 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         //in order to do this, read the current value and store it for later
         uint8_t cOriginalAmuxValue = this->configureAmux (cAmuxValue, pCbc, fSweepTimeout);
 
-        if (cAmuxValue->first == "Vth")
-            this->sweepVth (cGraph, pCbc);
-        // the bias is not Vth
+        if (cAmuxValue->first == "VCth")
+            this->sweepVCth (cGraph, pCbc);
+        // the bias is not VCth
         else
         {
             // here start sweeping the bias!
@@ -320,24 +316,30 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         if (!cCurrent)
         {
             LOG (INFO) << YELLOW << "Sending request to resume Temperatue monitoring" << RESET;
-            fKeController->SendResume();
+            int counter = 0;
+
+            while (!fKeController->SendResume() )
+            {
+                if (counter++ > 5)
+                {
+                    LOG (ERROR) << "Resumint temperature monitoring failed!";
+                    this->cleanup();
+                    exit (1);
+                }
+            }
         }
 
-        if (cCurrent && fPause)
+        if (cCurrent)
         {
             int cCounter = 0;
             LOG (INFO) << YELLOW << "Trying to resume monitoring with HMP4040!" << RESET;
 
-            while (!fHMPClient->StartMonitoring() )
+            while (!fHMPClient->ResumeMonitoring() )
             {
                 if (cCounter++ > 5)
                 {
                     LOG (ERROR) << RED <<  "HMP4040 Monitoring resume failed!" << RESET;
-
-                    if (fKeController) delete fKeController;
-
-                    if (fHMPClient) delete fHMPClient;
-
+                    this->cleanup();
                     exit (1);
                 }
             }
@@ -347,12 +349,9 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 
 #endif
         cTmpTree->Fill();
-        this->writeResults();
+        this->writeObjects();
         LOG (INFO) << "Bias Sweep finished, results saved!";
 
-        //if (cGraph) delete cGraph;
-
-        //if (cTmpTree) delete cTmpTree;
     }
 }
 
@@ -410,10 +409,10 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
     LOG (INFO) << "Origainal Register Value for bias " << pAmuxValue->first << "(" << pAmuxValue->second.fRegName << ") read to be 0x" << std::hex << +cOriginalBiasValue << std::dec << " - saving for later!";
 
     //take one initial reading on the dmm and save as the inital value in the tree
-    float cInitialReading = 0;
+    float cInitialReading = -999;
 #ifdef __USBINST__
 
-    while (cInitialReading == 0)
+    while (cInitialReading == -999)
     {
         fKeController->Measure();
         //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
@@ -422,7 +421,20 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
 
     LOG (INFO) << GREEN << "Initial Reading on AMUX with original bias value " << +cOriginalBiasValue << " : " << cInitialReading << RESET;
 
-    if (pCurrent) fKeController->SendResume();
+    if (pCurrent)
+    {
+        int counter = 0;
+
+        while (!fKeController->SendResume() )
+        {
+            if (counter++ > 5)
+            {
+                LOG (ERROR) << "Send resume monitoring failed!";
+                this->cleanup();
+                exit (1);
+            }
+        }
+    }
 
 #endif
     fData->fInitialXValue = cOriginalBiasValue;
@@ -450,12 +462,12 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
         fCbcInterface->WriteCbcReg (pCbc, pAmuxValue->second.fRegName, cRegValue );
 
         //std::this_thread::sleep_for (std::chrono::milliseconds (fSweepTimeout) );
-        double cReading = 0;
+        double cReading = -999;
 #ifdef __USBINST__
 
         if (!pCurrent)
         {
-            while (cReading == 0)
+            while (cReading == -999)
             {
                 fKeController->Measure();
                 //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
@@ -520,10 +532,10 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
 void BiasSweep::measureSingle (std::map<std::string, AmuxSetting>::iterator pAmuxValue, Cbc* pCbc)
 {
     LOG (INFO) << "Not an Amux setting that requires a sweep: " << pAmuxValue->first;
-    double cReading = 0;
+    double cReading = -999;
 #ifdef __USBINST__
 
-    while (cReading == 0)
+    while (cReading == -999)
     {
         fKeController->Measure();
         //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
@@ -537,7 +549,7 @@ void BiasSweep::measureSingle (std::map<std::string, AmuxSetting>::iterator pAmu
     fData->fInitialYValue = cReading;
 }
 
-void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
+void BiasSweep::sweepVCth (TGraph* pGraph, Cbc* pCbc)
 {
     ThresholdVisitor cThresholdVisitor (fCbcInterface);
     pCbc->accept (cThresholdVisitor);
@@ -546,10 +558,10 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
     cThresholdVisitor.setOption ('w');
 
     //take one initial reading on the dmm
-    float cInitialReading = 0;
+    float cInitialReading = -999;
 #ifdef __USBINST__
 
-    while (cInitialReading == 0)
+    while (cInitialReading == -999)
     {
         fKeController->Measure();
         //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
@@ -570,10 +582,10 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
 
         if (cThreshold == 0) std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
 
-        double cReading = 0;
+        double cReading = -999;
 #ifdef __USBINST__
 
-        while (cReading == 0)
+        while (cReading == -999)
         {
             fKeController->Measure();
             //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
@@ -606,11 +618,29 @@ void BiasSweep::sweepVth (TGraph* pGraph, Cbc* pCbc)
     pCbc->accept (cThresholdVisitor);
 }
 
-void BiasSweep::writeResults()
+void BiasSweep::writeObjects()
 {
+    this->SaveResults();
     //save the canvas too!
     fResultFile->cd();
     fSweepCanvas->Write ( fSweepCanvas->GetName(), TObject::kOverwrite );
     //to clean up, just use Tool::SaveResults in here!
-    this->SaveResults();
+    fResultFile->Flush();
+}
+
+void BiasSweep::cleanup()
+{
+    if (fKeController)
+    {
+        fKeController->SendQuit();
+        delete fKeController;
+    }
+
+    if (fHMPClient)
+    {
+        fHMPClient->Quit();
+        delete fHMPClient;
+    }
+
+    if (fArdNanoController) delete fArdNanoController;
 }

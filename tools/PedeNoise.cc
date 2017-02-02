@@ -565,16 +565,16 @@ void PedeNoise::fillOccupancyHist (BeBoard* pBoard, const std::vector<Event*>& p
 
 }
 
-void PedeNoise::SaveResults()
+void PedeNoise::writeObjects()
 {
+    this->SaveResults();
     // just use auto iterators to write everything to disk
     // this is the old method before Tool class was cool
     fResultFile->cd();
-    //Tool::SaveResults();
 
     // Save canvasses too
-
     fNoiseCanvas->Write ( fNoiseCanvas->GetName(), TObject::kOverwrite );
     fPedestalCanvas->Write ( fPedestalCanvas->GetName(), TObject::kOverwrite );
     fFeSummaryCanvas->Write ( fFeSummaryCanvas->GetName(), TObject::kOverwrite );
+    fResultFile->Flush();
 }

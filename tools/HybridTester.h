@@ -130,7 +130,7 @@ class HybridTester : public Tool
     /*!
     * \brief Save the results to the file created with SystemController::InitializeResultFile
     */
-    void SaveResults();
+    void writeObjects();
     void ReconfigureCBCRegisters (std::string pDirectoryName = "");
     /*!
     * \brief re-configure only the Vcth value on the CBCs
@@ -187,7 +187,7 @@ class HybridTester : public Tool
     /*!
     * \brief private method that classifies the channels on the top/bottom sensors into "Noisy/Dead"
     */
-    void ClassifyChannels (double pNoiseLevel = 65 , double pDeadLevel = 25 );
+    void ClassifyChannels (double pNoiseLevel = 65, double pDeadLevel = 25 );
 
     //double fChannelDiagnosisThreshold;
     /*!

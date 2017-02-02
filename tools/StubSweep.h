@@ -46,7 +46,7 @@ class StubSweep : public Tool
     TCanvas* fSweepCanvas;
 
     ChipType fType;
-	//settings
+    //settings
     uint8_t fDelay;
     uint8_t fReadBackAttempts;
 
@@ -55,8 +55,8 @@ class StubSweep : public Tool
     void fillStubBendHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair, uint8_t pStubBend );
     void fillStubSweepHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair, uint8_t pStubPosition );
 
-    // method to configure test pulse on the CBC 
-    void configureTestPulse(Cbc* pCbc, uint8_t pPulseState);
+    // method to configure test pulse on the CBC
+    void configureTestPulse (Cbc* pCbc, uint8_t pPulseState);
 
     // method to mask all channels on the CBC
     void maskAllChannels (Cbc* pCbc);
@@ -101,7 +101,7 @@ class StubSweep : public Tool
         //std::cout << std::bitset<8>( cValue ) << " cGroup " << +pGroup << " " << std::bitset<8>( pGroup ) << " pDelay " << +pDelay << " " << std::bitset<8>( pDelay ) << std::endl;
         return cValue;
     }
-	unsigned char fLookup[16] =
+    unsigned char fLookup[16] =
     {
         0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe,
         0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf,
@@ -190,7 +190,7 @@ class StubSweep : public Tool
     };
 
 
-    void writeResults();
+    void writeObjects();
 
 };
 

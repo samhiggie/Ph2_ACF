@@ -323,8 +323,8 @@ namespace Ph2_System {
             }
             else if (cType == ChipType::CBC3)
             {
-                pCbc->setReg ("Vth1", (cThreshold & 0x00FF) );
-                pCbc->setReg ("Vth2", (cThreshold & 0x0300) >> 8);
+                pCbc->setReg ("VCth1", (cThreshold & 0x00FF) );
+                pCbc->setReg ("VCth2", (cThreshold & 0x0300) >> 8);
                 pCbc->setReg ("TriggerLatency1", (cLatency & 0x00FF) );
                 uint8_t cLatReadValue = pCbc->getReg ("FeCtrl&TrgLat2") & 0xFE;
                 pCbc->setReg ("FeCtrl&TrgLat2", (cLatReadValue | ( (cLatency & 0x0100) >> 8) ) );

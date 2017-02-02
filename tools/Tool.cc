@@ -141,8 +141,8 @@ void Tool::SaveResults()
         cCanvas.second->SaveAs ( cPdfName.c_str() );
     }
 
-    fResultFile->Write();
-    // fResultFile->Close();
+    //fResultFile->Write();
+    //fResultFile->Close();
 
     LOG (INFO) << "Results saved!" ;
 }

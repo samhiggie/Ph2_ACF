@@ -252,7 +252,7 @@ void StubSweep::SweepStubs (uint32_t pNEvents )
         }
     }
 
-    this->writeResults();
+    this->writeObjects();
 }
 void StubSweep::fillStubSweepHist ( Cbc* pCbc, std::vector<uint8_t> pChannelPair, uint8_t pStubPosition )
 {
@@ -363,13 +363,14 @@ void StubSweep::maskAllChannels (Cbc* pCbc)
         }
     }
 }
-void StubSweep::writeResults()
+void StubSweep::writeObjects()
 {
     //to clean up, just use Tool::SaveResults in here!
     this->SaveResults();
     //save the canvas too!
     fResultFile->cd();
     fSweepCanvas->Write ( fSweepCanvas->GetName(), TObject::kOverwrite );
+    fResultFile->Flush();
 }
 std::vector<uint8_t> StubSweep::findChannelsInTestGroup ( uint8_t pTestGroup )
 {
