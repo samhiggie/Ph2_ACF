@@ -97,6 +97,12 @@ int main ( int argc, char* argv[] )
     std::string cCommand = "mkdir -p " + cDirectory;
     system ( cCommand.c_str() );
 
+    //now make sure that the log file ends up where I want it
+    std::string cLogFileName = cDirectory + "/CbcDAQ.log";
+    el::Loggers::reconfigureAllLoggers (el::ConfigurationType::Filename, cLogFileName);
+    //el::Loggers::reconfigureAllLoggers (el::ConfigurationType::Log_Flush_Threshold, 10);
+    LOG (INFO) << BLUE << "Changing log file to: " << MAGENTA << cLogFileName << RESET;
+
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
@@ -136,6 +142,7 @@ int main ( int argc, char* argv[] )
 #ifdef __USBINST__
         cLVClient = new HMP4040Client (cHostname, cPowerSupplyPortsInfo.first );
         LOG (INFO) << BOLDBLUE << "Starting monitoring of power supply currents on the HMP4040." << RESET ;
+        cLVClient->SetLogFileName (cPowerSupplyOutputFile);
         cLVClient->StartMonitoring();
         //make sure power supply is switched  on before doing anything else
         LOG (INFO) << BLUE << "Making sure that the power supply is ON at the start of the test!" << RESET ;
@@ -144,6 +151,7 @@ int main ( int argc, char* argv[] )
         cKeController = new Ke2110Controller();
         cKeController->InitializeClient ( cHostname, cDMMPortsInfo.first );
         LOG (INFO) << BOLDBLUE << "Starting monitoring of the ambient temperature on the Ke2110 DMM." << RESET ;
+        cKeController->SendLogFileName (cDMMOutputFile);
         cKeController->SendMonitoringStart();
 #endif
         // here the startup is complete
@@ -266,15 +274,15 @@ int main ( int argc, char* argv[] )
         //finished everything we want to do, so turn everything off and be happy
 #ifdef __USBINST__
 
-        LOG (INFO) << YELLOW << "Stopping the monitoring and exiting the server for the HMP4040!" << RESET;
+        //LOG (INFO) << YELLOW << "Stopping the monitoring and exiting the server for the HMP4040!" << RESET;
         //maybe also want to switch off the power supply at the end of the test
         //cLVClient->ToggleOutput (0);
-        cLVClient->StopMonitoring();
-        LOG (INFO) << YELLOW << "Stopping the monitoring and exiting the server for the Ke2110!" << RESET;
-        cKeController->SendMonitoringStop();
+        //cLVClient->StopMonitoring();
+        //LOG (INFO) << YELLOW << "Stopping the monitoring and exiting the server for the Ke2110!" << RESET;
+        //cKeController->SendMonitoringStop();
 
-        cLVClient->Quit();
-        cKeController->SendQuit();
+        //cLVClient->Quit();
+        //cKeController->SendQuit();
 #endif
 
     }
