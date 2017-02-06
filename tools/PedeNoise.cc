@@ -94,7 +94,7 @@ void PedeNoise::Initialise()
             bookHistogram ( cFe, "Module_noisehist", cNoise );
 
             cNoisehistname = Form ( "Fe%d_StripNoise", cFeId );
-            TProfile* cStripnoise = new TProfile ( cNoisehistname, cNoisehistname, ( NCHANNELS * cCbcCount ) + 1, -.5, cCbcCount * NCHANNELS + .5 );
+            TProfile* cStripnoise = new TProfile ( cNoisehistname, cNoisehistname, (NCHANNELS*cCbcCount), -.5, (NCHANNELS*cCbcCount)-.5 );
             cStripnoise->SetMinimum (0);
             cStripnoise->SetMaximum (15);
             bookHistogram ( cFe, "Module_Stripnoise", cStripnoise );
