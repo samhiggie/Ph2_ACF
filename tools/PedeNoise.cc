@@ -215,10 +215,12 @@ void PedeNoise::measureNoise()
                 // here add the CBC histos to the module histos
                 cTmpHist->Add ( cNoiseHist );
 
-                for ( int cBin = 0; cBin < NCHANNELS; cBin++ )
+                for ( int cBin = 1; cBin <= NCHANNELS; cBin++ )
                 {
                     // LOG(INFO) << cBin << " Strip " << +cCbcId * 254 + cBin << " Noise " << cStripHist->second->GetBinContent( cBin ) ;
-                    if ( cStripHist->GetBinContent ( cBin ) > 0 && cStripHist->GetBinContent ( cBin ) < 255 ) cTmpProfile->Fill ( cCbcId * 254 + cBin, cStripHist->GetBinContent ( cBin ) );
+                    if ( cStripHist->GetBinContent ( cBin ) > 0 && cStripHist->GetBinContent ( cBin ) < 255 ){
+                        cTmpProfile->Fill ( cCbcId * 254 + cBin-1, cStripHist->GetBinContent ( cBin ) );
+                    }
 
                     // else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
                 }
@@ -282,14 +284,14 @@ void PedeNoise::Validate ( double pNoiseStripThreshold )
 
                 RegisterVector cRegVec;
 
-                for (uint32_t iChan = 0; iChan < NCHANNELS; iChan++)
+                for (uint32_t iChan = 1; iChan <= NCHANNELS; iChan++)
                 {
                     if (cHist->GetBinContent (iChan) > pNoiseStripThreshold) // consider it noisy
                     {
-                        TString cRegName = Form ( "Channel%03d", iChan + 1 );
+                        TString cRegName = Form ( "Channel%03d", iChan );
                         uint8_t cValue = fHoleMode ? 0x00 : 0xFF;
                         cRegVec.push_back ({cRegName.Data(), cValue });
-                        LOG (INFO) << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iChan + 1 << " with an occupancy of " << cHist->GetBinContent (iChan) << "; setting offset to " << +cValue << RESET ;
+                        LOG (INFO) << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iChan << " with an occupancy of " << cHist->GetBinContent (iChan) << "; setting offset to " << +cValue << RESET ;
                     }
 
                 }
@@ -351,7 +353,7 @@ void PedeNoise::enableTestGroupforNoise ( int  pTGrpId )
                         for ( auto& cChan : cGrp.second )
                         {
 
-                            uint8_t cEnableOffset = cOffsets->GetBinContent ( cChan );
+                            uint8_t cEnableOffset = cOffsets->GetBinContent ( cChan+1 );
                             TString cRegName = Form ( "Channel%03d", cChan + 1 );
                             cRegVec.push_back ( { cRegName.Data(), cEnableOffset } );
                             // LOG(INFO) << GREEN << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << std::hex << "0x" << +cEnableOffset << std::dec << RESET ;
@@ -468,9 +470,9 @@ void PedeNoise::saveInitialOffsets()
                 // std::map<uint8_t, uint8_t> cCbcOffsetMap;
                 TH1F* cOffsetHist = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Offsets" ) );
 
-                for ( uint8_t cChan = 0; cChan < NCHANNELS; cChan++ )
+                for ( uint8_t cChan = 1; cChan <= NCHANNELS; cChan++ )
                 {
-                    TString cRegName = Form ( "Channel%03d", cChan + 1 );
+                    TString cRegName = Form ( "Channel%03d", cChan );
                     uint8_t cOffset = cCbc->getReg ( cRegName.Data() );
                     cOffsetHist->SetBinContent ( cChan, cOffset );
                     // cCbcOffsetMap[cChan] = cOffset;
@@ -503,11 +505,11 @@ void PedeNoise::setInitialOffsets()
                 //also write to CBCs
                 RegisterVector cRegVec;
 
-                for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
+                for ( int iChan = 1; iChan <= NCHANNELS; iChan++ )
                 {
                     uint8_t cOffset = cOffsetHist->GetBinContent ( iChan );
-                    cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
-                    cRegVec.push_back ({ Form ( "Channel%03d", iChan + 1 ), cOffset } );
+                    cCbc->setReg ( Form ( "Channel%03d", iChan ), cOffset );
+                    cRegVec.push_back ({ Form ( "Channel%03d", iChan ), cOffset } );
                     //LOG(INFO) << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET ;
                 }
 
