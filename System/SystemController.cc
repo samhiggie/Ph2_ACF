@@ -148,6 +148,7 @@ namespace Ph2_System {
             else if (cBoardType == BoardType::ICGLIB) cBoardTypeString = "ICGLIB";
             else if (cBoardType == BoardType::ICFC7) cBoardTypeString = "ICFC7";
             else if (cBoardType == BoardType::CBC3FC7) cBoardTypeString = "CBC3FC7";
+	    else if (cBoardType == BoardType::FC7DAQ) cBoardTypeString = "FC7DAQ";
 
 
             uint32_t cBeId = cBoard->getBeId();

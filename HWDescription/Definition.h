@@ -95,7 +95,7 @@
 #define WIDTH_CBCSTUBDATA         12
 //------------------------------------------------------------------------------
 
-enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7, SUPERVISOR};
+enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7, FC7DAQ, SUPERVISOR};
 enum class ChipType {UNDEFINED = 0, CBC2, CBC3};
 
 #endif

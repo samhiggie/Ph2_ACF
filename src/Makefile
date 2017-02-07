@@ -80,7 +80,7 @@ LibraryPaths = $(LibraryDirs:%=-L%)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 
-binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester test
+binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester fc7daqtest
 binariesNoRoot=systemtest datatest fpgaconfig configure
 
 .PHONY: clean $(binaries)
@@ -101,15 +101,15 @@ print:
 	@echo 'ZeroMQ installed:' $(ZMQINSTALLED)
 	@echo '****************************'
 
-test: test.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
-	cp $@ ../bin
-
 integratedtester: integratedtester.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
 systemtest: systemtest.cc
+	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
+	cp $@ ../bin
+
+fc7daqtest: fc7daqtest.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(ExternalObjects)
 	cp $@ ../bin
 
