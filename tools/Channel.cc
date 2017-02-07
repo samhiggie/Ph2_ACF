@@ -141,7 +141,7 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
         // Not Hole Mode
         if ( !pHole )
         {
-            for ( Int_t cBin = 1; cBin <= fScurve->GetNbinsX(); cBin++ )
+            for ( Int_t cBin = 1; cBin < fScurve->GetNbinsX() - 1; cBin++ )
             {
                 double cContent = fScurve->GetBinContent ( cBin );
 
@@ -159,7 +159,7 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
         // Hole mode
         else
         {
-            for ( Int_t cBin = fScurve->GetNbinsX(); cBin >= 1; cBin-- )
+            for ( Int_t cBin = fScurve->GetNbinsX() - 1; cBin > 1; cBin-- )
             {
                 double cContent = fScurve->GetBinContent ( cBin );
 
@@ -234,17 +234,18 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
 
         if ( pHole )
         {
-            cPrev = fScurve->GetBinContent ( fScurve->GetBin ( -0.5 ) );
+            cPrev = fScurve->GetBinContent ( fScurve->FindBin ( 0 ) );
             cActive = false;
 
-            for ( cBin = 0; cBin <= 1023; cBin++ )
+            for ( cBin = fScurve->FindBin (0); cBin <= fScurve->FindBin (1023); cBin++ )
             {
-                cCurrent = fScurve->GetBinContent ( fScurve->GetBin ( cBin ) );
+                cCurrent = fScurve->GetBinContent (cBin);
                 cDiff = cPrev - cCurrent;
 
                 if ( cPrev > 0.75 ) cActive = true; // sampling begins
 
-                if ( cActive ) fDerivative->SetBinContent ( fDerivative->GetBin ( cBin - 0.5 ),  cDiff  );
+                //if ( cActive ) fDerivative->SetBinContent ( fDerivative->FindBin ( cBin + 0.5 ),  cDiff  );
+                if ( cActive ) fDerivative->SetBinContent ( cBin + 1,  cDiff  );
 
                 if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 
@@ -255,17 +256,19 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
         }
         else
         {
-            cPrev = fScurve->GetBinContent ( fScurve->GetBin ( 1023.5 ) );
+            cPrev = fScurve->GetBinContent ( fScurve->FindBin ( 1023 ) );
             cActive = false;
 
-            for ( cBin = 1023; cBin >= 0; cBin-- )
+            for ( cBin = fScurve->FindBin (1023); cBin >= fScurve->FindBin ( 0); cBin-- )
             {
-                cCurrent = fScurve->GetBinContent ( fScurve->GetBin ( cBin ) );
-                cDiff = cCurrent - cPrev;
+                cCurrent = fScurve->GetBinContent (cBin);
+                cDiff = cPrev - cCurrent;
 
                 if ( cPrev > 0.75 ) cActive = true; // sampling begins
 
-                if ( cActive ) fDerivative->SetBinContent ( fDerivative->GetBin ( cBin - 0.5 ),   cDiff  );
+                //original
+                //if ( cActive ) fDerivative->SetBinContent ( fDerivative->FindBin ( cBin - 0.5 ),   cDiff  );
+                if ( cActive ) fDerivative->SetBinContent ( cBin - 1,   cDiff  );
 
                 if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 

@@ -75,8 +75,10 @@ void Calibration::Initialise ( bool pAllChan )
                 TProfile* cOffsetHist = new TProfile ( cName, Form ( "Offsets FE%d CBC%d ; Channel; Offset", cFeId, cCbcId ), 254, -.5, 253.5  );
                 uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
 
-                for ( int iBin = 0; iBin < NCHANNELS; iBin++ )
+                for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
                 {
+                    //suggested B. Schneider
+                    int iBin = cOffsetHist->FindBin (iChan);
                     cOffsetHist->SetBinContent ( iBin, cOffset );
                     cOffsetHist->SetBinEntries ( iBin, 1 );
                 }
@@ -88,7 +90,7 @@ void Calibration::Initialise ( bool pAllChan )
 
                 if ( cObj ) delete cObj;
 
-                TH1F* cOccHist = new TH1F ( cName, Form ( "Occupancy FE%d CBC%d ; Channel; Occupancy", cFeId, cCbcId ), 254, -.5, 254.5 );
+                TH1F* cOccHist = new TH1F ( cName, Form ( "Occupancy FE%d CBC%d ; Channel; Occupancy", cFeId, cCbcId ), 254, -.5, 253.5 );
                 bookHistogram ( cCbc, "Occupancy", cOccHist );
             }
         }
@@ -565,8 +567,13 @@ void Calibration::setOffset ( uint8_t pOffset, int  pGroup, bool pVPlus )
 
                     if ( pVPlus )
                     {
-                        cOffsetHist->SetBinContent ( cChannel, pOffset );
-                        cOffsetHist->SetBinEntries ( cChannel, 1 );
+                        //original
+                        //cOffsetHist->SetBinContent ( cChannel, pOffset );
+                        //cOffsetHist->SetBinEntries ( cChannel, 1 );
+                        //suggested by B. Schneider
+                        int iBin = cOffsetHist->FindBin (cChannel);
+                        cOffsetHist->SetBinContent ( iBin, pOffset );
+                        cOffsetHist->SetBinEntries ( iBin, 1 );
                     }
                 }
 
@@ -603,14 +610,23 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                     if ( pBegin )
                     {
                         // get the offset
-                        uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
+                        // Fix suggested by B. Schneider
+                        int iBin = cOffsetHist->FindBin (cChannel);
+                        uint16_t cOffset = cOffsetHist->GetBinContent (iBin);
+                        //original
+                        //uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
 
                         // toggle Bit i
                         toggleRegBit ( cOffset, pBit );
 
                         // modify the histogram
-                        cOffsetHist->SetBinContent ( cChannel, cOffset );
-                        cOffsetHist->SetBinEntries ( cChannel, 1 );
+                        // original
+                        //cOffsetHist->SetBinContent ( cChannel, cOffset );
+                        //cOffsetHist->SetBinEntries ( cChannel, 1 );
+                        //suggested B. Schneider
+                        iBin = cOffsetHist->FindBin (cChannel);
+                        cOffsetHist->SetBinContent ( iBin, cOffset );
+                        cOffsetHist->SetBinEntries ( iBin, 1 );
 
                         // push in a vector for CBC write transaction
                         cRegVec.push_back ( {cRegName.Data(), static_cast<uint8_t> (cOffset) } );
@@ -619,10 +635,15 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                     {
                         // if the occupancy is larger than 50%, flip the bit back, if it is smaller, don't do anything
                         // get the offset
-                        uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
+                        // original
+                        //uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
+                        //suggested B. Schneider
+                        int iBin = cOffsetHist->FindBin (cChannel);
+                        uint16_t cOffset = cOffsetHist->GetBinContent ( iBin );
 
                         // get the occupancy
-                        int iBin = cOccHist->GetXaxis()->FindBin ( cChannel );
+                        // original
+                        iBin = cOccHist->FindBin ( cChannel );
                         float cOccupancy = cOccHist->GetBinContent ( iBin );
                         //LOG (DEBUG) << "Bit " << +pBit << " Offset " << +cOffset << " Occupancy " << +cOccupancy;
 
@@ -630,8 +651,13 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                         if ( cOccupancy > 0.57 * fEventsPerPoint )
                         {
                             toggleRegBit ( cOffset, pBit ); // toggle the bit back that was previously flipped
-                            cOffsetHist->SetBinContent ( cChannel, cOffset );
-                            cOffsetHist->SetBinEntries ( cChannel, 1 );
+                            //sugested B. Schneider
+                            int iBin = cOffsetHist->FindBin (cChannel);
+                            cOffsetHist->SetBinContent ( iBin, cOffset );
+                            cOffsetHist->SetBinEntries ( iBin, 1 );
+                            //original
+                            //cOffsetHist->SetBinContent ( cChannel, cOffset );
+                            //cOffsetHist->SetBinEntries ( cChannel, 1 );
                             cRegVec.push_back ( {cRegName.Data(), static_cast<uint16_t> (cOffset) } );
                         }
 
@@ -703,7 +729,11 @@ void Calibration::setRegValues()
 
                 for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
                 {
-                    uint8_t cOffset = cOffsetHist->GetBinContent ( iChan );
+                    //original
+                    //uint8_t cOffset = cOffsetHist->GetBinContent ( iChan );
+                    //suggested B. Schneider
+                    int iBin = cOffsetHist->FindBin (iChan);
+                    uint8_t cOffset = cOffsetHist->GetBinContent ( iBin );
                     cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
                     //LOG(INFO) << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET ;
                 }
