@@ -11,7 +11,7 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption ) :
     if ( fOption == 'w' )
     {
         fThread = std::thread ( &FileHandler::writeFile, this );
-        fThread.detach();
+        //fThread.detach();
     }
 }
 
@@ -26,7 +26,7 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, Fil
     if ( fOption == 'w' )
     {
         fThread = std::thread ( &FileHandler::writeFile, this );
-        fThread.detach();
+        //fThread.detach();
     }
 }
 
