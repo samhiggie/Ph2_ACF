@@ -11,6 +11,6 @@ tmux send-keys -t $SESSION_NAME "echo \'Running cbc3irradiation test\'" Enter
 tmux send-keys -t $SESSION_NAME "while true; do
     $BASE_DIR/bin/cbc3irrad -b | tee $BASE_DIR/consoledump.log
     echo \'bin/cbc3irrad finished with exit code $?. Respawning...\' | tee $BASE_DIR/consoledump.log
-    sleep 60
+    sleep 10
 done" Enter
 #tmux send-keys -t $SESSION_NAME C-m
