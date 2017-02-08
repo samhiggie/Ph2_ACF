@@ -2,6 +2,7 @@
 #include "argvparser.h"
 #include "CommonVisitors.h"
 #include "Timer.h"
+#include "Watchdog.h"
 #include "UsbUtilities.h"
 
 #include "Calibration.h"
@@ -29,7 +30,12 @@ using namespace CommandLineProcessing;
 INITIALIZE_EASYLOGGINGPP
 
 // need this to reset terminal output
-const std::string rst ("\033[0m");
+//const std::string rst ("\033[0m");
+void exitme()
+{
+    LOG (ERROR) << BOLDRED << "Quitting application due to watchdog timeout - something must have got stuck!" << RESET;
+    exit (1);
+}
 
 int main ( int argc, char* argv[] )
 {
@@ -88,6 +94,8 @@ int main ( int argc, char* argv[] )
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cVcthset = cmd.foundOption ("vcth");
 
+    Watchdog cDog;
+    cDog.Start (2, &exitme);
 
     std::string cResultfile = "Cbc3RadiationCycle";
     cDirectory += "Cbc3RadiationCycle";
@@ -100,7 +108,6 @@ int main ( int argc, char* argv[] )
     //now make sure that the log file ends up where I want it
     std::string cLogFileName = cDirectory + "/CbcDAQ.log";
     el::Loggers::reconfigureAllLoggers (el::ConfigurationType::Filename, cLogFileName);
-    //el::Loggers::reconfigureAllLoggers (el::ConfigurationType::Log_Flush_Threshold, 10);
     LOG (INFO) << BLUE << "Changing log file to: " << MAGENTA << cLogFileName << RESET;
 
     TApplication cApp ( "Root Application", &argc, argv );
@@ -114,6 +121,7 @@ int main ( int argc, char* argv[] )
     HMP4040Client* cLVClient = nullptr;
 #endif
 
+    cDog.Reset (15);
 
     //Start server to communicate with HMP404 instrument via usbtmc and SCPI
     bool cPSStatus, cDMMStatus;
@@ -138,6 +146,7 @@ int main ( int argc, char* argv[] )
 
     if ( cPSStatus && cDMMStatus)  // Verify child process terminated without error.
     {
+        cDog.Reset (15);
         //at the beginning of the test start the monitoring and initalize the connection to the Arduino relay controller
 #ifdef __USBINST__
         cLVClient = new HMP4040Client (cHostname, cPowerSupplyPortsInfo.first );
@@ -156,6 +165,7 @@ int main ( int argc, char* argv[] )
 #endif
         // here the startup is complete
 
+        cDog.Reset (5);
         std::stringstream outp;
 
         Tool cTool;
@@ -168,12 +178,13 @@ int main ( int argc, char* argv[] )
         //cTool.StartHttpServer (8084);
         cTool.ConfigureHw ();
 
+        cDog.Reset (5);
         Timer t;
-        t.start();
         //then sweep a bunch of biases
         BiasSweep cBiasSweep (cLVClient, cKeController);
         cBiasSweep.Inherit (&cTool);
         cBiasSweep.Initialize();
+        cDog.Reset (5);
         std::vector<std::string> cBiases{"VCth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
 
         for (auto cBoard : cBiasSweep.fBoardVector)
@@ -183,13 +194,21 @@ int main ( int argc, char* argv[] )
                 for (auto cCbc : cFe->fCbcVector)
                 {
                     for (auto cBias : cBiases)
+                    {
+                        cDog.Reset (160);
+                        t.start();
                         cBiasSweep.SweepBias (cBias, cCbc);
+                        t.stop();
+                        t.show ("Time for this bias");
+                    }
                 }
             }
         }
 
-        t.stop();
-        t.show ( "Time to sweep all biases" );
+        cDog.Reset (10);
+
+        //t.stop();
+        //t.show ( "Time to sweep all biases" );
 
         ////first, run offset tuning
         Calibration cCalibration;
@@ -199,6 +218,8 @@ int main ( int argc, char* argv[] )
         cCalibration.FindOffsets();
         cCalibration.writeObjects();
         cCalibration.dumpConfigFiles();
+
+        cDog.Reset (30);
 
         ////now run a noise scan
         PedeNoise cPedeNoise;
@@ -210,10 +231,14 @@ int main ( int argc, char* argv[] )
         cPedeNoise.writeObjects();
 
         //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
+        cDog.Reset (30);
+
         StubSweep cStubSweep;
         cStubSweep.Inherit (&cTool);
         cStubSweep.Initialize();
         cStubSweep.SweepStubs (1);
+
+        cDog.Reset (100);
 
         //now take some data and save the binary files
         std::string cBinaryDataFileName = cDirectory + "/DAQ_data.raw";
@@ -287,9 +312,13 @@ int main ( int argc, char* argv[] )
 
     }
     else
+    {
         LOG (ERROR) << "Either PowerSupply or DMM server did not start up correctly!";
+        cDog.Stop();
+    }
 
     LOG (INFO) << GREEN << "Irradiation Test exited normally!" << RESET;
+    cDog.Stop();
 
     if ( !batchMode )
         cApp.Run();

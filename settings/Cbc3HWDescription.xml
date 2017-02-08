@@ -81,9 +81,8 @@
     <!--<Setting name="TestPulsePotentiometer">0x00</Setting>-->
 
     <!--BiasSweep-->
-    <Setting name="SweepTimeout">2</Setting>
+    <Setting name="SweepTimeout">1</Setting>
     <Setting name="StepSize">2</Setting>
     <Setting name="KePort">8083</Setting>
     <Setting name="HMPPort">8081</Setting>
-    <Setting name="PauseHMP">1</Setting>
 </Settings>
