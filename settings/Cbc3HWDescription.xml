@@ -28,7 +28,6 @@
     <Register name="cbc_system_cnfg">
         <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->
         <!--required-->
-        <Register name="global.misc.cbc_clk_phase_shift"> 0x1 </Register>
         <!--to output trigger-->
         <Register name="global.test_out.1"> 0x0020 </Register>
         <Register name="global.test_out.2"> 0x0001 </Register>
@@ -66,6 +65,7 @@
                 <Register name="trig_data"> 196 </Register>
             </Register>
         </Register>
+        <Register name="cbc_system_cnfg.data_buffer.safe_nwords_free"> 0x1c0 </Register>
     </Register>
   </BeBoard>
 </HwDescription>

@@ -85,11 +85,11 @@ namespace Ph2_HwInterface {
         //LOG(INFO) << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) ;
         //LOG(INFO) << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) ;
         uint32_t cVersionMajor, cVersionMinor;
-        cVersionMajor = ReadReg ( "cbc_system_stat.global.version.ver_major" );
-        cVersionMinor = ReadReg ( "cbc_system_stat.global.version.ver_minor" );
-        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "cbc_system_stat.global.version.ver_build" ) ) ;
+        cVersionMajor = ReadReg ( "cbc_system_stat.system.version.ver_major" );
+        cVersionMinor = ReadReg ( "cbc_system_stat.system.version.ver_minor" );
+        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "cbc_system_stat.system.version.ver_build" ) ) ;
 
-        uhal::ValWord<uint32_t> cBoardType = ReadReg ( "cbc_system_stat.global.id" );
+        uhal::ValWord<uint32_t> cBoardType = ReadReg ( "cbc_system_stat.system.id" );
 
         LOG (INFO) << "BoardType : ";
 
@@ -118,7 +118,6 @@ namespace Ph2_HwInterface {
         //OK, first we need to apply the configuration to the config part of the FW residing at address 0x40000100
         //all IDs start with 1
         cVecReg.push_back ({"cbc_system_cnfg.global.be.id", pBoard->getBeId() + 1  });
-        //enable fast signal ipbus
 
         //then loop the HWDescription and find out about our Connected CBCs
         for (Module* cFe : pBoard->fModuleVector)
@@ -143,9 +142,6 @@ namespace Ph2_HwInterface {
                 cVecReg.push_back ({cRegString + "i2c_address", cAddress});
             }
         }
-
-        //this might need some toggling
-        //cVecReg.push_back ({"cbc_system_cnfg.global.misc.cbc_clk_phase_shift", 0x1});
 
         //last, loop over the variable registers from the HWDescription.xml file
         //this is where I should get all the clocking and FastCommandInterface settings
@@ -191,78 +187,78 @@ namespace Ph2_HwInterface {
     void Cbc3Fc7FWInterface::FindPhase()
     {
         //this is to run the idelay tuning, similar to what we had to do for the pixels
-        uint32_t cCount = 0;
+        //uint32_t cCount = 0;
 
-        while (ReadReg ("cbc_system_stat.global.misc.idelayctrl_rdy") == 0)
-        {
-            WriteReg ("cbc_system_ctrl.global.idelayctrl_reset", 1);
+        //while (ReadReg ("cbc_system_stat.global.misc.idelayctrl_rdy") == 0)
+        //{
+        //WriteReg ("cbc_system_ctrl.global.idelayctrl_reset", 1);
 
-            if (++cCount > 10)
-            {
-                LOG (ERROR) << "Error, idelayctrl does not go to ready! Aborting!";
-                exit (1);
-            }
+        //if (++cCount > 10)
+        //{
+        //LOG (ERROR) << "Error, idelayctrl does not go to ready! Aborting!";
+        //exit (1);
+        //}
 
-            std::this_thread::sleep_for (std::chrono::microseconds (1000) );
-        }
+        //std::this_thread::sleep_for (std::chrono::microseconds (1000) );
+        //}
 
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
-        std::this_thread::sleep_for (std::chrono::microseconds (20) );
+        //WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
+        //WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
+        //std::this_thread::sleep_for (std::chrono::microseconds (20) );
 
-        uint32_t cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
-        cCount = 1;
+        //uint32_t cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
+        //cCount = 1;
 
-        while (cFsm != 4)
-        {
-            LOG (DEBUG) << "FSM: " << cFsm;
-            //here read "SerialIface&Error" register of CBC
-            //this whole block is needed for the manual low-level I2C transaction
-            CbcRegItem cRegItem (0, 0x1D, 0, 0);
-            std::vector<uint32_t> cVecReq;
-            this->EncodeReg (cRegItem, 0, cVecReq, true, false);
-            this->ReadCbcBlockReg (cVecReq);
-            bool cFailed = false;
-            bool cRead;
-            uint8_t cId;
-            this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-            LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-            LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
-            LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
-            LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
-            LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
-            LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
-            LOG (INFO) << "sending Cbc fast reset!";
-            this->CbcFastReset();
-            //here read "SerialIface&Error" register of CBC again
-            //this whole block is needed for the manual low-level I2C transaction
-            cRegItem.fValue = 0;
-            cVecReq.clear();
-            this->EncodeReg (cRegItem, 0, cVecReq, true, false);
-            this->ReadCbcBlockReg (cVecReq);
-            cFailed = false;
-            this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-            LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-            LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
-            LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
-            LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
-            LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
-            LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
+        //while (cFsm != 4)
+        //{
+        //LOG (DEBUG) << "FSM: " << cFsm;
+        ////here read "SerialIface&Error" register of CBC
+        ////this whole block is needed for the manual low-level I2C transaction
+        //CbcRegItem cRegItem (0, 0x1D, 0, 0);
+        //std::vector<uint32_t> cVecReq;
+        //this->EncodeReg (cRegItem, 0, cVecReq, true, false);
+        //this->ReadCbcBlockReg (cVecReq);
+        //bool cFailed = false;
+        //bool cRead;
+        //uint8_t cId;
+        //this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
+        //LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
+        //LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
+        //LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
+        //LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
+        //LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
+        //LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
+        //LOG (INFO) << "sending Cbc fast reset!";
+        //this->CbcFastReset();
+        ////here read "SerialIface&Error" register of CBC again
+        ////this whole block is needed for the manual low-level I2C transaction
+        //cRegItem.fValue = 0;
+        //cVecReq.clear();
+        //this->EncodeReg (cRegItem, 0, cVecReq, true, false);
+        //this->ReadCbcBlockReg (cVecReq);
+        //cFailed = false;
+        //this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
+        //LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
+        //LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
+        //LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
+        //LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
+        //LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
+        //LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
 
-            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
-            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
-            std::this_thread::sleep_for (std::chrono::microseconds (20) );
-            cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
+        //WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
+        //WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
+        //std::this_thread::sleep_for (std::chrono::microseconds (20) );
+        //cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
 
-            if (++cCount > 5)
-            {
-                LOG (ERROR) << "Error, idelay tuning failed! Aborting!";
-                exit (1);
-            }
-        }
+        //if (++cCount > 5)
+        //{
+        //LOG (ERROR) << "Error, idelay tuning failed! Aborting!";
+        //exit (1);
+        //}
+        //}
 
-        uint32_t cDelay = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
-        LOG (INFO) << "Idelay tuned to delay tap = " << cDelay;
+        //uint32_t cDelay = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
+        //LOG (INFO) << "Idelay tuned to delay tap = " << cDelay;
     }
 
     void Cbc3Fc7FWInterface::Start()
@@ -270,23 +266,17 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
         WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
         //first reset the DAQ
-        //global daq reset is not implemented yet
-        //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
-        //in the meantime, do this
-        //std::vector< std::pair<std::string, uint32_t> > cVecReg;
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1);
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.event_builder.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.data_buffer.reset", 0x1);
-        //WriteStackReg ( cVecReg );
-        //cVecReg.clear();
+        WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
+        //trigger the dctt fsm
+        WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 0x1);
+        int cDctt_fsm = 0;
 
-        //this could go into Configure() once it is more stable
-        //TODO
-        //this->FindPhase();
+        while (cDctt_fsm != 9)
+            cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
+
         //reload the config of the fast_command_manager
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (10) );
@@ -304,14 +294,13 @@ namespace Ph2_HwInterface {
     void Cbc3Fc7FWInterface::Pause()
     {
         //this should just brake triggers
-        //WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_stop", 0x1);
         WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
     }
 
 
     void Cbc3Fc7FWInterface::Resume()
     {
-        //WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_start", 0x1);
+        //and this resume them!
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
     }
 
@@ -333,10 +322,7 @@ namespace Ph2_HwInterface {
         pData = ReadBlockRegValue ("data", cNWords);
 
         if (fSaveToFile)
-        {
             fFileHandler->set (pData);
-            //fFileHandler->writeFile();
-        }
 
         //need to return the number of events read
         uint32_t cEventSize = computeEventSize (pBoard);
@@ -346,7 +332,6 @@ namespace Ph2_HwInterface {
         else
             LOG (ERROR) << "Packet Size is not a multiple of the event size!";
 
-        //return nEvents;
         return cNEvents;
     }
 
@@ -355,22 +340,22 @@ namespace Ph2_HwInterface {
     {
         //as per Kirika's recommendation, I will use the internal fast signal generator for this - if a method shows up to do this also with external triggers I can always modify in the future!
         //Procedure as follows:
-        //1)configure a cycle that only sends 100 triggers
+        //1)configure a cycle that only sends pNEvents triggers
         //2)send a serials_command_generator.fast_signal_generator_start
         //3)wait sufficiently long or make sure that the number of words to be read is pNEvents*EventSize
         //4)read data
 
         //Reset the DAQ and clear all the buffers
-        //not implemented yet, in the meantime do below
-        //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
         WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1);
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.event_builder.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.data_buffer.reset", 0x1);
-        //WriteStackReg ( cVecReg );
-        //cVecReg.clear();
+        //first reset the DAQ
+        WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
+        //trigger the dctt fsm
+        WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 0x1);
+        int cDctt_fsm = 0;
+
+        while (cDctt_fsm != 9)
+            cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
 
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         // configure the fast command cycle to send triggers
@@ -378,10 +363,6 @@ namespace Ph2_HwInterface {
         cVecReg.push_back ({"cbc_system_cnfg.fast_command_manager.fast_signal_generator.Ncycle", pNEvents});
         WriteStackReg ( cVecReg );
         cVecReg.clear();
-
-        //TODO
-        //this->FindPhase();
-
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
@@ -397,7 +378,7 @@ namespace Ph2_HwInterface {
 
         while (cNWords < pNEvents * cEventSize )
         {
-            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+            std::this_thread::sleep_for (std::chrono::milliseconds (10) );
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
         }
 
@@ -411,10 +392,7 @@ namespace Ph2_HwInterface {
         pData = ReadBlockRegValue ("data", cNWords);
 
         if ( fSaveToFile )
-        {
             fFileHandler->set ( pData );
-            //fFileHandler->writeFile();
-        }
     }
 
     /** compute the block size according to the number of CBC's on this board
