@@ -95,7 +95,7 @@ int main ( int argc, char* argv[] )
     bool cVcthset = cmd.foundOption ("vcth");
 
     Watchdog cDog;
-    cDog.Start (2, &exitme);
+    cDog.Start (5, &exitme);
 
     std::string cResultfile = "Cbc3RadiationCycle";
     cDirectory += "Cbc3RadiationCycle";
@@ -205,7 +205,7 @@ int main ( int argc, char* argv[] )
             }
         }
 
-        cDog.Reset (10);
+        cDog.Reset (30);
 
         //t.stop();
         //t.show ( "Time to sweep all biases" );
@@ -219,7 +219,7 @@ int main ( int argc, char* argv[] )
         cCalibration.writeObjects();
         cCalibration.dumpConfigFiles();
 
-        cDog.Reset (30);
+        cDog.Reset (50);
 
         ////now run a noise scan
         PedeNoise cPedeNoise;
@@ -231,7 +231,7 @@ int main ( int argc, char* argv[] )
         cPedeNoise.writeObjects();
 
         //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
-        cDog.Reset (30);
+        cDog.Reset (50);
 
         StubSweep cStubSweep;
         cStubSweep.Inherit (&cTool);
