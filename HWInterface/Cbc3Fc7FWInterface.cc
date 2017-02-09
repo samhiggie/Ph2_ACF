@@ -111,6 +111,8 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
+        //perform a global reset, just to be sure
+        WriteReg ("cbc_system_ctrl.global.reset", 0x1);
         //need to set to 0 before configuring, otherwise NCbc will keep incrementing when I re-configure
         fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
@@ -161,26 +163,41 @@ namespace Ph2_HwInterface {
         //this will do everthing that comes below eventually
         //WriteReg ("cbc_system_ctrl.global.init", 0x1);
         //temporary, should be in global init later
+        //TODO
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset_fifos", 0x1);
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset", 0x1);
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.init", 0x1);
 
-        std::this_thread::sleep_for (std::chrono::microseconds (50) * fNCbc );
+        int cBusState = 0;
+        int cCounter = 0;
+
+        while (cBusState != 1)
+        {
+            cBusState = ReadReg ("cbc_system_stat.cbc_i2c_bus_managers.fe0.bus_ready");
+            LOG (DEBUG) << "Bus State: " << cBusState;
+            std::this_thread::sleep_for (std::chrono::milliseconds (20) );
+
+            if (++cCounter > 20) break;
+        }
+
+        //TODO
+        //std::this_thread::sleep_for (std::chrono::microseconds (50) * fNCbc );
 
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
-        ReadI2C (  fNCbc, pReplies);
+        ReadI2C (fNCbc, pReplies);
 
         bool cSuccess = false;
 
         for (auto& cWord : pReplies)
+        {
+            LOG (DEBUG) << ( (cWord >> 20) & 0x1) << " " << std::bitset<8> (cWord & 0x000000FF) << " " << std::bitset<32> (cWord) ;
             cSuccess = ( ( (cWord >> 20) & 0x1) == 0 && ( (cWord) & 0x000000FF) != 0 ) ? true : false;
+        }
 
         if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
         else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() ;
 
-        //perform a global reset, just to be sure
-        WriteReg ("cbc_system_ctrl.global.reset", 0x1);
         this->FindPhase();
     }
 
@@ -510,6 +527,7 @@ namespace Ph2_HwInterface {
         }
         catch ( Exception& except )
         {
+            LOG (INFO) << "Caught exception in FWInterface::ReadI2C: " << except.what();
             throw except;
         }
 
