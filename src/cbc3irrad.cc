@@ -205,7 +205,7 @@ int main ( int argc, char* argv[] )
             }
         }
 
-        cDog.Reset (30);
+        cDog.Reset (50);
 
         //t.stop();
         //t.show ( "Time to sweep all biases" );
@@ -219,7 +219,7 @@ int main ( int argc, char* argv[] )
         cCalibration.writeObjects();
         cCalibration.dumpConfigFiles();
 
-        cDog.Reset (50);
+        cDog.Reset (70);
 
         ////now run a noise scan
         PedeNoise cPedeNoise;
@@ -317,7 +317,6 @@ int main ( int argc, char* argv[] )
         cDog.Stop();
     }
 
-    LOG (INFO) << GREEN << "Irradiation Test exited normally!" << RESET;
     cDog.Stop();
 
     if ( !batchMode )
@@ -326,6 +325,8 @@ int main ( int argc, char* argv[] )
     if (cLVClient) delete cLVClient;
 
     if (cKeController) delete cKeController;
+
+    LOG (INFO) << GREEN << "Irradiation Test exited normally!" << RESET;
 
     return 0;
 }

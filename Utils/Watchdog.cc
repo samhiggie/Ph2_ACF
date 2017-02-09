@@ -18,6 +18,7 @@ void Watchdog::Stop()
         std::unique_lock<std::mutex> cLock (fMutex);
         fRunning = false;
         fStopCondition.notify_all();
+        cLock.unlock();
 
         if (fThread.joinable() ) fThread.join();
     }
@@ -40,6 +41,8 @@ void Watchdog::Workloop()
         //  2. or the timeout expires
         //  3. or until spurious wakeup
         fStopCondition.wait_for (cLock, fTimeout ) ;
+
+    //cLock.unlock();
 
     if (fRunning.load() )
     {
