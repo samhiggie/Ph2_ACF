@@ -102,7 +102,7 @@ void Channel::initializeHist ( uint16_t pValue, TString pParameter )
 
     if ( fDerivative ) delete fDerivative;
 
-    fDerivative = new TH1F ( graphname, Form ( "Derivative_Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 1023, 0, 1023 );
+    fDerivative = new TH1F ( graphname, Form ( "Derivative_Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 1024, 0, 1024 );
     fDerivative->GetXaxis()->SetTitle ( pParameter );
     fDerivative->GetYaxis()->SetTitle ( "Slope" );
 
@@ -211,6 +211,7 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
 
 void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TString pParameter, TFile* pResultfile )
 {
+    //TODO
     fFitted = false;
 
     if ( fScurve != nullptr && fFit != nullptr )
@@ -244,8 +245,11 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
 
                 if ( cPrev > 0.75 ) cActive = true; // sampling begins
 
-                //if ( cActive ) fDerivative->SetBinContent ( fDerivative->FindBin ( cBin + 0.5 ),  cDiff  );
-                if ( cActive ) fDerivative->SetBinContent ( cBin + 1,  cDiff  );
+                int iBinDerivative = fDerivative->FindBin ( (fScurve->GetBinCenter (cBin + 1) + fScurve->GetBinCenter (cBin) ) / 2);
+
+                if ( cActive ) fDerivative->SetBinContent ( iBinDerivative, cDiff  );
+
+                //if ( cActive ) fDerivative->SetBinContent ( cBin + 1,  cDiff  );
 
                 if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 
@@ -266,9 +270,13 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
 
                 if ( cPrev > 0.75 ) cActive = true; // sampling begins
 
+                int iBinDerivative = fDerivative->FindBin ( (fScurve->GetBinCenter (cBin - 1 ) + fScurve->GetBinCenter (cBin ) ) / 2.0);
+
+                if ( cActive ) fDerivative->SetBinContent ( iBinDerivative, cDiff  );
+
                 //original
                 //if ( cActive ) fDerivative->SetBinContent ( fDerivative->FindBin ( cBin - 0.5 ),   cDiff  );
-                if ( cActive ) fDerivative->SetBinContent ( cBin - 1,   cDiff  );
+                //if ( cActive ) fDerivative->SetBinContent ( cBin - 1,   cDiff  );
 
                 if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 
