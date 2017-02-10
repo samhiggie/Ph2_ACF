@@ -168,20 +168,7 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset", 0x1);
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.init", 0x1);
 
-        int cBusState = 0;
-        int cCounter = 0;
-
-        while (cBusState != 1)
-        {
-            cBusState = ReadReg ("cbc_system_stat.cbc_i2c_bus_managers.fe0.bus_ready");
-            LOG (DEBUG) << "Bus State: " << cBusState;
-            std::this_thread::sleep_for (std::chrono::milliseconds (20) );
-
-            if (++cCounter > 20) break;
-        }
-
-        //TODO
-        //std::this_thread::sleep_for (std::chrono::microseconds (50) * fNCbc );
+        std::this_thread::sleep_for (std::chrono::microseconds (50) * fNCbc );
 
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
@@ -193,6 +180,18 @@ namespace Ph2_HwInterface {
         {
             LOG (DEBUG) << ( (cWord >> 20) & 0x1) << " " << std::bitset<8> (cWord & 0x000000FF) << " " << std::bitset<32> (cWord) ;
             cSuccess = ( ( (cWord >> 20) & 0x1) == 0 && ( (cWord) & 0x000000FF) != 0 ) ? true : false;
+        }
+
+        int cBusState = 0;
+        int cCounter = 0;
+
+        while (cBusState != 1)
+        {
+            cBusState = ReadReg ("cbc_system_stat.cbc_i2c_bus_managers.fe0.bus_ready");
+            LOG (DEBUG) << "Bus State: " << cBusState;
+            std::this_thread::sleep_for (std::chrono::milliseconds (20) );
+
+            if (++cCounter > 20) break;
         }
 
         if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
@@ -566,6 +565,12 @@ namespace Ph2_HwInterface {
         // the actual write & readback command is in the vector
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
+
+        if (cReplies.size() == 0)
+        {
+            LOG (ERROR) << "Error, received 0 I2C replies - something is wrong, aborting!";
+            exit (1);
+        }
 
         //for (int i = 0; i < pVecReg.size(); i++)
         //{
