@@ -108,7 +108,7 @@ namespace Ph2_System {
         for (auto& cBoard : fBoardVector)
         {
             fBeBoardInterface->ConfigureBoard ( cBoard );
-            //fBeBoardInterface->CbcFastReset ( cBoard );
+            fBeBoardInterface->CbcFastReset ( cBoard );
             //fBeBoardInterface->CbcHardReset ( cBoard );
 
             if ( cCheck && cBoard->getBoardType() == BoardType::GLIB)

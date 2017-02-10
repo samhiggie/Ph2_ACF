@@ -79,7 +79,6 @@ namespace Ph2_HwInterface {
         fBoard->getNode ( pRegNode ).write ( pVal );
         fBoard->dispatch();
         fBoardMutex.unlock();
-        LOG (DEBUG) << "Write:\t" << pRegNode << "\t" << pVal;
 
         // Verify if the writing is done correctly
         if ( DEV_FLAG )
@@ -110,10 +109,7 @@ namespace Ph2_HwInterface {
         fBoardMutex.lock();
 
         for ( auto const& v : pVecReg )
-        {
             fBoard->getNode ( v.first ).write ( v.second );
-            LOG (DEBUG) << "Write:\t" << v.first << "\t" << v.second;
-        }
 
 
         try
@@ -239,7 +235,6 @@ namespace Ph2_HwInterface {
         fBoardMutex.lock();
         uhal::ValWord<uint32_t> cValRead = fBoard->getNode ( pRegNode ).read();
         fBoard->dispatch();
-        LOG (DEBUG) << "Read:\t" << pRegNode << "\t" << static_cast<uint32_t> (cValRead);
         fBoardMutex.unlock();
 
         if ( DEV_FLAG )

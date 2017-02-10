@@ -125,7 +125,8 @@ int main ( int argc, char** argv )
         LOG (INFO) << outp.str();
     }
 
-    cNthAcq++;
+    //cNthAcq++;
+    //////////////////////////////////////////////////////////////////////////
     //cTool.fBeBoardInterface->Start ( pBoard );
 
     //while ( cN <= pEventsperVcth )

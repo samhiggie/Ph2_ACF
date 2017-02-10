@@ -19,7 +19,7 @@
                 <!--other values are not valid for single cbc firmware.-->
                 <node id="id"          mask="0x000001F0" description="0x1(default)"/>
                 <node id="fe_id"       mask="0x00000E00" description="0x1(default)"/>
-                <node id="i2c_address" mask="0x0007F000" description="0x41(default)"/>
+                <node id="i2c_address" mask="0x0007F000" description="0x5F(default)"/>
 			</node>
              <!--some more reigsters here that have to go into initial configure-->
              <node id="misc"        address="0x10">

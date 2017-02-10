@@ -30,8 +30,8 @@
         <!--required-->
         <Register name="cbc_system_clk"> 0x1 </Register>
         <!--to output trigger-->
-        <Register name="global.test_out.1"> 0x0008 </Register>
-        <Register name="global.test_out.2"> 0x0009 </Register>
+        <Register name="global.test_out.1"> 0x0004 </Register>
+        <Register name="global.test_out.2"> 0x0003 </Register>
         <!--FAST SIGNAL SOURCE-->
         <Register name="fast_command_manager">
             <Register name="fast_signal_enable">
@@ -45,14 +45,14 @@
             <Register name="fast_signal_generator">
                 <!--Kirkia sets this node to 7, so enables everything but fast_reset-->
                 <Register name="enable">
-                    <Register name="fast_reset"> 0 </Register>
+                    <Register name="fast_reset"> 1 </Register>
                     <Register name="trigger"> 1 </Register>
 					<Register name="test_pulse"> 1 </Register>
                     <Register name="orbit_reset"> 0 </Register>
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
                 <Register name="Ncycle"> 0 </Register>
-                <Register name="cycle_period"> 80 </Register>
+                <Register name="cycle_period"> 800 </Register>
                 <Register name="trigger_timing"> 19 </Register>
                 <Register name="test_pulse_timing"> 2 </Register>
                 <Register name="orbit_reset_timing"> 100 </Register>
@@ -65,7 +65,7 @@
                 <Register name="trig_data"> 196 </Register>
             </Register>
         </Register>
-        <Register name="data_buffer.safe_nwords_free"> 0x1c0 </Register>
+        <!--<Register name="data_buffer.safe_nwords_free"> 0x1c0 </Register>-->
     </Register>
   </BeBoard>
 </HwDescription>
