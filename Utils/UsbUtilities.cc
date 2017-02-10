@@ -98,9 +98,11 @@ void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile
     starterScript << "tmux send-keys -t $SESSION_NAME \". ./setup.sh\" Enter" << std::endl;
 
     // launch HMP4040 server
-    if ( pLogFile.empty() ) pLogFile = "./Current_log.txt";
+    if ( pLogFile.empty() )
+        sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"lvSupervisor -f %s -r %d -p %d -i %d -S \" Enter", pConfigFile.c_str(), pPortsInfo.first, pPortsInfo.second, pMeasureInterval_s  ) ;
+    else
+        sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"lvSupervisor -f %s -r %d -p %d -i %d -S -o %s\" Enter", pConfigFile.c_str(), pPortsInfo.first, pPortsInfo.second, pMeasureInterval_s, pLogFile.c_str() ) ;
 
-    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"lvSupervisor -f %s -r %d -p %d -i %d -S -o %s\" Enter", pConfigFile.c_str(), pPortsInfo.first, pPortsInfo.second, pMeasureInterval_s, pLogFile.c_str() ) ;
     starterScript << buffer << std::endl;
     starterScript.close();
 }
@@ -125,9 +127,12 @@ void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile,
     starterScript << "tmux send-keys -t $SESSION_NAME \". ./setup.sh\" Enter" << std::endl;
 
     // TODO - change to configure DMM supervisor
-    if ( pLogFile.empty() ) pLogFile = "./Temperature_log.txt";
+    if ( pLogFile.empty() )
 
-    sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"dmmSupervisor -r %d -p %d -o %s\" Enter", pPortsInfo.first, pPortsInfo.second, pLogFile.c_str() ) ;
+        sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"dmmSupervisor -r %d -p %d\" Enter", pPortsInfo.first, pPortsInfo.second) ;
+    else
+        sprintf (buffer, "tmux send-keys -t $SESSION_NAME \"dmmSupervisor -r %d -p %d -o %s\" Enter", pPortsInfo.first, pPortsInfo.second, pLogFile.c_str() ) ;
+
     starterScript << buffer << std::endl;
     starterScript.close();
 }

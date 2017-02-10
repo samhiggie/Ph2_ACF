@@ -136,12 +136,14 @@ int main ( int argc, char* argv[] )
     //Start the server to communicate with the LV power supply
     std::string cPowerSupplyOutputFile = currentDir + "/" + cDirectory + "/Current_log.txt";
     PortsInfo cPowerSupplyPortsInfo = std::make_pair (8081, 8080);
-    cPSStatus = InitializeMonitoring ( cHostname, "HMP4040", cPowerSupplyPortsInfo, cMonitoringInterval, cPowerSupplyOutputFile );
+    //cPSStatus = InitializeMonitoring ( cHostname, "HMP4040", cPowerSupplyPortsInfo, cMonitoringInterval, cPowerSupplyOutputFile );
+    cPSStatus = InitializeMonitoring ( cHostname, "HMP4040", cPowerSupplyPortsInfo, cMonitoringInterval );
 
     //Start server to communicate with Keithley DMM instrument via usbtmc and SCPI
     std::string cDMMOutputFile = currentDir + "/" + cDirectory  + "/Temperature_log.txt";
     PortsInfo cDMMPortsInfo = std::make_pair (8083, 8082);
-    cDMMStatus = InitializeMonitoring ( cHostname, "Ke2110", cDMMPortsInfo, cMonitoringInterval, cDMMOutputFile);
+    //cDMMStatus = InitializeMonitoring ( cHostname, "Ke2110", cDMMPortsInfo, cMonitoringInterval, cDMMOutputFile);
+    cDMMStatus = InitializeMonitoring ( cHostname, "Ke2110", cDMMPortsInfo, cMonitoringInterval);
 
 
     if ( cPSStatus && cDMMStatus)  // Verify child process terminated without error.
