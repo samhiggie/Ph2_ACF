@@ -195,7 +195,7 @@
                 <node id="bus_ready"                   address = "0x53"/>
 			</node>
 		</node>
-        <node id="io">
+      <node id="io">
       <node id="cbc0"                            >
         <node id="data_clock_timing"           address="0x65">
           <node id="fsm"                     mask="0x0000000F"/>
@@ -221,7 +221,7 @@
           <node id="idelay_reset_tuning_tap" mask="0x1F000000"/>
         </node>
       </node>
-    </node>
+         </node>
     <node id="mmcme2_drp"                          address="0x70">
       <node id="srdy"                                      mask="0x00000001"/>
     </node>
