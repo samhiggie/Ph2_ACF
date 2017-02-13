@@ -102,16 +102,18 @@ int main ( int argc, char** argv )
 
     BeBoard* pBoard = cTool.fBoardVector.at ( 0 );
     uint32_t cN = 1;
-    uint32_t cNthAcq = 0;
-    uint32_t count = 0;
+    //uint32_t cNthAcq = 0;
+    //uint32_t count = 0;
 
-    ThresholdVisitor cVisitor (cTool.fCbcInterface, 0);
 
     if (cVcthset)
     {
+        ThresholdVisitor cVisitor (cTool.fCbcInterface, 0);
         cVisitor.setThreshold (cVcth);
-        cTool.accept (cVisitor);
+        pBoard->accept (cVisitor);
     }
+
+    //std::this_thread::sleep_for (std::chrono::milliseconds (500) );
 
     cTool.ReadNEvents (pBoard, pEventsperVcth);
 

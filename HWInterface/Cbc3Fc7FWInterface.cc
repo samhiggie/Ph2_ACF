@@ -195,87 +195,46 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::FindPhase()
     {
-        //this is to run the idelay tuning, similar to what we had to do for the pixels
-        //uint32_t cCount = 0;
-
-        //while (ReadReg ("cbc_system_stat.global.misc.idelayctrl_rdy") == 0)
-        //{
-        //WriteReg ("cbc_system_ctrl.global.idelayctrl_reset", 1);
-
-        //if (++cCount > 10)
-        //{
-        //LOG (ERROR) << "Error, idelayctrl does not go to ready! Aborting!";
-        //exit (1);
-        //}
-
-        //std::this_thread::sleep_for (std::chrono::microseconds (1000) );
-        //}
-
-        //WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
-        //WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
-        //std::this_thread::sleep_for (std::chrono::microseconds (20) );
-
-        //uint32_t cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
-        //cCount = 1;
-
-        //while (cFsm != 4)
-        //{
-        //LOG (DEBUG) << "FSM: " << cFsm;
-        ////here read "SerialIface&Error" register of CBC
-        ////this whole block is needed for the manual low-level I2C transaction
-        //CbcRegItem cRegItem (0, 0x1D, 0, 0);
-        //std::vector<uint32_t> cVecReq;
-        //this->EncodeReg (cRegItem, 0, cVecReq, true, false);
-        //this->ReadCbcBlockReg (cVecReq);
-        //bool cFailed = false;
-        //bool cRead;
-        //uint8_t cId;
-        //this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-        //LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-        //LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
-        //LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
-        //LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
-        //LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
-        //LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
-        //LOG (INFO) << "sending Cbc fast reset!";
-        //this->CbcFastReset();
-        ////here read "SerialIface&Error" register of CBC again
-        ////this whole block is needed for the manual low-level I2C transaction
-        //cRegItem.fValue = 0;
-        //cVecReq.clear();
-        //this->EncodeReg (cRegItem, 0, cVecReq, true, false);
-        //this->ReadCbcBlockReg (cVecReq);
-        //cFailed = false;
-        //this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-        //LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-        //LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
-        //LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
-        //LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
-        //LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
-        //LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
-
-        //WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
-        //WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
-        //std::this_thread::sleep_for (std::chrono::microseconds (20) );
-        //cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
-
-        //if (++cCount > 5)
-        //{
-        //LOG (ERROR) << "Error, idelay tuning failed! Aborting!";
-        //exit (1);
-        //}
-        //}
-
-        //uint32_t cDelay = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
-        //LOG (INFO) << "Idelay tuned to delay tap = " << cDelay;
+        //LOG (DEBUG) << "Before: " << static_cast<int> (ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.pattern") );
         //trigger the dctt fsm
-        WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 0x1);
+        WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 1);
+        int cCounter = 0;
         int cDctt_fsm = 0;
 
         while (cDctt_fsm != 9)
+        {
+            CbcRegItem cRegItem (0, 0x1D, 0, 0);
+            std::vector<uint32_t> cVecReq;
+            this->EncodeReg (cRegItem, 0, cVecReq, true, false);
+            this->ReadCbcBlockReg (cVecReq);
+            bool cFailed = false;
+            bool cRead;
+            uint8_t cId;
+            this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
+
+            if (cRegItem.fValue != 0)
+            {
+                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
+                LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
+                LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
+                LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
+                LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
+                LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
+                LOG (INFO) << "sending Cbc fast reset!";
+                this->CbcFastReset();
+            }
+
             cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
 
-        LOG (DEBUG) << "DCTT FSM Status: " << cDctt_fsm ;
+            if (cCounter++ > 50)
+            {
+                LOG (INFO) << "Clock Data Timing tuning failed after 50 attempts with value " << cDctt_fsm << " -aborting!";
+                exit (1);
+            }
+        }
+
+        LOG (INFO) << "DCTT FSM Status: " << cDctt_fsm ;
+        //LOG (DEBUG) << "AFter: " << static_cast<int> (ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.pattern") );
     }
 
     void Cbc3Fc7FWInterface::Start()
@@ -285,20 +244,14 @@ namespace Ph2_HwInterface {
         //first reset the DAQ
         WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
         //trigger the dctt fsm
-        WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 0x1);
-        int cDctt_fsm = 0;
-
-        while (cDctt_fsm != 9)
-            cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
-
-        LOG (DEBUG) << "CDTT FSM Status: " << cDctt_fsm ;
+        this->FindPhase();
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
 
         //reload the config of the fast_command_manager
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (10) );
+        std::this_thread::sleep_for (std::chrono::microseconds (100) );
         //start the periodic fast signals if enabled
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
     }
@@ -332,11 +285,9 @@ namespace Ph2_HwInterface {
 
         while (cNWords == 0)
         {
-            std::this_thread::sleep_for (std::chrono::milliseconds (10) );
-            LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
+            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
-            LOG (DEBUG) << cNWords;
         }
 
         pData = ReadBlockRegValue ("data", cNWords);
@@ -365,31 +316,7 @@ namespace Ph2_HwInterface {
         //3)wait sufficiently long or make sure that the number of words to be read is pNEvents*EventSize
         //4)read data
 
-        //Reset the DAQ and clear all the buffers
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
-        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
-        //first reset the DAQ
-        WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
-        //trigger the dctt fsm
-        WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 0x1);
-        int cDctt_fsm = 0;
-
-        int cCounter = 0;
-
-        while (cDctt_fsm != 9)
-        {
-            cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
-            LOG (DEBUG) << cDctt_fsm;
-
-            if (cCounter++ > 50)
-            {
-                LOG (ERROR) << "Could not run data clock timing";
-                exit (1);
-            }
-        }
-
-        LOG (DEBUG) << "FSM Status: " << cDctt_fsm ;
-
+        // configure fast signal generator
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         // configure the fast command cycle to send triggers
         cVecReg.push_back ({"cbc_system_cnfg.fast_command_manager.fast_signal_generator.enable.trigger", 0x1});
@@ -397,36 +324,22 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        //then start the triggers
-        WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
-        //reload the config of the fast_command_manager
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (10) );
-        //start the periodic fast signals if enabled
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
-        LOG (DEBUG) << "Started triggers";
+        this->Start();
 
         //now wait until nword_event is equal to pNEvents * eventSize
         uint32_t cNWords = 0;
         uint32_t cEventSize = 3 + fNCbc * 11; // 3 words event header + nCbc*11 words per CBC in unsparsified mode
-        cCounter = 0;
 
         while (cNWords < pNEvents * cEventSize )
         {
-            LOG (DEBUG) << cNWords << " of " << pNEvents* cEventSize;
-            LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
-            std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
-
-            if (cCounter++ > 50) exit (1);
         }
 
         if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
 
         //disable triggers
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
-        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
-
+        this->Stop();
         //and read data
         pData = ReadBlockRegValue ("data", cNWords);
 
