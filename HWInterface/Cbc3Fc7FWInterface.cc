@@ -190,7 +190,7 @@ namespace Ph2_HwInterface {
         if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
         else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() << " - or I2C FSM did not go to ready!" ;
 
-        this->FindPhase();
+        //this->FindPhase();
     }
 
     void Cbc3Fc7FWInterface::FindPhase()
@@ -374,8 +374,19 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 0x1);
         int cDctt_fsm = 0;
 
+        int cCounter = 0;
+
         while (cDctt_fsm != 9)
+        {
             cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
+            LOG (DEBUG) << cDctt_fsm;
+
+            if (cCounter++ > 50)
+            {
+                LOG (ERROR) << "Could not run data clock timing";
+                exit (1);
+            }
+        }
 
         LOG (DEBUG) << "FSM Status: " << cDctt_fsm ;
 
@@ -398,7 +409,7 @@ namespace Ph2_HwInterface {
         //now wait until nword_event is equal to pNEvents * eventSize
         uint32_t cNWords = 0;
         uint32_t cEventSize = 3 + fNCbc * 11; // 3 words event header + nCbc*11 words per CBC in unsparsified mode
-        int cCounter = 0;
+        cCounter = 0;
 
         while (cNWords < pNEvents * cEventSize )
         {
