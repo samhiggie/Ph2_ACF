@@ -91,19 +91,11 @@ namespace Ph2_HwInterface {
 
         uhal::ValWord<uint32_t> cBoardType = ReadReg ( "cbc_system_stat.system.id" );
 
-        LOG (INFO) << "BoardType : ";
-
-        char cChar = ( ( cBoardType & cMask4 ) >> 24 );
-        LOG (INFO) << cChar;
-
-        cChar = ( ( cBoardType & cMask3 ) >> 16 );
-        LOG (INFO) << cChar;
-
-        cChar = ( ( cBoardType & cMask2 ) >> 8 );
-        LOG (INFO) << cChar;
-
-        cChar = ( cBoardType & cMask1 );
-        LOG (INFO) << cChar ;
+        char cChar1 = ( ( cBoardType & cMask4 ) >> 24 );
+        char cChar2 = ( ( cBoardType & cMask3 ) >> 16 );
+        char cChar3 = ( ( cBoardType & cMask2 ) >> 8 );
+        char cChar4 = ( cBoardType & cMask1 );
+        LOG (INFO) << "BoardType : " << cChar1 << cChar2 << cChar3 << cChar4;
 
         uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 || (cVersionMinor & 0x0000FFFF) );
         return cVersionWord;
@@ -111,6 +103,7 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
+        this->getBoardInfo();
         //perform a global reset, just to be sure
         WriteReg ("cbc_system_ctrl.global.reset", 0x1);
         //need to set to 0 before configuring, otherwise NCbc will keep incrementing when I re-configure
@@ -167,7 +160,7 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset", 0x1);
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.init", 0x1);
 
-        //std::this_thread::sleep_for (std::chrono::microseconds (50) * fNCbc );
+        std::this_thread::sleep_for (std::chrono::microseconds (50) * fNCbc );
 
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
@@ -189,12 +182,13 @@ namespace Ph2_HwInterface {
             if (++cCounter > 20)
             {
                 LOG (ERROR) << "Error: I2C Bus FSM did not go to ready!";
+                cSuccess = false;
                 break;
             }
         }
 
         if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
-        else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() ;
+        else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() << " - or I2C FSM did not go to ready!" ;
 
         this->FindPhase();
     }
@@ -274,6 +268,14 @@ namespace Ph2_HwInterface {
 
         //uint32_t cDelay = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
         //LOG (INFO) << "Idelay tuned to delay tap = " << cDelay;
+        //trigger the dctt fsm
+        WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 0x1);
+        int cDctt_fsm = 0;
+
+        while (cDctt_fsm != 9)
+            cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
+
+        LOG (DEBUG) << "DCTT FSM Status: " << cDctt_fsm ;
     }
 
     void Cbc3Fc7FWInterface::Start()
@@ -289,7 +291,7 @@ namespace Ph2_HwInterface {
         while (cDctt_fsm != 9)
             cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
 
-        LOG (DEBUG) << "FSM Status: " << cDctt_fsm ;
+        LOG (DEBUG) << "CDTT FSM Status: " << cDctt_fsm ;
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
@@ -331,6 +333,7 @@ namespace Ph2_HwInterface {
         while (cNWords == 0)
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+            LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
             //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
             LOG (DEBUG) << cNWords;
@@ -395,13 +398,16 @@ namespace Ph2_HwInterface {
         //now wait until nword_event is equal to pNEvents * eventSize
         uint32_t cNWords = 0;
         uint32_t cEventSize = 3 + fNCbc * 11; // 3 words event header + nCbc*11 words per CBC in unsparsified mode
+        int cCounter = 0;
 
         while (cNWords < pNEvents * cEventSize )
         {
             LOG (DEBUG) << cNWords << " of " << pNEvents* cEventSize;
-            LOG (DEBUG) << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
+            LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
             std::this_thread::sleep_for (std::chrono::milliseconds (10) );
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
+
+            if (cCounter++ > 50) exit (1);
         }
 
         if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
