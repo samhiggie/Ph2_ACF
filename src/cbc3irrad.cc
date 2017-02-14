@@ -75,6 +75,9 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "batch", "b" );
 
+    cmd.defineOption ( "standalone", "launch irradtest without spawning the monitoring servers from code", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "standalone", "s" );
+
     int result = cmd.parse ( argc, argv );
 
     if ( result != ArgvParser::NoParserError )
@@ -92,6 +95,7 @@ int main ( int argc, char* argv[] )
     uint16_t cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 500;
 
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
+    bool cStandalone = ( cmd.foundOption ( "standalone" ) ) ? true : false;
     bool cVcthset = cmd.foundOption ("vcth");
 
     Watchdog cDog;
@@ -125,26 +129,34 @@ int main ( int argc, char* argv[] )
 
     //Start server to communicate with HMP404 instrument via usbtmc and SCPI
     bool cPSStatus, cDMMStatus;
-    cPSStatus = false;
-    cDMMStatus = false;
 
     // get current working directory
     char buffer[256];
     std::string currentDir = getcwd (buffer, sizeof (buffer) );
 
-    int cMonitoringInterval = 2;
-    //Start the server to communicate with the LV power supply
     std::string cPowerSupplyOutputFile = currentDir + "/" + cDirectory + "/Current_log.txt";
     PortsInfo cPowerSupplyPortsInfo = std::make_pair (8081, 8080);
-    //cPSStatus = InitializeMonitoring ( cHostname, "HMP4040", cPowerSupplyPortsInfo, cMonitoringInterval, cPowerSupplyOutputFile );
-    cPSStatus = InitializeMonitoring ( cHostname, "HMP4040", cPowerSupplyPortsInfo, cMonitoringInterval );
-
-    //Start server to communicate with Keithley DMM instrument via usbtmc and SCPI
     std::string cDMMOutputFile = currentDir + "/" + cDirectory  + "/Temperature_log.txt";
     PortsInfo cDMMPortsInfo = std::make_pair (8083, 8082);
-    //cDMMStatus = InitializeMonitoring ( cHostname, "Ke2110", cDMMPortsInfo, cMonitoringInterval, cDMMOutputFile);
-    cDMMStatus = InitializeMonitoring ( cHostname, "Ke2110", cDMMPortsInfo, cMonitoringInterval);
 
+    if (!cStandalone)
+    {
+        cPSStatus = false;
+        cDMMStatus = false;
+
+        int cMonitoringInterval = 2;
+        //Start the server to communicate with the LV power supply
+        cPSStatus = InitializeMonitoring ( cHostname, "HMP4040", cPowerSupplyPortsInfo, cMonitoringInterval );
+
+        //Start server to communicate with Keithley DMM instrument via usbtmc and SCPI
+        cDMMStatus = InitializeMonitoring ( cHostname, "Ke2110", cDMMPortsInfo, cMonitoringInterval);
+    }
+    else
+    {
+        LOG (INFO) << BOLDBLUE << "Standalone option set, thus requiring servers to be running already!" << RESET;
+        cPSStatus = true;
+        cDMMStatus = true;
+    }
 
     if ( cPSStatus && cDMMStatus)  // Verify child process terminated without error.
     {
