@@ -52,7 +52,7 @@ function run_irradtest {
     tmux select-pane -t $MAIN_PANE
     tmux send-keys -t $SESSION_NAME "
     while true; do
-        $TMUX_BASE_DIR/bin/cbc3irrad -b | tee $TMUX_BASE_DIR/consoledump.log
+        $TMUX_BASE_DIR/bin/cbc3irrad -s -b | tee $TMUX_BASE_DIR/consoledump.log
         echo \'bin/cbc3irrad finished with exit code $?. Respawning...\' | tee $TMUX_BASE_DIR/consoledump.log
         #if (("$CYCLECOUNT" % 1 == 0)); then 
             #echo \'Re-starting monitoring servers\'
