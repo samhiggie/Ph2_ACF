@@ -15,7 +15,6 @@ export KE_HTTP_PORT=8082
 export KE_ZMQ_PORT=8083
 #monitoring interval
 export INTERVAL=2
-#export CYCLECOUNT=1
 
 #params: 1 pane, 2 working dir
 function setup_env {
@@ -26,8 +25,8 @@ function setup_env {
 }
 
 function start_HMP {
+        tmux select-window -t $SESSION_NAME
         tmux select-pane -t $HMP_PANE
-        tmux send-keys  -t $SESSION_NAME C-c
         tmux send-keys -t $SESSION_NAME "cd $TMUX_USB_DIR" C-m
         tmux send-keys -t $SESSION_NAME ". $TMUX_USB_DIR/setup.sh" C-m
         tmux send-keys -t $SESSION_NAME "lvSupervisor -f $TMUX_USB_DIR/settings/HMP4040.xml -r $HMP_ZMQ_PORT -p $HMP_HTTP_PORT -i $INTERVAL -S" C-m
@@ -36,31 +35,54 @@ function start_HMP {
 function start_KE {
         tmux select-window -t $SESSION_NAME
         tmux select-pane -t $KE_PANE
-        tmux send-keys -t $SESSION_NAME C-c
         tmux send-keys -t $SESSION_NAME "cd $TMUX_USB_DIR" C-m
         tmux send-keys -t $SESSION_NAME ". $TMUX_USB_DIR/setup.sh" C-m
         tmux send-keys -t $SESSION_NAME "dmmSupervisor -r $KE_ZMQ_PORT -p $KE_HTTP_PORT -i $INTERVAL" C-m
 }
 
+function restart_HMP {
+        tmux select-window -t $SESSION_NAME
+        tmux select-pane -t $HMP_PANE
+        tmux send-keys -t $SESSION_NAME "e" C-m
+        tmux send-keys -t $SESSION_NAME "q" C-m
+        tmux send-keys -t $SESSION_NAME "lvSupervisor -f $TMUX_USB_DIR/settings/HMP4040.xml -r $HMP_ZMQ_PORT -p $HMP_HTTP_PORT -i $INTERVAL -S" C-m
+}
+
+function restart_KE {
+        tmux select-window -t $SESSION_NAME
+        tmux select-pane -t $KE_PANE
+        tmux send-keys -t $SESSION_NAME "e" C-m
+        tmux send-keys -t $SESSION_NAME "q" C-m
+        tmux send-keys -t $SESSION_NAME "dmmSupervisor -r $KE_ZMQ_PORT -p $KE_HTTP_PORT -i $INTERVAL" C-m
+}
+
+function run_test {
+    while true; do
+        echo "Running iteration $CYCLECOUNT ..."
+        $TMUX_BASE_DIR/bin/cbc3irrad -s -b | tee $TMUX_BASE_DIR/consoledump.log
+        echo "$CYCLECOUNT iteration of bin/cbc3irrad finished with exit code $?. Respawning..." | tee $TMUX_BASE_DIR/consoledump.log
+        if (($CYCLECOUNT % 2 == 0)); then 
+            echo "Re-starting monitoring servers"
+            restart_HMP
+            restart_KE
+        fi
+        CYCLECOUNT=$((CYCLECOUNT+1))
+        sleep 20
+    done
+}
+
 export -f start_HMP
 export -f start_KE
+export -f restart_HMP
+export -f restart_KE
+export -f run_test
 
 
 function run_irradtest {
-    #CYCLECOUNT=1;
     tmux select-window -t $SESSION_NAME
     tmux select-pane -t $MAIN_PANE
-    tmux send-keys -t $SESSION_NAME "
-    while true; do
-        $TMUX_BASE_DIR/bin/cbc3irrad -s -b | tee $TMUX_BASE_DIR/consoledump.log
-        echo \'bin/cbc3irrad finished with exit code $?. Respawning...\' | tee $TMUX_BASE_DIR/consoledump.log
-        #if (("$CYCLECOUNT" % 1 == 0)); then 
-            #echo \'Re-starting monitoring servers\'
-            #start_HMP
-            #start_KE
-        #fi
-        sleep 20
-    done" C-m
+    tmux send-keys -t $SESSION_NAME "export CYCLECOUNT=1" C-m
+    tmux send-keys -t $SESSION_NAME "run_test" C-m
 }
 
 #default pane (left) is 0
@@ -82,13 +104,3 @@ setup_env 0 $TMUX_BASE_DIR
 start_HMP 
 start_KE
 run_irradtest
-
-#tmux send-keys -t $SESSION_NAME ". $TMUX_BASE_DIR/setup.sh" Enter
-#tmux send-keys -t $SESSION_NAME "echo \'Running cbc3irradiation test\'" Enter
-##tmux send-keys -t $SESSION_NAME C-m
-#tmux send-keys -t $SESSION_NAME "while true; do
-    #$TMUX_BASE_DIR/bin/cbc3irrad -b | tee $TMUX_BASE_DIR/consoledump.log
-    #echo \'bin/cbc3irrad finished with exit code $?. Respawning...\' | tee $TMUX_BASE_DIR/consoledump.log
-    #sleep 10
-#done" Enter
-#tmux send-keys -t $SESSION_NAME C-m
