@@ -145,7 +145,7 @@ void PedeNoise::measureNoise()
         // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
         if ( fTestPulse )
         {
-            LOG (INFO) << BLUE << "Enabling Commissioninc cycle with TestPulse in FW" << RESET ;
+            LOG (INFO) << BLUE << "Enabling Commissioning cycle with TestPulse in FW" << RESET ;
             setFWTestPulse();
             LOG (INFO) << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +fTestPulseAmplitude << RESET ;
             setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first );

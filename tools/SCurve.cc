@@ -290,7 +290,7 @@ void SCurve::initializeSCurves ( TString pParameter, uint8_t pValue, int  pTGrpI
 
 uint32_t SCurve::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint8_t pValue, int  pTGrpId, bool pDraw )
 {
-    // loop over all FEs on board, check if channels are hit and if so , fill pValue in the histogram of Channel
+    // loop over all FEs on board, check if channels are hit and if so, fill pValue in the histogram of Channel
     uint32_t cHitCounter = 0;
 
     for ( auto cFe : pBoard->fModuleVector )
@@ -330,7 +330,7 @@ void SCurve::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup )
 
     cRegVec.push_back ( std::make_pair ( "SelTestPulseDel&ChanGroup",  cRegValue ) );
 
-    //set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
+    // set the value of test pulsepot register and MiscTestPulseCtrl&AnalogMux register
     if ( fHoleMode )
         cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
     else
