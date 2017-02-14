@@ -401,8 +401,6 @@ void HybridTester::ScanThreshold()
         uint32_t cHitCounter = 0;
 
         // maybe restrict to pBoard? instead of looping?
-        if ( cAllOne ) break;
-
         for ( BeBoard* pBoard : fBoardVector )
         {
             fBeBoardInterface->Start ( pBoard );

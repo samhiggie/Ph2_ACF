@@ -120,9 +120,6 @@ void SCurve::measureSCurves ( int  pTGrpId )
         uint32_t cNthAcq = 0;
         uint32_t cHitCounter = 0;
 
-        // DEBUG
-        if ( cAllOne ) break;
-
         for ( BeBoard* pBoard : fBoardVector )
         {
             for (Module* cFe : pBoard->fModuleVector)
