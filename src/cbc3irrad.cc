@@ -78,6 +78,9 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "standalone", "launch irradtest without spawning the monitoring servers from code", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "standalone", "s" );
 
+    cmd.defineOption ( "skipbias", "skip the bias sweep - false by default!", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
+    //cmd.defineOptionAlternative ( "standalone", "s" );
+
     int result = cmd.parse ( argc, argv );
 
     if ( result != ArgvParser::NoParserError )
@@ -97,6 +100,7 @@ int main ( int argc, char* argv[] )
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cStandalone = ( cmd.foundOption ( "standalone" ) ) ? true : false;
     bool cVcthset = cmd.foundOption ("vcth");
+    bool cSkipbias = (cmd.foundOption ("skipbias") ) ? true : false;
 
     Watchdog cDog;
     cDog.Start (5, &exitme);
@@ -193,27 +197,31 @@ int main ( int argc, char* argv[] )
         cTool.ConfigureHw ();
 
         cDog.Reset (5);
-        Timer t;
-        //then sweep a bunch of biases
-        BiasSweep cBiasSweep (cLVClient, cKeController);
-        cBiasSweep.Inherit (&cTool);
-        cBiasSweep.Initialize();
-        cDog.Reset (5);
-        std::vector<std::string> cBiases{"VCth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
 
-        for (auto cBoard : cBiasSweep.fBoardVector)
+        if (!cSkipbias)
         {
-            for (auto cFe : cBoard->fModuleVector)
+            Timer t;
+            //then sweep a bunch of biases
+            BiasSweep cBiasSweep (cLVClient, cKeController);
+            cBiasSweep.Inherit (&cTool);
+            cBiasSweep.Initialize();
+            cDog.Reset (5);
+            std::vector<std::string> cBiases{"VCth", "CAL_Vcasc", "VPLUS1", "VPLUS2", "VBGbias", "VBG_LDO", "Vpafb", "VDDA", "Nc50", "Ipa", "Ipre1", "Ipre2", "CAL_I", "Ibias", "Ipsf", "Ipaos", "Icomp", "Ihyst"};
+
+            for (auto cBoard : cBiasSweep.fBoardVector)
             {
-                for (auto cCbc : cFe->fCbcVector)
+                for (auto cFe : cBoard->fModuleVector)
                 {
-                    for (auto cBias : cBiases)
+                    for (auto cCbc : cFe->fCbcVector)
                     {
-                        cDog.Reset (160);
-                        t.start();
-                        cBiasSweep.SweepBias (cBias, cCbc);
-                        t.stop();
-                        t.show ("Time for this bias");
+                        for (auto cBias : cBiases)
+                        {
+                            cDog.Reset (160);
+                            t.start();
+                            cBiasSweep.SweepBias (cBias, cCbc);
+                            t.stop();
+                            t.show ("Time for this bias");
+                        }
                     }
                 }
             }
@@ -281,6 +289,13 @@ int main ( int argc, char* argv[] )
             if ( cN + cPacketSize >= pEventsperVcth )
                 cTool.fBeBoardInterface->Stop ( pBoard );
 
+            //if (cN % 10000 == 0)
+            //{
+            //cTool.fBeBoardInterface->Stop (pBoard);
+            //cTool.fBeBoardInterface->FindPhase (pBoard);
+            //cTool.fBeBoardInterface->Start (pBoard);
+            //}
+
             const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
 
             for ( auto& ev : events )
@@ -301,6 +316,7 @@ int main ( int argc, char* argv[] )
 
                 if ( count % 1000  == 0 )
                     LOG (INFO) << ">>> Recorded Event #" << count ;
+
             }
 
             cNthAcq++;

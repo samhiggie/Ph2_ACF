@@ -44,7 +44,9 @@ function restart_HMP {
         tmux select-window -t $SESSION_NAME
         tmux select-pane -t $HMP_PANE
         tmux send-keys -t $SESSION_NAME "e" C-m
+        sleep 2
         tmux send-keys -t $SESSION_NAME "q" C-m
+        sleep 3
         tmux send-keys -t $SESSION_NAME "lvSupervisor -f $TMUX_USB_DIR/settings/HMP4040.xml -r $HMP_ZMQ_PORT -p $HMP_HTTP_PORT -i $INTERVAL -S" C-m
 }
 
@@ -52,7 +54,9 @@ function restart_KE {
         tmux select-window -t $SESSION_NAME
         tmux select-pane -t $KE_PANE
         tmux send-keys -t $SESSION_NAME "e" C-m
+        sleep 2
         tmux send-keys -t $SESSION_NAME "q" C-m
+        sleep 3
         tmux send-keys -t $SESSION_NAME "dmmSupervisor -r $KE_ZMQ_PORT -p $KE_HTTP_PORT -i $INTERVAL" C-m
 }
 
@@ -61,11 +65,13 @@ function run_test {
         echo "Running iteration $CYCLECOUNT ..."
         $TMUX_BASE_DIR/bin/cbc3irrad -s -b | tee $TMUX_BASE_DIR/consoledump.log
         echo "$CYCLECOUNT iteration of bin/cbc3irrad finished with exit code $?. Respawning..." | tee $TMUX_BASE_DIR/consoledump.log
+
         if (($CYCLECOUNT % 2 == 0)); then 
             echo "Re-starting monitoring servers"
             restart_HMP
             restart_KE
         fi
+
         CYCLECOUNT=$((CYCLECOUNT+1))
         sleep 20
     done
@@ -94,6 +100,9 @@ tmux rename-window 'overview'
 npanes=$(tmux list-panes | wc -l)
 if (($npanes == 1)); then
     tmux split-window -h 
+    tmux split-window -v
+elif(($npanes == 2)); then
+    tmux select-pane -t 1
     tmux split-window -v
 elif (($npanes == 3)); then
     echo "enough panes available!"
