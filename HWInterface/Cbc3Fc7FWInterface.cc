@@ -135,6 +135,9 @@ namespace Ph2_HwInterface {
                 cVecReg.push_back ({cRegString + "id", cCbcId + 1});
                 cVecReg.push_back ({cRegString + "fe_id", cFeId + 1});
                 cVecReg.push_back ({cRegString + "i2c_address", cAddress});
+
+                //get the stub and hit input source
+                fStubLogicInput = cCbc->getReg ("Pipe&StubInpSel&Ptwidth");
             }
         }
 
@@ -190,12 +193,25 @@ namespace Ph2_HwInterface {
         if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
         else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() << " - or I2C FSM did not go to ready!" ;
 
-        //this->FindPhase();
+        LOG (INFO) << "StubFindingLogic default input = 0x" << std::hex << +fStubLogicInput << std::dec << " -saving!";
     }
 
     void Cbc3Fc7FWInterface::FindPhase()
     {
+        //before running the Dctt I need to disable the stub logic so the alignment can be done!
+        //a lower level implementation
+        //std::vector<uint32_t> cReplies;
+        //std::vector<uint32_t> cVecReq = {0b00100000001100000001001000000000 | (fStubLogicInput & 0xCF | 0x20 0x30)};
+        //this->WriteI2C (cVecReq, cReplies, false, bool pBroadcast );
+        CbcRegItem cRegItem (0, 0x12, 0, (fStubLogicInput & 0xCF | 0x20 & 0x30) );
+        std::vector<uint32_t> cVecReq;
+        this->EncodeReg (cRegItem, 0, cVecReq, true, true);
+        LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
+        uint8_t cWriteAttempts = 0 ;
+        this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+
         //LOG (DEBUG) << "Before: " << static_cast<int> (ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.pattern") );
+
         //trigger the dctt fsm
         WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 1);
         int cCounter = 0;
@@ -235,6 +251,17 @@ namespace Ph2_HwInterface {
 
         LOG (INFO) << "DCTT FSM Status: " << cDctt_fsm ;
         //LOG (DEBUG) << "AFter: " << static_cast<int> (ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.pattern") );
+        //re-enable the stub logic
+        cRegItem.fValue = fStubLogicInput;
+        cVecReq.clear();
+        this->EncodeReg (cRegItem, 0, cVecReq, true, true);
+        LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
+        cWriteAttempts = 0;
+        this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+        //lower level
+        //cVecReq.clear(), cReplies.clear();
+        //cVecReq.push_back(0b00100000001100000001001000000000 | (fStubLogicInput));
+        //this->WriteI2C (cVecReq, cReplies, false, bool pBroadcast );
     }
 
     void Cbc3Fc7FWInterface::Start()
@@ -334,6 +361,8 @@ namespace Ph2_HwInterface {
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
+            LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
+            LOG (DEBUG) << cNWords << " " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_frame.cbc0") );
         }
 
         if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
