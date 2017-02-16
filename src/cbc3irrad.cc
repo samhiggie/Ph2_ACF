@@ -81,8 +81,8 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "skipbias", "skip the bias sweep - false by default!", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     //cmd.defineOptionAlternative ( "standalone", "s" );
 
-    //cmd.defineOption ( "webmonitor", "start THttpServer on port - default: 8090", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
-    //cmd.defineOptionAlternative ( "webmonitor", "w" );
+    cmd.defineOption ( "webmonitor", "start THttpServer on port - default: 8090", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "webmonitor", "w" );
 
     int result = cmd.parse ( argc, argv );
 
@@ -99,13 +99,13 @@ int main ( int argc, char* argv[] )
 
     uint32_t pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 300000;
     uint16_t cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 500;
-    //uint32_t cHttpPort = (cmd.foundOption ("webmonitor") ) ? convertAnyInt (cmd.optionValue ("webmonitor").c_str()) : 8090;
+    uint32_t cHttpPort = (cmd.foundOption ("webmonitor") ) ? convertAnyInt (cmd.optionValue ("webmonitor").c_str() ) : 8090;
 
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cStandalone = ( cmd.foundOption ( "standalone" ) ) ? true : false;
     bool cVcthset = cmd.foundOption ("vcth");
     bool cSkipbias = (cmd.foundOption ("skipbias") ) ? true : false;
-    //bool cWebMon = (cmd.foundOption ("webmonitor")) ? true : false;
+    bool cWebMon = (cmd.foundOption ("webmonitor") ) ? true : false;
 
     Watchdog cDog;
     cDog.Start (5, &exitme);
@@ -199,8 +199,7 @@ int main ( int argc, char* argv[] )
         cTool.CreateResultDirectory ( cDirectory, false, false );
         cTool.InitResultFile (cResultfile);
 
-        //if (cWebMon) cTool.StartHttpServer (cHttpPort);
-        //cTool.StartHttpServer (8090);
+        if (cWebMon) cTool.StartHttpServer (cHttpPort);
 
         cTool.ConfigureHw ();
 
