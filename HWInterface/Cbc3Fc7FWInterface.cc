@@ -194,6 +194,7 @@ namespace Ph2_HwInterface {
         else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() << " - or I2C FSM did not go to ready!" ;
 
         LOG (INFO) << "StubFindingLogic default input = 0x" << std::hex << +fStubLogicInput << std::dec << " -saving!";
+        //this->FindPhase();
     }
 
     void Cbc3Fc7FWInterface::FindPhase()
@@ -206,9 +207,10 @@ namespace Ph2_HwInterface {
         CbcRegItem cRegItem (0, 0x12, 0, (fStubLogicInput & 0xCF | 0x20 & 0x30) );
         std::vector<uint32_t> cVecReq;
         this->EncodeReg (cRegItem, 0, cVecReq, true, true);
-        LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
+        //LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
         uint8_t cWriteAttempts = 0 ;
         this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+        std::this_thread::sleep_for (std::chrono::milliseconds (10) );
 
         //LOG (DEBUG) << "Before: " << static_cast<int> (ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.pattern") );
 
@@ -247,17 +249,20 @@ namespace Ph2_HwInterface {
                 LOG (INFO) << "Clock Data Timing tuning failed after 50 attempts with value " << cDctt_fsm << " -aborting!";
                 exit (1);
             }
+
         }
 
-        LOG (INFO) << "DCTT FSM Status: " << cDctt_fsm ;
+        if (cDctt_fsm != 9) LOG (INFO) << "DCTT FSM Status bad: " << cDctt_fsm ;
+
         //LOG (DEBUG) << "AFter: " << static_cast<int> (ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.pattern") );
         //re-enable the stub logic
         cRegItem.fValue = fStubLogicInput;
         cVecReq.clear();
         this->EncodeReg (cRegItem, 0, cVecReq, true, true);
-        LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
+        //LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
         cWriteAttempts = 0;
         this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+        std::this_thread::sleep_for (std::chrono::milliseconds (10) );
         //lower level
         //cVecReq.clear(), cReplies.clear();
         //cVecReq.push_back(0b00100000001100000001001000000000 | (fStubLogicInput));
@@ -315,6 +320,8 @@ namespace Ph2_HwInterface {
             std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
+            //LOG (DEBUG) << cNWords;
+            //LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
         }
 
         pData = ReadBlockRegValue ("data", cNWords);
@@ -361,8 +368,7 @@ namespace Ph2_HwInterface {
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
-            LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
-            LOG (DEBUG) << cNWords << " " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_frame.cbc0") );
+            //LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
         }
 
         if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";

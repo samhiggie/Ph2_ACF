@@ -39,6 +39,12 @@ namespace Ph2_HwInterface {
 
     int Cbc3Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
+        if (list.at (0) == list.at (13) )
+        {
+            for (auto cWord : list)
+                LOG (DEBUG) << std::bitset<32> (cWord);
+        }
+
         fEventSize = pNbCbc *  CBC_EVENT_SIZE_32  + EVENT_HEADER_TDC_SIZE_32;
 
         //now decode the header info
@@ -555,6 +561,12 @@ namespace Ph2_HwInterface {
         }
 
         os << std::endl;
+
+        //for (auto const& cKey : this->fEventDataMap)
+        //{
+        //for (auto cWord : cKey.second)
+        //LOG (DEBUG) << std::bitset<32> (cWord);
+        //}
     }
 
     std::vector<Cluster> Cbc3Event::getClusters ( uint8_t pFeId, uint8_t pCbcId) const

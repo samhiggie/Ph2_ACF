@@ -156,7 +156,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
             Counter cCounter;
             pBoard->accept ( cCounter );
 
-            //LOG (INFO) << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ;
+            LOG (INFO) << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ;
 
             // check if the hitcounter is all ones
             if ( cNonZero == false && cHitCounter != 0 )
@@ -333,8 +333,8 @@ uint32_t SCurve::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint16_t p
                         cChanVec->second.at ( cChanId ).fillHist ( pValue );
                         cHitCounter++;
                     }
-
                 }
+
             }
             else LOG (INFO) << RED << "Error: could not find the channels for CBC " << int ( cCbc->getCbcId() ) << RESET ;
         }
