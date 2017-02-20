@@ -39,11 +39,11 @@ namespace Ph2_HwInterface {
 
     int Cbc3Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
-        if (list.at (0) == list.at (13) )
-        {
-            for (auto cWord : list)
-                LOG (DEBUG) << std::bitset<32> (cWord);
-        }
+        //if (list.at (0) == list.at (13) )
+        //{
+        //for (auto cWord : list)
+        //LOG (DEBUG) << std::bitset<32> (cWord);
+        //}
 
         fEventSize = pNbCbc *  CBC_EVENT_SIZE_32  + EVENT_HEADER_TDC_SIZE_32;
 

@@ -92,6 +92,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
     }
 
     uint16_t cMaxValue = (fType == ChipType::CBC2) ? 0xFF : 0x03FF;
+    fHoleMode = (fType == ChipType::CBC3) ? false :  true;
 
     // the expression below mimics XOR
     if ( fHoleMode )
@@ -156,7 +157,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
             Counter cCounter;
             pBoard->accept ( cCounter );
 
-            LOG (INFO) << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ;
+            //LOG (INFO) << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ;
 
             // check if the hitcounter is all ones
             if ( cNonZero == false && cHitCounter != 0 )

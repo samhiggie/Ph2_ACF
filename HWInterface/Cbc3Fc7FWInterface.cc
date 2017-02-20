@@ -193,7 +193,9 @@ namespace Ph2_HwInterface {
         if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
         else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() << " - or I2C FSM did not go to ready!" ;
 
-        LOG (INFO) << "StubFindingLogic default input = 0x" << std::hex << +fStubLogicInput << std::dec << " -saving!";
+        this->CbcFastReset();
+
+        //LOG (INFO) << "StubFindingLogic default input = 0x" << std::hex << +fStubLogicInput << std::dec << " -saving!";
         //this->FindPhase();
     }
 
