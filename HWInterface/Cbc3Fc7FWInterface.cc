@@ -131,7 +131,7 @@ namespace Ph2_HwInterface {
 
                 uint8_t cCbcId = cCbc->getCbcId();
                 uint8_t cFeId = cCbc->getFeId();
-                uint32_t cAddress = 0x41 + cCbcId;
+                uint32_t cAddress = 0x5F + cCbcId;
                 char cTmpChar[30];
                 sprintf (cTmpChar, "cbc_system_cnfg.global.cbc%d.", cCbcId );
                 std::string cRegString (cTmpChar);
