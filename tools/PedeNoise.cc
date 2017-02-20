@@ -289,6 +289,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
                 {
                     // suggested B. Schneider
                     int iBin = cHist->FindBin (iChan);
+                    LOG (DEBUG) << iChan << " " << cHist->GetBinContent (iBin) << " " << iBin;
 
                     if (cHist->GetBinContent (iBin) > double ( pNoiseStripThreshold * 0.001 ) ) // consider it noisy
                     {
@@ -299,6 +300,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
                     }
 
                 }
+
 
                 //Write the changes
                 fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);
@@ -539,6 +541,7 @@ void PedeNoise::setThresholdtoNSigma (BeBoard* pBoard, uint32_t pNSigma)
             uint16_t cNoise =  round (cNoiseHist->GetMean() );
             int cDiff = fHoleMode ? pNSigma * cNoise : -pNSigma * cNoise;
             uint16_t cValue = cPedestal + cDiff;
+
 
             if (pNSigma > 0) LOG (INFO) << "Changing Threshold on CBC " << +cCbcId << " by " << cDiff << " to " << cPedestal + cDiff << " VCth units to supress noise!" ;
             else LOG (INFO) << "Changing Threshold on CBC " << +cCbcId << " back to the pedestal at " << +cPedestal ;

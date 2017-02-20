@@ -513,18 +513,21 @@ namespace Ph2_HwInterface {
         //reset the I2C controller
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset_fifos", 0x1);
 
-        try
+        if (!pVecSend.empty() )
         {
-            WriteBlockReg ( "cbc_i2c_regs.command_fifos", pVecSend );
-        }
-        catch ( Exception& except )
-        {
-            throw except;
-        }
+            try
+            {
+                WriteBlockReg ( "cbc_i2c_regs.command_fifos", pVecSend );
+            }
+            catch ( Exception& except )
+            {
+                throw except;
+            }
 
-        uint32_t cNReplies = pVecSend.size() * ( pReadback ? 2 : 1 ) * ( pBroadcast ? fNCbc : 1 );
+            uint32_t cNReplies = pVecSend.size() * ( pReadback ? 2 : 1 ) * ( pBroadcast ? fNCbc : 1 );
 
-        cFailed = ReadI2C (  cNReplies, pReplies) ;
+            cFailed = ReadI2C (  cNReplies, pReplies) ;
+        }
 
         return cFailed;
     }
