@@ -289,7 +289,6 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
                 {
                     // suggested B. Schneider
                     int iBin = cHist->FindBin (iChan);
-                    LOG (DEBUG) << iChan << " " << cHist->GetBinContent (iBin) << " " << iBin;
 
                     if (cHist->GetBinContent (iBin) > double ( pNoiseStripThreshold * 0.001 ) ) // consider it noisy
                     {

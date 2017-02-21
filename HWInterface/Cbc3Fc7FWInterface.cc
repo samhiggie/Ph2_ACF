@@ -514,23 +514,18 @@ namespace Ph2_HwInterface {
         //reset the I2C controller
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset_fifos", 0x1);
 
-        LOG (DEBUG) << pVecSend.size();
-
-        if (pVecSend.size() != 0 )
+        try
         {
-            try
-            {
-                WriteBlockReg ( "cbc_i2c_regs.command_fifos", pVecSend );
-            }
-            catch ( Exception& except )
-            {
-                throw except;
-            }
-
-            uint32_t cNReplies = pVecSend.size() * ( pReadback ? 2 : 1 ) * ( pBroadcast ? fNCbc : 1 );
-
-            cFailed = ReadI2C (  cNReplies, pReplies) ;
+            WriteBlockReg ( "cbc_i2c_regs.command_fifos", pVecSend );
         }
+        catch ( Exception& except )
+        {
+            throw except;
+        }
+
+        uint32_t cNReplies = pVecSend.size() * ( pReadback ? 2 : 1 ) * ( pBroadcast ? fNCbc : 1 );
+
+        cFailed = ReadI2C (  cNReplies, pReplies) ;
 
         return cFailed;
     }
@@ -539,121 +534,118 @@ namespace Ph2_HwInterface {
 
     bool Cbc3Fc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts, bool pReadback)
     {
-
-        uint8_t cMaxWriteAttempts = 5;
-        // the actual write & readback command is in the vector
-        std::vector<uint32_t> cReplies;
-        bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
-
-        if (cReplies.size() == 0)
+        if (!pVecReg.empty() )
         {
-            LOG (ERROR) << "Error, received 0 I2C replies - something is wrong, aborting!";
-            exit (1);
-        }
+            uint8_t cMaxWriteAttempts = 5;
+            // the actual write & readback command is in the vector
+            std::vector<uint32_t> cReplies;
+            bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
 
-        //for (int i = 0; i < pVecReg.size(); i++)
-        //{
-        //LOG (DEBUG) << std::bitset<16> ( pVecReg.at (i)  >> 16)  << " " << std::bitset<16> ( pVecReg.at (i) );
-        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i)  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i) );
-        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i + 1 )  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i + 1 ) );
-        //LOG (DEBUG) << std::endl;
-        //}
-
-        //LOG (DEBUG) << "Command Size: " << pVecReg.size() << " Reply size " << cReplies.size();
-
-        // the reply format is different from the sent format, therefore a binary predicate is necessary to compare
-        // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
-
-        //here make a distinction: if pReadback is true, compare only the read replies using the binary predicate
-        //else, just check that info is 0 and thus the CBC acqnowledged the command if the writeread is 0
-        std::vector<uint32_t> cWriteAgain;
-
-        if (pReadback)
-        {
-            //split the reply vector in even and odd replies
-            //even is the write reply, odd is the read reply
-            //since I am already reading back, might as well forget about the CMD acknowledge from the CBC and directly look at the read back value
-            std::vector<uint32_t> cOdd;
-            getOddElements (cReplies, cOdd);
-
-            //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), Cbc3Fc7FWInterface::cmd_reply_comp);
-
-            // now clear the initial cmd Vec and set the read-back
-            pVecReg.clear();
-            pVecReg = cOdd;
-        }
-        else
-        {
-            //since I do not read back, I can safely just check that the info bit of the reply is 0 and that it was an actual write reply
-            //then i put the replies in pVecReg so I can decode later in CBCInterface
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Cbc3Fc7FWInterface::cmd_reply_ack);
-            pVecReg.clear();
-            pVecReg = cReplies;
-        }
-
-        // now check the size of the WriteAgain vector and assert Success or not
-        // also check that the number of write attempts does not exceed cMaxWriteAttempts
-        if (cWriteAgain.empty() ) cSuccess = true;
-        else
-        {
-            cSuccess = false;
-
-            // if the number of errors is greater than 100, give up
-            if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
+            if (cReplies.size() == 0)
             {
-                if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
-                else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
-
-                pWriteAttempts++;
-                this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
+                LOG (ERROR) << "Error, received 0 I2C replies - something is wrong, aborting!";
+                exit (1);
             }
-            else if ( pWriteAttempts >= cMaxWriteAttempts )
+
+            // the reply format is different from the sent format, therefore a binary predicate is necessary to compare
+            // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
+
+            //here make a distinction: if pReadback is true, compare only the read replies using the binary predicate
+            //else, just check that info is 0 and thus the CBC acqnowledged the command if the writeread is 0
+            std::vector<uint32_t> cWriteAgain;
+
+            if (pReadback)
+            {
+                //split the reply vector in even and odd replies
+                //even is the write reply, odd is the read reply
+                //since I am already reading back, might as well forget about the CMD acknowledge from the CBC and directly look at the read back value
+                std::vector<uint32_t> cOdd;
+                getOddElements (cReplies, cOdd);
+
+                //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
+                cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), Cbc3Fc7FWInterface::cmd_reply_comp);
+
+                // now clear the initial cmd Vec and set the read-back
+                pVecReg.clear();
+                pVecReg = cOdd;
+            }
+            else
+            {
+                //since I do not read back, I can safely just check that the info bit of the reply is 0 and that it was an actual write reply
+                //then i put the replies in pVecReg so I can decode later in CBCInterface
+                cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Cbc3Fc7FWInterface::cmd_reply_ack);
+                pVecReg.clear();
+                pVecReg = cReplies;
+            }
+
+            // now check the size of the WriteAgain vector and assert Success or not
+            // also check that the number of write attempts does not exceed cMaxWriteAttempts
+            if (cWriteAgain.empty() ) cSuccess = true;
+            else
             {
                 cSuccess = false;
-                pWriteAttempts = 0 ;
+
+                // if the number of errors is greater than 100, give up
+                if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
+                {
+                    if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
+                    else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
+
+                    pWriteAttempts++;
+                    this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
+                }
+                else if ( pWriteAttempts >= cMaxWriteAttempts )
+                {
+                    cSuccess = false;
+                    pWriteAttempts = 0 ;
+                }
+                else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
             }
-            else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
+
+
+            return cSuccess;
         }
-
-
-        return cSuccess;
+        else return true;
     }
 
     bool Cbc3Fc7FWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
     {
-        std::vector<uint32_t> cReplies;
-        bool cSuccess = !WriteI2C ( pVecReg, cReplies, false, true );
-
-        //just as above, I can check the replies - there will be NCbc * pVecReg.size() write replies and also read replies if I chose to enable readback
-        //this needs to be adapted
-        if (pReadback)
+        if (!pVecReg.empty() )
         {
-            //TODO: actually, i just need to check the read write and the info bit in each reply - if all info bits are 0, this is as good as it gets, else collect the replies that faild for decoding - potentially no iterative retrying
-            //TODO: maybe I can do something with readback here - think about it
-            for (auto& cWord : cReplies)
-            {
-                //it was a write transaction!
-                if ( ( (cWord >> 17) & 0x1) == 0)
-                {
-                    // infor bit is 0 which means that the transaction was acknowledged by the CBC
-                    if ( ( (cWord >> 20) & 0x1) == 0)
-                        cSuccess = true;
-                    else cSuccess == false;
-                }
-                else
-                    cSuccess = false;
+            std::vector<uint32_t> cReplies;
+            bool cSuccess = !WriteI2C ( pVecReg, cReplies, false, true );
 
-                //LOG(INFO) << std::bitset<32>(cWord) ;
+            //just as above, I can check the replies - there will be NCbc * pVecReg.size() write replies and also read replies if I chose to enable readback
+            //this needs to be adapted
+            if (pReadback)
+            {
+                //TODO: actually, i just need to check the read write and the info bit in each reply - if all info bits are 0, this is as good as it gets, else collect the replies that faild for decoding - potentially no iterative retrying
+                //TODO: maybe I can do something with readback here - think about it
+                for (auto& cWord : cReplies)
+                {
+                    //it was a write transaction!
+                    if ( ( (cWord >> 17) & 0x1) == 0)
+                    {
+                        // infor bit is 0 which means that the transaction was acknowledged by the CBC
+                        if ( ( (cWord >> 20) & 0x1) == 0)
+                            cSuccess = true;
+                        else cSuccess == false;
+                    }
+                    else
+                        cSuccess = false;
+
+                    //LOG(INFO) << std::bitset<32>(cWord) ;
+                }
+
+                //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Cbc3Fc7FWInterface::cmd_reply_ack);
+                pVecReg.clear();
+                pVecReg = cReplies;
+
             }
 
-            //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Cbc3Fc7FWInterface::cmd_reply_ack);
-            pVecReg.clear();
-            pVecReg = cReplies;
-
+            return cSuccess;
         }
-
-        return cSuccess;
+        else return true;
     }
 
     void Cbc3Fc7FWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg )
