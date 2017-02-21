@@ -80,6 +80,7 @@ namespace Ph2_HwInterface {
         else LOG (INFO) << "Error, can not set NULL FileHandler" ;
     }
 
+
     uint32_t Cbc3Fc7FWInterface::getBoardInfo()
     {
         //LOG(INFO) << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) ;
@@ -513,7 +514,9 @@ namespace Ph2_HwInterface {
         //reset the I2C controller
         WriteReg ("cbc_system_ctrl.cbc_i2c_bus_managers.fe0.reset_fifos", 0x1);
 
-        if (!pVecSend.empty() )
+        LOG (DEBUG) << pVecSend.size();
+
+        if (pVecSend.size() != 0 )
         {
             try
             {
