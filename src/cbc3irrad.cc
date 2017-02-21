@@ -248,7 +248,7 @@ int main ( int argc, char* argv[] )
         cCalibration.writeObjects();
         cCalibration.dumpConfigFiles();
 
-        cDog.Reset (70);
+        cDog.Reset (120);
 
         ////now run a noise scan
         PedeNoise cPedeNoise;
@@ -287,21 +287,12 @@ int main ( int argc, char* argv[] )
             cTool.accept (cVisitor);
         }
 
-        cTool.fBeBoardInterface->Start ( pBoard );
+        //cTool.fBeBoardInterface->Start ( pBoard );
+        int cAcqSize = 2000;
 
-        while ( cN <= pEventsperVcth )
+        for (int iAcq = 0; iAcq < pEventsperVcth / cAcqSize; iAcq++)
         {
-            uint32_t cPacketSize = cTool.ReadData ( pBoard );
-
-            if ( cN + cPacketSize >= pEventsperVcth )
-                cTool.fBeBoardInterface->Stop ( pBoard );
-
-            //if (cN % 10000 == 0)
-            //{
-            //cTool.fBeBoardInterface->Stop (pBoard);
-            //cTool.fBeBoardInterface->FindPhase (pBoard);
-            //cTool.fBeBoardInterface->Start (pBoard);
-            //}
+            cTool.ReadNEvents (pBoard, cAcqSize);
 
             const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
 
@@ -325,9 +316,47 @@ int main ( int argc, char* argv[] )
                     LOG (INFO) << ">>> Recorded Event #" << count ;
 
             }
-
-            cNthAcq++;
         }
+
+        //while ( cN <= pEventsperVcth )
+        //{
+        //uint32_t cPacketSize = cTool.ReadData ( pBoard );
+
+        //if ( cN + cPacketSize >= pEventsperVcth )
+        //cTool.fBeBoardInterface->Stop ( pBoard );
+
+        //if (cN % 10000 == 0)
+        //{
+        //cTool.fBeBoardInterface->Stop (pBoard);
+        //cTool.fBeBoardInterface->FindPhase (pBoard);
+        //cTool.fBeBoardInterface->Start (pBoard);
+        //}
+
+        //const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
+
+        //for ( auto& ev : events )
+        //{
+        //count++;
+        //cN++;
+
+        //if ( cmd.foundOption ( "dqm" ) )
+        //{
+        //if ( count % atoi ( cmd.optionValue ( "dqm" ).c_str() ) == 0 )
+        //{
+        //LOG (INFO) << ">>> Event #" << count ;
+        //outp.str ("");
+        //outp << *ev << std::endl;
+        //LOG (INFO) << outp.str();
+        //}
+        //}
+
+        //if ( count % 1000  == 0 )
+        //LOG (INFO) << ">>> Recorded Event #" << count ;
+
+        //}
+
+        //cNthAcq++;
+        //}
 
         cTool.SaveResults();
         cTool.CloseResultFile();
