@@ -433,7 +433,7 @@ namespace Ph2_System {
             {
                 pCbc->setReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | cDll & 0x1F) );
                 uint8_t cPtWidthRead = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
-                pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) >> 4) | cPtWidthRead & 0x0F) );
+                pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) << 4) | (cPtWidthRead & 0x0F) ) );
 
                 uint8_t cAmuxRead = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
                 pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", (cAmuxRead & 0xE0 | (cAmuxValue & 0x1F) ) );

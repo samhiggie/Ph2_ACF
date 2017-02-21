@@ -92,6 +92,7 @@ void SCurve::measureSCurves ( int  pTGrpId )
     }
 
     uint16_t cMaxValue = (fType == ChipType::CBC2) ? 0xFF : 0x03FF;
+    fHoleMode = (fType == ChipType::CBC3) ? false :  true;
 
     // the expression below mimics XOR
     if ( fHoleMode )
@@ -333,8 +334,8 @@ uint32_t SCurve::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint16_t p
                         cChanVec->second.at ( cChanId ).fillHist ( pValue );
                         cHitCounter++;
                     }
-
                 }
+
             }
             else LOG (INFO) << RED << "Error: could not find the channels for CBC " << int ( cCbc->getCbcId() ) << RESET ;
         }

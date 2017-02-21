@@ -80,30 +80,23 @@ namespace Ph2_HwInterface {
         else LOG (INFO) << "Error, can not set NULL FileHandler" ;
     }
 
+
     uint32_t Cbc3Fc7FWInterface::getBoardInfo()
     {
         //LOG(INFO) << "FMC1 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc0" ) ;
         //LOG(INFO) << "FMC2 present : " << ReadReg ( "user_stat.current_fec_fmc2_cbc1" ) ;
         uint32_t cVersionMajor, cVersionMinor;
-        cVersionMajor = ReadReg ( "cbc_system_stat.global.version.ver_major" );
-        cVersionMinor = ReadReg ( "cbc_system_stat.global.version.ver_minor" );
-        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "cbc_system_stat.global.version.ver_build" ) ) ;
+        cVersionMajor = ReadReg ( "cbc_system_stat.system.version.ver_major" );
+        cVersionMinor = ReadReg ( "cbc_system_stat.system.version.ver_minor" );
+        LOG (INFO) << "FW version : " << cVersionMajor << "." << cVersionMinor << "." << std::to_string (ReadReg ( "cbc_system_stat.system.version.ver_build" ) ) ;
 
-        uhal::ValWord<uint32_t> cBoardType = ReadReg ( "cbc_system_stat.global.id" );
+        uhal::ValWord<uint32_t> cBoardType = ReadReg ( "cbc_system_stat.system.id" );
 
-        LOG (INFO) << "BoardType : ";
-
-        char cChar = ( ( cBoardType & cMask4 ) >> 24 );
-        LOG (INFO) << cChar;
-
-        cChar = ( ( cBoardType & cMask3 ) >> 16 );
-        LOG (INFO) << cChar;
-
-        cChar = ( ( cBoardType & cMask2 ) >> 8 );
-        LOG (INFO) << cChar;
-
-        cChar = ( cBoardType & cMask1 );
-        LOG (INFO) << cChar ;
+        char cChar1 = ( ( cBoardType & cMask4 ) >> 24 );
+        char cChar2 = ( ( cBoardType & cMask3 ) >> 16 );
+        char cChar3 = ( ( cBoardType & cMask2 ) >> 8 );
+        char cChar4 = ( cBoardType & cMask1 );
+        LOG (INFO) << "BoardType : " << cChar1 << cChar2 << cChar3 << cChar4;
 
         uint32_t cVersionWord = ( (cVersionMajor & 0x0000FFFF) << 16 || (cVersionMinor & 0x0000FFFF) );
         return cVersionWord;
@@ -111,6 +104,9 @@ namespace Ph2_HwInterface {
 
     void Cbc3Fc7FWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
+        this->getBoardInfo();
+        //perform a global reset, just to be sure
+        WriteReg ("cbc_system_ctrl.global.reset", 0x1);
         //need to set to 0 before configuring, otherwise NCbc will keep incrementing when I re-configure
         fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
@@ -118,7 +114,6 @@ namespace Ph2_HwInterface {
         //OK, first we need to apply the configuration to the config part of the FW residing at address 0x40000100
         //all IDs start with 1
         cVecReg.push_back ({"cbc_system_cnfg.global.be.id", pBoard->getBeId() + 1  });
-        //enable fast signal ipbus
 
         //then loop the HWDescription and find out about our Connected CBCs
         for (Module* cFe : pBoard->fModuleVector)
@@ -141,11 +136,11 @@ namespace Ph2_HwInterface {
                 cVecReg.push_back ({cRegString + "id", cCbcId + 1});
                 cVecReg.push_back ({cRegString + "fe_id", cFeId + 1});
                 cVecReg.push_back ({cRegString + "i2c_address", cAddress});
+
+                //get the stub and hit input source
+                fStubLogicInput = cCbc->getReg ("Pipe&StubInpSel&Ptwidth");
             }
         }
-
-        //this might need some toggling
-        //cVecReg.push_back ({"cbc_system_cnfg.global.misc.cbc_clk_phase_shift", 0x1});
 
         //last, loop over the variable registers from the HWDescription.xml file
         //this is where I should get all the clocking and FastCommandInterface settings
@@ -173,51 +168,62 @@ namespace Ph2_HwInterface {
 
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
-        ReadI2C (  fNCbc, pReplies);
+        ReadI2C (fNCbc, pReplies);
 
         bool cSuccess = false;
 
         for (auto& cWord : pReplies)
             cSuccess = ( ( (cWord >> 20) & 0x1) == 0 && ( (cWord) & 0x000000FF) != 0 ) ? true : false;
 
-        if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
-        else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() ;
+        int cBusState = 0;
+        int cCounter = 0;
 
-        //perform a global reset, just to be sure
-        WriteReg ("cbc_system_ctrl.global.reset", 0x1);
-        this->FindPhase();
+        while (cBusState != 1)
+        {
+            cBusState = ReadReg ("cbc_system_stat.cbc_i2c_bus_managers.fe0.bus_ready");
+            std::this_thread::sleep_for (std::chrono::milliseconds (20) );
+
+            if (++cCounter > 20)
+            {
+                LOG (ERROR) << "Error: I2C Bus FSM did not go to ready!";
+                cSuccess = false;
+                break;
+            }
+        }
+
+        if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
+        else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() << " - or I2C FSM did not go to ready!" ;
+
+        this->CbcFastReset();
+
+        //LOG (INFO) << "StubFindingLogic default input = 0x" << std::hex << +fStubLogicInput << std::dec << " -saving!";
+        //this->FindPhase();
     }
 
     void Cbc3Fc7FWInterface::FindPhase()
     {
-        //this is to run the idelay tuning, similar to what we had to do for the pixels
-        uint32_t cCount = 0;
+        //before running the Dctt I need to disable the stub logic so the alignment can be done!
+        //a lower level implementation
+        //std::vector<uint32_t> cReplies;
+        //std::vector<uint32_t> cVecReq = {0b00100000001100000001001000000000 | (fStubLogicInput & 0xCF | 0x20 0x30)};
+        //this->WriteI2C (cVecReq, cReplies, false, bool pBroadcast );
+        CbcRegItem cRegItem (0, 0x12, 0, (fStubLogicInput & 0xCF | 0x20 & 0x30) );
+        std::vector<uint32_t> cVecReq;
+        this->EncodeReg (cRegItem, 0, cVecReq, true, true);
+        //LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
+        uint8_t cWriteAttempts = 0 ;
+        this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+        std::this_thread::sleep_for (std::chrono::milliseconds (10) );
 
-        while (ReadReg ("cbc_system_stat.global.misc.idelayctrl_rdy") == 0)
+        //LOG (DEBUG) << "Before: " << static_cast<int> (ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.pattern") );
+
+        //trigger the dctt fsm
+        WriteReg ("cbc_system_ctrl.io.data_clock_timing_tune", 1);
+        int cCounter = 0;
+        int cDctt_fsm = 0;
+
+        while (cDctt_fsm != 9)
         {
-            WriteReg ("cbc_system_ctrl.global.idelayctrl_reset", 1);
-
-            if (++cCount > 10)
-            {
-                LOG (ERROR) << "Error, idelayctrl does not go to ready! Aborting!";
-                exit (1);
-            }
-
-            std::this_thread::sleep_for (std::chrono::microseconds (1000) );
-        }
-
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
-        std::this_thread::sleep_for (std::chrono::microseconds (20) );
-
-        uint32_t cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
-        cCount = 1;
-
-        while (cFsm != 4)
-        {
-            LOG (DEBUG) << "FSM: " << cFsm;
-            //here read "SerialIface&Error" register of CBC
-            //this whole block is needed for the manual low-level I2C transaction
             CbcRegItem cRegItem (0, 0x1D, 0, 0);
             std::vector<uint32_t> cVecReq;
             this->EncodeReg (cRegItem, 0, cVecReq, true, false);
@@ -226,43 +232,44 @@ namespace Ph2_HwInterface {
             bool cRead;
             uint8_t cId;
             this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-            LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-            LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
-            LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
-            LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
-            LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
-            LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
-            LOG (INFO) << "sending Cbc fast reset!";
-            this->CbcFastReset();
-            //here read "SerialIface&Error" register of CBC again
-            //this whole block is needed for the manual low-level I2C transaction
-            cRegItem.fValue = 0;
-            cVecReq.clear();
-            this->EncodeReg (cRegItem, 0, cVecReq, true, false);
-            this->ReadCbcBlockReg (cVecReq);
-            cFailed = false;
-            this->DecodeReg (cRegItem, cId, cVecReq.at (0), cRead, cFailed);
-            LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
-            LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
-            LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
-            LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
-            LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
-            LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
 
-            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_reset", 1);
-            WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.ser_data_delay_start_tuning", 1);
-            std::this_thread::sleep_for (std::chrono::microseconds (20) );
-            cFsm = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_tuning_fsm");
-
-            if (++cCount > 5)
+            if (cRegItem.fValue != 0)
             {
-                LOG (ERROR) << "Error, idelay tuning failed! Aborting!";
+                LOG (DEBUG) << "Read CbcI2C Register \"SerialIface&Error\" on page 0, address 0x1D: ";
+                LOG (DEBUG) << "RAM Buffer Overflow: " << ( (cRegItem.fValue >> 4) & 0x1);
+                LOG (DEBUG) << "Latency Error:       " << ( (cRegItem.fValue >> 3) & 0x1);
+                LOG (DEBUG) << "Sync Lost:           " << ( (cRegItem.fValue >> 2) & 0x1);
+                LOG (DEBUG) << "Sync Stat:           " << ( (cRegItem.fValue >> 1) & 0x1);
+                LOG (DEBUG) << "Bad Code:            " << ( (cRegItem.fValue ) & 0x1   );
+                LOG (INFO) << "sending Cbc fast reset!";
+                this->CbcFastReset();
+            }
+
+            cDctt_fsm = ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.fsm");
+
+            if (cCounter++ > 50)
+            {
+                LOG (INFO) << "Clock Data Timing tuning failed after 50 attempts with value " << cDctt_fsm << " -aborting!";
                 exit (1);
             }
+
         }
 
-        uint32_t cDelay = ReadReg ("cbc_system_stat.cbc_data_processor.cbc0.ser_data_delay_idelay_delay");
-        LOG (INFO) << "Idelay tuned to delay tap = " << cDelay;
+        if (cDctt_fsm != 9) LOG (INFO) << "DCTT FSM Status bad: " << cDctt_fsm ;
+
+        //LOG (DEBUG) << "AFter: " << static_cast<int> (ReadReg ("cbc_system_stat.io.cbc0.data_clock_timing.pattern") );
+        //re-enable the stub logic
+        cRegItem.fValue = fStubLogicInput;
+        cVecReq.clear();
+        this->EncodeReg (cRegItem, 0, cVecReq, true, true);
+        //LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
+        cWriteAttempts = 0;
+        this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+        std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+        //lower level
+        //cVecReq.clear(), cReplies.clear();
+        //cVecReq.push_back(0b00100000001100000001001000000000 | (fStubLogicInput));
+        //this->WriteI2C (cVecReq, cReplies, false, bool pBroadcast );
     }
 
     void Cbc3Fc7FWInterface::Start()
@@ -270,26 +277,16 @@ namespace Ph2_HwInterface {
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
         WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
         //first reset the DAQ
-        //global daq reset is not implemented yet
-        //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
-        //in the meantime, do this
-        //std::vector< std::pair<std::string, uint32_t> > cVecReg;
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1);
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.event_builder.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.data_buffer.reset", 0x1);
-        //WriteStackReg ( cVecReg );
-        //cVecReg.clear();
-
-        //this could go into Configure() once it is more stable
-        //TODO
-        //this->FindPhase();
+        WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
+        //trigger the dctt fsm
+        this->FindPhase();
 
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
+
         //reload the config of the fast_command_manager
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (10) );
+        std::this_thread::sleep_for (std::chrono::microseconds (100) );
         //start the periodic fast signals if enabled
         WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
     }
@@ -304,14 +301,13 @@ namespace Ph2_HwInterface {
     void Cbc3Fc7FWInterface::Pause()
     {
         //this should just brake triggers
-        //WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_stop", 0x1);
         WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
     }
 
 
     void Cbc3Fc7FWInterface::Resume()
     {
-        //WriteReg ("cbc_system_ctrl.serial_command_generator.fast_signal_generator_start", 0x1);
+        //and this resume them!
         WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
     }
 
@@ -324,19 +320,17 @@ namespace Ph2_HwInterface {
 
         while (cNWords == 0)
         {
-            std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
             //LOG (DEBUG) << cNWords;
+            //LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
         }
 
         pData = ReadBlockRegValue ("data", cNWords);
 
         if (fSaveToFile)
-        {
             fFileHandler->set (pData);
-            //fFileHandler->writeFile();
-        }
 
         //need to return the number of events read
         uint32_t cEventSize = computeEventSize (pBoard);
@@ -346,7 +340,6 @@ namespace Ph2_HwInterface {
         else
             LOG (ERROR) << "Packet Size is not a multiple of the event size!";
 
-        //return nEvents;
         return cNEvents;
     }
 
@@ -355,23 +348,12 @@ namespace Ph2_HwInterface {
     {
         //as per Kirika's recommendation, I will use the internal fast signal generator for this - if a method shows up to do this also with external triggers I can always modify in the future!
         //Procedure as follows:
-        //1)configure a cycle that only sends 100 triggers
+        //1)configure a cycle that only sends pNEvents triggers
         //2)send a serials_command_generator.fast_signal_generator_start
         //3)wait sufficiently long or make sure that the number of words to be read is pNEvents*EventSize
         //4)read data
 
-        //Reset the DAQ and clear all the buffers
-        //not implemented yet, in the meantime do below
-        //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
-        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_reset", 0x1);
-        WriteReg ("cbc_system_ctrl.cbc_data_processor.cbc0.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.event_builder.reset", 0x1);
-        WriteReg ("cbc_system_ctrl.data_buffer.reset", 0x1);
-        //WriteStackReg ( cVecReg );
-        //cVecReg.clear();
-
+        // configure fast signal generator
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
         // configure the fast command cycle to send triggers
         cVecReg.push_back ({"cbc_system_cnfg.fast_command_manager.fast_signal_generator.enable.trigger", 0x1});
@@ -379,17 +361,7 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        //TODO
-        //this->FindPhase();
-
-
-        //then start the triggers
-        WriteReg ("cbc_system_ctrl.fast_command_manager.start_trigger", 0x1);
-        //reload the config of the fast_command_manager
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_load_config", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (10) );
-        //start the periodic fast signals if enabled
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_start", 0x1);
+        this->Start();
 
         //now wait until nword_event is equal to pNEvents * eventSize
         uint32_t cNWords = 0;
@@ -399,22 +371,18 @@ namespace Ph2_HwInterface {
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
+            //LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
         }
 
         if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
 
         //disable triggers
-        WriteReg ("cbc_system_ctrl.fast_command_manager.fast_signal_generator_stop", 0x1);
-        WriteReg ("cbc_system_ctrl.fast_command_manager.stop_trigger", 0x1);
-
+        this->Stop();
         //and read data
         pData = ReadBlockRegValue ("data", cNWords);
 
         if ( fSaveToFile )
-        {
             fFileHandler->set ( pData );
-            //fFileHandler->writeFile();
-        }
     }
 
     /** compute the block size according to the number of CBC's on this board
@@ -532,6 +500,7 @@ namespace Ph2_HwInterface {
         }
         catch ( Exception& except )
         {
+            LOG (INFO) << "Caught exception in FWInterface::ReadI2C: " << except.what();
             throw except;
         }
 
@@ -565,115 +534,118 @@ namespace Ph2_HwInterface {
 
     bool Cbc3Fc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts, bool pReadback)
     {
-
-        uint8_t cMaxWriteAttempts = 5;
-        // the actual write & readback command is in the vector
-        std::vector<uint32_t> cReplies;
-        bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
-
-        //for (int i = 0; i < pVecReg.size(); i++)
-        //{
-        //LOG (DEBUG) << std::bitset<16> ( pVecReg.at (i)  >> 16)  << " " << std::bitset<16> ( pVecReg.at (i) );
-        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i)  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i) );
-        //LOG (DEBUG) << std::bitset<16> ( cReplies.at (2 * i + 1 )  >> 16)  << " " << std::bitset<16> ( cReplies.at (2 * i + 1 ) );
-        //LOG (DEBUG) << std::endl;
-        //}
-
-        //LOG (DEBUG) << "Command Size: " << pVecReg.size() << " Reply size " << cReplies.size();
-
-        // the reply format is different from the sent format, therefore a binary predicate is necessary to compare
-        // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
-
-        //here make a distinction: if pReadback is true, compare only the read replies using the binary predicate
-        //else, just check that info is 0 and thus the CBC acqnowledged the command if the writeread is 0
-        std::vector<uint32_t> cWriteAgain;
-
-        if (pReadback)
+        if (!pVecReg.empty() )
         {
-            //split the reply vector in even and odd replies
-            //even is the write reply, odd is the read reply
-            //since I am already reading back, might as well forget about the CMD acknowledge from the CBC and directly look at the read back value
-            std::vector<uint32_t> cOdd;
-            getOddElements (cReplies, cOdd);
+            uint8_t cMaxWriteAttempts = 5;
+            // the actual write & readback command is in the vector
+            std::vector<uint32_t> cReplies;
+            bool cSuccess = !WriteI2C ( pVecReg, cReplies, pReadback, false );
 
-            //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), Cbc3Fc7FWInterface::cmd_reply_comp);
-
-            // now clear the initial cmd Vec and set the read-back
-            pVecReg.clear();
-            pVecReg = cOdd;
-        }
-        else
-        {
-            //since I do not read back, I can safely just check that the info bit of the reply is 0 and that it was an actual write reply
-            //then i put the replies in pVecReg so I can decode later in CBCInterface
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Cbc3Fc7FWInterface::cmd_reply_ack);
-            pVecReg.clear();
-            pVecReg = cReplies;
-        }
-
-        // now check the size of the WriteAgain vector and assert Success or not
-        // also check that the number of write attempts does not exceed cMaxWriteAttempts
-        if (cWriteAgain.empty() ) cSuccess = true;
-        else
-        {
-            cSuccess = false;
-
-            // if the number of errors is greater than 100, give up
-            if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
+            if (cReplies.size() == 0)
             {
-                if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
-                else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
-
-                pWriteAttempts++;
-                this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
+                LOG (ERROR) << "Error, received 0 I2C replies - something is wrong, aborting!";
+                exit (1);
             }
-            else if ( pWriteAttempts >= cMaxWriteAttempts )
+
+            // the reply format is different from the sent format, therefore a binary predicate is necessary to compare
+            // fValue is in the 8 lsb, then address is in 15 downto 8, page is in 16, CBCId is in 24
+
+            //here make a distinction: if pReadback is true, compare only the read replies using the binary predicate
+            //else, just check that info is 0 and thus the CBC acqnowledged the command if the writeread is 0
+            std::vector<uint32_t> cWriteAgain;
+
+            if (pReadback)
+            {
+                //split the reply vector in even and odd replies
+                //even is the write reply, odd is the read reply
+                //since I am already reading back, might as well forget about the CMD acknowledge from the CBC and directly look at the read back value
+                std::vector<uint32_t> cOdd;
+                getOddElements (cReplies, cOdd);
+
+                //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
+                cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), Cbc3Fc7FWInterface::cmd_reply_comp);
+
+                // now clear the initial cmd Vec and set the read-back
+                pVecReg.clear();
+                pVecReg = cOdd;
+            }
+            else
+            {
+                //since I do not read back, I can safely just check that the info bit of the reply is 0 and that it was an actual write reply
+                //then i put the replies in pVecReg so I can decode later in CBCInterface
+                cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Cbc3Fc7FWInterface::cmd_reply_ack);
+                pVecReg.clear();
+                pVecReg = cReplies;
+            }
+
+            // now check the size of the WriteAgain vector and assert Success or not
+            // also check that the number of write attempts does not exceed cMaxWriteAttempts
+            if (cWriteAgain.empty() ) cSuccess = true;
+            else
             {
                 cSuccess = false;
-                pWriteAttempts = 0 ;
+
+                // if the number of errors is greater than 100, give up
+                if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
+                {
+                    if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
+                    else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
+
+                    pWriteAttempts++;
+                    this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
+                }
+                else if ( pWriteAttempts >= cMaxWriteAttempts )
+                {
+                    cSuccess = false;
+                    pWriteAttempts = 0 ;
+                }
+                else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
             }
-            else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
+
+
+            return cSuccess;
         }
-
-
-        return cSuccess;
+        else return true;
     }
 
     bool Cbc3Fc7FWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
     {
-        std::vector<uint32_t> cReplies;
-        bool cSuccess = !WriteI2C ( pVecReg, cReplies, false, true );
-
-        //just as above, I can check the replies - there will be NCbc * pVecReg.size() write replies and also read replies if I chose to enable readback
-        //this needs to be adapted
-        if (pReadback)
+        if (!pVecReg.empty() )
         {
-            //TODO: actually, i just need to check the read write and the info bit in each reply - if all info bits are 0, this is as good as it gets, else collect the replies that faild for decoding - potentially no iterative retrying
-            //TODO: maybe I can do something with readback here - think about it
-            for (auto& cWord : cReplies)
-            {
-                //it was a write transaction!
-                if ( ( (cWord >> 17) & 0x1) == 0)
-                {
-                    // infor bit is 0 which means that the transaction was acknowledged by the CBC
-                    if ( ( (cWord >> 20) & 0x1) == 0)
-                        cSuccess = true;
-                    else cSuccess == false;
-                }
-                else
-                    cSuccess = false;
+            std::vector<uint32_t> cReplies;
+            bool cSuccess = !WriteI2C ( pVecReg, cReplies, false, true );
 
-                //LOG(INFO) << std::bitset<32>(cWord) ;
+            //just as above, I can check the replies - there will be NCbc * pVecReg.size() write replies and also read replies if I chose to enable readback
+            //this needs to be adapted
+            if (pReadback)
+            {
+                //TODO: actually, i just need to check the read write and the info bit in each reply - if all info bits are 0, this is as good as it gets, else collect the replies that faild for decoding - potentially no iterative retrying
+                //TODO: maybe I can do something with readback here - think about it
+                for (auto& cWord : cReplies)
+                {
+                    //it was a write transaction!
+                    if ( ( (cWord >> 17) & 0x1) == 0)
+                    {
+                        // infor bit is 0 which means that the transaction was acknowledged by the CBC
+                        if ( ( (cWord >> 20) & 0x1) == 0)
+                            cSuccess = true;
+                        else cSuccess == false;
+                    }
+                    else
+                        cSuccess = false;
+
+                    //LOG(INFO) << std::bitset<32>(cWord) ;
+                }
+
+                //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Cbc3Fc7FWInterface::cmd_reply_ack);
+                pVecReg.clear();
+                pVecReg = cReplies;
+
             }
 
-            //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Cbc3Fc7FWInterface::cmd_reply_ack);
-            pVecReg.clear();
-            pVecReg = cReplies;
-
+            return cSuccess;
         }
-
-        return cSuccess;
+        else return true;
     }
 
     void Cbc3Fc7FWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg )

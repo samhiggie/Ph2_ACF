@@ -80,6 +80,8 @@ namespace Ph2_HwInterface {
         fBoard->dispatch();
         fBoardMutex.unlock();
 
+        //LOG (DEBUG) << "Write: " <<  pRegNode << ": " << pVal;
+
         // Verify if the writing is done correctly
         if ( DEV_FLAG )
         {
@@ -109,7 +111,10 @@ namespace Ph2_HwInterface {
         fBoardMutex.lock();
 
         for ( auto const& v : pVecReg )
+        {
             fBoard->getNode ( v.first ).write ( v.second );
+            //LOG (DEBUG) << "Write: " <<  v.first << ": " << v.second;
+        }
 
         try
         {
@@ -164,6 +169,11 @@ namespace Ph2_HwInterface {
         fBoard->getNode ( pRegNode ).writeBlock ( pValues );
         fBoard->dispatch();
         fBoardMutex.unlock();
+
+        //LOG (DEBUG) << "Write block: " << pRegNode;
+
+        //for (auto cWord : pValues)
+        //LOG (DEBUG) << "Write block: " <<  std::bitset<32> (cWord);
 
         bool cWriteCorr = true;
 
@@ -235,6 +245,7 @@ namespace Ph2_HwInterface {
         uhal::ValWord<uint32_t> cValRead = fBoard->getNode ( pRegNode ).read();
         fBoard->dispatch();
         fBoardMutex.unlock();
+        //LOG (DEBUG) << "Read: " << pRegNode << ": " << static_cast<uint32_t> (cValRead);
 
         if ( DEV_FLAG )
         {
@@ -268,6 +279,10 @@ namespace Ph2_HwInterface {
         uhal::ValVector<uint32_t> cBlockRead = fBoard->getNode ( pRegNode ).readBlock ( pBlockSize );
         fBoard->dispatch();
         fBoardMutex.unlock();
+        //LOG (DEBUG) << "Read block: " << pRegNode;
+
+        //for (auto cWord : cBlockRead)
+        //if (pRegNode != "data") LOG (DEBUG) << "Read block: " << std::bitset<32> (cWord);
 
         if ( DEV_FLAG )
         {
