@@ -49,8 +49,8 @@ namespace Ph2_HwInterface {
     fDeactiveThread ( false )
     {
         // Loging settings
-        //uhal::disableLogging();
-        uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
+        uhal::disableLogging();
+        //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
 
         uhal::ConnectionManager cm ( strDummyXml ); // Get connection
 
