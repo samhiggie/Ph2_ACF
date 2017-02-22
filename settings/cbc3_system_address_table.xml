@@ -30,7 +30,7 @@
 				 <node id="2" mask="0xFFFF0000"/>
 			 </node>
 		</node>
-		<node id="cbc_system_clk" mask="0x20" description="0x0(external)/0x1(internal)"/>
+		<node id="cbc_system_clk" address="0x20" description="0x0(external)/0x1(internal)"/>
 		<node id="fast_command_manager">
 			<node id="fast_signal_enable" address="0x21">
 				<node id="async_l1a" mask="0x00000001"/>
