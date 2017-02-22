@@ -180,6 +180,110 @@ void BiasSweep::Initialize()
     this->InitializeAmuxMap();
 }
 
+void BiasSweep::MeasureMinPower (BeBoard* pBoard, Cbc* pCbc)
+{
+    LOG (INFO) << std::endl;
+    LOG (INFO) << BOLDBLUE << "*****************************************" << RESET;
+    LOG (INFO) << BOLDBLUE << "Measuring minimal Power consumption" << RESET;
+    LOG (INFO) << BOLDBLUE << "*****************************************" << RESET;
+
+    std::vector<std::string> cRegisters {"BetaMult&SLVS", "HIP&TestMode", "Ipre1", "Ipre2", "Ipsf", "Ipa", "Ipaos", "Icomp", "CALIbias"};
+    std::vector<uint8_t> cRegSettings {0x1F, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    std::vector<uint8_t> cOriginalRegSettings;
+
+    for (auto cReg : cRegisters)
+        cOriginalRegSettings.push_back (pCbc->getReg (cReg) );
+
+    std::time_t cTime = std::time (nullptr);
+    TTree* cTmpTree = static_cast<TTree*> (getHist ( pCbc, "DataTree" ) );
+    fData->fBias = "MinimalPower";
+    fData->fTimestamp = static_cast<long int> (cTime);
+    fData->fFeId = pCbc->getFeId();
+    fData->fCbcId = pCbc->getCbcId();
+    fData->fUnit[0] = 'I';
+    fData->fUnit[1] = 0;
+    fData->fInitialXValue = 0;
+    fData->fInitialYValue = 0;
+    fData->fXValues.clear();
+    fData->fYValues.clear();
+
+#ifdef __USBINST__
+    LOG (INFO) << YELLOW <<  "Trying to pause monitoring with HMP4040!" << RESET;
+
+    if (!fHMPClient->PauseMonitoring() )
+    {
+        LOG (ERROR) << RED << "HMP4040 Monitoring pause failed - qutting!" << RESET;
+        this->cleanup();
+        exit (1);
+    }
+    else
+        LOG (INFO) << YELLOW << "HMP4040 Monitoring Pause request sent successfully!" << RESET;
+
+#endif
+    //here need to 1st turn off all the biases, then 2nd set the fc7 to external clock, red the digital current and then power cycle the CBC with the LV
+    //and re-configure
+    std::vector<std::pair<std::string, uint8_t>> cRegVec;
+
+    for (size_t cIndex = 0; cIndex < cRegisters.size(); cIndex++)
+        cRegVec.push_back (std::make_pair (cRegisters.at (cIndex), cRegSettings.at (cIndex) ) );
+
+    this->fCbcInterface->WriteCbcMultReg (pCbc, cRegVec);
+    this->fBeBoardInterface->WriteBoardReg (pBoard, "cbc_system_cnfg.cbc_system_clk", 0);
+
+    std::this_thread::sleep_for (std::chrono::milliseconds (800) );
+    double cReading = -999;
+#ifdef __USBINST__
+    //read the LV PS
+    bool cSuccess = fHMPClient->MeasureValues();
+
+    if (cSuccess)
+    {
+        // request was successfull, so proceed
+        // currents.at(3) because we want the VDDD
+        cReading = fHMPClient->fValues.fCurrents.at (3);
+
+        LOG (INFO) << "Turned off all biases on the CBC and read: " << cReading << " A on the HMP4040";
+    }
+    else
+        LOG (ERROR) << RED << "Could not retreive the measurement values from the HMP4040!" << RESET;
+
+#endif
+    fData->fInitialYValue = cReading;
+    //re enable the clock
+    this->fBeBoardInterface->WriteBoardReg (pBoard, "cbc_system_cnfg.cbc_system_clk", 0x1);
+
+#ifdef __USBINST__
+    //now power cycle the LVPS
+    //TODO: change to hard reset
+    LOG (INFO) << RED << "Since HardReset not working, need to power cycle the CBC" << RESET;
+    fHMPClient->ToggleOutput (false);
+    fHMPClient->ToggleOutput (true);
+
+    LOG (INFO) << YELLOW << "Trying to resume monitoring with HMP4040!" << RESET;
+
+    if (!fHMPClient->ResumeMonitoring() )
+    {
+        LOG (ERROR) << RED <<  "HMP4040 Monitoring resume failed - quitting!" << RESET;
+        this->cleanup();
+        exit (1);
+    }
+    else
+        LOG (INFO) << YELLOW << "HMP4040 Monitoring Resume request sent successfully!" << RESET;
+
+#endif
+    //re-configure the CBC but befoere set the original register settings
+    cRegVec.clear();
+
+    for (size_t cIndex = 0; cIndex < cRegisters.size(); cIndex++)
+        pCbc->setReg (cRegisters.at (cIndex), cOriginalRegSettings.at (cIndex) );
+
+    //this->fCbcInterface->ConfigureCbc (pCbc);
+    this->ConfigureHw();
+
+    cTmpTree->Fill();
+    this->writeObjects();
+    LOG (INFO) << "Finished measuring minimal power consumption, results saved!";
+}
 
 void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
 {
@@ -460,7 +564,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
         else if (pCurrent)
         {
             //read the LV PS instead
-            int cTimeoutCounter = 0;
+            //int cTimeoutCounter = 0;
 
             bool cSuccess = fHMPClient->MeasureValues();
 

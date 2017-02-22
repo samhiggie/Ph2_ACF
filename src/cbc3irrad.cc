@@ -203,7 +203,7 @@ int main ( int argc, char* argv[] )
 
         cTool.ConfigureHw ();
 
-        cDog.Reset (5);
+        cDog.Reset (15);
 
         if (!cSkipbias)
         {
@@ -221,6 +221,9 @@ int main ( int argc, char* argv[] )
                 {
                     for (auto cCbc : cFe->fCbcVector)
                     {
+                        cBiasSweep.MeasureMinPower (cBoard, cCbc);
+                        mypause();
+
                         for (auto cBias : cBiases)
                         {
                             cDog.Reset (160);

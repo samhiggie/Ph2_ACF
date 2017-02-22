@@ -80,6 +80,7 @@ class BiasSweep : public Tool
     void Initialize();
     // *******
     void SweepBias (std::string pBias, Cbc* pCbc);
+    void MeasureMinPower (BeBoard* pBoard, Cbc* pCbc);
 
 
 
