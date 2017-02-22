@@ -19,18 +19,17 @@
             <Settings threshold="580" latency="199"/>
             <TestPulse enable="0" polarity="0" amplitude="0x0C" channelgroup="0" delay="0" groundothers="1"/>
             <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
-            <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" testclock="1" dll="25"/>
+            <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" testclock="1" dll="4"/>
             <ChannelMask disable=""/>
-            <Register name="BetaMult&SLVS"> 0x1F </Register>
-            <Register name="HIP&TestMode"> 0x19 </Register>
-            <Register name="Ipre1"> 0x00 </Register>
-            <Register name="Ipre2"> 0x00 </Register>
-            <Register name="Ipsf"> 0x00 </Register>
-            <Register name="Ipa"> 0x00 </Register>
-            <Register name="Ipaos"> 0x00 </Register>
-            <Register name="Icomp"> 0x00 </Register>
-            <Register name="CALIbias"> 0x00 </Register>
-
+            <!--<Register name="BetaMult&SLVS"> 0x1F </Register>-->
+            <!--<Register name="HIP&TestMode"> 0x19 </Register>-->
+            <!--<Register name="Ipre1"> 0x00 </Register>-->
+            <!--<Register name="Ipre2"> 0x00 </Register>-->
+            <!--<Register name="Ipsf"> 0x00 </Register>-->
+            <!--<Register name="Ipa"> 0x00 </Register>-->
+            <!--<Register name="Ipaos"> 0x00 </Register>-->
+            <!--<Register name="Icomp"> 0x00 </Register>-->
+            <!--<Register name="CALIbias"> 0x00 </Register>-->
         </CBC>
     </Module>
 
@@ -38,10 +37,10 @@
     <Register name="cbc_system_cnfg">
         <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->
         <!--required-->
-        <Register name="cbc_system_clk"> 0x0 </Register>
+        <Register name="cbc_system_clk"> 0x1 </Register>
         <!--to output trigger-->
-        <Register name="global.test_out.1"> 0x0004 </Register>
-        <Register name="global.test_out.2"> 0x0003 </Register>
+        <Register name="global.test_out.1"> 0x0000 </Register>
+        <Register name="global.test_out.2"> 0x0002 </Register>
         <!--FAST SIGNAL SOURCE-->
         <Register name="fast_command_manager">
             <Register name="fast_signal_enable">
@@ -60,7 +59,7 @@
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
                 <Register name="Ncycle"> 0 </Register>
-                <Register name="cycle_period"> 80 </Register>
+                <Register name="cycle_period"> 8000 </Register>
                 <Register name="trigger_timing"> 19 </Register>
                 <Register name="test_pulse_timing"> 2 </Register>
                 <Register name="orbit_reset_timing"> 100 </Register>
@@ -90,7 +89,7 @@
 
     <!--BiasSweep-->
     <Setting name="SweepTimeout">1</Setting>
-    <Setting name="StepSize">2</Setting>
+    <Setting name="StepSize">5</Setting>
     <Setting name="KePort">8083</Setting>
     <Setting name="HMPPort">8081</Setting>
 </Settings>

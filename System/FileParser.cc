@@ -422,7 +422,7 @@ namespace Ph2_System {
             cStubLogic = convertAnyInt (cMiscNode.attribute ("stublogic").value() );
             cOr254 = convertAnyInt (cMiscNode.attribute ("or254").value() );
             cDll = reverseBits (static_cast<uint8_t> (convertAnyInt (cMiscNode.attribute ("dll").value() ) ) & 0x1F ) >> 3;
-            LOG (DEBUG) << convertAnyInt (cMiscNode.attribute ("dll").value() ) << " " << +cDll;
+            //LOG (DEBUG) << convertAnyInt (cMiscNode.attribute ("dll").value() ) << " " << +cDll << " " << std::bitset<5> (cDll);
             cTpgClock = convertAnyInt (cMiscNode.attribute ("tpgclock").value() );
             cTestClock = convertAnyInt (cMiscNode.attribute ("testclock").value() );
             cAmuxValue = convertAnyInt (cMiscNode.attribute ("analogmux").value() );
@@ -437,6 +437,7 @@ namespace Ph2_System {
             else if (cType == ChipType::CBC3)
             {
                 pCbc->setReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | (cTestClock & 0x01) << 5 | cDll & 0x1F) );
+                //LOG (DEBUG) << BOLDRED << std::bitset<8> (pCbc->getReg ("40MhzClk&Or254") ) << RESET;
                 uint8_t cPtWidthRead = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
                 pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) << 4) | (cPtWidthRead & 0x0F) ) );
 
