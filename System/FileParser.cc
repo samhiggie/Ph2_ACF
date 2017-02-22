@@ -236,7 +236,10 @@ namespace Ph2_System {
             this->parseCbcSettings (pModuleNode.child ("CBC"), cCbc, os);
 
             for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
-                cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), atoi ( cCbcRegisterNode.first_child().value() ) );
+            {
+                cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), convertAnyInt ( cCbcRegisterNode.first_child().value() ) );
+                os << BLUE << "|\t|\t|\t|----Register: " << std::string ( cCbcRegisterNode.attribute ( "name" ).value() ) << " : " << RED << std::hex << "0x" <<  convertAnyInt ( cCbcRegisterNode.first_child().value() ) << RESET << std::endl;
+            }
 
             // here parese the GlobalCbcSettings so that Global CBC regisers take precedence over Global CBC settings which take precedence over CBC specific settings
             //for ( pugi::xml_node cCbcGlobalNode = pModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != pModuleNode.child ( "CBC" ) && cCbcGlobalNode != pModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
@@ -418,9 +421,10 @@ namespace Ph2_System {
             cPipeLogic = convertAnyInt (cMiscNode.attribute ("pipelogic").value() );
             cStubLogic = convertAnyInt (cMiscNode.attribute ("stublogic").value() );
             cOr254 = convertAnyInt (cMiscNode.attribute ("or254").value() );
-            cTestClock = convertAnyInt (cMiscNode.attribute ("testclock").value() );
+            cDll = reverseBits (static_cast<uint8_t> (convertAnyInt (cMiscNode.attribute ("dll").value() ) ) & 0x1F ) >> 3;
+            LOG (DEBUG) << convertAnyInt (cMiscNode.attribute ("dll").value() ) << " " << +cDll;
             cTpgClock = convertAnyInt (cMiscNode.attribute ("tpgclock").value() );
-            cDll = convertAnyInt (cMiscNode.attribute ("dll").value() );
+            cTestClock = convertAnyInt (cMiscNode.attribute ("testclock").value() );
             cAmuxValue = convertAnyInt (cMiscNode.attribute ("analogmux").value() );
 
             if (cType == ChipType::CBC2)
@@ -439,7 +443,7 @@ namespace Ph2_System {
                 uint8_t cAmuxRead = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
                 pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", (cAmuxRead & 0xE0 | (cAmuxValue & 0x1F) ) );
 
-                os << GREEN << "|\t|\t|\t|----Misc Settings: " << " PipelineLogicSource: " << RED << +cPipeLogic << GREEN << ", StubLogicSource: " << RED << +cStubLogic << GREEN << ", OR254: " << RED << +cOr254 << GREEN << ", TPG Clock: " << RED << +cTpgClock << GREEN << ", DLL: " << RED << +cDll << RESET << std::endl;
+                os << GREEN << "|\t|\t|\t|----Misc Settings: " << " PipelineLogicSource: " << RED << +cPipeLogic << GREEN << ", StubLogicSource: " << RED << +cStubLogic << GREEN << ", OR254: " << RED << +cOr254 << GREEN << ", TPG Clock: " << RED << +cTpgClock << GREEN  << ", Test Clock 40: " << RED << +cTestClock << GREEN << ", DLL: " << RED << convertAnyInt (cMiscNode.attribute ("dll").value() ) << RESET << std::endl;
             }
 
             os << GREEN << "|\t|\t|\t|----Analog Mux " << "value: " << RED << +cAmuxValue << " (0x" << std::hex << +cAmuxValue << std::dec << ", 0b" << std::bitset<5> (cAmuxValue) << ")" << RESET << std::endl;
