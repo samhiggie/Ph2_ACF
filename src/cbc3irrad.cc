@@ -221,8 +221,8 @@ int main ( int argc, char* argv[] )
                 {
                     for (auto cCbc : cFe->fCbcVector)
                     {
+                        cDog.Reset (25);
                         cBiasSweep.MeasureMinPower (cBoard, cCbc);
-                        mypause();
 
                         for (auto cBias : cBiases)
                         {
@@ -239,6 +239,10 @@ int main ( int argc, char* argv[] )
 
         cDog.Reset (50);
 
+#ifdef __USBINST__
+        cLVClient->ToggleOutput (0);
+        cLVClient->ToggleOutput (1);
+#endif
         //t.stop();
         //t.show ( "Time to sweep all biases" );
 
@@ -246,6 +250,7 @@ int main ( int argc, char* argv[] )
         Calibration cCalibration;
         cCalibration.Inherit (&cTool);
         cCalibration.Initialise (false);
+        cCalibration.ConfigureHw();
         cCalibration.FindVplus();
         cCalibration.FindOffsets();
         cCalibration.writeObjects();

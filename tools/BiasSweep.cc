@@ -112,15 +112,15 @@ void BiasSweep::Initialize()
 
     int cCounter = 0;
 
-    while (fArdNanoController->Write ("1") != 0 )
-    {
-        if (cCounter++ > 5)
-        {
-            LOG (ERROR) << RED << "Failed to initialize ArduinoNano Controller - quitting!" << RESET;
-            this->cleanup();
-            exit (1);
-        }
-    }
+    //while (fArdNanoController->Write ("1") != 0 )
+    //{
+    //if (cCounter++ > 5)
+    //{
+    //LOG (ERROR) << RED << "Failed to initialize ArduinoNano Controller - quitting!" << RESET;
+    //this->cleanup();
+    //exit (1);
+    //}
+    //}
 
 #endif
 
@@ -225,7 +225,10 @@ void BiasSweep::MeasureMinPower (BeBoard* pBoard, Cbc* pCbc)
     std::vector<std::pair<std::string, uint8_t>> cRegVec;
 
     for (size_t cIndex = 0; cIndex < cRegisters.size(); cIndex++)
+    {
+        LOG (INFO) << "Original Value of " << cRegisters.at (cIndex) << ": 0x" << std::hex << +cOriginalRegSettings.at (cIndex) << " will be changed to 0x" << +cRegSettings.at (cIndex) << std::dec;
         cRegVec.push_back (std::make_pair (cRegisters.at (cIndex), cRegSettings.at (cIndex) ) );
+    }
 
     this->fCbcInterface->WriteCbcMultReg (pCbc, cRegVec);
     this->fBeBoardInterface->WriteBoardReg (pBoard, "cbc_system_cnfg.cbc_system_clk", 0);
@@ -247,16 +250,11 @@ void BiasSweep::MeasureMinPower (BeBoard* pBoard, Cbc* pCbc)
     else
         LOG (ERROR) << RED << "Could not retreive the measurement values from the HMP4040!" << RESET;
 
-#endif
-    fData->fInitialYValue = cReading;
-    //re enable the clock
-    this->fBeBoardInterface->WriteBoardReg (pBoard, "cbc_system_cnfg.cbc_system_clk", 0x1);
-
-#ifdef __USBINST__
     //now power cycle the LVPS
     //TODO: change to hard reset
     LOG (INFO) << RED << "Since HardReset not working, need to power cycle the CBC" << RESET;
     fHMPClient->ToggleOutput (false);
+    std::this_thread::sleep_for (std::chrono::seconds (2) );
     fHMPClient->ToggleOutput (true);
 
     LOG (INFO) << YELLOW << "Trying to resume monitoring with HMP4040!" << RESET;
@@ -271,6 +269,10 @@ void BiasSweep::MeasureMinPower (BeBoard* pBoard, Cbc* pCbc)
         LOG (INFO) << YELLOW << "HMP4040 Monitoring Resume request sent successfully!" << RESET;
 
 #endif
+    fData->fInitialYValue = cReading;
+    //re enable the clock
+    //this->fBeBoardInterface->WriteBoardReg (pBoard, "cbc_system_cnfg.cbc_system_clk", 0x1);
+    pBoard->setReg ("cbc_system_cnfg.cbc_system_clk", 0x01);
     //re-configure the CBC but befoere set the original register settings
     cRegVec.clear();
 
@@ -278,6 +280,7 @@ void BiasSweep::MeasureMinPower (BeBoard* pBoard, Cbc* pCbc)
         pCbc->setReg (cRegisters.at (cIndex), cOriginalRegSettings.at (cIndex) );
 
     //this->fCbcInterface->ConfigureCbc (pCbc);
+    std::this_thread::sleep_for (std::chrono::seconds (2) );
     this->ConfigureHw();
 
     cTmpTree->Fill();
