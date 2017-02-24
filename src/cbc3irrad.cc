@@ -242,6 +242,7 @@ int main ( int argc, char* argv[] )
 
 #ifdef __USBINST__
         cLVClient->ToggleOutput (0);
+        //std::this_thread::sleep_for (std::chrono::seconds (1) );
         cLVClient->ToggleOutput (1);
 #endif
         //t.stop();
