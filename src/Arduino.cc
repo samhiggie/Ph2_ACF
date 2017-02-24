@@ -52,9 +52,8 @@ int main (int argc, char** argv)
 
     bool cAsync = false;
     bool cMultex = false;
-    ArdNanoController* cController = new ArdNanoController (cAsync, cMultex);
+    ArdNanoController* cController = new ArdNanoController ();
     bool cState = cController->CheckArduinoState();
-    //mypause(); // here so I can start sniffer...
 
 
     if ( cState)

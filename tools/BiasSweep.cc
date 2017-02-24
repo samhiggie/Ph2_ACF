@@ -108,19 +108,9 @@ void BiasSweep::Initialize()
 
     // first is async, second is multex??
     LOG (INFO) << YELLOW << "Attempting to connect to arduino nano!" << RESET;
-    fArdNanoController = new ArdNanoController (false, false);
+    fArdNanoController = new ArdNanoController ();
 
     int cCounter = 0;
-
-    //while (fArdNanoController->Write ("1") != 0 )
-    //{
-    //if (cCounter++ > 5)
-    //{
-    //LOG (ERROR) << RED << "Failed to initialize ArduinoNano Controller - quitting!" << RESET;
-    //this->cleanup();
-    //exit (1);
-    //}
-    //}
 
 #endif
 
