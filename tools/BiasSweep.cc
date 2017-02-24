@@ -742,6 +742,7 @@ void BiasSweep::StartDAQ()
     if (!fDAQrunning.load() )
     {
         std::unique_lock<std::mutex> cLock (fHWMutex);
+        //this->fBeBoardInterface->WriteBoardReg(fBoardVector.at(0), "cbc_system_cnfg.misc.trigger_master_external", 0x1);
         this->Start (fBoardVector.at (0) );
         fDAQrunning = true;
         cLock.unlock();
@@ -763,5 +764,6 @@ void BiasSweep::StopDAQ()
         //cLock.lock();
         //std::unique_lock<std::mutex> cLock (fHWMutex);
         //this->Stop (fBoardVector.at (0) );
+        //this->fBeBoardInterface->WriteBoardReg(fBoardVector.at(0), "cbc_system_cnfg.misc.trigger_master_external", 0x0);
     }
 }
