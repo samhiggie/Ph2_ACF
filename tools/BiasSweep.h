@@ -87,9 +87,9 @@ class BiasSweep : public Tool
 
 
   private:
-    std::thread fThread;
-    std::mutex fHWMutex;
-    std::atomic<bool> fDAQrunning;
+    //std::thread fThread;
+    //std::mutex fHWMutex;
+    //std::atomic<bool> fDAQrunning;
     void InitializeAmuxMap();
     uint8_t configureAmux (std::map<std::string, AmuxSetting>::iterator pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 0);
     void resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 0  );
