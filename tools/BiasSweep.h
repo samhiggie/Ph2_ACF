@@ -15,6 +15,8 @@
 #include "Tool.h"
 #include <map>
 #include <vector>
+#include <mutex>
+#include <atomic>
 #include "TGraph.h"
 #include "TObject.h"
 #include "TAxis.h"
@@ -85,6 +87,9 @@ class BiasSweep : public Tool
 
 
   private:
+    std::thread fThread;
+    std::mutex fHWMutex;
+    std::atomic<bool> fDAQrunning;
     void InitializeAmuxMap();
     uint8_t configureAmux (std::map<std::string, AmuxSetting>::iterator pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 0);
     void resetAmux (uint8_t pAmuxValue, Cbc* pCbc, double pSettlingTime_s = 0  );
@@ -92,6 +97,9 @@ class BiasSweep : public Tool
     void measureSingle (std::map<std::string, AmuxSetting>::iterator pAmuxMap, Cbc* pCbc);
     void sweepVCth (TGraph* pGraph, Cbc* pCbc);
     void cleanup();
+    void DAQloop();
+    void StartDAQ();
+    void StopDAQ();
 
     TCanvas* fSweepCanvas;
 

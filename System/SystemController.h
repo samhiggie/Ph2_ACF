@@ -153,7 +153,7 @@ namespace Ph2_System {
          * \brief Run a DAQ
          * \param pBeBoard
          */
-        void Run ( BeBoard* pBoard );
+        //void Run ( BeBoard* pBoard );
 
         /*!
          * \brief Read Data from pBoard
@@ -161,6 +161,9 @@ namespace Ph2_System {
          * \return: number of packets
          */
         uint32_t ReadData (BeBoard* pBoard);
+
+        void Start (BeBoard* pBoard);
+        void Stop (BeBoard* pBoard);
 
         /*!
          * \brief Read Data from all boards

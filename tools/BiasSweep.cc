@@ -52,7 +52,7 @@ void BiasSweep::InitializeAmuxMap()
 
 //cases: 1)VCth 2)Voltage & sweepable -> DMM 3) not sweepable: old code 4) current & sweepable: 1 reading on dmm with default setting, then sweep using PS
 
-BiasSweep::BiasSweep (HMP4040Client* pClient, Ke2110Controller* pController)
+BiasSweep::BiasSweep (HMP4040Client* pClient, Ke2110Controller* pController) : fDAQrunning (false)
 {
 #ifdef __USBINST__
 
@@ -303,6 +303,8 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         LOG (INFO) << BOLDBLUE << "*****************************************" << RESET;
         LOG (INFO) << BOLDBLUE << "Measuring bias: " << BOLDRED << pBias << RESET;
         LOG (INFO) << BOLDBLUE << "*****************************************" << RESET;
+        LOG (INFO) << BOLDGREEN << "Starting Triggers" << RESET;
+        this->StartDAQ();
         //boolean variable to find out if current or not
         bool cCurrent = (pBias.find ("I") != std::string::npos) ? true : false;
 
@@ -448,7 +450,8 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         cTmpTree->Fill();
         this->writeObjects();
         LOG (INFO) << "Bias Sweep finished, results saved!";
-
+        LOG (INFO) << BOLDGREEN << "Stopping Triggers!" << RESET;
+        this->StopDAQ();
     }
 }
 
@@ -718,4 +721,57 @@ void BiasSweep::cleanup()
     }
 
     if (fArdNanoController) delete fArdNanoController;
+}
+
+void BiasSweep::DAQloop()
+{
+
+    while (fDAQrunning.load() )
+    {
+        std::unique_lock<std::mutex> cLock (fHWMutex);
+        this->ReadData (fBoardVector.at (0) );
+        cLock.unlock();
+
+        if (!fDAQrunning.load() )
+        {
+            //cLock.lock();
+            this->Stop (fBoardVector.at (0) );
+            //cLock.unlock();
+            break;
+        }
+        else
+        {
+            //cLock.unlock();
+            std::this_thread::sleep_for (std::chrono::microseconds (100) );
+        }
+    }
+}
+
+void BiasSweep::StartDAQ()
+{
+    if (!fDAQrunning.load() )
+    {
+        std::unique_lock<std::mutex> cLock (fHWMutex);
+        this->Start (fBoardVector.at (0) );
+        fDAQrunning = true;
+        cLock.unlock();
+        fThread = std::thread (&BiasSweep::DAQloop, this);
+    }
+}
+
+void BiasSweep::StopDAQ()
+{
+    if (fDAQrunning.load() )
+    {
+        //std::unique_lock<std::mutex> cLock (fHWMutex);
+        fDAQrunning = false;
+        //cLock.unlock();
+        std::this_thread::sleep_for (std::chrono::seconds (2) );
+
+        if (fThread.joinable() ) fThread.join();
+
+        //cLock.lock();
+        //std::unique_lock<std::mutex> cLock (fHWMutex);
+        //this->Stop (fBoardVector.at (0) );
+    }
 }

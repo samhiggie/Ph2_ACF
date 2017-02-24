@@ -221,8 +221,6 @@ int main ( int argc, char* argv[] )
                 {
                     for (auto cCbc : cFe->fCbcVector)
                     {
-                        cDog.Reset (25);
-                        cBiasSweep.MeasureMinPower (cBoard, cCbc);
 
                         for (auto cBias : cBiases)
                         {
@@ -232,6 +230,9 @@ int main ( int argc, char* argv[] )
                             t.stop();
                             t.show ("Time for this bias");
                         }
+
+                        cDog.Reset (25);
+                        cBiasSweep.MeasureMinPower (cBoard, cCbc);
                     }
                 }
             }

@@ -184,6 +184,15 @@ namespace Ph2_System {
         }
     }
 
+    void SystemController::Start (BeBoard* pBoard)
+    {
+        fBeBoardInterface->Start (pBoard);
+    }
+    void SystemController::Stop (BeBoard* pBoard)
+    {
+        fBeBoardInterface->Stop (pBoard);
+    }
+
     uint32_t SystemController::ReadData (BeBoard* pBoard)
     {
         //reset the data object
