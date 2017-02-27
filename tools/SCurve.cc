@@ -66,8 +66,9 @@ void SCurve::setOffset ( uint8_t pOffset, int  pGroup )
     }
 }
 
-uint16_t SCurve::find50()
+uint16_t SCurve::findPedestal (int pTGrpId)
 {
+    uint16_t cStartValue = 0x00;
     //have a map of thresholds and hit counts
     std::map<Cbc*, uint16_t> cThresholdMap;
     std::map<Cbc*, uint32_t> cHitCountMap;
@@ -76,11 +77,11 @@ uint16_t SCurve::find50()
         for (Module* cFe : pBoard->fModuleVector)
             for (Cbc* cCbc : cFe->fCbcVector)
             {
-                cThresholdMap[cCbc] = 0;
+                cThresholdMap[cCbc] = cStartValue;
                 cHitCountMap[cCbc] = 0;
             }
 
-    ThresholdVisitor cThresholdVisitor (fCbcInterface, 0);
+    ThresholdVisitor cThresholdVisitor (fCbcInterface, cStartValue);
     this->accept (cThresholdVisitor);
 
     for ( BeBoard* pBoard : fBoardVector )
@@ -96,15 +97,31 @@ uint16_t SCurve::find50()
             for ( auto cFe : pBoard->fModuleVector )
             {
                 for ( auto cCbc : cFe->fCbcVector )
-                    //TODO: Test Groups
+                {
+                    //std::map<Cbc*, uint32_t>::iterator cHitCounter = cHitCountMap.find (cCbc);
+
+                    //if ( cChanVec != fCbcChannelMap.end() )
+                    //{
+                    //const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
+
+                    //for ( auto& cChanId : cTestGrpChannelVec )
+                    //{
+                    //if ( cEvent->DataBit ( cFe->getFeId(), cCbc->getCbcId(),  cChanId ) )
+                    //cHitCounter->second++;
+                    //}
+
+                    //}
+                    //else LOG (INFO) << RED << "Error: could not find the channels for CBC " << int ( cCbc->getCbcId() ) << RESET ;
+
                     cHitCountMap[cCbc] += cEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
+                }
             }
         }
     }
 
     for (auto& cCbc : cThresholdMap)
     {
-        float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint);
+        float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
         fHoleMode = (cOccupancy == 0) ? false :  true;
         LOG (DEBUG) << "Threshold " << cCbc.second << " Occupancy " << cOccupancy << " Hole Mode: " << fHoleMode;
     }
@@ -113,51 +130,78 @@ uint16_t SCurve::find50()
 
     // now go over the VTh bits for each CBC, start with the MSB, flip it to one and measure the occupancy
     // VTh is 10 bits on CBC3
+    bool cCloseEnough = false;
+
     for ( int iBit = cNbits - 1 ; iBit >= 0; iBit-- )
     {
-        for (auto& cCbc : cThresholdMap)
+        if (!cCloseEnough)
         {
-            LOG (DEBUG) << cCbc.second;
-            toggleRegBit ( cCbc.second, iBit );
-            LOG (DEBUG) << cCbc.second;
-            cThresholdVisitor.setThreshold (cCbc.second);
-            cCbc.first->accept (cThresholdVisitor);
-            cHitCountMap[cCbc.first] = 0;
-        }
-
-        for ( BeBoard* pBoard : fBoardVector )
-        {
-            ReadNEvents ( pBoard, fEventsPerPoint );
-
-            //now decode the events and measure the occupancy on the chip
-            //in the first iteration, check if I'm in hole mode or electron mode
-            std::vector<Event*> events = GetEvents ( pBoard );
-
-            for ( auto& cEvent : events )
+            for (auto& cCbc : cThresholdMap)
             {
-                for ( auto cFe : pBoard->fModuleVector )
+                toggleRegBit ( cCbc.second, iBit );
+                cThresholdVisitor.setThreshold (cCbc.second);
+                cCbc.first->accept (cThresholdVisitor);
+                cHitCountMap[cCbc.first] = 0;
+            }
+
+            for ( BeBoard* pBoard : fBoardVector )
+            {
+                ReadNEvents ( pBoard, fEventsPerPoint );
+
+                //now decode the events and measure the occupancy on the chip
+                //in the first iteration, check if I'm in hole mode or electron mode
+                std::vector<Event*> events = GetEvents ( pBoard );
+
+                for ( auto& cEvent : events )
                 {
-                    for ( auto cCbc : cFe->fCbcVector )
-                        //TODO: Test Group here
-                        cHitCountMap[cCbc] += cEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
+                    for ( auto cFe : pBoard->fModuleVector )
+                    {
+                        for ( auto cCbc : cFe->fCbcVector )
+                        {
+                            //std::map<Cbc*, uint32_t>::iterator cHitCounter = cHitCountMap.find (cCbc);
+
+                            //if (cHitCounter != cHitCountMap.end() )
+                            //{
+                            //const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
+
+                            //for ( auto& cChanId : cTestGrpChannelVec )
+                            //{
+                            //LOG (DEBUG) << cChanId;
+
+                            //if ( cEvent->DataBit ( cFe->getFeId(), cCbc->getCbcId(), cChanId ) )
+                            //cHitCounter->second++;
+                            //}
+                            //}
+                            //else LOG (INFO) << RED << "Error: could not find the HitCounter for CBC " << int ( cCbc->getCbcId() ) << RESET ;
+
+                            cHitCountMap[cCbc] += cEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
+                        }
+                    }
                 }
             }
-        }
 
-        // now I know how many hits there are with a Threshold of 0
-        for (auto& cCbc : cThresholdMap)
-        {
-            float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
+            // now I know how many hits there are with a Threshold of 0
+            for (auto& cCbc : cThresholdMap)
+            {
+                float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
 
-            LOG (DEBUG) << "IBIT " << +iBit << " DEBUG Setting VTh for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<10> ( cCbc.second ) << ") and occupancy " << cOccupancy ;
+                LOG (DEBUG) << "IBIT " << +iBit << " DEBUG Setting VTh for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<10> ( cCbc.second ) << ") and occupancy " << cOccupancy ;
 
-            if (fHoleMode && cOccupancy < 0.45)
-                toggleRegBit (cCbc.second, iBit);
-            else if (!fHoleMode && cOccupancy > 0.54)
-                toggleRegBit (cCbc.second, iBit);
+                if (fabs (cOccupancy - 0.5) < 0.05 )
+                {
+                    cCloseEnough = true;
+                    break;
+                }
 
-            cThresholdVisitor.setThreshold (cCbc.second);
-            cCbc.first->accept (cThresholdVisitor);
+                if (fHoleMode && cOccupancy < 0.45)
+                    toggleRegBit (cCbc.second, iBit);
+                else if (!fHoleMode && cOccupancy > 0.56)
+                    toggleRegBit (cCbc.second, iBit);
+
+                cThresholdVisitor.setThreshold (cCbc.second);
+                cCbc.first->accept (cThresholdVisitor);
+
+            }
         }
     }
 
@@ -168,113 +212,16 @@ uint16_t SCurve::find50()
 
     cMean /= cThresholdMap.size();
 
+    LOG (INFO) << BOLDBLUE << "Found Pedestals to be around " << BOLDRED << cMean << " (0x" << std::hex << cMean << std::dec << ", 0b" << std::bitset<10> (cMean) << ")" << BOLDBLUE << " for Test Group " << pTGrpId << RESET;
+
     return cMean;
 }
 
-uint16_t SCurve::findOccupancy ( int  pTGrpId )
+
+void SCurve::measureSCurves (int pTGrpId, uint16_t pStartValue)
 {
-    //find 50% occupancy chip wide
-    uint16_t cThreshold = 0x00;
-    // Adaptive Loop to measure SCurves
+    //if (pStartValue == 0) pStartValue = this->findPedestal (pTGrpId);
 
-    LOG (INFO) << BOLDGREEN << "Measuring SCurves sweeping VCth ... " << RESET ;
-
-    // Necessary variables
-    bool cFoundOccupancy = false;
-    uint16_t cValue = 0x00;
-    uint8_t cIterationCount = 0;
-
-    //figure out what kind of chips we are dealing with here
-    //re-run the phase finding at least before every sweep
-    for (BeBoard* cBoard : fBoardVector)
-    {
-        //fBeBoardInterface->FindPhase (cBoard);
-
-        for (Module* cModule : cBoard->fModuleVector)
-            fType = cModule->getChipType();
-    }
-
-    uint16_t cMaxValue = (fType == ChipType::CBC2) ? 0xFF : 0x03FF;
-
-    //visitor to set threshold on CBC2 and CBC3
-    ThresholdVisitor cVisitor (fCbcInterface, 0);
-
-    // Adaptive VCth loop
-    while ( cValue <= cMaxValue )
-    {
-        if (cFoundOccupancy) break;
-
-        uint32_t cHitCounter = 0;
-
-        for ( BeBoard* pBoard : fBoardVector )
-        {
-            for (Module* cFe : pBoard->fModuleVector)
-            {
-                cVisitor.setThreshold (cValue);
-                cFe->accept (cVisitor);
-            }
-
-            ReadNEvents ( pBoard, fEventsPerPoint );
-
-            const std::vector<Event*>& events = GetEvents ( pBoard );
-
-            // Loop over Events from this Acquisition
-            for ( auto& ev : events )
-            {
-                // loop over all FEs on board, check if channels are hit and if so , fill pValue in the histogram of Channel
-                uint32_t cHitCounterLocal = 0;
-
-                for ( auto cFe : pBoard->fModuleVector )
-                {
-                    for ( auto cCbc : cFe->fCbcVector )
-                    {
-                        CbcChannelMap::iterator cChanVec = fCbcChannelMap.find ( cCbc );
-
-                        if ( cChanVec != fCbcChannelMap.end() )
-                        {
-                            const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
-
-                            for ( auto& cChanId : cTestGrpChannelVec )
-                            {
-                                if ( ev->DataBit ( cFe->getFeId(), cCbc->getCbcId(), cChanVec->second.at ( cChanId ).fChannelId ) )
-                                    cHitCounterLocal++;
-                            }
-
-                        }
-                        else LOG (INFO) << RED << "Error: could not find the channels for CBC " << int ( cCbc->getCbcId() ) << RESET ;
-                    }
-                }
-
-                cHitCounter += cHitCounterLocal;
-            }
-
-            Counter cCounter;
-            pBoard->accept ( cCounter );
-
-            //LOG (DEBUG) << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter << " and should be > 0  and <" <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ;
-
-            // check if the hitcounter is all ones
-            int cMaxHits = fEventsPerPoint *   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size();
-
-            if (cHitCounter > 0 * cMaxHits && cHitCounter < 0.90 * cMaxHits)
-            {
-                double cOccupancy = cHitCounter / double (cMaxHits);
-                cThreshold = cValue;
-                LOG (INFO) << "Found occupancy of " << cOccupancy << " @ Threshold " << cThreshold;
-                cFoundOccupancy = true;
-            }
-
-        }
-
-        cValue += 10;
-    }
-
-    cIterationCount++;
-    return cThreshold;
-}
-
-void SCurve::findLimits (int pTGrpId, uint16_t pStartValue)
-{
     bool cAllZero = false;
     bool cAllOne = false;
     bool cFoundOne = false;
@@ -312,7 +259,6 @@ void SCurve::findLimits (int pTGrpId, uint16_t pStartValue)
 
             Counter cCbcCounter;
             pBoard->accept ( cCbcCounter );
-            //LOG (DEBUG) << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter;
 
             //now establish if I'm zero or one
             if (cHitCounter == 0) cAllZeroCounter ++;
@@ -363,12 +309,8 @@ void SCurve::findLimits (int pTGrpId, uint16_t pStartValue)
         }
 
     }
-}
 
-void SCurve::measureSCurves (int pTGrpId)
-{
-    uint16_t cStartThreshold = this->findOccupancy (pTGrpId);
-    this->findLimits (pTGrpId, cStartThreshold);
+    LOG (INFO) << RED << "Found minimal and maximal occupancy 8 times, SCurves finished! " << RESET ;
 }
 
 

@@ -9,7 +9,7 @@ void PedeNoise::Initialise()
 
 
     fPedestalCanvas = new TCanvas ( "Pedestal & Noise", "Pedestal & Noise", 670, 0, 650, 650 );
-    fFeSummaryCanvas = new TCanvas ( "Noise for each FE", "Noise for each FE", 0, 670, 650, 650 );
+    //fFeSummaryCanvas = new TCanvas ( "Noise for each FE", "Noise for each FE", 0, 670, 650, 650 );
     fNoiseCanvas = new TCanvas ( "Final SCurves, Strip Noise", "Final SCurves, Noise", 0, 0, 650, 650 );
 
 
@@ -110,7 +110,7 @@ void PedeNoise::Initialise()
 
     fNoiseCanvas->DivideSquare ( 2 * cPads );
     fPedestalCanvas->DivideSquare ( 2 * cPads );
-    fFeSummaryCanvas->DivideSquare ( fNFe );
+    //fFeSummaryCanvas->DivideSquare ( fNFe );
 
     // now read the settings from the map
     auto cSetting = fSettingsMap.find ( "HoleMode" );
@@ -138,7 +138,8 @@ void PedeNoise::measureNoise()
 {
     saveInitialOffsets();
 
-    find50();
+    //find50();
+    uint16_t cStartValue = this->findPedestal (-1);
 
     // method to measure one final set of SCurves with the final calibration applied to extract the noise
     // now measure some SCurves
@@ -162,7 +163,7 @@ void PedeNoise::measureNoise()
         initializeSCurves ( "Final", fTestPulseAmplitude, cTGrpM.first );
 
         // measure the SCurves, the false is indicating that I am sweeping Vcth
-        measureSCurves ( cTGrpM.first );
+        measureSCurves ( cTGrpM.first, cStartValue );
 
         // now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
         processSCurvesNoise ( "Final", fTestPulseAmplitude, true, cTGrpM.first );
@@ -229,11 +230,11 @@ void PedeNoise::measureNoise()
 
             //now apply
 
-            fFeSummaryCanvas->cd ( cFeId + 1 );
-            cTmpHist->DrawCopy();
-            fFeSummaryCanvas->cd ( fNFe + cFeId + 1 );
-            cTmpProfile->DrawCopy();
-            fFeSummaryCanvas->Update();
+            //fFeSummaryCanvas->cd ( cFeId + 1 );
+            //cTmpHist->DrawCopy();
+            //fFeSummaryCanvas->cd ( fNFe + cFeId + 1 );
+            //cTmpProfile->DrawCopy();
+            //fFeSummaryCanvas->Update();
         }
     }
 
@@ -279,7 +280,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
 
                 //as we are at it, draw the plot
                 fNoiseCanvas->cd ( cCbc->getCbcId() + 1 );
-                gPad->SetLogy();
+                gPad->SetLogy (1);
                 cHist->DrawCopy();
                 line->Draw ("same");
                 fNoiseCanvas->Modified();
@@ -310,6 +311,33 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
 
         setThresholdtoNSigma (cBoard, 0);
     }
+
+    for ( auto& cCbc : fCbcChannelMap )
+    {
+        bool cFirst = true;
+        TString cOption;
+
+        for (auto& cChan : cCbc.second)
+        {
+
+            if ( cFirst )
+            {
+                cOption = "L" ;
+                cFirst = false;
+            }
+            else cOption = "L same";
+
+            fNoiseCanvas->cd ( cCbc.first->getCbcId() + 1 );
+            gPad->SetLogy (0);
+            cChan.fScurve->DrawCopy ( cOption );
+
+            //if ( fFitted )
+            //cChan.fFit->DrawCopy ( "same" );
+            //else cChan.fDerivative->DrawCopy ( "same" );
+        }
+    }
+
+    fNoiseCanvas->Update();
 }
 
 
@@ -590,6 +618,6 @@ void PedeNoise::writeObjects()
     // Save canvasses too
     fNoiseCanvas->Write ( fNoiseCanvas->GetName(), TObject::kOverwrite );
     fPedestalCanvas->Write ( fPedestalCanvas->GetName(), TObject::kOverwrite );
-    fFeSummaryCanvas->Write ( fFeSummaryCanvas->GetName(), TObject::kOverwrite );
+    //fFeSummaryCanvas->Write ( fFeSummaryCanvas->GetName(), TObject::kOverwrite );
     fResultFile->Flush();
 }

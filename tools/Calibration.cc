@@ -24,7 +24,7 @@ void Calibration::Initialise ( bool pAllChan )
 
 
     // Canvases
-    fVplusCanvas = new TCanvas ( "VPlus", "VPlus", 515, 0, 500, 500 );
+    //fVplusCanvas = new TCanvas ( "VPlus", "VPlus", 515, 0, 500, 500 );
     fOffsetCanvas = new TCanvas ( "Offset", "Offset", 10, 0, 500, 500 );
     fOccupancyCanvas = new TCanvas ( "Occupancy", "Occupancy", 10, 525, 500, 500 );
 
@@ -101,7 +101,7 @@ void Calibration::Initialise ( bool pAllChan )
 
     uint32_t cPads = ( cCbcIdMax > cCbcCount ) ? cCbcIdMax : cCbcCount;
 
-    fVplusCanvas->DivideSquare ( cPads );
+    //fVplusCanvas->DivideSquare ( cPads );
     fOffsetCanvas->DivideSquare ( cPads );
     fOccupancyCanvas->DivideSquare ( cPads );
 
@@ -216,7 +216,7 @@ void Calibration::FindVplus()
                 cTmpProfile->Fill ( cTGroup.first, cCbc.second ); // fill Vplus value for each test group
             }
 
-            updateHists ( "Vplus" );
+            //updateHists ( "Vplus" );
             //
         }
     }
@@ -683,13 +683,13 @@ void Calibration::updateHists ( std::string pHistname )
         if ( cHist != std::end ( cCbc.second ) )
         {
             // now cHist.second is the Histogram
-            if ( pHistname == "Vplus" )
-            {
-                fVplusCanvas->cd ( cCbc.first->getCbcId() + 1 );
-                TProfile* cTmpProfile = static_cast<TProfile*> ( cHist->second );
-                cTmpProfile->DrawCopy ( "H P0 E" );
-                fVplusCanvas->Update();
-            }
+            //if ( pHistname == "Vplus" )
+            //{
+            //fVplusCanvas->cd ( cCbc.first->getCbcId() + 1 );
+            //TProfile* cTmpProfile = static_cast<TProfile*> ( cHist->second );
+            //cTmpProfile->DrawCopy ( "H P0 E" );
+            //fVplusCanvas->Update();
+            //}
 
             if ( pHistname == "Offsets" )
             {
