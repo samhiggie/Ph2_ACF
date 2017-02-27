@@ -46,7 +46,9 @@ function restart_HMP {
         tmux send-keys -t $SESSION_NAME "e" C-m
         sleep 2
         tmux send-keys -t $SESSION_NAME "q" C-m
-        sleep 3
+        sleep 2
+        tmux send-keys -t $SESSION_NAME C-c
+        sleep 2
         tmux send-keys -t $SESSION_NAME "lvSupervisor -f $TMUX_USB_DIR/settings/HMP4040.xml -r $HMP_ZMQ_PORT -p $HMP_HTTP_PORT -i $INTERVAL -S" C-m
 }
 
@@ -56,7 +58,9 @@ function restart_KE {
         tmux send-keys -t $SESSION_NAME "e" C-m
         sleep 2
         tmux send-keys -t $SESSION_NAME "q" C-m
-        sleep 3
+        sleep 2
+        tmux send-keys -t $SESSION_NAME C-c
+        sleep 2
         tmux send-keys -t $SESSION_NAME "dmmSupervisor -r $KE_ZMQ_PORT -p $KE_HTTP_PORT -i $INTERVAL" C-m
 }
 
