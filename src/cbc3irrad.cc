@@ -240,11 +240,6 @@ int main ( int argc, char* argv[] )
 
         cDog.Reset (50);
 
-#ifdef __USBINST__
-        cLVClient->ToggleOutput (0);
-        //std::this_thread::sleep_for (std::chrono::seconds (1) );
-        cLVClient->ToggleOutput (1);
-#endif
         //t.stop();
         //t.show ( "Time to sweep all biases" );
 
@@ -252,7 +247,6 @@ int main ( int argc, char* argv[] )
         Calibration cCalibration;
         cCalibration.Inherit (&cTool);
         cCalibration.Initialise (false);
-        cCalibration.ConfigureHw();
         cCalibration.FindVplus();
         cCalibration.FindOffsets();
         cCalibration.writeObjects();
@@ -263,7 +257,7 @@ int main ( int argc, char* argv[] )
         ////now run a noise scan
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        cPedeNoise.ConfigureHw();
+        //cPedeNoise.ConfigureHw();
         cPedeNoise.Initialise();
         cPedeNoise.measureNoise();
         //cPedeNoise.Validate();

@@ -40,7 +40,7 @@
         <Register name="cbc_system_clk"> 0x1 </Register>
         <!--to output trigger-->
         <Register name="global.test_out.1"> 0x0004 </Register>
-        <Register name="global.test_out.2"> 0x0002 </Register>
+        <Register name="global.test_out.2"> 0x0100 </Register>
         <!--FAST SIGNAL SOURCE-->
         <Register name="fast_command_manager">
             <Register name="fast_signal_enable">

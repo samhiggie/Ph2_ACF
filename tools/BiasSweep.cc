@@ -240,13 +240,6 @@ void BiasSweep::MeasureMinPower (BeBoard* pBoard, Cbc* pCbc)
     else
         LOG (ERROR) << RED << "Could not retreive the measurement values from the HMP4040!" << RESET;
 
-    //now power cycle the LVPS
-    //TODO: change to hard reset
-    LOG (INFO) << RED << "Since HardReset not working, need to power cycle the CBC" << RESET;
-    fHMPClient->ToggleOutput (false);
-    std::this_thread::sleep_for (std::chrono::seconds (2) );
-    fHMPClient->ToggleOutput (true);
-
     LOG (INFO) << YELLOW << "Trying to resume monitoring with HMP4040!" << RESET;
 
     if (!fHMPClient->ResumeMonitoring() )
@@ -269,7 +262,6 @@ void BiasSweep::MeasureMinPower (BeBoard* pBoard, Cbc* pCbc)
     for (size_t cIndex = 0; cIndex < cRegisters.size(); cIndex++)
         pCbc->setReg (cRegisters.at (cIndex), cOriginalRegSettings.at (cIndex) );
 
-    //this->fCbcInterface->ConfigureCbc (pCbc);
     std::this_thread::sleep_for (std::chrono::seconds (2) );
     this->ConfigureHw();
 

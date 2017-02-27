@@ -23,7 +23,7 @@
 			</node>
              <!--some more reigsters here that have to go into initial configure-->
              <node id="misc"        address="0x10">
-                 <node id="trigger_master_external" mask="0x00000001"/>
+                 <node id="trigger_master_external" mask="0x00000002"/>
              </node>
              <node id="test_out" address="0x11">
 				 <node id="1" mask="0x0000FFFF"/>
