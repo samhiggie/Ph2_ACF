@@ -77,6 +77,9 @@ class SCurve : public Tool
 
     // SCurve related
     void measureSCurves ( int  pTGrpId );
+    uint16_t find50();
+    uint16_t findOccupancy (int pTGrpId);
+    void findLimits (int pTGrpId, uint16_t pStartValue);
     void measureSCurvesOffset ( int  pTGrpId );
     uint32_t fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint16_t pValue, int  pTGrpId, bool pDraw = false );
     void initializeSCurves ( TString pParameter, uint16_t pValue, int  pTGrpId );
@@ -91,6 +94,22 @@ class SCurve : public Tool
     {
         // Reverse the top and bottom nibble then swap them.
         return ( fLookup[n & 0b1111] << 4 ) | fLookup[n >> 4];
+    }
+
+    // helper methods
+    void setRegBit ( uint16_t& pRegValue, uint8_t pPos, bool pValue )
+    {
+        pRegValue ^= ( -pValue ^ pRegValue ) & ( 1 << pPos );
+    }
+
+    void toggleRegBit ( uint16_t& pRegValue, uint8_t pPos )
+    {
+        pRegValue ^= 1 << pPos;
+    }
+
+    bool getBit ( uint16_t& pRegValue, uint8_t pPos )
+    {
+        return ( pRegValue >> pPos ) & 1;
     }
 
     /*!

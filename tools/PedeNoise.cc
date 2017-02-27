@@ -138,6 +138,8 @@ void PedeNoise::measureNoise()
 {
     saveInitialOffsets();
 
+    find50();
+
     // method to measure one final set of SCurves with the final calibration applied to extract the noise
     // now measure some SCurves
     for ( auto& cTGrpM : fTestGroupChannelMap )
