@@ -15,6 +15,10 @@ export KE_HTTP_PORT=8082
 export KE_ZMQ_PORT=8083
 #monitoring interval
 export INTERVAL=2
+#interval at which to take bias sweeps
+export SWEEPINTERVAL=2
+#interval at which to re-start the monitoring
+export RESTARTINTERVAL=3
 
 #params: 1 pane, 2 working dir
 function setup_env {
@@ -67,17 +71,25 @@ function restart_KE {
 function run_test {
     while true; do
         echo "Running iteration $CYCLECOUNT ..."
-        $TMUX_BASE_DIR/bin/cbc3irrad -s -b | tee $TMUX_BASE_DIR/consoledump.log
+
+        if (($CYCLECOUNT % $SWEEPINTERVAL == 0)); then
+            echo 'running cycle with bias sweep...'
+            $TMUX_BASE_DIR/bin/cbc3irrad -s -b | tee $TMUX_BASE_DIR/consoledump.log
+        else
+            echo 'running cycle without bias sweep...'
+            $TMUX_BASE_DIR/bin/cbc3irrad -s -b --skipbias | tee $TMUX_BASE_DIR/consoledump.log
+        fi
+
         echo "$CYCLECOUNT iteration of bin/cbc3irrad finished with exit code $?. Respawning..." | tee $TMUX_BASE_DIR/consoledump.log
 
-        if (($CYCLECOUNT % 2 == 0)); then 
+        if (($CYCLECOUNT % $RESTARTINTERVAL == 0)); then 
             echo "Re-starting monitoring servers"
             restart_HMP
             restart_KE
         fi
 
         CYCLECOUNT=$((CYCLECOUNT+1))
-        sleep 20
+        sleep 30
     done
 }
 
