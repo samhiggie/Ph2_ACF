@@ -97,7 +97,7 @@ int main ( int argc, char* argv[] )
     std::string cDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/Irrad_Xrays/";
     std::string cHostname = (cmd.foundOption ( "hostname" ) ) ? cmd.optionValue ("hostname") : "localhost";
 
-    uint32_t pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 300000;
+    uint32_t pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 500000;
     uint16_t cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 500;
     uint32_t cHttpPort = (cmd.foundOption ("webmonitor") ) ? convertAnyInt (cmd.optionValue ("webmonitor").c_str() ) : 8090;
 
@@ -246,6 +246,7 @@ int main ( int argc, char* argv[] )
         ////first, run offset tuning
         Calibration cCalibration;
         cCalibration.Inherit (&cTool);
+        //cCalibration.ConfigureHw();
         cCalibration.Initialise (false);
         cCalibration.FindVplus();
         cCalibration.FindOffsets();
@@ -292,7 +293,7 @@ int main ( int argc, char* argv[] )
         }
 
         //cTool.fBeBoardInterface->Start ( pBoard );
-        int cAcqSize = 2000;
+        int cAcqSize = 4000;
 
         for (int iAcq = 0; iAcq < pEventsperVcth / cAcqSize; iAcq++)
         {
@@ -321,46 +322,6 @@ int main ( int argc, char* argv[] )
 
             }
         }
-
-        //while ( cN <= pEventsperVcth )
-        //{
-        //uint32_t cPacketSize = cTool.ReadData ( pBoard );
-
-        //if ( cN + cPacketSize >= pEventsperVcth )
-        //cTool.fBeBoardInterface->Stop ( pBoard );
-
-        //if (cN % 10000 == 0)
-        //{
-        //cTool.fBeBoardInterface->Stop (pBoard);
-        //cTool.fBeBoardInterface->FindPhase (pBoard);
-        //cTool.fBeBoardInterface->Start (pBoard);
-        //}
-
-        //const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
-
-        //for ( auto& ev : events )
-        //{
-        //count++;
-        //cN++;
-
-        //if ( cmd.foundOption ( "dqm" ) )
-        //{
-        //if ( count % atoi ( cmd.optionValue ( "dqm" ).c_str() ) == 0 )
-        //{
-        //LOG (INFO) << ">>> Event #" << count ;
-        //outp.str ("");
-        //outp << *ev << std::endl;
-        //LOG (INFO) << outp.str();
-        //}
-        //}
-
-        //if ( count % 1000  == 0 )
-        //LOG (INFO) << ">>> Recorded Event #" << count ;
-
-        //}
-
-        //cNthAcq++;
-        //}
 
         cTool.SaveResults();
         cTool.CloseResultFile();
