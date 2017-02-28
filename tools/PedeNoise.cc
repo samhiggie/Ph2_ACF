@@ -113,9 +113,9 @@ void PedeNoise::Initialise()
     //fFeSummaryCanvas->DivideSquare ( fNFe );
 
     // now read the settings from the map
-    auto cSetting = fSettingsMap.find ( "HoleMode" );
-    fHoleMode = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 1;
-    cSetting = fSettingsMap.find ( "Nevents" );
+    //auto cSetting = fSettingsMap.find ( "HoleMode" );
+    //fHoleMode = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 1;
+    auto cSetting = fSettingsMap.find ( "Nevents" );
     fEventsPerPoint = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 10;
     cSetting = fSettingsMap.find ( "FitSCurves" );
     fFitted = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0;
@@ -127,7 +127,7 @@ void PedeNoise::Initialise()
     else fTestPulse = 1;
 
     LOG (INFO) << "Created Object Maps and parsed settings:" ;
-    LOG (INFO) << "	Hole Mode = " << fHoleMode ;
+    //LOG (INFO) << "   Hole Mode = " << fHoleMode ;
     LOG (INFO) << "	Nevents = " << fEventsPerPoint ;
     LOG (INFO) << "	FitSCurves = " << int ( fFitted ) ;
     LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
@@ -136,37 +136,40 @@ void PedeNoise::Initialise()
 
 void PedeNoise::measureNoise()
 {
-    saveInitialOffsets();
-
-    //find50();
+    //determine the average midpoint globally and then measure the individual groups precisely
+    //this also yields if it's hole mode or not
     uint16_t cStartValue = this->findPedestal (-1);
+    saveInitialOffsets();
 
     // method to measure one final set of SCurves with the final calibration applied to extract the noise
     // now measure some SCurves
     for ( auto& cTGrpM : fTestGroupChannelMap )
     {
-        // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
-        if ( fTestPulse )
+        if (cTGrpM.first != -1)
         {
-            LOG (INFO) << BLUE << "Enabling Commissioninc cycle with TestPulse in FW" << RESET ;
-            setFWTestPulse();
-            LOG (INFO) << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +fTestPulseAmplitude << RESET ;
-            setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first );
+            // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
+            if ( fTestPulse )
+            {
+                LOG (INFO) << BLUE << "Enabling Commissioninc cycle with TestPulse in FW" << RESET ;
+                setFWTestPulse();
+                LOG (INFO) << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +fTestPulseAmplitude << RESET ;
+                setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first );
 
+            }
+
+            LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
+            // this leaves the offset values at the tuned values for cTGrp and disables all other groups
+            enableTestGroupforNoise ( cTGrpM.first );
+
+            // now initialize the Scurves
+            initializeSCurves ( "Final", fTestPulseAmplitude, cTGrpM.first );
+
+            // measure the SCurves, the false is indicating that I am sweeping Vcth
+            measureSCurves ( cTGrpM.first, cStartValue );
+
+            // now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
+            processSCurvesNoise ( "Final", fTestPulseAmplitude, true, cTGrpM.first );
         }
-
-        LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
-        // this leaves the offset values at the tuned values for cTGrp and disables all other groups
-        enableTestGroupforNoise ( cTGrpM.first );
-
-        // now initialize the Scurves
-        initializeSCurves ( "Final", fTestPulseAmplitude, cTGrpM.first );
-
-        // measure the SCurves, the false is indicating that I am sweeping Vcth
-        measureSCurves ( cTGrpM.first, cStartValue );
-
-        // now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
-        processSCurvesNoise ( "Final", fTestPulseAmplitude, true, cTGrpM.first );
     }
 
     LOG (INFO) << BOLDBLUE << "Finished measuring the noise ..."  << RESET ;
@@ -285,7 +288,6 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
                 line->Draw ("same");
                 fNoiseCanvas->Modified();
                 fNoiseCanvas->Update();
-
                 RegisterVector cRegVec;
 
                 for (uint32_t iChan = 0; iChan < NCHANNELS; iChan++)
@@ -298,11 +300,10 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
                         TString cRegName = Form ( "Channel%03d", iChan + 1 );
                         uint8_t cValue = fHoleMode ? 0x00 : 0xFF;
                         cRegVec.push_back ({cRegName.Data(), cValue });
-                        LOG (INFO) << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iChan + 1 << " with an occupancy of " << cHist->GetBinContent (iChan) << "; setting offset to " << +cValue << RESET ;
+                        LOG (INFO) << RED << "Found a noisy channel on CBC " << +cCbc->getCbcId() << " Channel " << iChan  << " with an occupancy of " << cHist->GetBinContent (iChan) << "; setting offset to " << +cValue << RESET ;
                     }
 
                 }
-
 
                 //Write the changes
                 fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);
@@ -322,10 +323,10 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
 
             if ( cFirst )
             {
-                cOption = "L" ;
+                cOption = "C" ;
                 cFirst = false;
             }
-            else cOption = "L same";
+            else cOption = "C same";
 
             fNoiseCanvas->cd ( cCbc.first->getCbcId() + 1 );
             gPad->SetLogy (0);
@@ -335,6 +336,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
             //cChan.fFit->DrawCopy ( "same" );
             //else cChan.fDerivative->DrawCopy ( "same" );
         }
+
     }
 
     fNoiseCanvas->Update();
@@ -465,6 +467,8 @@ void PedeNoise::processSCurvesNoise ( TString pParameter, uint16_t pValue, bool 
                 else cOption = "P same";
 
                 fNoiseCanvas->cd ( cCbc.first->getCbcId() + 1 );
+                cChan.fScurve->SetLineColor (pTGrpId + 1);
+                cChan.fScurve->SetMarkerColor (pTGrpId + 1);
                 cChan.fScurve->DrawCopy ( cOption );
 
                 if ( fFitted )

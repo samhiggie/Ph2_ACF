@@ -727,6 +727,8 @@ void Calibration::setRegValues()
                 // first, find the offset Histogram for this CBC
                 TProfile* cOffsetHist = static_cast<TProfile*> ( getHist ( cCbc, "Offsets" ) );
 
+                RegisterVector cRegVec;   // vector of pairs for the write operation
+
                 for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
                 {
                     //original
@@ -734,13 +736,18 @@ void Calibration::setRegValues()
                     //suggested B. Schneider
                     int iBin = cOffsetHist->FindBin (iChan);
                     uint8_t cOffset = cOffsetHist->GetBinContent ( iBin );
-                    cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
-                    //LOG(INFO) << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET ;
+                    //cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
+                    TString cRegName = Form ( "Channel%03d", iChan + 1 );
+                    cRegVec.push_back ( {cRegName.Data(), cOffset} );
+                    //LOG (INFO) << GREEN << "Offset for CBC " << cCbc->getCbcId() << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << " -applying to chip" << RESET ;
                 }
 
+                fCbcInterface->WriteCbcMultReg ( cCbc, cRegVec );
             }
         }
     }
+
+    LOG (INFO) << BOLDGREEN << "Applying final offsets determined by tuning to chip - no re-configure necessary!" << RESET;
 }
 
 void Calibration::writeObjects()

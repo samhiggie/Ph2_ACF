@@ -24,6 +24,14 @@ void SCurve::MakeTestGroups ( bool pAllChan )
             fTestGroupChannelMap[cGId] = tempchannelVec;
 
         }
+
+        int cGId = -1;
+        std::vector<uint8_t> tempchannelVec;
+
+        for ( int idx = 0; idx < 254; idx++ )
+            tempchannelVec.push_back ( idx );
+
+        fTestGroupChannelMap[cGId] = tempchannelVec;
     }
     else
     {
@@ -66,9 +74,10 @@ void SCurve::setOffset ( uint8_t pOffset, int  pGroup )
     }
 }
 
+
 uint16_t SCurve::findPedestal (int pTGrpId)
 {
-    uint16_t cStartValue = 0x00;
+    uint16_t cStartValue = 0x000;
     //have a map of thresholds and hit counts
     std::map<Cbc*, uint16_t> cThresholdMap;
     std::map<Cbc*, uint32_t> cHitCountMap;
@@ -85,45 +94,13 @@ uint16_t SCurve::findPedestal (int pTGrpId)
     this->accept (cThresholdVisitor);
 
     for ( BeBoard* pBoard : fBoardVector )
-    {
-        ReadNEvents ( pBoard, fEventsPerPoint );
-
-        //now decode the events and measure the occupancy on the chip
-        //in the first iteration, check if I'm in hole mode or electron mode
-        std::vector<Event*> events = GetEvents ( pBoard );
-
-        for ( auto& cEvent : events )
-        {
-            for ( auto cFe : pBoard->fModuleVector )
-            {
-                for ( auto cCbc : cFe->fCbcVector )
-                {
-                    //std::map<Cbc*, uint32_t>::iterator cHitCounter = cHitCountMap.find (cCbc);
-
-                    //if ( cChanVec != fCbcChannelMap.end() )
-                    //{
-                    //const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
-
-                    //for ( auto& cChanId : cTestGrpChannelVec )
-                    //{
-                    //if ( cEvent->DataBit ( cFe->getFeId(), cCbc->getCbcId(),  cChanId ) )
-                    //cHitCounter->second++;
-                    //}
-
-                    //}
-                    //else LOG (INFO) << RED << "Error: could not find the channels for CBC " << int ( cCbc->getCbcId() ) << RESET ;
-
-                    cHitCountMap[cCbc] += cEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
-                }
-            }
-        }
-    }
+        this->measureOccupancy (pBoard, pTGrpId, cHitCountMap);
 
     for (auto& cCbc : cThresholdMap)
     {
         float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
         fHoleMode = (cOccupancy == 0) ? false :  true;
-        LOG (DEBUG) << "Threshold " << cCbc.second << " Occupancy " << cOccupancy << " Hole Mode: " << fHoleMode;
+        LOG (INFO) << BOLDBLUE << "Measuring Occupancy @ Threshold " << BOLDRED << cCbc.second << " (0x" << std::hex << cCbc.second << std::dec << ", 0b" << std::bitset<10> (cCbc.second) << ")" << BOLDBLUE": " << BOLDRED << cOccupancy << BOLDBLUE << ", thus assuming Hole Mode: " << BOLDRED << fHoleMode << RESET;
     }
 
     uint16_t cNbits = (fType == ChipType::CBC2) ? 8 : 10;
@@ -145,49 +122,16 @@ uint16_t SCurve::findPedestal (int pTGrpId)
             }
 
             for ( BeBoard* pBoard : fBoardVector )
-            {
-                ReadNEvents ( pBoard, fEventsPerPoint );
-
-                //now decode the events and measure the occupancy on the chip
-                //in the first iteration, check if I'm in hole mode or electron mode
-                std::vector<Event*> events = GetEvents ( pBoard );
-
-                for ( auto& cEvent : events )
-                {
-                    for ( auto cFe : pBoard->fModuleVector )
-                    {
-                        for ( auto cCbc : cFe->fCbcVector )
-                        {
-                            //std::map<Cbc*, uint32_t>::iterator cHitCounter = cHitCountMap.find (cCbc);
-
-                            //if (cHitCounter != cHitCountMap.end() )
-                            //{
-                            //const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
-
-                            //for ( auto& cChanId : cTestGrpChannelVec )
-                            //{
-                            //LOG (DEBUG) << cChanId;
-
-                            //if ( cEvent->DataBit ( cFe->getFeId(), cCbc->getCbcId(), cChanId ) )
-                            //cHitCounter->second++;
-                            //}
-                            //}
-                            //else LOG (INFO) << RED << "Error: could not find the HitCounter for CBC " << int ( cCbc->getCbcId() ) << RESET ;
-
-                            cHitCountMap[cCbc] += cEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
-                        }
-                    }
-                }
-            }
+                this->measureOccupancy (pBoard, pTGrpId, cHitCountMap);
 
             // now I know how many hits there are with a Threshold of 0
             for (auto& cCbc : cThresholdMap)
             {
                 float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
 
-                LOG (DEBUG) << "IBIT " << +iBit << " DEBUG Setting VTh for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<10> ( cCbc.second ) << ") and occupancy " << cOccupancy ;
+                //LOG (DEBUG) << "IBIT " << +iBit << " DEBUG Setting VTh for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<10> ( cCbc.second ) << ") and occupancy " << cOccupancy ;
 
-                if (fabs (cOccupancy - 0.5) < 0.05 )
+                if (fabs (cOccupancy - 0.5) < 0.06 )
                 {
                     cCloseEnough = true;
                     break;
@@ -200,7 +144,6 @@ uint16_t SCurve::findPedestal (int pTGrpId)
 
                 cThresholdVisitor.setThreshold (cCbc.second);
                 cCbc.first->accept (cThresholdVisitor);
-
             }
         }
     }
@@ -217,19 +160,16 @@ uint16_t SCurve::findPedestal (int pTGrpId)
     return cMean;
 }
 
-
 void SCurve::measureSCurves (int pTGrpId, uint16_t pStartValue)
 {
-    //if (pStartValue == 0) pStartValue = this->findPedestal (pTGrpId);
+    if (pStartValue == 0) pStartValue = this->findPedestal (pTGrpId);
 
     bool cAllZero = false;
     bool cAllOne = false;
-    bool cFoundOne = false;
     int cAllZeroCounter = 0;
     int cAllOneCounter = 0;
     uint16_t cValue = pStartValue;
-    int cFactor = 1;
-    int cCounter = 0;
+    int cSign = 1;
     int cIncrement = 0;
 
 
@@ -259,60 +199,39 @@ void SCurve::measureSCurves (int pTGrpId, uint16_t pStartValue)
 
             Counter cCbcCounter;
             pBoard->accept ( cCbcCounter );
+            uint32_t cMaxHits = fEventsPerPoint *   cCbcCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size();
 
             //now establish if I'm zero or one
             if (cHitCounter == 0) cAllZeroCounter ++;
 
-            if (cHitCounter > 0.95 * fEventsPerPoint *   cCbcCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
+            if (cHitCounter > 0.95 * cMaxHits ) cAllOneCounter++;
 
-            //flag if I have enough points at the low end and at the high end
-            if (cAllZeroCounter == 8)
+            //it will either find one or the other extreme first and thus these will be mutually exclusive
+            //if any of the two conditions is true, just revert the sign and go the opposite direction starting from startvalue+1
+            //check that cAllZero is not yet set, otherwise I'll be reversing signs a lot because once i switch direction, the statement stays true
+            if (!cAllZero && cAllZeroCounter == 8)
             {
                 cAllZero = true;
-
-                if (!cFoundOne)
-                {
-                    if (cValue < pStartValue) cFactor = 1;
-                    else cFactor = -1;
-
-                    cFoundOne = true;
-                }
+                cSign *= (-1);
+                cIncrement = 0;
             }
 
-            if (cAllOneCounter == 8)
+            if (!cAllOne && cAllOneCounter == 8)
             {
                 cAllOne = true;
-
-                if (!cFoundOne)
-                {
-                    if (cValue > pStartValue) cFactor = -1;
-                    else cFactor = 1;
-
-                    cFoundOne = true;
-                }
+                cSign *= (-1);
+                cIncrement = 0;
             }
 
-            if (cAllZero || cAllOne)
-                cIncrement++;
-            else
-            {
-                cFactor = pow (-1, cCounter);
 
-                if (cCounter % 2 == 0 )
-                    cIncrement++;
-            }
-
-            cValue = pStartValue + (cIncrement * cFactor);
-
-            cCounter++;
-
+            cIncrement++;
+            //LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement;
+            cValue = pStartValue + (cIncrement * cSign);
         }
-
     }
 
     LOG (INFO) << RED << "Found minimal and maximal occupancy 8 times, SCurves finished! " << RESET ;
 }
-
 
 //void SCurve::measureSCurves ( int  pTGrpId )
 //{
@@ -591,6 +510,37 @@ uint32_t SCurve::fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint16_t p
     return cHitCounter;
 }
 
+void SCurve::measureOccupancy (BeBoard* pBoard, int pTGrpId, std::map<Cbc*, uint32_t>& pHitCountMap)
+{
+    ReadNEvents ( pBoard, fEventsPerPoint );
+
+    //now decode the events and measure the occupancy on the chip
+    //in the first iteration, check if I'm in hole mode or electron mode
+    std::vector<Event*> events = GetEvents ( pBoard );
+
+    for ( auto& cEvent : events )
+    {
+        for ( auto cFe : pBoard->fModuleVector )
+        {
+            for ( auto cCbc : cFe->fCbcVector )
+            {
+                std::map<Cbc*, uint32_t>::iterator cHitCounter = pHitCountMap.find (cCbc);
+
+                if (cHitCounter != pHitCountMap.end() )
+                {
+                    const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
+
+                    for ( auto& cChan : cTestGrpChannelVec )
+                    {
+                        if ( cEvent->DataBit ( cFe->getFeId(), cCbc->getCbcId(),  cChan ) )
+                            cHitCounter->second++;
+                    }
+                }
+                else LOG (INFO) << RED << "Error: could not find the HitCounter for CBC " << int ( cCbc->getCbcId() ) << RESET ;
+            }
+        }
+    }
+}
 
 void SCurve::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup )
 {

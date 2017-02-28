@@ -77,7 +77,6 @@ class SCurve : public Tool
 
     // SCurve related
     void measureSCurves ( int  pTGrpId, uint16_t pStartValue = 0 );
-    uint16_t findPedestal (int pTGrpId);
     void measureSCurvesOffset ( int  pTGrpId );
     uint32_t fillSCurves ( BeBoard* pBoard,  const Event* pEvent, uint16_t pValue, int  pTGrpId, bool pDraw = false );
     void initializeSCurves ( TString pParameter, uint16_t pValue, int  pTGrpId );
@@ -86,6 +85,10 @@ class SCurve : public Tool
     void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup );
     //enable commissioning loops and Test Pulse
     void setFWTestPulse();
+
+    //helpers for SCurve measurement
+    void measureOccupancy (BeBoard* pBoard, int pTGrpId, std::map<Cbc*, uint32_t>& pHitCountMap);
+    uint16_t findPedestal (int pTGrpId);
 
     // little helpers
     uint8_t reverse ( uint8_t n )
