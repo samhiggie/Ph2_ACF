@@ -32,7 +32,7 @@ INITIALIZE_EASYLOGGINGPP
 // I hate global variables but hey...
 
 std::atomic<bool> gRunDAQ;
-std::string gDirectory;
+std::string gResultDirectory;
 
 void notifyme()
 {
@@ -43,7 +43,7 @@ void exitme()
 {
     LOG (ERROR) << BOLDRED << "Quitting application due to watchdog timeout - something must have got stuck!" << RESET;
     std::string cSystemeCommand = "touch ";
-    cSystemeCommand += gDirectory;
+    cSystemeCommand += gResultDirectory;
     cSystemeCommand += "/crashed.txt";
     system (cSystemeCommand.c_str() );
     exit (1);
@@ -105,7 +105,7 @@ int main ( int argc, char* argv[] )
 
     // now query the parsing results
     std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/Cbc3HWDescription.xml";
-    gDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/Irrad_Xrays/";
+    gResultDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/Irrad_Xrays/";
     std::string cHostname = (cmd.foundOption ( "hostname" ) ) ? cmd.optionValue ("hostname") : "localhost";
 
     uint32_t pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 500000;
@@ -119,21 +119,21 @@ int main ( int argc, char* argv[] )
     bool cFull = (cmd.foundOption ("full") ) ? true : false;
 
     Watchdog cDog;
-    cDog.Start (1, &exitme);
+    cDog.Start (5, &exitme);
 
     std::string cResultfile = "Cbc3RadiationCycle";
-    gDirectory += "Cbc3RadiationCycle";
+    gResultDirectory += "Cbc3RadiationCycle";
 
-    if (cFull) gDirectory += "_FULL";
+    if (cFull) gResultDirectory += "_FULL";
 
-    gDirectory += currentDateTime();
+    gResultDirectory += currentDateTime();
 
-    LOG (INFO)  << "Creating directory: " << gDirectory;
-    std::string cCommand = "mkdir -p " + gDirectory;
+    LOG (INFO)  << "Creating directory: " << gResultDirectory;
+    std::string cCommand = "mkdir -p " + gResultDirectory;
     system ( cCommand.c_str() );
 
     //now make sure that the log file ends up where I want it
-    std::string cLogFileName = gDirectory + "/CbcDAQ.log";
+    std::string cLogFileName = gResultDirectory + "/CbcDAQ.log";
     el::Loggers::reconfigureAllLoggers (el::ConfigurationType::Filename, cLogFileName);
     LOG (INFO) << BLUE << "Changing log file to: " << MAGENTA << cLogFileName << RESET;
 
@@ -157,9 +157,9 @@ int main ( int argc, char* argv[] )
     char buffer[256];
     std::string currentDir = getcwd (buffer, sizeof (buffer) );
 
-    std::string cPowerSupplyOutputFile = currentDir + "/" + gDirectory + "/Current_log.txt";
+    std::string cPowerSupplyOutputFile = currentDir + "/" + gResultDirectory + "/Current_log.txt";
     PortsInfo cPowerSupplyPortsInfo = std::make_pair (8081, 8080);
-    std::string cDMMOutputFile = currentDir + "/" + gDirectory  + "/Temperature_log.txt";
+    std::string cDMMOutputFile = currentDir + "/" + gResultDirectory  + "/Temperature_log.txt";
     PortsInfo cDMMPortsInfo = std::make_pair (8083, 8082);
 
     if (!cStandalone)
@@ -210,7 +210,7 @@ int main ( int argc, char* argv[] )
         cTool.InitializeSettings ( cHWFile, outp );
         LOG (INFO) << outp.str();
         outp.str ("");
-        cTool.CreateResultDirectory ( gDirectory, false, false );
+        cTool.CreateResultDirectory ( gResultDirectory, false, false );
         cTool.InitResultFile (cResultfile);
 
         if (cWebMon) cTool.StartHttpServer (cHttpPort);
@@ -300,7 +300,7 @@ int main ( int argc, char* argv[] )
             cDog.Stop();
             cDog.Start (1200, &notifyme);
             //now take some data and save the binary files
-            std::string cBinaryDataFileName = gDirectory + "/DAQ_data.raw";
+            std::string cBinaryDataFileName = gResultDirectory + "/DAQ_data.raw";
             cTool.addFileHandler (cBinaryDataFileName, 'w');
             cTool.initializeFileHandler();
             cTool.ConfigureHw();
