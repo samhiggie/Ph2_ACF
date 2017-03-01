@@ -31,6 +31,12 @@ INITIALIZE_EASYLOGGINGPP
 
 // need this to reset terminal output
 //const std::string rst ("\033[0m");
+std::atomic<bool> gRunDAQ;
+void notifyme()
+{
+    LOG (INFO) << BOLDBLUE << "Watchdog timer timed out - stopping the DAQ!" << RESET;
+    gRunDAQ = false;
+}
 void exitme()
 {
     LOG (ERROR) << BOLDRED << "Quitting application due to watchdog timeout - something must have got stuck!" << RESET;
@@ -78,8 +84,7 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "standalone", "launch irradtest without spawning the monitoring servers from code", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "standalone", "s" );
 
-    cmd.defineOption ( "skipbias", "skip the bias sweep - false by default!", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
-    //cmd.defineOptionAlternative ( "standalone", "s" );
+    cmd.defineOption ( "full", "run full characterization, default: false", ArgvParser::NoOptionAttribute /*| ArgvParser::OptionRequired*/ );
 
     cmd.defineOption ( "webmonitor", "start THttpServer on port - default: 8090", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "webmonitor", "w" );
@@ -104,14 +109,17 @@ int main ( int argc, char* argv[] )
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cStandalone = ( cmd.foundOption ( "standalone" ) ) ? true : false;
     bool cVcthset = cmd.foundOption ("vcth");
-    bool cSkipbias = (cmd.foundOption ("skipbias") ) ? true : false;
     bool cWebMon = (cmd.foundOption ("webmonitor") ) ? true : false;
+    bool cFull = (cmd.foundOption ("full") ) ? true : false;
 
     Watchdog cDog;
     cDog.Start (5, &exitme);
 
     std::string cResultfile = "Cbc3RadiationCycle";
     cDirectory += "Cbc3RadiationCycle";
+
+    if (cFull) cDirectory += "_FULL";
+
     cDirectory += currentDateTime();
 
     LOG (INFO)  << "Creating directory: " << cDirectory;
@@ -205,7 +213,7 @@ int main ( int argc, char* argv[] )
 
         cDog.Reset (15);
 
-        if (!cSkipbias)
+        if (cFull)
         {
             Timer t;
             //then sweep a bunch of biases
@@ -238,12 +246,8 @@ int main ( int argc, char* argv[] )
             }
         }
 
-        cDog.Reset (50);
-
-        //t.stop();
-        //t.show ( "Time to sweep all biases" );
-
         ////first, run offset tuning
+        cDog.Reset (50);
         Calibration cCalibration;
         cCalibration.Inherit (&cTool);
         //cCalibration.ConfigureHw();
@@ -253,73 +257,105 @@ int main ( int argc, char* argv[] )
         cCalibration.writeObjects();
         cCalibration.dumpConfigFiles();
 
-        cDog.Reset (120);
-
         ////now run a noise scan
+        cDog.Reset (120);
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        //cPedeNoise.ConfigureHw();
         cPedeNoise.Initialise();
         cPedeNoise.measureNoise();
-        //cPedeNoise.Validate();
         cPedeNoise.writeObjects();
 
         //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
-        cDog.Reset (50);
-
-        StubSweep cStubSweep;
-        cStubSweep.Inherit (&cTool);
-        cStubSweep.Initialize();
-        cStubSweep.SweepStubs (1);
-
-        cDog.Reset (100);
-
-        //now take some data and save the binary files
-        std::string cBinaryDataFileName = cDirectory + "/DAQ_data.raw";
-        cTool.addFileHandler (cBinaryDataFileName, 'w');
-        cTool.initializeFileHandler();
-        cTool.ConfigureHw();
-        BeBoard* pBoard = cTool.fBoardVector.at ( 0 );
-        uint32_t cN = 1;
-        uint32_t cNthAcq = 0;
-        uint32_t count = 0;
-
         ThresholdVisitor cVisitor (cTool.fCbcInterface, 0);
 
-        if (cVcthset)
+        if (cFull)
         {
-            cVisitor.setThreshold (cVcth);
-            cTool.accept (cVisitor);
+            cDog.Reset (50);
+
+            if (cVcthset)
+            {
+                //hard coded threshold so I see stuff with the stub sweep
+                LOG (INFO) << YELLOW << "Changing threshold to 580 to see the test pulse for stub sweeps" << RESET;
+                cVisitor.setThreshold (580);
+                cTool.accept (cVisitor);
+            }
+
+            StubSweep cStubSweep;
+            cStubSweep.Inherit (&cTool);
+            cStubSweep.Initialize();
+            cStubSweep.SweepStubs (1);
         }
 
-        //cTool.fBeBoardInterface->Start ( pBoard );
-        int cAcqSize = 4000;
 
-        for (int iAcq = 0; iAcq < pEventsperVcth / cAcqSize; iAcq++)
+        if (!cFull)
         {
-            cTool.ReadNEvents (pBoard, cAcqSize);
+            //here I stop the original watchdog and restart it with another callback that just updates  a condition variable
+            //thus, once the 1200 seconds (20 minutes) time out, the callback will just change the variable, the DAQ will stop and thats it?
+            cDog.Stop();
+            cDog.Start (1200, &notifyme);
+            //now take some data and save the binary files
+            std::string cBinaryDataFileName = cDirectory + "/DAQ_data.raw";
+            cTool.addFileHandler (cBinaryDataFileName, 'w');
+            cTool.initializeFileHandler();
+            cTool.ConfigureHw();
+            BeBoard* pBoard = cTool.fBoardVector.at ( 0 );
+            uint32_t cN = 1;
+            uint32_t cNthAcq = 0;
+            uint32_t count = 0;
 
-            const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
 
-            for ( auto& ev : events )
+            if (cVcthset)
             {
-                count++;
-                cN++;
+                //hardcoded threshold so the data has ~50% occupancy
+                LOG (INFO) << YELLOW << "Changing threshold to 592 to have some occupancy in the data" << RESET;
+                cVisitor.setThreshold (590);
+                cTool.accept (cVisitor);
+            }
 
-                if ( cmd.foundOption ( "dqm" ) )
+            int cAcqSize = 4000;
+            int cAcqMultiple = 50;
+            //by default disable the file handler
+            cTool.fBeBoardInterface->disableFileHandler (pBoard);
+
+            //for (int iAcq = 0; iAcq < pEventsperVcth / cAcqSize; iAcq++)
+            gRunDAQ = true;
+
+            while (gRunDAQ.load() )
+            {
+                if (cNthAcq % cAcqMultiple == 0)
                 {
-                    if ( count % atoi ( cmd.optionValue ( "dqm" ).c_str() ) == 0 )
+                    //if  the acquisition is a multiple of what I want, enable it
+                    cTool.fBeBoardInterface->enableFileHandler (pBoard);
+                    cTool.ReadNEvents (pBoard, cAcqSize);
+                    cTool.fBeBoardInterface->disableFileHandler (pBoard);
+                }
+                //otherwise just read data
+                else cTool.ReadNEvents (pBoard, cAcqSize);
+
+                const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
+
+                for ( auto& ev : events )
+                {
+                    count++;
+                    cN++;
+
+                    if ( cmd.foundOption ( "dqm" ) )
                     {
-                        LOG (INFO) << ">>> Event #" << count ;
-                        outp.str ("");
-                        outp << *ev << std::endl;
-                        LOG (INFO) << outp.str();
+                        if ( count % atoi ( cmd.optionValue ( "dqm" ).c_str() ) == 0 )
+                        {
+                            LOG (INFO) << ">>> Event #" << count ;
+                            outp.str ("");
+                            outp << *ev << std::endl;
+                            LOG (INFO) << outp.str();
+                        }
                     }
+
+                    if ( count % cAcqSize  == 0 )
+                        LOG (INFO) << ">>> Recorded Event #" << count ;
+
                 }
 
-                if ( count % 1000  == 0 )
-                    LOG (INFO) << ">>> Recorded Event #" << count ;
-
+                cNthAcq++;
             }
         }
 

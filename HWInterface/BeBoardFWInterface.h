@@ -83,6 +83,20 @@ namespace Ph2_HwInterface {
         */
         virtual ~BeBoardFWInterface() {}
         /*!
+        * \brief enable the file handler temporarily
+        */
+        void enableFileHandler()
+        {
+            fSaveToFile = true;
+        }
+        /*!
+        * \brief disable the file handler temporarily
+        */
+        void disableFileHandler()
+        {
+            fSaveToFile = false;
+        }
+        /*!
         * \brief Get the board type
         */
         virtual std::string readBoardType();

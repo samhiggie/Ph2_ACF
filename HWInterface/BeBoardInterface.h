@@ -95,6 +95,18 @@ namespace Ph2_HwInterface {
         void SetFileHandler (BeBoard* pBoard, FileHandler* pHandler);
 
         /*!
+         * \brief enable the file handler
+         * \param pBoard
+         */
+        void enableFileHandler (BeBoard* pBoard);
+
+        /*!
+         * \brief disable the file handler
+         * \param pBoard
+         */
+        void disableFileHandler (BeBoard* pBoard);
+
+        /*!
          * \brief Update both Board register and Config File
          * \param pBoard
          * \param pRegNode : Node of the register to update

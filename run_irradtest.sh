@@ -73,11 +73,15 @@ function run_test {
         echo "Running iteration $CYCLECOUNT ..."
 
         if (($CYCLECOUNT % $SWEEPINTERVAL == 0)); then
-            echo 'running cycle with bias sweep...'
-            $TMUX_BASE_DIR/bin/cbc3irrad -s -b | tee $TMUX_BASE_DIR/consoledump.log
+            echo 'running full cycle with bias sweeps and Stub Scan ...'
+            # -v 0 is just a dummy as the actual threshold values are hardcoded
+            # --full runs the bias sweeps, calibration, noise measurement and stub sweep
+            $TMUX_BASE_DIR/bin/cbc3irrad -s -v 0 -b --full | tee $TMUX_BASE_DIR/consoledump.log
         else
             echo 'running cycle without bias sweep...'
-            $TMUX_BASE_DIR/bin/cbc3irrad -s -b --skipbias | tee $TMUX_BASE_DIR/consoledump.log
+            # -v 0 is just a dummy as the actual threshold values are hardcoded
+            # this just runs calibration, noise measurement and takes data
+            $TMUX_BASE_DIR/bin/cbc3irrad -s -v 0 -b | tee $TMUX_BASE_DIR/consoledump.log
         fi
 
         echo "$CYCLECOUNT iteration of bin/cbc3irrad finished with exit code $?. Respawning..." | tee $TMUX_BASE_DIR/consoledump.log
@@ -103,7 +107,7 @@ export -f run_test
 function run_irradtest {
     tmux select-window -t $SESSION_NAME
     tmux select-pane -t $MAIN_PANE
-    tmux send-keys -t $SESSION_NAME "export CYCLECOUNT=1" C-m
+    tmux send-keys -t $SESSION_NAME "export CYCLECOUNT=0" C-m
     tmux send-keys -t $SESSION_NAME "run_test" C-m
 }
 
