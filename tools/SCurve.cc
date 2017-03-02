@@ -83,12 +83,22 @@ uint16_t SCurve::findPedestal (int pTGrpId)
     std::map<Cbc*, uint32_t> cHitCountMap;
 
     for (BeBoard* pBoard : this->fBoardVector)
+    {
         for (Module* cFe : pBoard->fModuleVector)
+        {
             for (Cbc* cCbc : cFe->fCbcVector)
             {
                 cThresholdMap[cCbc] = cStartValue;
                 cHitCountMap[cCbc] = 0;
+                fType = cCbc->getChipType();
             }
+        }
+    }
+
+    if (fType == ChipType::CBC3)
+        LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC3" << RESET;
+    else
+        LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC2" << RESET;
 
     ThresholdVisitor cThresholdVisitor (fCbcInterface, cStartValue);
     this->accept (cThresholdVisitor);
@@ -127,7 +137,9 @@ uint16_t SCurve::findPedestal (int pTGrpId)
             // now I know how many hits there are with a Threshold of 0
             for (auto& cCbc : cThresholdMap)
             {
-                float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
+                const std::vector<uint8_t>& cTestGrpChannelVec = fTestGroupChannelMap[pTGrpId];
+
+                float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint * cTestGrpChannelVec.size() );
 
                 //LOG (DEBUG) << "IBIT " << +iBit << " DEBUG Setting VTh for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<10> ( cCbc.second ) << ") and occupancy " << cOccupancy ;
 
@@ -162,6 +174,8 @@ uint16_t SCurve::findPedestal (int pTGrpId)
 
 void SCurve::measureSCurves (int pTGrpId, uint16_t pStartValue)
 {
+    int cMinBreakCount = 10;
+
     if (pStartValue == 0) pStartValue = this->findPedestal (pTGrpId);
 
     bool cAllZero = false;
@@ -173,10 +187,11 @@ void SCurve::measureSCurves (int pTGrpId, uint16_t pStartValue)
     int cIncrement = 0;
 
 
+    //start with the threshold value found above
+    ThresholdVisitor cVisitor (fCbcInterface, cValue);
+
     while (! (cAllZero && cAllOne) )
     {
-        //start with the threshold value found above
-        ThresholdVisitor cVisitor (fCbcInterface, cValue);
         uint32_t cHitCounter = 0;
 
         for ( BeBoard* pBoard : fBoardVector )
@@ -204,19 +219,19 @@ void SCurve::measureSCurves (int pTGrpId, uint16_t pStartValue)
             //now establish if I'm zero or one
             if (cHitCounter == 0) cAllZeroCounter ++;
 
-            if (cHitCounter > 0.95 * cMaxHits ) cAllOneCounter++;
+            if (cHitCounter > 0.98 * cMaxHits ) cAllOneCounter++;
 
             //it will either find one or the other extreme first and thus these will be mutually exclusive
             //if any of the two conditions is true, just revert the sign and go the opposite direction starting from startvalue+1
             //check that cAllZero is not yet set, otherwise I'll be reversing signs a lot because once i switch direction, the statement stays true
-            if (!cAllZero && cAllZeroCounter == 8)
+            if (!cAllZero && cAllZeroCounter == cMinBreakCount )
             {
                 cAllZero = true;
                 cSign *= (-1);
                 cIncrement = 0;
             }
 
-            if (!cAllOne && cAllOneCounter == 8)
+            if (!cAllOne && cAllOneCounter == cMinBreakCount)
             {
                 cAllOne = true;
                 cSign *= (-1);
@@ -225,138 +240,13 @@ void SCurve::measureSCurves (int pTGrpId, uint16_t pStartValue)
 
 
             cIncrement++;
-            //LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement;
+            //LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement << " Hitcounter: " << cHitCounter << " Max hits: " << cMaxHits;
             cValue = pStartValue + (cIncrement * cSign);
         }
     }
 
-    LOG (INFO) << RED << "Found minimal and maximal occupancy 8 times, SCurves finished! " << RESET ;
+    LOG (INFO) << RED << "Found minimal and maximal occupancy " << cMinBreakCount << " times, SCurves finished! " << RESET ;
 }
-
-//void SCurve::measureSCurves ( int  pTGrpId )
-//{
-//// Adaptive Loop to measure SCurves
-
-//LOG (INFO) << BOLDGREEN << "Measuring SCurves sweeping VCth ... " << RESET ;
-
-//// Necessary variables
-//bool cNonZero = false;
-//bool cAllOne = false;
-//uint32_t cAllOneCounter = 0;
-//uint16_t cValue, cDoubleValue;
-//int cStep;
-//uint8_t cIterationCount = 0;
-
-////figure out what kind of chips we are dealing with here
-////re-run the phase finding at least before every sweep
-//for (BeBoard* cBoard : fBoardVector)
-//{
-////fBeBoardInterface->FindPhase (cBoard);
-
-//for (Module* cModule : cBoard->fModuleVector)
-//fType = cModule->getChipType();
-//}
-
-//uint16_t cMaxValue = (fType == ChipType::CBC2) ? 0xFF : 0x03FF;
-//fHoleMode = (fType == ChipType::CBC3) ? false :  true;
-
-//// the expression below mimics XOR
-//if ( fHoleMode )
-//{
-//cValue = cMaxValue;
-//cStep = -10;
-//}
-//else
-//{
-//cValue = 0x00;
-//cStep = 10;
-//}
-
-////visitor to set threshold on CBC2 and CBC3
-//ThresholdVisitor cVisitor (fCbcInterface, 0);
-
-//// Adaptive VCth loop
-//while ( 0x00 <= cValue && cValue <= cMaxValue )
-//{
-//if (cIterationCount > 0 && (cValue == cMaxValue || cValue == 0x00) )
-//{
-//LOG (INFO) << BOLDRED << "ERROR: something wrong with these SCurves"  << RESET ;
-//break;
-//}
-
-//// DEBUG
-//if ( cAllOne ) break;
-
-//if ( cValue == cDoubleValue )
-//{
-//cValue +=  cStep;
-//continue;
-//}
-
-//uint32_t cN = 1;
-//uint32_t cNthAcq = 0;
-//uint32_t cHitCounter = 0;
-
-//// DEBUG
-//if ( cAllOne ) break;
-
-//for ( BeBoard* pBoard : fBoardVector )
-//{
-//for (Module* cFe : pBoard->fModuleVector)
-//{
-//cVisitor.setThreshold (cValue);
-//cFe->accept (cVisitor);
-//}
-
-//ReadNEvents ( pBoard, fEventsPerPoint );
-
-//const std::vector<Event*>& events = GetEvents ( pBoard );
-
-//// Loop over Events from this Acquisition
-//for ( auto& ev : events )
-//{
-//cHitCounter += fillSCurves ( pBoard, ev, cValue, pTGrpId ); //pass test group here
-//cN++;
-//}
-
-//cNthAcq++;
-//Counter cCounter;
-//pBoard->accept ( cCounter );
-
-////LOG (INFO) << "DEBUG Vcth " << int ( cValue ) << " Hits " << cHitCounter << " and should be " <<  0.95 * fEventsPerPoint*   cCounter.getNCbc() * fTestGroupChannelMap[pTGrpId].size() ;
-
-//// check if the hitcounter is all ones
-//if ( cNonZero == false && cHitCounter != 0 )
-//{
-//cDoubleValue = cValue;
-//cNonZero = true;
-
-//if ( cValue == cMaxValue ) cValue = cMaxValue;
-//else if ( cValue == 0 ) cValue = 0;
-//else cValue -= cStep;
-
-//cStep /= 10;
-//LOG (INFO) << GREEN << "Found > 0 Hits!, Falling back to " << +cValue  <<  RESET ;
-//continue;
-//}
-
-//// the above counter counted the CBC objects connected to pBoard
-//if ( cHitCounter > 0.95 * fEventsPerPoint  * fNCbc * fTestGroupChannelMap[pTGrpId].size() ) cAllOneCounter++;
-
-//if ( cAllOneCounter >= 10 )
-//{
-//cAllOne = true;
-//LOG (INFO) << RED << "Found maximum occupancy 10 times, SCurves finished! " << RESET ;
-//}
-
-//if ( cAllOne ) break;
-
-//cValue += cStep;
-//}
-
-//cIterationCount++;
-//}
-//} // end of VCth loop
 
 
 void SCurve::measureSCurvesOffset ( int  pTGrpId )
@@ -542,27 +432,52 @@ void SCurve::measureOccupancy (BeBoard* pBoard, int pTGrpId, std::map<Cbc*, uint
     }
 }
 
-void SCurve::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup )
+void SCurve::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool pTPState )
 {
-    std::vector<std::pair<std::string, uint8_t>> cRegVec;
-    uint8_t cRegValue =  to_reg ( 0, pTestGroup );
 
-    cRegVec.push_back ( std::make_pair ( "SelTestPulseDel&ChanGroup",  cRegValue ) );
+    for (auto cBoard : this->fBoardVector)
+    {
+        for (auto cFe : cBoard->fModuleVector)
+        {
+            for (auto cCbc : cFe->fCbcVector)
+            {
+                //first, get the Amux Value
+                uint8_t cOriginalAmuxValue;
+                cOriginalAmuxValue = cCbc->getReg ("MiscTestPulseCtrl&AnalogMux" );
 
-    //set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
-    if ( fHoleMode )
-        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
-    else
-        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0x61 ) );
+                std::vector<std::pair<std::string, uint8_t>> cRegVec;
+                uint8_t cRegValue =  to_reg ( 0, pTestGroup );
 
-    cRegVec.push_back ( std::make_pair ( "TestPulsePot", pTPAmplitude ) );
-    // cRegVec.push_back( std::make_pair( "Vplus",  fVplus ) );
-    CbcMultiRegWriter cWriter ( fCbcInterface, cRegVec );
-    this->accept ( cWriter );
-    // CbcRegReader cReader( fCbcInterface, "MiscTestPulseCtrl&AnalogMux" );
-    // this->accept( cReader );
-    // cReader.setRegister( "TestPulsePot" );
-    // this->accept( cReader );
+                if (fType == ChipType::CBC3)
+                {
+                    uint8_t cTPRegValue;
+
+                    if (pTPState) cTPRegValue  = (cOriginalAmuxValue |  0x1 << 6);
+                    else if (!pTPState) cTPRegValue = (cOriginalAmuxValue & ~ (0x1 << 6) );
+
+                    cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux",  cTPRegValue ) );
+                    cRegVec.push_back ( std::make_pair ( "TestPulseDel&ChanGroup",  cRegValue ) );
+                    cRegVec.push_back ( std::make_pair ( "TestPulsePotNodeSel", pTPAmplitude ) );
+                    LOG (DEBUG) << BOLDBLUE << "Read original Amux Value to be: " << std::bitset<8> (cOriginalAmuxValue) << " and changed to " << std::bitset<8> (cTPRegValue) << " - the TP is bit 6!" RESET;
+                }
+                else
+                {
+                    //CBC2
+                    cRegVec.push_back ( std::make_pair ( "SelTestPulseDel&ChanGroup",  cRegValue ) );
+
+                    //set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
+                    if ( fHoleMode )
+                        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
+                    else
+                        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0x61 ) );
+
+                    cRegVec.push_back ( std::make_pair ( "TestPulsePot", pTPAmplitude ) );
+                }
+
+                this->fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);
+            }
+        }
+    }
 }
 
 void SCurve::setFWTestPulse()
@@ -582,6 +497,10 @@ void SCurve::setFWTestPulse()
             cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.enable", 1 });
             cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable", 1 });
             cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle_ctrl", 0x1 });
+        }
+        else if (cBoardType == BoardType::CBC3FC7)
+        {
+            cRegVec.push_back ({"cbc_system_cnfg.fast_command_manager.fast_signal_generator.enable.test_pulse", 0x1});
         }
 
         fBeBoardInterface->WriteBoardMultReg (cBoard, cRegVec);

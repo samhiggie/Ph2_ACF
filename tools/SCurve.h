@@ -82,7 +82,7 @@ class SCurve : public Tool
     void initializeSCurves ( TString pParameter, uint16_t pValue, int  pTGrpId );
 
     // general stuff
-    void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup );
+    void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool pTPState = false );
     //enable commissioning loops and Test Pulse
     void setFWTestPulse();
 

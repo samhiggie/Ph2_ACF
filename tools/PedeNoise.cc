@@ -119,26 +119,36 @@ void PedeNoise::Initialise()
     fEventsPerPoint = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 10;
     cSetting = fSettingsMap.find ( "FitSCurves" );
     fFitted = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0;
-    cSetting = fSettingsMap.find ( "TestPulseAmplitude" );
-    fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0;
+    //cSetting = fSettingsMap.find ( "TestPulseAmplitude" );
+    //fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0;
 
-    // Decide if test pulse or not
-    if ( ( fTestPulseAmplitude == 0x00 ) || ( fTestPulseAmplitude == 0xFF ) ) fTestPulse = 0;
-    else fTestPulse = 1;
 
     LOG (INFO) << "Created Object Maps and parsed settings:" ;
     //LOG (INFO) << "   Hole Mode = " << fHoleMode ;
     LOG (INFO) << "	Nevents = " << fEventsPerPoint ;
     LOG (INFO) << "	FitSCurves = " << int ( fFitted ) ;
-    LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
 }
 
-
-void PedeNoise::measureNoise()
+void PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
 {
-    //determine the average midpoint globally and then measure the individual groups precisely
-    //this also yields if it's hole mode or not
-    uint16_t cStartValue = this->findPedestal (-1);
+    uint16_t cStartValue = 0;
+
+    if (pTPAmplitude != 0)
+    {
+        fTestPulseAmplitude = pTPAmplitude;
+        fTestPulse = true;
+        //if the test pulse is enabled, I actually want every group to measure it's own midpoint thus I leave the start value at 0 which will make the measureSCurve method check
+    }
+    else
+    {
+        fTestPulseAmplitude = pTPAmplitude;
+        fTestPulse = false;
+        //determine the average midpoint globally and then measure the individual groups precisely
+        //this also yields if it's hole mode or not
+        //and the chip type
+        cStartValue = this->findPedestal (-1);
+    }
+
     saveInitialOffsets();
 
     // method to measure one final set of SCurves with the final calibration applied to extract the noise
@@ -148,12 +158,12 @@ void PedeNoise::measureNoise()
         if (cTGrpM.first != -1)
         {
             // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
-            if ( fTestPulse )
+            if (fTestPulse)
             {
-                LOG (INFO) << BLUE << "Enabling Commissioninc cycle with TestPulse in FW" << RESET ;
+                LOG (INFO) << BLUE << "Enabling Test pulse" << RESET ;
                 setFWTestPulse();
-                LOG (INFO) << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +fTestPulseAmplitude << RESET ;
-                setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first );
+                LOG (INFO) << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
+                setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true );
 
             }
 
@@ -169,10 +179,24 @@ void PedeNoise::measureNoise()
 
             // now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
             processSCurvesNoise ( "Final", fTestPulseAmplitude, true, cTGrpM.first );
+
+            if (fTestPulse)
+            {
+                LOG (INFO) << RED <<  "Disabling Test Pulse for Test Group " << cTGrpM.first << RESET ;
+                setSystemTestPulse ( 0, cTGrpM.first, false );
+
+            }
         }
     }
 
     LOG (INFO) << BOLDBLUE << "Finished measuring the noise ..."  << RESET ;
+    //dont forget to apply the original offsets
+    setInitialOffsets();
+}
+
+void PedeNoise::measureNoise (uint8_t pTPAmplitude)
+{
+    this->sweepSCurves (pTPAmplitude);
 
     // now plot the histogram with the noise
 
@@ -240,9 +264,6 @@ void PedeNoise::measureNoise()
             //fFeSummaryCanvas->Update();
         }
     }
-
-    //now set back the initial offsets
-    setInitialOffsets();
 }
 
 
@@ -342,6 +363,34 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
     fNoiseCanvas->Update();
 }
 
+double PedeNoise::getPedestal (Cbc* pCbc)
+{
+    TH1F* cPedeHist  = dynamic_cast<TH1F*> ( getHist ( pCbc, "Cbc_Pedestal" ) );
+    return cPedeHist->GetMean();
+}
+double PedeNoise::getPedestal (Module* pFe)
+{
+    double cPedestal = 0;
+
+    for (auto cCbc : pFe->fCbcVector)
+    {
+        TH1F* cPedeHist  = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Pedestal" ) );
+        cPedestal += cPedeHist->GetMean();
+    }
+
+    return cPedestal / pFe->fCbcVector.size();
+}
+
+double PedeNoise::getNoise (Cbc* pCbc)
+{
+    TH1F* cNoiseHist = dynamic_cast<TH1F*> ( getHist ( pCbc, "Cbc_Noise" ) );
+    return cNoiseHist->GetMean();
+}
+double PedeNoise::getNoise (Module* pFe)
+{
+    TH1F* cNoiseHist = dynamic_cast<TH1F*> (getHist (pFe, "Module_noisehist") );
+    return cNoiseHist->GetMean();
+}
 
 //////////////////////////////////////      PRIVATE METHODS     /////////////////////////////////////////////
 

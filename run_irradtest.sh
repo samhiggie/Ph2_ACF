@@ -75,13 +75,13 @@ function run_test {
         if (($CYCLECOUNT % $SWEEPINTERVAL == 0)); then
             echo 'running full cycle with bias sweeps and Stub Scan ...'
             # -v 0 is just a dummy as the actual threshold values are hardcoded
-            # --full runs the bias sweeps, calibration, noise measurement and stub sweep
-            $TMUX_BASE_DIR/bin/cbc3irrad -s -v 0 -b --full | tee $TMUX_BASE_DIR/consoledump.log
+            # this just runs calibration, noise measurement and takes data
+            $TMUX_BASE_DIR/bin/cbc3irrad -s -v 0 -b | tee $TMUX_BASE_DIR/consoledump.log
         else
             echo 'running cycle without bias sweep...'
             # -v 0 is just a dummy as the actual threshold values are hardcoded
-            # this just runs calibration, noise measurement and takes data
-            $TMUX_BASE_DIR/bin/cbc3irrad -s -v 0 -b | tee $TMUX_BASE_DIR/consoledump.log
+            # --full runs the bias sweeps, calibration, noise measurement and stub sweep
+            $TMUX_BASE_DIR/bin/cbc3irrad -s -v 0 -b --full | tee $TMUX_BASE_DIR/consoledump.log
         fi
 
         echo "$CYCLECOUNT iteration of bin/cbc3irrad finished with exit code $?. Respawning..." | tee $TMUX_BASE_DIR/consoledump.log

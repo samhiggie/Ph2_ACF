@@ -56,9 +56,13 @@ class PedeNoise : public SCurve
     }
 
     void Initialise();
-    void measureNoise();
+    void measureNoise (uint8_t pTPAmplitude = 0); //method based on the one below that actually analyzes the scurves and extracts the noise
+    void sweepSCurves (uint8_t pTPAmplitude); // actual methods to measure SCurves
     void Validate (uint32_t pNoiseStripThreshold = 1, uint32_t pMultiple = 100);
-    //void SaveResults();
+    double getPedestal (Cbc* pCbc);
+    double getPedestal (Module* pFe);
+    double getNoise (Cbc* pCbc);
+    double getNoise (Module* pFe);
     void writeObjects();
 
   private:

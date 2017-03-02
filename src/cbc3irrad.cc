@@ -268,10 +268,19 @@ int main ( int argc, char* argv[] )
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
         cPedeNoise.Initialise();
+        //measure noise actually extracts the noise and pedestal values
         cPedeNoise.measureNoise();
+        //measure a second set with the TP
+        //maximal tp amplitude is 0, minimal is 255
+        //so in orde to get 30 we need 225
+        //this only records SCurves
+        cPedeNoise.sweepSCurves (225);
         cPedeNoise.writeObjects();
 
-        //sweep the stubs before the calibration, otherwise we'll have to adapt the threshold, just to be safe
+        //get the pedestal determined in the step above so I can adjust the threshold for the stub sweep and the DAQ
+        Module* cFe = cPedeNoise.fBoardVector.at (0)->fModuleVector.at (0);
+        uint16_t cPedestal = round (cPedeNoise.getPedestal (cFe) );
+        //sweep the stubs
         ThresholdVisitor cVisitor (cTool.fCbcInterface, 0);
 
         if (cFull)
@@ -281,8 +290,9 @@ int main ( int argc, char* argv[] )
             if (cVcthset)
             {
                 //hard coded threshold so I see stuff with the stub sweep
-                LOG (INFO) << YELLOW << "Changing threshold to 580 to see the test pulse for stub sweeps" << RESET;
-                cVisitor.setThreshold (580);
+                uint16_t cThreshold = cPedestal - 20;
+                LOG (INFO) << YELLOW << "Changing threshold to " << cThreshold << " to see the test pulse for stub sweeps" << RESET;
+                cVisitor.setThreshold (cThreshold);
                 cTool.accept (cVisitor);
             }
 
@@ -290,8 +300,12 @@ int main ( int argc, char* argv[] )
             cStubSweep.Inherit (&cTool);
             cStubSweep.Initialize();
             cStubSweep.SweepStubs (1);
+
         }
 
+        //close and save root file here
+        cTool.SaveResults();
+        cTool.CloseResultFile();
 
         if (!cFull)
         {
@@ -309,12 +323,12 @@ int main ( int argc, char* argv[] )
             uint32_t cNthAcq = 0;
             uint32_t count = 0;
 
-
             if (cVcthset)
             {
                 //hardcoded threshold so the data has ~50% occupancy
-                LOG (INFO) << YELLOW << "Changing threshold to 592 to have some occupancy in the data" << RESET;
-                cVisitor.setThreshold (590);
+                uint16_t cThreshold = cPedestal - 4;
+                LOG (INFO) << YELLOW << "Changing threshold to " << cThreshold << " to have some occupancy in the data" << RESET;
+                cVisitor.setThreshold (cThreshold);
                 cTool.accept (cVisitor);
             }
 
@@ -365,8 +379,6 @@ int main ( int argc, char* argv[] )
             }
         }
 
-        cTool.SaveResults();
-        cTool.CloseResultFile();
         cTool.Destroy();
 
         //finished everything we want to do, so turn everything off and be happy
