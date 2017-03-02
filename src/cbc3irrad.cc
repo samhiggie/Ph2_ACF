@@ -326,7 +326,7 @@ int main ( int argc, char* argv[] )
             if (cVcthset)
             {
                 //hardcoded threshold so the data has ~50% occupancy
-                uint16_t cThreshold = cPedestal - 4;
+                uint16_t cThreshold = cPedestal - 2;
                 LOG (INFO) << YELLOW << "Changing threshold to " << cThreshold << " to have some occupancy in the data" << RESET;
                 cVisitor.setThreshold (cThreshold);
                 cTool.accept (cVisitor);

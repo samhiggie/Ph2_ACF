@@ -178,7 +178,8 @@ void PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
             measureSCurves ( cTGrpM.first, cStartValue );
 
             // now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
-            processSCurvesNoise ( "Final", fTestPulseAmplitude, true, cTGrpM.first );
+            bool cFillSummary = (fTestPulse) ? false : true;
+            processSCurvesNoise ( "Final", fTestPulseAmplitude, true, cFillSummary, cTGrpM.first );
 
             if (fTestPulse)
             {
@@ -366,6 +367,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
 double PedeNoise::getPedestal (Cbc* pCbc)
 {
     TH1F* cPedeHist  = dynamic_cast<TH1F*> ( getHist ( pCbc, "Cbc_Pedestal" ) );
+    LOG (INFO) << "Pedestal on CBC " << +pCbc->getCbcId() << " is " << cPedeHist->GetMean() << " VCth units.";
     return cPedeHist->GetMean();
 }
 double PedeNoise::getPedestal (Module* pFe)
@@ -376,9 +378,13 @@ double PedeNoise::getPedestal (Module* pFe)
     {
         TH1F* cPedeHist  = dynamic_cast<TH1F*> ( getHist ( cCbc, "Cbc_Pedestal" ) );
         cPedestal += cPedeHist->GetMean();
+        LOG (INFO) << "Pedestal on CBC " << +cCbc->getCbcId() << " is " << cPedeHist->GetMean() << " VCth units.";
     }
 
-    return cPedestal / pFe->fCbcVector.size();
+    cPedestal /= pFe->fCbcVector.size();
+
+    LOG (INFO) << "Pedestal on Module " << +pFe->getFeId() << " is " << cPedestal << " VCth units.";
+    return cPedestal;
 }
 
 double PedeNoise::getNoise (Cbc* pCbc)
@@ -459,7 +465,7 @@ void PedeNoise::enableTestGroupforNoise ( int  pTGrpId )
 }
 
 
-void PedeNoise::processSCurvesNoise ( TString pParameter, uint16_t pValue, bool pDraw, int  pTGrpId )
+void PedeNoise::processSCurvesNoise ( TString pParameter, uint16_t pValue, bool pDraw, bool pFillSummary, int  pTGrpId )
 {
 
     // First fitHits for every Channel, then extract the midpoint and noise and fill it in fVplusVcthGraphMap
@@ -491,19 +497,22 @@ void PedeNoise::processSCurvesNoise ( TString pParameter, uint16_t pValue, bool 
             // instead of the code below, use a histogram to histogram the noise
             if ( cChan.getNoise() == 0 || cChan.getNoise() > 1023 ) LOG (INFO) << RED << "Error, SCurve Fit for Fe " << int ( cCbc.first->getFeId() ) << " Cbc " << int ( cCbc.first->getCbcId() ) << " Channel " << int ( cChan.fChannelId ) << " did not work correctly! Noise " << cChan.getNoise() << RESET ;
 
-            cNoiseHist->Fill ( cChan.getNoise() );
-            cPedeHist->Fill ( cChan.getPedestal() );
+            if (pFillSummary)
+            {
+                cNoiseHist->Fill ( cChan.getNoise() );
+                cPedeHist->Fill ( cChan.getPedestal() );
 
-            // Even and odd channel noise
-            if ( ( int ( cChan.fChannelId ) % 2 ) == 0 )
-                cEvenHist->Fill ( int ( cChan.fChannelId / 2 ), cChan.getNoise() );
-            else
-                cOddHist->Fill ( int ( cChan.fChannelId / 2.0 ), cChan.getNoise() );
+                // Even and odd channel noise
+                if ( ( int ( cChan.fChannelId ) % 2 ) == 0 )
+                    cEvenHist->Fill ( int ( cChan.fChannelId / 2 ), cChan.getNoise() );
+                else
+                    cOddHist->Fill ( int ( cChan.fChannelId / 2.0 ), cChan.getNoise() );
 
-            // some output
-            //LOG(INFO) << "FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " Chanel " << +cChan.fChannelId << " Pedestal " << cChan.getPedestal() << " Noise " << cChan.getNoise() ;
+                // some output
+                //LOG(INFO) << "FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " Chanel " << +cChan.fChannelId << " Pedestal " << cChan.getPedestal() << " Noise " << cChan.getNoise() ;
 
-            cStripHist->Fill ( cChan.fChannelId, cChan.getNoise() );
+                cStripHist->Fill ( cChan.fChannelId, cChan.getNoise() );
+            }
 
             //Draw
             if ( pDraw )
