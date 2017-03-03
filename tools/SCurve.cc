@@ -90,15 +90,9 @@ uint16_t SCurve::findPedestal (int pTGrpId)
             {
                 cThresholdMap[cCbc] = cStartValue;
                 cHitCountMap[cCbc] = 0;
-                fType = cCbc->getChipType();
             }
         }
     }
-
-    if (fType == ChipType::CBC3)
-        LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC3" << RESET;
-    else
-        LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC2" << RESET;
 
     ThresholdVisitor cThresholdVisitor (fCbcInterface, cStartValue);
     this->accept (cThresholdVisitor);
@@ -110,7 +104,8 @@ uint16_t SCurve::findPedestal (int pTGrpId)
     {
         float cOccupancy = cHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
         fHoleMode = (cOccupancy == 0) ? false :  true;
-        LOG (INFO) << BOLDBLUE << "Measuring Occupancy @ Threshold " << BOLDRED << cCbc.second << " (0x" << std::hex << cCbc.second << std::dec << ", 0b" << std::bitset<10> (cCbc.second) << ")" << BOLDBLUE": " << BOLDRED << cOccupancy << BOLDBLUE << ", thus assuming Hole Mode: " << BOLDRED << fHoleMode << RESET;
+
+        LOG (INFO) << BOLDBLUE << "Measuring Occupancy @ Threshold " << BOLDRED << cCbc.second << BOLDBLUE << ": " << BOLDRED << cOccupancy << BOLDBLUE << ", thus assuming Hole Mode: " << BOLDYELLOW << fHoleMode << RESET;
     }
 
     uint16_t cNbits = (fType == ChipType::CBC2) ? 8 : 10;

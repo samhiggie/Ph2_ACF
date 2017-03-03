@@ -26,6 +26,7 @@ void PedeNoise::Initialise()
         {
             uint32_t cFeId = cFe->getFeId();
             cFeCount++;
+            fType = cFe->getChipType();
 
             for ( auto cCbc : cFe->fCbcVector )
             {
@@ -113,8 +114,6 @@ void PedeNoise::Initialise()
     //fFeSummaryCanvas->DivideSquare ( fNFe );
 
     // now read the settings from the map
-    //auto cSetting = fSettingsMap.find ( "HoleMode" );
-    //fHoleMode = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 1;
     auto cSetting = fSettingsMap.find ( "Nevents" );
     fEventsPerPoint = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 10;
     cSetting = fSettingsMap.find ( "FitSCurves" );
@@ -124,9 +123,14 @@ void PedeNoise::Initialise()
 
 
     LOG (INFO) << "Created Object Maps and parsed settings:" ;
-    //LOG (INFO) << "   Hole Mode = " << fHoleMode ;
     LOG (INFO) << "	Nevents = " << fEventsPerPoint ;
     LOG (INFO) << "	FitSCurves = " << int ( fFitted ) ;
+
+    if (fType == ChipType::CBC3)
+        LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC3" << RESET;
+    else
+        LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC2" << RESET;
+
 }
 
 void PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
@@ -145,7 +149,6 @@ void PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
         fTestPulse = false;
         //determine the average midpoint globally and then measure the individual groups precisely
         //this also yields if it's hole mode or not
-        //and the chip type
         cStartValue = this->findPedestal (-1);
     }
 
@@ -160,11 +163,9 @@ void PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
             // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
             if (fTestPulse)
             {
-                LOG (INFO) << BLUE << "Enabling Test pulse" << RESET ;
-                setFWTestPulse();
                 LOG (INFO) << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
+                setFWTestPulse();
                 setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true );
-
             }
 
             LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
@@ -172,14 +173,14 @@ void PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
             enableTestGroupforNoise ( cTGrpM.first );
 
             // now initialize the Scurves
-            initializeSCurves ( "Final", fTestPulseAmplitude, cTGrpM.first );
+            initializeSCurves ( "SCurves", fTestPulseAmplitude, cTGrpM.first );
 
             // measure the SCurves, the false is indicating that I am sweeping Vcth
             measureSCurves ( cTGrpM.first, cStartValue );
 
             // now process the measured SCuvers, true indicates that I am drawing, the TGraphErrors with Vcth vs Vplus are also filled
             bool cFillSummary = (fTestPulse) ? false : true;
-            processSCurvesNoise ( "Final", fTestPulseAmplitude, true, cFillSummary, cTGrpM.first );
+            processSCurvesNoise ( "SCurves", fTestPulseAmplitude, true, cFillSummary, cTGrpM.first );
 
             if (fTestPulse)
             {
@@ -248,11 +249,9 @@ void PedeNoise::measureNoise (uint8_t pTPAmplitude)
                 {
                     //edit suggested by B. Schneider
                     int iBin = cStripHist->FindBin (cChannel);
-                    // LOG(INFO) << cChannel << " Strip " << +cCbcId * 254 + cChannel << " Noise " << cStripHist->second->GetBinContent( iBin ) ;
 
                     if ( cStripHist->GetBinContent ( iBin ) > 0 && cStripHist->GetBinContent ( iBin ) < 255 ) cTmpProfile->Fill ( cCbcId * 254 + cChannel, cStripHist->GetBinContent ( iBin ) );
 
-                    // else cTmpProfile->Fill( cCbcId * 254 + cBin, 255 );
                 }
             }
 
@@ -282,8 +281,6 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
         //take data
         for (uint32_t cAcq = 0; cAcq < pMultiple; cAcq++)
         {
-            //if (cAcq % 10) fBeBoardInterface->FindPhase (cBoard);
-
             ReadNEvents (cBoard, fEventsPerPoint );
 
             //analyze
@@ -353,10 +350,6 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
             fNoiseCanvas->cd ( cCbc.first->getCbcId() + 1 );
             gPad->SetLogy (0);
             cChan.fScurve->DrawCopy ( cOption );
-
-            //if ( fFitted )
-            //cChan.fFit->DrawCopy ( "same" );
-            //else cChan.fDerivative->DrawCopy ( "same" );
         }
 
     }
@@ -435,7 +428,6 @@ void PedeNoise::enableTestGroupforNoise ( int  pTGrpId )
                         {
                             TString cRegName = Form ( "Channel%03d", cChan + 1 );
                             cRegVec.push_back ( { cRegName.Data(), cOffset } );
-                            //LOG(INFO) << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << +cOffset ;
                         }
                     }
                     // if it is the current group, get the original offset values
@@ -449,7 +441,6 @@ void PedeNoise::enableTestGroupforNoise ( int  pTGrpId )
                             uint8_t cEnableOffset = cOffsets->GetBinContent ( iBin );
                             TString cRegName = Form ( "Channel%03d", cChan + 1 );
                             cRegVec.push_back ( { cRegName.Data(), cEnableOffset } );
-                            // LOG(INFO) << GREEN << "DEBUG CBC " << cCbcId << " Channel " << +cChan << " group " << cGrp.first << " offset " << std::hex << "0x" << +cEnableOffset << std::dec << RESET ;
                         }
                     }
                 }
@@ -508,9 +499,6 @@ void PedeNoise::processSCurvesNoise ( TString pParameter, uint16_t pValue, bool 
                 else
                     cOddHist->Fill ( int ( cChan.fChannelId / 2.0 ), cChan.getNoise() );
 
-                // some output
-                //LOG(INFO) << "FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " Chanel " << +cChan.fChannelId << " Pedestal " << cChan.getPedestal() << " Noise " << cChan.getNoise() ;
-
                 cStripHist->Fill ( cChan.fChannelId, cChan.getNoise() );
             }
 
@@ -529,9 +517,9 @@ void PedeNoise::processSCurvesNoise ( TString pParameter, uint16_t pValue, bool 
                 cChan.fScurve->SetMarkerColor (pTGrpId + 1);
                 cChan.fScurve->DrawCopy ( cOption );
 
-                if ( fFitted )
-                    cChan.fFit->DrawCopy ( "same" );
-                else cChan.fDerivative->DrawCopy ( "same" );
+                //if ( fFitted )
+                //cChan.fFit->DrawCopy ( "same" );
+                //else cChan.fDerivative->DrawCopy ( "same" );
             }
         }
 
