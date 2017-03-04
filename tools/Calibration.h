@@ -130,7 +130,6 @@ class Calibration : public Tool
     uint16_t fTargetVcth;
     uint8_t fTargetOffset;
     bool fCheckLoop;
-    ChipType fType;
 
 };
 

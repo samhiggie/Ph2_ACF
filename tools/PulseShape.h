@@ -141,7 +141,6 @@ class PulseShape : public Tool
     uint8_t fOffset; /*!< Offset value for the channel */
     uint32_t fStepSize; /*!< Step size */
     std::vector<uint32_t> fChannelVector;  /*!< Channels in the test group */
-    ChipType fType;
 
     unsigned char fLookup[16] =
     {

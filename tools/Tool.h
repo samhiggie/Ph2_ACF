@@ -78,6 +78,7 @@ class Tool : public SystemController
     CanvasMap fCanvasMap;
     CbcHistogramMap fCbcHistMap;
     ModuleHistogramMap fModuleHistMap;
+    ChipType fType;
 
 
     /*!
@@ -98,6 +99,7 @@ class Tool : public SystemController
         fFileHandler = pTool->fFileHandler;
         fDirectoryName = pTool->fDirectoryName;
         fResultFile = pTool->fResultFile;
+        fType = pTool->fType;
 #ifdef __HTTP__
         fHttpServer = pTool->fHttpServer;
 #endif
@@ -155,5 +157,53 @@ class Tool : public SystemController
 #endif
     }
     void dumpConfigFiles();
+    // general stuff that can be useful
+    void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool pTPState = false, bool pHoleMode = false );
+    //enable commissioning loops and Test Pulse
+    void setFWTestPulse();
+
+    uint8_t reverse ( uint8_t n )
+    {
+        // Reverse the top and bottom nibble then swap them.
+        return ( fLookup[n & 0b1111] << 4 ) | fLookup[n >> 4];
+    }
+
+    // helper methods
+    void setRegBit ( uint16_t& pRegValue, uint8_t pPos, bool pValue )
+    {
+        pRegValue ^= ( -pValue ^ pRegValue ) & ( 1 << pPos );
+    }
+
+    void toggleRegBit ( uint16_t& pRegValue, uint8_t pPos )
+    {
+        pRegValue ^= 1 << pPos;
+    }
+
+    bool getBit ( uint16_t& pRegValue, uint8_t pPos )
+    {
+        return ( pRegValue >> pPos ) & 1;
+    }
+
+    /*!
+    * \brief reverse the endianess before writing in to the register
+    * \param pDelay: the actual delay
+    * \param pGroup: the actual group number
+    * \return the reversed endianness
+    */
+    uint8_t to_reg ( uint8_t pDelay, uint8_t pGroup )
+    {
+
+        uint8_t cValue = ( ( reverse ( pDelay ) ) & 0xF8 ) |
+                         ( ( reverse ( pGroup ) ) >> 5 );
+
+        //LOG(DBUG) << std::bitset<8>( cValue ) << " cGroup " << +pGroup << " " << std::bitset<8>( pGroup ) << " pDelay " << +pDelay << " " << std::bitset<8>( pDelay ) ;
+        return cValue;
+    }
+
+    unsigned char fLookup[16] =
+    {
+        0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe,
+        0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf,
+    }; /*!< Lookup table for reverce the endianness */
 };
 #endif

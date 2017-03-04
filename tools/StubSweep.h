@@ -45,7 +45,6 @@ class StubSweep : public Tool
   private:
     TCanvas* fSweepCanvas;
 
-    ChipType fType;
     //settings
     uint8_t fDelay;
     uint8_t fReadBackAttempts;

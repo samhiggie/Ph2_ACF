@@ -174,7 +174,6 @@ class HybridTester : public Tool
     int fSigmas;
     uint8_t fVcth;
     double fDecisionThreshold = 10.0;   /*!< Decision Threshold for channels occupancy based tests, values from 1 to 100 as % */
-    ChipType fType;
 
     void SetBeBoardForShortsFinding (BeBoard* pBoard);
     void ReconstructShorts (std::array<std::vector<std::array<int, 5>>, 8> pShortedGroupsArray);

@@ -247,3 +247,77 @@ void Tool::dumpConfigFiles()
 
     LOG (INFO) << BOLDBLUE << "Configfiles for all Cbcs written to " << fDirectoryName << RESET ;
 }
+void Tool::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool pTPState, bool pHoleMode )
+{
+
+    for (auto cBoard : this->fBoardVector)
+    {
+        for (auto cFe : cBoard->fModuleVector)
+        {
+            for (auto cCbc : cFe->fCbcVector)
+            {
+                //first, get the Amux Value
+                uint8_t cOriginalAmuxValue;
+                cOriginalAmuxValue = cCbc->getReg ("MiscTestPulseCtrl&AnalogMux" );
+
+                std::vector<std::pair<std::string, uint8_t>> cRegVec;
+                uint8_t cRegValue =  to_reg ( 0, pTestGroup );
+
+                if (fType == ChipType::CBC3)
+                {
+                    uint8_t cTPRegValue;
+
+                    if (pTPState) cTPRegValue  = (cOriginalAmuxValue |  0x1 << 6);
+                    else if (!pTPState) cTPRegValue = (cOriginalAmuxValue & ~ (0x1 << 6) );
+
+                    cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux",  cTPRegValue ) );
+                    cRegVec.push_back ( std::make_pair ( "TestPulseDel&ChanGroup",  cRegValue ) );
+                    cRegVec.push_back ( std::make_pair ( "TestPulsePotNodeSel", pTPAmplitude ) );
+                    LOG (DEBUG) << BOLDBLUE << "Read original Amux Value to be: " << std::bitset<8> (cOriginalAmuxValue) << " and changed to " << std::bitset<8> (cTPRegValue) << " - the TP is bit 6!" RESET;
+                }
+                else
+                {
+                    //CBC2
+                    cRegVec.push_back ( std::make_pair ( "SelTestPulseDel&ChanGroup",  cRegValue ) );
+
+                    //set the value of test pulsepot registrer and MiscTestPulseCtrl&AnalogMux register
+                    if ( pHoleMode )
+                        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0xD1 ) );
+                    else
+                        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0x61 ) );
+
+                    cRegVec.push_back ( std::make_pair ( "TestPulsePot", pTPAmplitude ) );
+                }
+
+                this->fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);
+            }
+        }
+    }
+}
+
+void Tool::setFWTestPulse()
+{
+    for (auto& cBoard : fBoardVector)
+    {
+        std::vector<std::pair<std::string, uint32_t> > cRegVec;
+        BoardType cBoardType = cBoard->getBoardType();
+
+        if (cBoardType == BoardType::GLIB || cBoardType == BoardType::CTA)
+        {
+            cRegVec.push_back ({"COMMISSIONNING_MODE_RQ", 1 });
+            cRegVec.push_back ({"COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID", 1 });
+        }
+        else if (cBoardType == BoardType::ICGLIB || cBoardType == BoardType::ICFC7)
+        {
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.enable", 1 });
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle.mode_flags.test_pulse_enable", 1 });
+            cRegVec.push_back ({"cbc_daq_ctrl.commissioning_cycle_ctrl", 0x1 });
+        }
+        else if (cBoardType == BoardType::CBC3FC7)
+        {
+            cRegVec.push_back ({"cbc_system_cnfg.fast_command_manager.fast_signal_generator.enable.test_pulse", 0x1});
+        }
+
+        fBeBoardInterface->WriteBoardMultReg (cBoard, cRegVec);
+    }
+}

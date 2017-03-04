@@ -67,7 +67,6 @@ class SCurve : public Tool
     uint8_t fTestPulseAmplitude;
     uint32_t fEventsPerPoint;
     bool fFitted;
-    ChipType fType;
 
 
 
