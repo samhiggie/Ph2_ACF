@@ -43,24 +43,13 @@ class Calibration : public Tool
 {
   public:
     Calibration() {};
-    ~Calibration()
-    {
-        //if ( fResultFile ) {
-        //fResultFile->Write();
-        //fResultFile->Close();
-        //}
-    }
+    ~Calibration() {};
 
     void Initialise ( bool pAllChan = false );
     void FindVplus();
     // offsets are found by taking pMultiple*fEvents triggers
     void FindOffsets();
     void writeObjects();
-    //void SaveResults()
-    //{
-    //writeGraphs();
-    //dumpConfigFiles();
-    //}
 
 
   protected:
@@ -93,22 +82,6 @@ class Calibration : public Tool
 
 
   private:
-    // helper methods
-    void setRegBit ( uint16_t& pRegValue, uint8_t pPos, bool pValue )
-    {
-        pRegValue ^= ( -pValue ^ pRegValue ) & ( 1 << pPos );
-    }
-
-    void toggleRegBit ( uint16_t& pRegValue, uint8_t pPos )
-    {
-        pRegValue ^= 1 << pPos;
-    }
-
-    bool getBit ( uint16_t& pRegValue, uint8_t pPos )
-    {
-        return ( pRegValue >> pPos ) & 1;
-    }
-
     // Canvases
     TCanvas* fVplusCanvas;
     TCanvas* fOffsetCanvas;
