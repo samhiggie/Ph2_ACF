@@ -19,6 +19,7 @@ export INTERVAL=2
 export SWEEPINTERVAL=2
 #interval at which to re-start the monitoring
 export RESTARTINTERVAL=3
+export TIMEOUT=1200
 
 #params: 1 pane, 2 working dir
 function setup_env {
@@ -76,7 +77,7 @@ function run_test {
             echo 'running full cycle with bias sweeps and Stub Scan ...'
             # -v 0 is just a dummy as the actual threshold values are hardcoded
             # this just runs calibration, noise measurement and takes data
-            $TMUX_BASE_DIR/bin/cbc3irrad -s -v 0 -b | tee $TMUX_BASE_DIR/consoledump.log
+            $TMUX_BASE_DIR/bin/cbc3irrad -s -v 0 --timout $TIMEOUT -b | tee $TMUX_BASE_DIR/consoledump.log
         else
             echo 'running cycle without bias sweep...'
             # -v 0 is just a dummy as the actual threshold values are hardcoded

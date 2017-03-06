@@ -95,6 +95,8 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "webmonitor", "start THttpServer on port - default: 8090", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "webmonitor", "w" );
 
+    cmd.defineOption ( "timeout", "timeout after which DAQ should stop", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+
     int result = cmd.parse ( argc, argv );
 
     if ( result != ArgvParser::NoParserError )
@@ -111,6 +113,7 @@ int main ( int argc, char* argv[] )
     uint32_t pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 500000;
     uint16_t cVcth = ( cmd.foundOption ( "vcth" ) ) ? convertAnyInt ( cmd.optionValue ( "vcth" ).c_str() ) : 500;
     uint32_t cHttpPort = (cmd.foundOption ("webmonitor") ) ? convertAnyInt (cmd.optionValue ("webmonitor").c_str() ) : 8090;
+    uint32_t cTimout = (cmd.foundOption ("timeout") ) ? convertAnyInt (cmd.optionValue ("timeout").c_str() ) : 1200;
 
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cStandalone = ( cmd.foundOption ( "standalone" ) ) ? true : false;
@@ -312,7 +315,7 @@ int main ( int argc, char* argv[] )
             //here I stop the original watchdog and restart it with another callback that just updates  a condition variable
             //thus, once the 1200 seconds (20 minutes) time out, the callback will just change the variable, the DAQ will stop and thats it?
             cDog.Stop();
-            cDog.Start (1200, &notifyme);
+            cDog.Start (cTimout, &notifyme);
             //now take some data and save the binary files
             std::string cBinaryDataFileName = gResultDirectory + "/DAQ_data.raw";
             cTool.addFileHandler (cBinaryDataFileName, 'w');
