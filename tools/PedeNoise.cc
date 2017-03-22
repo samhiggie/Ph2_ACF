@@ -173,7 +173,7 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
         bookHistogram ( cCbc.first, cHistogramname, cHist );
 
         fNoiseCanvas->cd ( cCbc.first->getCbcId() + 1 );
-        cHist->Draw ( "colz" );
+        cHist->Draw ( "colz2" );
 
     }
 
@@ -199,6 +199,16 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
 
             // measure the SCurves, the false is indicating that I am sweeping Vcth
             measureSCurves ( cTGrpM.first, cHistogramname, cStartValue );
+
+            for (auto& cCbc : fHitCountMap)
+            {
+                TH2F* cSCurveHist = dynamic_cast<TH2F*> (this->getHist (cCbc.first, cHistogramname) );
+                fNoiseCanvas->cd (cCbc.first->getCbcId() + 1);
+                double cMean = cSCurveHist->GetMean (2);
+                cSCurveHist->GetYaxis()->SetRangeUser (cMean - 30, cMean + 30);
+                cSCurveHist->Draw ("colz2");
+            }
+
             fNoiseCanvas->Modified();
             fNoiseCanvas->Update();
 
@@ -430,7 +440,7 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
             // Loop over Events from this Acquisition
             for ( auto& ev : events )
             {
-                uint32_t cHitCounter = 0;
+                //uint32_t cHitCounter = 0;
 
                 for ( auto cFe : pBoard->fModuleVector )
                 {
