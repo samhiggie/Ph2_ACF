@@ -1,46 +1,33 @@
 <?xml version='1.0' encoding='utf-8'?>
 <HwDescription>
   <BeBoard Id="0" boardType="FC7DAQ">
-    <connection id="board" uri="chtcp-2.0://localhost:10203?target=192.168.1.50:50001" address_table="file://settings/fc7_daq_address_table.xml" />
+    <connection id="board" uri="ipbusudp-2.0://192.168.1.80:50001" address_table="file://settings/fc7_daq_address_table.xml" />
 
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         
         <CBC_Files path="./settings/" />
-        <CBC Id="0" configfile="CBC3_default.txt" />   
- 	<CBC Id="1" configfile="CBC3_default.txt" />
-	<CBC Id="2" configfile="CBC3_default.txt" />   
- 	<CBC Id="3" configfile="CBC3_default.txt" />
-	<CBC Id="4" configfile="CBC3_default.txt" />   
- 	<CBC Id="5" configfile="CBC3_default.txt" />
-	<CBC Id="6" configfile="CBC3_default.txt" />   
- 	<CBC Id="7" configfile="CBC3_default.txt" />        
-    </Module>
-
-    <Module FeId="0" FMCId="0" ModuleId="1" Status="1">
-        
-        <CBC_Files path="./settings/" />
-        <CBC Id="0" configfile="CBC3_default.txt" />   
- 	<CBC Id="1" configfile="CBC3_default.txt" />
-	<CBC Id="2" configfile="CBC3_default.txt" />   
- 	<CBC Id="3" configfile="CBC3_default.txt" />
-	<CBC Id="4" configfile="CBC3_default.txt" />   
- 	<CBC Id="5" configfile="CBC3_default.txt" />
-	<CBC Id="6" configfile="CBC3_default.txt" />   
- 	<CBC Id="7" configfile="CBC3_default.txt" />        
+        <CBC Id="0" configfile="Cbc_default_hole.txt" />
+        <CBC Id="1" configfile="Cbc_default_hole.txt" />
+        <CBC Id="2" configfile="Cbc_default_hole.txt" />
+        <CBC Id="3" configfile="Cbc_default_hole.txt" />
+        <CBC Id="4" configfile="Cbc_default_hole.txt" />
+        <CBC Id="5" configfile="Cbc_default_hole.txt" />
+        <CBC Id="6" configfile="Cbc_default_hole.txt" />
+        <CBC Id="7" configfile="Cbc_default_hole.txt" />
     </Module>
 
     <!--CONFIG-->
-    <Register name="ipb_daq_system_cnfg">
+    <Register name="fc7_daq_cnfg">
         <!-- Fast Command Block -->
         <Register name="fast_command_block">
-                <Register name="triggers_to_accept"> 0 </Register>
+                <Register name="triggers_to_accept"> 10 </Register>
 		<Register name="trigger_source"> 3 </Register>
 		<Register name="user_trigger_frequency"> 1 </Register>
 		<Register name="stubs_mask"> 0 </Register>
         </Register>
 	<!-- I2C manager -->
-	<Register name="i2c">
-		<Register name="write_mask"> 0xFF </Register>
+        <Register name="command_processor_block">
+                <Register name="i2c_write_mask"> 0xFF </Register>
 	</Register>
     </Register>
   </BeBoard>

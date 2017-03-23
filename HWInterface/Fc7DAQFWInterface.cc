@@ -86,8 +86,8 @@ namespace Ph2_HwInterface {
         LOG (INFO) << YELLOW << "============================" << RESET;
         LOG (INFO) << BOLDYELLOW << "Current Status" << RESET;
 
-        int error_block_id = ReadReg("ipb_daq_system_stat.status.error.block_id");
-        int error_code = ReadReg("ipb_daq_system_stat.status.error.code");
+        int error_block_id = ReadReg("fc7_daq_stat.general.error.block_id");
+        int error_code = ReadReg("fc7_daq_stat.general.error.code");
         if (error_block_id == 0) {
             LOG (INFO) << "No Errors detected";
         }
@@ -96,8 +96,8 @@ namespace Ph2_HwInterface {
             LOG (ERROR) << "Error Code: " << BOLDRED << error_code << RESET;
         }
 
-        int source_id = ReadReg("ipb_daq_system_stat.status.fast_block.fsm_source");
-        double user_frequency = ReadReg("ipb_daq_system_cnfg.fast_command_block.user_trigger_frequency");
+        int source_id = ReadReg("fc7_daq_stat.fast_command_block.general.source");
+        double user_frequency = ReadReg("fc7_daq_cnfg.fast_command_block.user_trigger_frequency");
         if (source_id == 1)
             LOG (INFO) << "Trigger Source: " << BOLDGREEN << "L1-Trigger" << RESET;
         else if (source_id == 2)
@@ -107,7 +107,7 @@ namespace Ph2_HwInterface {
         else
             LOG (WARNING) << " Trigger Source: " << BOLDRED << "Unknown" << RESET;
 
-        int state_id = ReadReg("ipb_daq_system_stat.status.fast_block.fsm_state");
+        int state_id = ReadReg("fc7_daq_stat.fast_command_block.general.fsm_state");
         if (state_id == 0)
             LOG (INFO) << "Trigger State: " << BOLDGREEN << "Idle" << RESET;
         else if (state_id == 1)
@@ -115,19 +115,19 @@ namespace Ph2_HwInterface {
         else
             LOG (WARNING) << " Trigger State: " << BOLDRED << "Unknown" << RESET;
 
-        int i2c_replies_empty = ReadReg("ipb_daq_system_stat.i2c_reply_fifo.empty");
+        int i2c_replies_empty = ReadReg("fc7_daq_stat.command_processor_block.i2c.reply_fifo.empty");
         if (i2c_replies_empty==0)
             LOG (INFO) << "I2C Replies Available: " << BOLDGREEN << "Yes" << RESET;
         else LOG (INFO) << "I2C Replies Available: " << BOLDGREEN << "No" << RESET;
 
         LOG (INFO) << YELLOW << "============================" << RESET;
         LOG (INFO) << BOLDYELLOW << "Frequency Checker:" << RESET;
-        float ipb_clk_rate = ReadReg("ipb_daq_system_stat.ipb_clk_rate")/10000.0;
-        float forty_mhz_clk_rate = ReadReg("ipb_daq_system_stat.40mhz_clk_rate")/10000.0;
-        float user_clk_rate = ReadReg("ipb_daq_system_stat.user_clk_rate")/10.0;
+        float ipb_clk_rate = ReadReg("fc7_daq_stat.test_clock.ipb_clk_rate")/10000.0;
+        float forty_mhz_clk_rate = ReadReg("fc7_daq_stat.test_clock.40mhz_clk_rate")/10000.0;
+        float user_clk_rate = ReadReg("fc7_daq_stat.test_clock.trigger_rate")/10.0;
         LOG (INFO) << "IPBus Clock: " << ipb_clk_rate << "MHz";
         LOG (INFO) << "40MHz Clock: " << forty_mhz_clk_rate << "MHz";
-        LOG (INFO) << "User Clock: " << user_clk_rate << "kHz";
+        LOG (INFO) << "Trigger Clock: " << user_clk_rate << "kHz";
 
         LOG (INFO) << YELLOW << "============================" << RESET;
 
@@ -137,7 +137,7 @@ namespace Ph2_HwInterface {
 
     void Fc7DAQFWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
-        WriteReg ("ipb_daq_system_ctrl.global.reset", 0x1);
+        WriteReg ("fc7_daq_ctrl.command_processor_block.global.reset", 0x1);
 
         usleep(500);
 
@@ -167,14 +167,13 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
-        WriteReg ("ipb_daq_system_ctrl.fast_command_block.load_config", 0x1);
+        WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
 
 
         // ping cbcs
-        uint32_t cInit = ( ( (2) << 28 ) | (  (0) << 18 )  | ( (0) << 17 ) | ( (1) << 16 ) | (26 << 8 ) | 10);
+        uint32_t cInit = ( ( (2) << 28 ) | (  (0) << 18 )  | ( (0) << 17 ) | ( (1) << 16 ) | (0 << 8 ) | 0);
 
-        WriteReg("ipb_daq_system_ctrl.i2c_command_fifo", cInit);
-
+        WriteReg("fc7_daq_ctrl.command_processor_block.i2c.command_fifo", cInit);
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
         uint32_t cWord;
@@ -183,7 +182,7 @@ namespace Ph2_HwInterface {
         if (cReadSuccess) {
             for (int i=0; i < pReplies.size(); i++) {
                 cWord = pReplies.at(i);
-                cWordCorrect = ( (((cWord) & 0x00f00000) >> 20) == i%8 ) ? true : false;
+                cWordCorrect = ( (((cWord) & 0x00f00000) >> 20) == i%fNCbc ) ? true : false;
                 if (!cWordCorrect) break;
             }
         }
@@ -203,24 +202,24 @@ namespace Ph2_HwInterface {
     void Fc7DAQFWInterface::Start()
     {
 
-        WriteReg ("ipb_daq_system_ctrl.fast_command_block.start_trigger", 0x1);
+        WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
 
     void Fc7DAQFWInterface::Stop()
     {
-        WriteReg ("ipb_daq_system_ctrl.fast_command_block.stop_trigger", 0x1);
+        WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
     }
 
 
     void Fc7DAQFWInterface::Pause()
     {
-        WriteReg ("ipb_daq_system_ctrl.fast_command_block.stop_trigger", 0x1);
+        WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
     }
 
 
     void Fc7DAQFWInterface::Resume()
     {
-        WriteReg ("ipb_daq_system_ctrl.fast_command_block.start_trigger", 0x1);
+        WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
 
     uint32_t Fc7DAQFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
@@ -256,32 +255,35 @@ namespace Ph2_HwInterface {
     void Fc7DAQFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
                                          uint8_t pCbcId,
                                          std::vector<uint32_t>& pVecReq,
-                                         bool pRead,
+                                         bool pReadBack,
                                          bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( 0 << 28 ) | ( 0 << 24 ) | ( pCbcId << 20 ) | (  0 << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( pRead ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue);
+        bool pUseMask = false;
+        pVecReq.push_back ( ( 0 << 28 ) | ( 0 << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue);
     }
 
-    void Fc7DAQFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
+    void Fc7DAQFWInterface::EncodeReg (const CbcRegItem& pRegItem,
                                          uint8_t pFeId,
                                          uint8_t pCbcId,
                                          std::vector<uint32_t>& pVecReq,
-                                         bool pRead,
-                                         bool pUseMask )
+                                         bool pReadBack,
+                                         bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( pRead ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        bool pUseMask = false;
+        pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void Fc7DAQFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
                                            uint8_t pNCbc,
                                            std::vector<uint32_t>& pVecReq,
-                                           bool pRead,
-                                           bool pUseMask )
+                                           bool pReadBack,
+                                           bool pWrite )
     {
         //use fBroadcastCBCId for broadcast commands
-        pVecReq.push_back ( ( 2 << 28 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( pRead ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+        bool pUseMask = false;
+        pVecReq.push_back ( ( 2 << 28 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
 
@@ -294,7 +296,6 @@ namespace Ph2_HwInterface {
         //pFeId    =  ( ( pWord & 0x0f000000 ) >> 24) ;
         pCbcId   =  ( ( pWord & 0x00f00000 ) >> 20) ;
         pFailed  =  0 ;
-        //pRead is 1 for read transaction, 0 for a write transaction
         pRegItem.fPage    =  ( (pWord & 0x00020000  ) >> 17) ;
         pRead    =  ( pWord & 0x00010000 ) >> 16;
         pRegItem.fAddress =  ( pWord & 0x0000FF00 ) >> 8;
@@ -308,7 +309,7 @@ namespace Ph2_HwInterface {
         bool cFailed (false);
 
         //read the number of received replies from ndata and use this number to compare with the number of expected replies and to read this number 32-bit words from the reply FIFO
-        uint32_t cNReplies = ReadReg ("ipb_daq_system_stat.i2c_nreplies_present");
+        uint32_t cNReplies = ReadReg ("fc7_daq_stat.command_processor_block.i2c.nreplies");
 
 
         if (cNReplies != pNReplies)
@@ -319,7 +320,7 @@ namespace Ph2_HwInterface {
 
         try
         {
-            pReplies = ReadBlockRegValue ( "ipb_daq_system_ctrl.i2c_reply_fifo", cNReplies );
+            pReplies = ReadBlockRegValue ( "fc7_daq_ctrl.command_processor_block.i2c.reply_fifo", cNReplies );
         }
         catch ( Exception& except )
         {
@@ -334,11 +335,11 @@ namespace Ph2_HwInterface {
     {
         bool cFailed ( false );
         //reset the I2C controller
-        WriteReg ("ipb_daq_system_ctrl.i2c_master.reset_fifos", 0x1);
+        WriteReg ("fc7_daq_ctrl.command_processor_block.i2c.control.reset_fifos", 0x1);
 
         try
         {
-            WriteBlockReg ( "ipb_daq_system_ctrl.i2c_command_fifo", pVecSend );
+            WriteBlockReg ( "fc7_daq_ctrl.command_processor_block.i2c.command_fifo", pVecSend );
         }
         catch ( Exception& except )
         {
@@ -384,21 +385,21 @@ namespace Ph2_HwInterface {
             //split the reply vector in even and odd replies
             //even is the write reply, odd is the read reply
             //since I am already reading back, might as well forget about the CMD acknowledge from the CBC and directly look at the read back value
-            std::vector<uint32_t> cOdd;
-            getOddElements (cReplies, cOdd);
+            //std::vector<uint32_t> cOdd;
+            //getOddElements (cReplies, cOdd);
 
             //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cOdd.begin(), Fc7DAQFWInterface::cmd_reply_comp);
+            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Fc7DAQFWInterface::cmd_reply_comp);
 
             // now clear the initial cmd Vec and set the read-back
             pVecReg.clear();
-            pVecReg = cOdd;
+            pVecReg = cReplies;
         }
         else
         {
             //since I do not read back, I can safely just check that the info bit of the reply is 0 and that it was an actual write reply
             //then i put the replies in pVecReg so I can decode later in CBCInterface
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Fc7DAQFWInterface::cmd_reply_ack);
+            //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Fc7DAQFWInterface::cmd_reply_ack);
             pVecReg.clear();
             pVecReg = cReplies;
         }
@@ -445,12 +446,12 @@ namespace Ph2_HwInterface {
             for (auto& cWord : cReplies)
             {
                 //it was a write transaction!
-                if ( ( (cWord >> 17) & 0x1) == 0)
+                if ( ( (cWord >> 16) & 0x1) == 0)
                 {
                     // infor bit is 0 which means that the transaction was acknowledged by the CBC
-                    if ( ( (cWord >> 20) & 0x1) == 0)
+                    //if ( ( (cWord >> 20) & 0x1) == 0)
                         cSuccess = true;
-                    else cSuccess == false;
+                    //else cSuccess == false;
                 }
                 else
                     cSuccess = false;
@@ -478,7 +479,7 @@ namespace Ph2_HwInterface {
 
     void Fc7DAQFWInterface::CbcFastReset()
     {
-        WriteReg ( "ipb_daq_system_ctrl.fast_command_block.fast_reset", 0x1 );
+        WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_reset", 0x1 );
     }
 
     void Fc7DAQFWInterface::CbcHardReset()
@@ -488,12 +489,12 @@ namespace Ph2_HwInterface {
 
     void Fc7DAQFWInterface::CbcTestPulse()
     {
-        WriteReg ( "ipb_daq_system_ctrl.fast_command_block.fast_test_pulse", 0x1 );
+        WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_test_pulse", 0x1 );
     }
 
     void Fc7DAQFWInterface::CbcTrigger()
     {
-        WriteReg ( "ipb_daq_system_ctrl.fast_command_block.fast_trigger", 0x1 );
+        WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_trigger", 0x1 );
     }
 
     void Fc7DAQFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
@@ -548,17 +549,20 @@ namespace Ph2_HwInterface {
         //}
 
         //if the Register is FrontEndControl at p0 addr0, page is not defined and therefore I ignore it!
-        if ( ( (cWord1 >> 16) & 0x1) == 0 && ( (cWord1 >> 8 ) & 0xFF) == 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
-        else return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
+        //if ( ( (cWord1 >> 16) & 0x1) == 0 && ( (cWord1 >> 8 ) & 0xFF) == 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
+        //else return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
+
+        return ( (cWord1 & 0x00F2FFFF) == (cWord2 & 0x00F2FFFF) );
+
     }
 
     bool Fc7DAQFWInterface::cmd_reply_ack (const uint32_t& cWord1, const
                                             uint32_t& cWord2)
     {
-        // if Info (>>20) is 0 and  it was a write transaction (>>17 == 0) and
+        // if it was a write transaction (>>17 == 0) and
         // the CBC id matches it is false
-        if ( ( (cWord2 >> 20) & 0x1) == 0 && ( (cWord2 >> 17) & 0x1 ) == 0 &&
-                (cWord1 & 0x0F000000) == (cWord2 & 0x0F000000) ) return true;
+        if (  ( (cWord2 >> 16) & 0x1 ) == 0 &&
+                (cWord1 & 0x00F00000) == (cWord2 & 0x00F00000) ) return true;
         else
             return false;
     }

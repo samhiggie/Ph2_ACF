@@ -1,71 +1,155 @@
 <?xml version="1.0" encoding="LATIN1"?>
 <node id="FPGA1" address="0x00000000" >
 	<!-- FC7 system register address table -->
-	<node id="sysreg" address="0x00000000" module="file://fc7_system_address_table.xml"/>
+        <node id="sysreg" address="0x00000000" module="file://fc7_system_address_table.xml"/>
 	<!-- GLIB user logic registers -->
 	<!-- firmware configurations -->
     <node id="user_stat" address ="0x40000000" permission="r" mode="block" size="0x0000000F">
     </node>
-	<node id="ipb_daq_system_cnfg" address="0x40000100" permission="rw" >
-		<node id="fast_command_block" description="internal fast signal is generated in the fast_signal_generator module and the settings are here.">
-				
-				<node id="triggers_to_accept"             address="0x23" description="# of periodic fast signal cycle from the start signal."/>
-				<node id="user_trigger_frequency"       address="0x24" description="User-defined frequency in kHz"/>
-				<node id="trigger_source"     address="0x28" mask="0x0000000F" description="1 - L1, 2 - Stubs, 3 - User-Defined Frequency"/>
-				<node id="stubs_mask"  address="0x29" description="if mode is stubs, then coincidence mask can be set here: 0x0000000f requires presence of stubs from hybrids 0,1,2,3"/>
-		</node>
-		<node id="i2c">
-			<node id="write_mask" address="0x40" mask="0x000000FF"/>
-		</node>
-	</node>
-	<node id="ipb_daq_system_ctrl" address="0x40000200" permission="rw" >
-		<node id="global"                   address="0x00">
-			<node id="reset"                             mask="0x00000001" description="reset all the modules."/>
-		</node>
-		<node id="fast_command_block" address="0x01">
-			<node id="reset"                             mask="0x00000001"/>
-			<node id="start_trigger"                     mask="0x00000002"/>
-			<node id="stop_trigger"                      mask="0x00000004"/>
-			<node id="load_config"                 	     mask="0x00000008"/>
-			<node id="fast_reset"		             mask="0x00010000"/>
-			<node id="fast_test_pulse"		     mask="0x00020000"/>
-			<node id="fast_trigger"		             mask="0x00040000"/>
-			<node id="fast_orbit_reset"		     mask="0x00080000"/>
-		</node>
-		<node id="i2c_master" address="0x30">
-			<node id="reset"                             mask="0x00000001"/>
-			<node id="reset_fifos"                       mask="0x00000004"/>
-		</node>
-		<node id="i2c_command_fifo" address="0x40" permission="w" mode="non-incremental" size="2048"/>
-		<node id="i2c_reply_fifo" address="0x50" permission="r" mode="non-incremental" size="1024"/>   
-	</node>
-	<node id="ipb_daq_system_stat" address="0x40000300" permission="r" >
-        	<node id="status" address="0x00">
-			<node id="error">
-				<node id="block_id" mask="0xf0000000"/>
-				<node id="code" mask="0x0ff00000"/>
-			</node>
-			<node id="fast_block">
-				<node id="configured" mask="0x00002000"/>
-				<node id="fsm_state" mask="0x00001000"/>
-				<node id="fsm_source" mask="0x00000f00"/>
-			</node>
-			<node id="i2c_fsm_state" mask="0x0000000f"/>			
-		</node>
-		<node id="i2c_command_fifo" address="0x50">
-			<node id="empty" mask="0x00000001"/>
-			<node id="full" mask="0x00000002"/>
-		</node>
-		<node id="i2c_reply_fifo" address="0x51">
-			<node id="empty" mask="0x00000001"/>
-			<node id="full" mask="0x00000002"/>
-		</node>
-		<node id="i2c_nreplies_present" address="0x52"/>
 
-		<node id="ipb_clk_rate" address="0x40"/>
-		<node id="40mhz_clk_rate" address="0x41"/>
-		<node id="user_clk_rate" address="0x42"/>
-	</node>
+    <node id="fc7_daq_cnfg" address="0x40010000" permission="rw" >
+
+        <node id="command_processor_block"      address="0x1000">
+            <node id="i2c_write_mask"                   address="0x001" mask="0x000000FF"/>
+        </node>
+
+        <node id="fast_command_block"           address="0x2000" description="internal fast signal is generated in the fast_signal_generator module and the settings are here.">
+            <node id="triggers_to_accept"               address="0x000" description="# of periodic fast signal cycle from the start signal."/>
+            <node id="user_trigger_frequency"           address="0x001" description="User-defined frequency in kHz"/>
+            <node id="trigger_source"                   address="0x002" mask="0x0000000F" description="1 - L1, 2 - Stubs, 3 - User-Defined Frequency"/>
+            <node id="stubs_mask"                       address="0x003" description="if mode is stubs, then coincidence mask can be set here: 0x0000000f requires presence of stubs from hybrids 0,1,2,3"/>
+            <node id="test_pulse" description="configuration of the test pulse delays.">
+                <node id="delay_after_fast_reset"       address="0x004" description="delay between fast reset and following test pulse command"/>
+                <node id="delay_after_test_pulse"       address="0x005" description="delay after test pulse command before l1a signal sent to readout the data"/>
+            </node>
+        </node>
+
+        <node id="physical_interface_block"     address="0x3000">
+        </node>
+
+        <node id="hybrid_block"                 address="0x4000">
+        </node>
+
+        <node id="be_data_block"                address="0x5000">
+        </node>
+
+        <node id="dio5_block"                   address="0x6000">
+        </node>
+
+    </node>
+
+    <node id="fc7_daq_ctrl" address="0x40020000" permission="rw" >
+
+        <node id="command_processor_block"      address="0x1000">
+            <node id="global"                           address="0x000">
+                    <node id="reset"                        mask="0x00000001" description="reset all the modules."/>
+            </node>
+            <node id="i2c">
+                    <node id="control"                  address="0x001">
+                        <node id="reset"                    mask="0x00000001" description="reset i2c"/>
+                        <node id="reset_fifos"              mask="0x00000004" description="reset fifos"/>
+                    </node>
+                    <node id="command_fifo"             address="0x002" permission="w" mode="non-incremental" description="command fifo(write i2c commands here)"/>
+                    <node id="reply_fifo"               address="0x003" permission="r" mode="non-incremental" description="reply fifo(read i2c replies here)"/>
+            </node>
+        </node>
+
+        <node id="fast_command_block"           address="0x2000">
+            <node id="control"                          address="0x000">
+                <node id="reset"                            mask="0x00000001"/>
+                <node id="start_trigger"                    mask="0x00000002"/>
+                <node id="stop_trigger"                     mask="0x00000004"/>
+                <node id="load_config"                 	    mask="0x00000008"/>
+                <node id="fast_reset"		            mask="0x00010000"/>
+                <node id="fast_test_pulse"		    mask="0x00020000"/>
+                <node id="fast_trigger"		            mask="0x00040000"/>
+                <node id="fast_orbit_reset"		    mask="0x00080000"/>
+                <node id="fast_i2c_refresh"                 mask="0x00100000"/>
+            </node>
+        </node>
+
+        <node id="physical_interface_block"     address="0x3000">
+        </node>
+
+        <node id="hybrid_block"                 address="0x4000">
+        </node>
+
+        <node id="be_data_block"                address="0x5000">
+        </node>
+
+        <node id="dio5_block"                   address="0x6000">
+        </node>
+
+    </node>
+
+    <node id="fc7_daq_stat" address="0x40030000" permission="r" >
+
+        <node id="general"                     address="0x0000">
+            <node id="error"                            address="0x001">
+                <node id="block_id"                         mask="0x0000000f"/>
+                <node id="code"                             mask="0x00000ff0"/>
+            </node>
+        </node>
+
+        <node id="command_processor_block"      address="0x1000">
+            <node id="i2c">
+                <node id="master_status_fsm"            address="0x001" mask="0x0000000f"/>
+                <node id="command_fifo"                 address="0x002">
+                        <node id="empty"                    mask="0x00000001"/>
+                        <node id="full"                     mask="0x00000002"/>
+                </node>
+                <node id="reply_fifo"                   address="0x003">
+                        <node id="empty"                    mask="0x00000001"/>
+                        <node id="full"                     mask="0x00000002"/>
+                </node>
+                <node id="nreplies"                     address="0x004" description="nreplies present in reply fifo"/>
+            </node>
+        </node>
+
+        <node id="fast_command_block"           address="0x2000">
+            <node id="general"                          address="0x000">
+                <node id="source"                           mask="0x0000000f"/>
+                <node id="fsm_state"                        mask="0x00000010"/>
+                <node id="configured"                       mask="0x00000020"/>
+            </node>
+        </node>
+
+        <node id="physical_interface_block"     address="0x3000">
+        </node>
+
+        <node id="hybrid_block"                 address="0x4000">
+        </node>
+
+        <node id="be_data_block"                address="0x5000">
+        </node>
+
+        <node id="dio5_block"                   address="0x6000">
+        </node>
+
+        <node id="test_data"                    address="0xe000" description="temporary block for data readout of hyb0 chip0">
+            <node id="general"                          address="0x000">
+                <node id="latency_error"                    mask="0x80000000"/>
+                <node id="overflow"                         mask="0x40000000"/>
+                <node id="pipe_address"                     mask="0x000001ff"/>
+                <node id="latency"                          mask="0x0003fe00"/>
+                <node id="trigger_counter"                  mask="0x07fc0000"/>
+            </node>
+            <node id="channels_data_1"                  address="0x001"/>
+            <node id="channels_data_2"                  address="0x002"/>
+            <node id="channels_data_3"                  address="0x003"/>
+            <node id="channels_data_4"                  address="0x004"/>
+            <node id="channels_data_5"                  address="0x005"/>
+            <node id="channels_data_6"                  address="0x006"/>
+            <node id="channels_data_7"                  address="0x007"/>
+            <node id="channels_data_8"                  address="0x008"/>
+        </node>
+
+        <node id="test_clock"                   address="0xf000">
+            <node id="ipb_clk_rate"                     address="0x000"/>
+            <node id="40mhz_clk_rate"                   address="0x001"/>
+            <node id="trigger_rate"                     address="0x002"/>
+        </node>
+    </node>
 
     <!--Present in Glib or FC7 address table for fpgaconfig-->
 	<node id="flash_async_read_cmd"	address="0x0800bddf"  mask="0xFFFFFFFF" description="FLASH memory asynchronous read mode"/>

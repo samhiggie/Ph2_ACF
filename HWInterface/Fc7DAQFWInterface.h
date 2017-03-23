@@ -47,7 +47,7 @@ namespace Ph2_HwInterface {
         uint32_t fNCbc;
         uint32_t fFMCId;
 
-        const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
+        const uint32_t SINGLE_I2C_WAIT = 1500; //usec for 0.1MHz I2C
 
       public:
         /*!
@@ -205,9 +205,9 @@ namespace Ph2_HwInterface {
         * \param pCbcId : Id of the Cbc to work with
         * \param pVecReq : Vector to stack the encoded words
         */
-        void EncodeReg ( const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pWrite ) override; /*!< Encode a/several word(s) readable for a Cbc*/
-        void EncodeReg (const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pRead, bool pUseMask ) override; /*!< Encode a/several word(s) readable for a Cbc*/
-        void BCEncodeReg (const CbcRegItem& pRegItem, uint8_t pNCbc, std::vector<uint32_t>& pVecReq, bool pRead, bool pUseMask ) override;
+        void EncodeReg (const CbcRegItem& pRegItem, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pReadBack, bool pWrite ) override; /*!< Encode a/several word(s) readable for a Cbc*/
+        void EncodeReg (const CbcRegItem& pRegItem, uint8_t pFeId, uint8_t pCbcId, std::vector<uint32_t>& pVecReq, bool pReadBack, bool pWrite ) override; /*!< Encode a/several word(s) readable for a Cbc*/
+        void BCEncodeReg (const CbcRegItem& pRegItem, uint8_t pNCbc, std::vector<uint32_t>& pVecReq, bool pReadBack, bool pWrite ) override;
         void DecodeReg ( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed ) override;
 
 
