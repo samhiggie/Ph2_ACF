@@ -291,7 +291,8 @@ namespace Ph2_HwInterface {
     {
         //use fBroadcastCBCId for broadcast commands
         bool pUseMask = false;
-        pVecReq.push_back ( ( 0 << 28 ) | ( 0 << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue);
+        uint8_t pFeId = 0;
+        pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue);
     }
 
     void Fc7DAQFWInterface::EncodeReg (const CbcRegItem& pRegItem,
