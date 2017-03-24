@@ -82,6 +82,28 @@ namespace Ph2_HwInterface {
 
     uint32_t Fc7DAQFWInterface::getBoardInfo()
     {
+        // firmware info
+        LOG (INFO) << GREEN << "============================" << RESET;
+        LOG (INFO) << BOLDGREEN << "General Firmware Info" << RESET;
+
+        int implementation = ReadReg("fc7_daq_stat.general.info.implementation");
+        int cbc_version = ReadReg("fc7_daq_stat.general.info.cbc_version");
+        int num_hybrids = ReadReg("fc7_daq_stat.general.info.num_hybrids");
+        int num_chips = ReadReg("fc7_daq_stat.general.info.num_chips");
+
+        if (implementation == 0)
+            LOG (INFO) << "Implementation: " << BOLDGREEN << "Optical" << RESET;
+        else if (implementation == 1)
+            LOG (INFO) << "Implementation: " << BOLDGREEN << "Electrical" << RESET;
+        else if (implementation == 2)
+            LOG (INFO) << "Implementation: " << BOLDGREEN << "CBC3 Emulation" << RESET;
+        else
+            LOG (WARNING) << "Implementation: " << BOLDRED << "Unknown" << RESET;
+
+        LOG (INFO) << "CBC Version: " << BOLDGREEN << cbc_version << RESET;
+        LOG (INFO) << "Number of Hybrids: " << BOLDGREEN << num_hybrids << RESET;
+        LOG (INFO) << "Number of Chips per Hybrid: " << BOLDGREEN << num_chips << RESET;
+
         // temporary used for board status printing
         LOG (INFO) << YELLOW << "============================" << RESET;
         LOG (INFO) << BOLDYELLOW << "Current Status" << RESET;
@@ -141,6 +163,11 @@ namespace Ph2_HwInterface {
 
         usleep(500);
 
+        // read info about current firmware
+        int cbc_version = ReadReg("fc7_daq_stat.general.info.cbc_version");
+        int num_hybrids = ReadReg("fc7_daq_stat.general.info.num_hybrids");
+        int num_chips = ReadReg("fc7_daq_stat.general.info.num_chips");
+
         fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
@@ -155,6 +182,8 @@ namespace Ph2_HwInterface {
             }
         }
 
+        if(num_hybrids*num_chips != fNCbc) LOG (ERROR) << "Number of chips in the configuration file doesn't correspond to the number of chips in the firmware. Firmware: " << num_hybrids << " hybrids, " << num_chips << " chips. Configuration file: " << fNCbc << " chips in total.";
+
         //last, loop over the variable registers from the HWDescription.xml file
         //this is where I should get all the clocking and FastCommandInterface settings
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
@@ -167,10 +196,11 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
+        // load trigger configuration
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
 
 
-        // ping cbcs
+        // ping cbcs (reads data from registers #0)
         uint32_t cInit = ( ( (2) << 28 ) | (  (0) << 18 )  | ( (0) << 17 ) | ( (1) << 16 ) | (0 << 8 ) | 0);
 
         WriteReg("fc7_daq_ctrl.command_processor_block.i2c.command_fifo", cInit);
@@ -182,7 +212,7 @@ namespace Ph2_HwInterface {
         if (cReadSuccess) {
             for (int i=0; i < pReplies.size(); i++) {
                 cWord = pReplies.at(i);
-                cWordCorrect = ( (((cWord) & 0x00f00000) >> 20) == i%fNCbc ) ? true : false;
+                cWordCorrect = ( (((cWord) & 0x00f00000) >> 20) == i%num_chips ) ? true : false;
                 if (!cWordCorrect) break;
             }
         }
