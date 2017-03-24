@@ -1,12 +1,13 @@
 
 /*!
 
-        \file                           ICICFc7FWInterface.h
-        \brief                          ICICFc7FWInterface init/config of the Glib and its Cbc's
-        \author                         G. Auzinger, K. Uchida
+        \file                           Fc7DAQFWInterface.h
+        \brief                          Fc7DAQFWInterface init/config of the FC7 and its Cbc's
+        \author                         G. Auzinger, K. Uchida, M. Haranko
         \version            1.0
-        \date                           25.02.2016
+        \date                           24.03.2017
         Support :                       mail to : georg.auzinger@SPAMNOT.cern.ch
+                                                  mykyta.haranko@SPAMNOT.cern.ch
 
  */
 
