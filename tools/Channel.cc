@@ -177,6 +177,7 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
 
         // Fit
         fScurve->Fit ( fFit, "RNQ+" );
+        //fScurve->Fit ( fFit, "RQ+" );
 
         // Eventually add TFitResultPointer
         // create a Directory in the file for the current Offset and save the channel Data
