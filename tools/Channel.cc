@@ -78,16 +78,10 @@ void Channel::initializeHist ( uint16_t pValue, TString pParameter )
 {
 
     TString histname;
-    TString fitname;
-    TString graphname;
 
     pParameter += Form ( "%d", pValue );
     histname = Form ( "Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId );
     histname += pParameter;
-    fitname = Form ( "Fit_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId );
-    fitname += pParameter;
-    graphname = Form ( "fDerivative_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId );
-    graphname += pParameter;
 
 
     fScurve = dynamic_cast<TH1F*> ( gROOT->FindObject ( histname ) );
@@ -98,23 +92,10 @@ void Channel::initializeHist ( uint16_t pValue, TString pParameter )
     fScurve->GetXaxis()->SetTitle ( pParameter );
     fScurve->GetYaxis()->SetTitle ( "Occupancy" );
 
-    fDerivative = dynamic_cast<TH1F*> ( gROOT->FindObject ( graphname ) );
-
-    if ( fDerivative ) delete fDerivative;
-
-    fDerivative = new TH1F ( graphname, Form ( "Derivative_Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 1024, 0, 1024 );
-    fDerivative->GetXaxis()->SetTitle ( pParameter );
-    fDerivative->GetYaxis()->SetTitle ( "Slope" );
 
     fScurve->SetMarkerStyle ( 7 );
     fScurve->SetMarkerSize ( 2 );
 
-    fFit = dynamic_cast< TF1* > ( gROOT->FindObject ( fitname ) );
-
-    if ( fFit ) delete fFit;
-
-    // TF1 *f1=gROOT->GetFunction("myfunc");
-    fFit = new TF1 ( fitname, MyErf, 0, 1023, 2 );
 }
 
 
@@ -126,8 +107,15 @@ void Channel::fillHist ( uint16_t pVcth )
 void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TString pParameter, TFile* pResultfile )
 {
     fFitted = true;
+    TString fitname;
 
-    if ( fScurve != nullptr && fFit != nullptr )
+    fitname = Form ( "Fit_Be%d_Fe%d_Cbc%d_Channel%d%s%d", fBeId, fFeId, fCbcId, fChannelId, pParameter.Data(), pValue );
+
+    fFit = dynamic_cast< TF1* > ( gROOT->FindObject ( fitname ) );
+
+    if ( fFit ) delete fFit;
+
+    if ( fScurve != nullptr && fFit == nullptr )
     {
 
         // Normalize first
@@ -179,8 +167,13 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
         double cMid = ( cFirst1 + cFirstNon0 ) * 0.5;
         double cWidth = ( cFirst1 - cFirstNon0 ) * 0.5;
 
+        if (!pHole)
+            fFit = new TF1 ( fitname, MyErf, cFirstNon0 - 10, cFirst1 + 10, 2 );
+        else
+            fFit = new TF1 ( fitname, MyErf, cFirst1 - 10, cFirstNon0 + 10, 2 );
+
         fFit->SetParameter ( 0, cMid );
-        fFit->SetParameter ( 1, cWidth );
+        fFit->SetParameter ( 1, sqrt (2) *cWidth );
 
         // Fit
         fScurve->Fit ( fFit, "RNQ+" );
@@ -213,6 +206,17 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
 {
     //TODO
     fFitted = false;
+    TString graphname;
+
+    graphname = Form ( "fDerivative_Be%d_Fe%d_Cbc%d_Channel%d%s%d", fBeId, fFeId, fCbcId, fChannelId, pParameter.Data(), pValue );
+
+    fDerivative = dynamic_cast<TH1F*> ( gROOT->FindObject ( graphname ) );
+
+    if ( fDerivative ) delete fDerivative;
+
+    fDerivative = new TH1F ( graphname, Form ( "Derivative_Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 1024, 0, 1024 );
+    fDerivative->GetXaxis()->SetTitle ( pParameter );
+    fDerivative->GetYaxis()->SetTitle ( "Slope" );
 
     if ( fScurve != nullptr && fFit != nullptr )
     {
