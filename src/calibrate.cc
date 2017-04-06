@@ -126,6 +126,7 @@ int main ( int argc, char* argv[] )
         cPedeNoise.measureNoise();
         //cPedeNoise.sweepSCurves (225);
         //cPedeNoise.sweepSCurves (205);
+        //cPedeNoise.sweepSCurves (185);
         cPedeNoise.Validate();
         cPedeNoise.writeObjects( );
         cPedeNoise.dumpConfigFiles();

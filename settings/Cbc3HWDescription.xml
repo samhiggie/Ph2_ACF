@@ -13,16 +13,19 @@
         <!--</Global>-->
         <!--<Global_CBC_Register name="TriggerLatency1"> 0x09 </Global_CBC_Register>-->
         <CBC_Files path="./settings/" />
-        <!--<CBC Id="0" configfile="CBC3_default.txt" />-->
-        <!--experimental-->
         <CBC Id="0" configfile="CBC3_default.txt" >
             <Settings threshold="570" latency="199"/>
-            <TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="0"/>
+            <TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>
             <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
             <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" testclock="1" dll="4"/>
             <ChannelMask disable=""/>
-            <!--<Register name="Pipe&StubInpSel&Ptwidth"> 0x03 </Register>-->
-            <Register name="FeCtrl&TrgLat2"> 0x40 </Register>
+            <Register name="Pipe&StubInpSel&Ptwidth"> 0x63 </Register>
+            <!--<Register name="FeCtrl&TrgLat2"> 0x40 </Register>-->
+            <!--<Register name="Ipre2"> 0x5A </Register>-->
+            <!--<Register name="Ipsf"> 0x6E </Register>-->
+            <!--<Register name="Ipa"> 0x8C </Register>-->
+            <!--<Register name="Ipaos"> 0x2D </Register>-->
+            <!--<Register name="BetaMult&SLVS"> 0x87 </Register>-->
         </CBC>
     </Module>
 
