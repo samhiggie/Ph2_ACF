@@ -110,15 +110,15 @@ void PedeNoise::Initialise()
     // now read the settings from the map
     auto cSetting = fSettingsMap.find ( "Nevents" );
     fEventsPerPoint = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 10;
-    //cSetting = fSettingsMap.find ( "FitSCurves" );
-    //fFitted = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0;
+    cSetting = fSettingsMap.find ( "FitSCurves" );
+    fFitted = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0;
     //cSetting = fSettingsMap.find ( "TestPulseAmplitude" );
     //fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0;
 
 
     LOG (INFO) << "Created Object Maps and parsed settings:" ;
     LOG (INFO) << "	Nevents = " << fEventsPerPoint ;
-    //LOG (INFO) << "   FitSCurves = " << int ( fFitted ) ;
+    LOG (INFO) << "   FitSCurves = " << int ( fFitted ) ;
 
     if (fType == ChipType::CBC3)
         LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC3" << RESET;
@@ -392,8 +392,12 @@ uint16_t PedeNoise::findPedestal (int pTGrpId)
 
     uint16_t cMean = 0;
 
-    for (auto cCbc : fThresholdMap)
+    for (auto& cCbc : fThresholdMap)
+    {
         cMean += cCbc.second;
+        //re-set start value to 0 for next iteration
+        cCbc.second = 0x000;
+    }
 
     cMean /= fThresholdMap.size();
 
@@ -562,85 +566,125 @@ void PedeNoise::processSCurves (std::string pHistName)
 {
     for (auto& cCbc : fHitCountMap)
     {
-        //first get the SCurveHisto and create a differential histo
-        TH2F* cHist = dynamic_cast<TH2F*> ( getHist ( cCbc.first, pHistName) );
-        TString cHistname = Form ( "Fe%dCBC%d_Differential_TP%d", cCbc.first->getFeId(), cCbc.first->getCbcId(), fTestPulseAmplitude );
-        TH2F* cDerivative = new TH2F ( cHistname, cHistname, NCHANNELS, -0.5, 253.5, 1024, 0, 1024 );
-        bookHistogram ( cCbc.first, pHistName + "_Diff", cDerivative );
+        if (!fFitted)
+            this->differentiateHist (cCbc.first, pHistName);
+        else
+            this->fitHist (cCbc.first, pHistName);
 
-        //now, slice by slice, differentiate the SCurve Histo
-        // fScurve->Sumw2();
-        cHist->Scale ( 1 / double_t (fEventsPerPoint) );
+    }
 
-        for (uint16_t cChan = 0; cChan < NCHANNELS; cChan++)
+    //end of CBC loop
+}
+
+void PedeNoise::differentiateHist (Cbc* pCbc, std::string pHistName)
+{
+    //first get the SCurveHisto and create a differential histo
+    TH2F* cHist = dynamic_cast<TH2F*> ( getHist ( pCbc, pHistName) );
+    TString cHistname = Form ( "Fe%dCBC%d_Differential_TP%d", pCbc->getFeId(), pCbc->getCbcId(), fTestPulseAmplitude );
+    TH2F* cDerivative = new TH2F ( cHistname, cHistname, NCHANNELS, -0.5, 253.5, 1024, 0, 1024 );
+    bookHistogram ( pCbc, pHistName + "_Diff", cDerivative );
+
+    //now, slice by slice, differentiate the SCurve Histo
+    cHist->Sumw2();
+    cHist->Scale ( 1 / double_t (fEventsPerPoint) );
+
+    for (uint16_t cChan = 0; cChan < NCHANNELS; cChan++)
+    {
+        //if(!fFitted)
+        //get a projection
+        TH1D* cProjection = cHist->ProjectionY ("_py", cChan + 1, cChan + 1);
+
+        double_t cDiff;
+        double_t cCurrent;
+        double_t cPrev;
+        bool cActive; // indicates existence of data points
+        int cStep = 1;
+        int cDiffCounter = 0;
+
+        double cBin = 0;
+
+        if ( fHoleMode )
         {
-            //if(!fFitted)
-            //get a projection
-            TH1D* cProjection = cHist->ProjectionY ("_py", cChan + 1, cChan + 1);
-            double_t cDiff;
-            double_t cCurrent;
-            double_t cPrev;
-            bool cActive; // indicates existence of data points
-            int cStep = 1;
-            int cDiffCounter = 0;
+            cPrev = cProjection->GetBinContent ( cProjection->FindBin ( 0 ) );
+            cActive = false;
 
-            double cBin = 0;
-
-            if ( fHoleMode )
+            for ( cBin = cProjection->FindBin (0); cBin <= cProjection->FindBin (1023); cBin++ )
             {
-                cPrev = cProjection->GetBinContent ( cProjection->FindBin ( 0 ) );
-                cActive = false;
+                //veify that this happens exactly 1023
+                cCurrent = cProjection->GetBinContent (cBin);
+                cDiff = cPrev - cCurrent;
 
-                for ( cBin = cProjection->FindBin (0); cBin <= cProjection->FindBin (1023); cBin++ )
-                {
-                    //veify that this happens exactly 1023
-                    cCurrent = cProjection->GetBinContent (cBin);
-                    cDiff = cPrev - cCurrent;
+                if ( cPrev > 0.75 ) cActive = true; // sampling begins
 
-                    if ( cPrev > 0.75 ) cActive = true; // sampling begins
+                int iBinDerivative = cDerivative->FindBin (cChan, (cProjection->GetBinCenter (cBin + 1) + cProjection->GetBinCenter (cBin) ) / 2.0);
 
-                    int iBinDerivative = cDerivative->FindBin (cChan, (cProjection->GetBinCenter (cBin + 1) + cProjection->GetBinCenter (cBin) ) / 2.0);
+                if ( cActive ) cDerivative->SetBinContent ( iBinDerivative, cDiff  );
 
-                    if ( cActive ) cDerivative->SetBinContent ( iBinDerivative, cDiff  );
+                if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 
-                    if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
+                if ( cDiffCounter == 8 ) break;
 
-                    if ( cDiffCounter == 8 ) break;
-
-                    cPrev = cCurrent;
-                }
+                cPrev = cCurrent;
             }
-            else
+        }
+        else
+        {
+            cPrev = cProjection->GetBinContent ( cProjection->FindBin ( 1023 ) );
+            cActive = false;
+
+            for ( cBin = cProjection->FindBin (1023); cBin >= cProjection->FindBin ( 0); cBin-- )
             {
-                cPrev = cProjection->GetBinContent ( cProjection->FindBin ( 1023 ) );
-                cActive = false;
+                cCurrent = cProjection->GetBinContent (cBin);
+                cDiff = cPrev - cCurrent;
 
-                for ( cBin = cProjection->FindBin (1023); cBin >= cProjection->FindBin ( 0); cBin-- )
-                {
-                    cCurrent = cProjection->GetBinContent (cBin);
-                    cDiff = cPrev - cCurrent;
+                if ( cPrev > 0.75 ) cActive = true; // sampling begins
 
-                    if ( cPrev > 0.75 ) cActive = true; // sampling begins
+                int iBinDerivative = cDerivative->FindBin ( cChan, (cProjection->GetBinCenter (cBin - 1 ) + cProjection->GetBinCenter (cBin ) ) / 2.0);
 
-                    int iBinDerivative = cDerivative->FindBin ( cChan, (cProjection->GetBinCenter (cBin - 1 ) + cProjection->GetBinCenter (cBin ) ) / 2.0);
+                if ( cActive ) cDerivative->SetBinContent ( iBinDerivative, cDiff  );
 
-                    if ( cActive ) cDerivative->SetBinContent ( iBinDerivative, cDiff  );
+                if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 
-                    if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
+                if ( cDiffCounter == 8 ) break;
 
-                    if ( cDiffCounter == 8 ) break;
-
-                    cPrev = cCurrent;
-                }
+                cPrev = cCurrent;
             }
-
-            //else if (fFitted)
         }
 
         //end of channel loop
     }
 
     //end of CBC loop
+}
+
+void PedeNoise::fitHist (Cbc* pCbc, std::string pHistName)
+{
+    //first get the SCurveHisto and create a differential histo
+    TH2F* cHist = dynamic_cast<TH2F*> ( getHist ( pCbc, pHistName) );
+    //since this is a bit of a special situation I need to create a directory for the SCurves and their fits inside the FExCBCx direcotry and make sure they are saved here
+    cHist->Sumw2();
+    cHist->Scale ( 1 / double_t (fEventsPerPoint) );
+
+    for (uint16_t cChan = 0; cChan < NCHANNELS; cChan++)
+    {
+        //if(!fFitted)
+        //get a projection
+        TH1D* cProjection = cHist->ProjectionY ("_py", cChan + 1, cChan + 1);
+        //here analyze the projection, fit it with the appropriate function and store the fit (or the histogram with the fit?) in a dedicated subfolder?
+    }
+
+    //or fit the slices
+    //TF1* myerf = ...
+    //myErf->SetRange();
+    //cHist->FitSlicesY (myerf, 1, NCHANNELS + 1, 0, "QNR+");
+    //TH1F* cMidpoint = static_cast<TH1F*> (gDirectory->Get ("cHist_0") );
+    //or
+    //std::string cHistname = cHist->GetName();
+    //std::string cMidpointName = cHistName + "_0";
+    //std::string cWidthName = cHistName + "_1";
+    //TH1F* cMidpoint = static_cast<TH1F*> (gDirectory->Get (cMidpointName.c_str() ) );
+    //TH1F* cWidth = static_cast<TH1F*> (gDirectory->Get (cWidthName.c_str() ) );
+    //this fills a histogram for each parameter that I should book
 }
 
 void PedeNoise::extractPedeNoise (std::string pHistName)
