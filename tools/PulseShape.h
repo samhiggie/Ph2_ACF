@@ -101,33 +101,6 @@ class PulseShape : public Tool
     */
     void fitGraph ( int pLow );
 
-    /*!
-    * \brief reverse the byte
-    * \param n:the number to be reversed
-    * \return the reversed number
-    */
-    uint8_t reverse ( uint8_t n )
-    {
-        // Reverse the top and bottom nibble then swap them.
-        return ( fLookup[n & 0xF] << 4 ) | fLookup[n >> 4];
-    }
-
-    /*!
-    * \brief reverse the endianess before writing in to the register
-    * \param pDelay: the actual delay
-    * \param pGroup: the actual group number
-    * \return the reversed endianness
-    */
-    uint8_t to_reg ( uint8_t pDelay, uint8_t pGroup )
-    {
-
-        uint8_t cValue = ( ( reverse ( pDelay ) ) & 0xF8 ) |
-                         ( ( reverse ( pGroup ) ) >> 5 );
-
-        //std::cout << std::bitset<8>( cValue ) << " cGroup " << +pGroup << " " << std::bitset<8>( pGroup ) << " pDelay " << +pDelay << " " << std::bitset<8>( pDelay ) << std::endl;
-        return cValue;
-    }
-
     ChannelMap fChannelMap;/*!< Map Cbc vs chennels number */
     bool fFitHist;
     uint32_t fNevents; /*!< Number of events */
@@ -141,13 +114,7 @@ class PulseShape : public Tool
     uint8_t fOffset; /*!< Offset value for the channel */
     uint32_t fStepSize; /*!< Step size */
     std::vector<uint32_t> fChannelVector;  /*!< Channels in the test group */
-    ChipType fType;
 
-    unsigned char fLookup[16] =
-    {
-        0x0, 0x8, 0x4, 0xc, 0x2, 0xa, 0x6, 0xe,
-        0x1, 0x9, 0x5, 0xd, 0x3, 0xb, 0x7, 0xf,
-    }; /*!< Lookup table for reverce the endianness */
 
     const std::string getDelAfterTPString (BoardType pBoardType)
     {

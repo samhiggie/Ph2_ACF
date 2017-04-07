@@ -116,18 +116,6 @@ void StubSweep::configureTestPulse (Cbc* pCbc, uint8_t pPulseState)
 
 void StubSweep::SweepStubs (uint32_t pNEvents )
 {
-    //just to ensure we see something with the test pulse and the noise measurement has not screwed up the Vcth setting
-    ThresholdVisitor cVisitor (fCbcInterface);
-    this->accept (cVisitor);
-    LOG (DEBUG) << "Got VCth of " << cVisitor.getThreshold();
-
-    //if (cVisitor.getThreshold() != 570)
-    //{
-    //cVisitor.setThreshold (570);
-    //cVisitor.setOption ('w');
-    //this->accept (cVisitor);
-    //}
-
     std::stringstream outp;
 
     for (auto cBoard : fBoardVector)

@@ -124,9 +124,10 @@ int main ( int argc, char* argv[] )
         //cPedeNoise.ConfigureHw ();
         cPedeNoise.Initialise(); // canvases etc. for fast calibration
         cPedeNoise.measureNoise();
-        //cPedeNoise.sweepSCurves (225);
-        //cPedeNoise.sweepSCurves (205);
-        //cPedeNoise.sweepSCurves (185);
+
+        cPedeNoise.sweepSCurves (225);
+        cPedeNoise.sweepSCurves (205);
+s
         cPedeNoise.Validate();
         cPedeNoise.writeObjects( );
         cPedeNoise.dumpConfigFiles();

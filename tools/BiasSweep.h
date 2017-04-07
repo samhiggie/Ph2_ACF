@@ -103,7 +103,6 @@ class BiasSweep : public Tool
 
     TCanvas* fSweepCanvas;
 
-    ChipType fType;
     std::map<std::string, AmuxSetting> fAmuxSettings;
     //for the TTree
     BiasSweepData* fData;
