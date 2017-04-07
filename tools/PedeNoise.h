@@ -21,6 +21,7 @@
 
 #include "TCanvas.h"
 #include <TH2.h>
+#include <TF1.h>
 #include "TProfile.h"
 #include "TString.h"
 #include "TGraphErrors.h"
@@ -65,6 +66,8 @@ class PedeNoise : public Tool
     TCanvas* fNoiseCanvas;
     TCanvas* fPedestalCanvas;
     TCanvas* fFeSummaryCanvas;
+    //histogram to divide the Scurves by to get proper binomial errors
+    TH2F*    fNormHist;
 
     TestGroupChannelMap fTestGroupChannelMap;
     //have a map of thresholds and hit counts

@@ -118,12 +118,21 @@ void PedeNoise::Initialise()
 
     LOG (INFO) << "Created Object Maps and parsed settings:" ;
     LOG (INFO) << "	Nevents = " << fEventsPerPoint ;
-    LOG (INFO) << "   FitSCurves = " << int ( fFitted ) ;
+    LOG (INFO) << " FitSCurves = " << int ( fFitted ) ;
 
     if (fType == ChipType::CBC3)
         LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC3" << RESET;
     else
         LOG (INFO) << BOLDBLUE << "Chip Type determined to be " << BOLDRED << "CBC2" << RESET;
+
+    fNormHist = new TH2F ("normalizationHistogram", "normalizationHistogram", NCHANNELS, -0.5, 253.5, 1024, -0.5, 1023.5);
+    //fNormHist->Sumw2();
+
+    for (int cBinX = 1; cBinX <= fNormHist->GetNbinsX(); cBinX++)
+    {
+        for (int cBinY = 1; cBinY <= fNormHist->GetNbinsY(); cBinY++)
+            fNormHist->SetBinContent (cBinX, cBinY, fEventsPerPoint);
+    }
 
     //determine the occupancy at Threshold = 0 to see if it is hole mode or not
     ThresholdVisitor cThresholdVisitor (fCbcInterface, cStartValue);
@@ -170,6 +179,7 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
     {
         TString cHistname = Form ( "Fe%dCBC%d_Scurves_TP%d", cCbc.first->getFeId(), cCbc.first->getCbcId(), fTestPulseAmplitude );
         TH2F* cHist = new TH2F ( cHistname, cHistname, NCHANNELS, -0.5, 253.5, 1024, -0.5, 1023.5 );
+        cHist->Sumw2();
         bookHistogram ( cCbc.first, cHistogramname, cHist );
 
         fNoiseCanvas->cd ( cCbc.first->getCbcId() + 1 );
@@ -188,7 +198,7 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
             // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
             if (fTestPulse)
             {
-                LOG (INFO) << RED <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
+                LOG (INFO) << GREEN <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
                 setFWTestPulse();
                 setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true, fHoleMode );
             }
@@ -205,7 +215,9 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
                 TH2F* cSCurveHist = dynamic_cast<TH2F*> (this->getHist (cCbc.first, cHistogramname) );
                 fNoiseCanvas->cd (cCbc.first->getCbcId() + 1);
                 double cMean = cSCurveHist->GetMean (2);
-                cSCurveHist->GetYaxis()->SetRangeUser (cMean - 30, cMean + 30);
+                TH1D* cTmp = cSCurveHist->ProjectionY();
+                cSCurveHist->GetYaxis()->SetRangeUser ( cTmp->GetBinCenter (cTmp->FindFirstBinAbove (0) ) - 10, cTmp->GetBinCenter (cTmp->FindLastBinAbove (0.99) ) + 10 );
+                //cSCurveHist->GetYaxis()->SetRangeUser (cMean - 30, cMean + 30);
                 cSCurveHist->Draw ("colz2");
             }
 
@@ -371,7 +383,7 @@ uint16_t PedeNoise::findPedestal (int pTGrpId)
 
                 float cOccupancy = fHitCountMap[cCbc.first] / float (fEventsPerPoint * cTestGrpChannelVec.size() );
 
-                //LOG (DEBUG) << "IBIT " << +iBit << " DEBUG Setting VTh for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<10> ( cCbc.second ) << ") and occupancy " << cOccupancy ;
+                LOG (DEBUG) << "IBIT " << +iBit << " DEBUG Setting VTh for CBC " << +cCbc.first->getCbcId() << " to " << +cCbc.second << " (= 0b" << std::bitset<10> ( cCbc.second ) << ") and occupancy " << cOccupancy ;
 
                 if (fabs (cOccupancy - 0.5) < 0.06 )
                 {
@@ -454,6 +466,7 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
 
                         for ( auto& cChan : cTestGrpChannelVec )
                         {
+
                             if ( ev->DataBit ( cFe->getFeId(), cCbc->getCbcId(), cChan) )
                             {
                                 //fill the strip number and the current threshold
@@ -493,12 +506,12 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
 
 
             cIncrement++;
-            //LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement << " Hitcounter: " << cHitCounter << " Max hits: " << cMaxHits;
+            LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement << " Hitcounter: " << cHitCounter << " Max hits: " << cMaxHits;
             cValue = pStartValue + (cIncrement * cSign);
         }
     }
 
-    LOG (INFO) << RED << "Found minimal and maximal occupancy " << cMinBreakCount << " times, SCurves finished! " << RESET ;
+    LOG (INFO) << YELLOW << "Found minimal and maximal occupancy " << cMinBreakCount << " times, SCurves finished! " << RESET ;
 }
 
 void PedeNoise::enableTestGroupforNoise ( int  pTGrpId )
@@ -559,16 +572,22 @@ void PedeNoise::enableTestGroupforNoise ( int  pTGrpId )
         }
     }
 
-    LOG (INFO) << "Disabling all TGroups except " << pTGrpId << " ! " ;
+    LOG (INFO) << RED << "Disabling all TGroups except " << pTGrpId << " ! " << RESET;
 }
 
 void PedeNoise::processSCurves (std::string pHistName)
 {
     for (auto& cCbc : fHitCountMap)
     {
-        if (!fFitted)
-            this->differentiateHist (cCbc.first, pHistName);
-        else
+        TH2F* cHist = dynamic_cast<TH2F*> ( getHist ( cCbc.first, pHistName) );
+        //cHist->Scale (1 / double_t (fEventsPerPoint) );
+        //in order to have proper binomial errors
+        cHist->Divide (cHist, fNormHist, 1, 1, "B");
+        //do this in any case!
+        this->differentiateHist (cCbc.first, pHistName);
+
+        //only do this if requested
+        if (fFitted)
             this->fitHist (cCbc.first, pHistName);
 
     }
@@ -582,17 +601,15 @@ void PedeNoise::differentiateHist (Cbc* pCbc, std::string pHistName)
     TH2F* cHist = dynamic_cast<TH2F*> ( getHist ( pCbc, pHistName) );
     TString cHistname = Form ( "Fe%dCBC%d_Differential_TP%d", pCbc->getFeId(), pCbc->getCbcId(), fTestPulseAmplitude );
     TH2F* cDerivative = new TH2F ( cHistname, cHistname, NCHANNELS, -0.5, 253.5, 1024, 0, 1024 );
+    cDerivative->Sumw2();
     bookHistogram ( pCbc, pHistName + "_Diff", cDerivative );
-
-    //now, slice by slice, differentiate the SCurve Histo
-    cHist->Sumw2();
-    cHist->Scale ( 1 / double_t (fEventsPerPoint) );
 
     for (uint16_t cChan = 0; cChan < NCHANNELS; cChan++)
     {
         //if(!fFitted)
         //get a projection
-        TH1D* cProjection = cHist->ProjectionY ("_py", cChan + 1, cChan + 1);
+        int iBin = cHist->GetXaxis()->FindBin (cChan);
+        TH1D* cProjection = cHist->ProjectionY ("_py", iBin, iBin);
 
         double_t cDiff;
         double_t cCurrent;
@@ -661,30 +678,80 @@ void PedeNoise::fitHist (Cbc* pCbc, std::string pHistName)
 {
     //first get the SCurveHisto and create a differential histo
     TH2F* cHist = dynamic_cast<TH2F*> ( getHist ( pCbc, pHistName) );
+    TString cDirName = Form ("FE%dCBC%d/%s_Fits", pCbc->getFeId(), pCbc->getCbcId(), pHistName.c_str() );
+    TDirectory* cDir = dynamic_cast<TDirectory*> (gROOT->FindObject (cDirName) );
+
+    if (!cDir) fResultFile->mkdir (cDirName);
+
+    fResultFile->cd (cDirName);
     //since this is a bit of a special situation I need to create a directory for the SCurves and their fits inside the FExCBCx direcotry and make sure they are saved here
-    cHist->Sumw2();
-    cHist->Scale ( 1 / double_t (fEventsPerPoint) );
 
     for (uint16_t cChan = 0; cChan < NCHANNELS; cChan++)
     {
-        //if(!fFitted)
         //get a projection
-        TH1D* cProjection = cHist->ProjectionY ("_py", cChan + 1, cChan + 1);
-        //here analyze the projection, fit it with the appropriate function and store the fit (or the histogram with the fit?) in a dedicated subfolder?
-    }
+        TString cProjectionName = Form ("%s_Channel%d", cHist->GetName(), cChan);
+        int iBin = cHist->GetXaxis()->FindBin (cChan);
+        TH1D* cProjection = cHist->ProjectionY (cProjectionName, iBin, iBin);
+        double cFirstNon0 ( 0 );
+        double cFirst1 ( 0 );
+        std::string cFitname = "SCurveFit";
+        TF1* cFit = dynamic_cast<TF1*> (gROOT->FindObject (cFitname.c_str() ) );
 
-    //or fit the slices
-    //TF1* myerf = ...
-    //myErf->SetRange();
-    //cHist->FitSlicesY (myerf, 1, NCHANNELS + 1, 0, "QNR+");
-    //TH1F* cMidpoint = static_cast<TH1F*> (gDirectory->Get ("cHist_0") );
-    //or
-    //std::string cHistname = cHist->GetName();
-    //std::string cMidpointName = cHistName + "_0";
-    //std::string cWidthName = cHistName + "_1";
-    //TH1F* cMidpoint = static_cast<TH1F*> (gDirectory->Get (cMidpointName.c_str() ) );
-    //TH1F* cWidth = static_cast<TH1F*> (gDirectory->Get (cWidthName.c_str() ) );
-    //this fills a histogram for each parameter that I should book
+        if (cFit) delete cFit;
+
+        // Not Hole Mode
+        if ( !fHoleMode )
+        {
+            for ( Int_t cBin = 1; cBin < cProjection->GetNbinsX() - 1; cBin++ )
+            {
+                double cContent = cProjection->GetBinContent ( cBin );
+
+                if ( !cFirstNon0 )
+                {
+                    if ( cContent ) cFirstNon0 = cProjection->GetBinCenter ( cBin );
+                }
+                else if ( cContent > 0.85 )
+                {
+                    cFirst1 = cProjection->GetBinCenter ( cBin );
+                    break;
+                }
+            }
+
+            cFit = new TF1 ( "SCurveFit", MyErf, cFirstNon0 - 10, cFirst1 + 10, 2 );
+        }
+        // Hole mode
+        else
+        {
+            for ( Int_t cBin = cProjection->GetNbinsX() - 1; cBin > 1; cBin-- )
+            {
+                double cContent = cProjection->GetBinContent ( cBin );
+
+                if ( !cFirstNon0 )
+                {
+                    if ( cContent ) cFirstNon0 = cProjection->GetBinCenter ( cBin );
+                }
+                else if ( cContent > 0.85 )
+                {
+                    cFirst1 = cProjection->GetBinCenter ( cBin );
+                    break;
+                }
+            }
+
+            cFit = new TF1 (cFitname.c_str(), MyErf, cFirst1 - 10, cFirstNon0 + 10, 2 );
+        }
+
+        // Get rough midpoint & width
+        double cMid = ( cFirst1 + cFirstNon0 ) * 0.5;
+        double cWidth = ( cFirst1 - cFirstNon0 ) * 0.5;
+
+        cFit->SetParameter ( 0, cMid );
+        cFit->SetParameter ( 1, cWidth );
+
+        // Fit
+        cProjection->Fit ( cFit, "RQ+" );
+        cProjection->SetDirectory (cDir);
+        cProjection->Write (cProjection->GetName(), TObject::kOverwrite);
+    }
 }
 
 void PedeNoise::extractPedeNoise (std::string pHistName)
@@ -802,11 +869,8 @@ void PedeNoise::saveInitialOffsets()
                     //suggested B. Schneider
                     int iBin = cOffsetHist->FindBin (cChan);
                     cOffsetHist->SetBinContent ( iBin, cOffset );
-                    // cCbcOffsetMap[cChan] = cOffset;
-                    // LOG(INFO) << "DEBUG Original Offset for CBC " << cCbcId << " channel " << +cChan << " " << +cOffset ;
+                    LOG (DEBUG) << "Original Offset for CBC " << cCbcId << " channel " << +cChan << " " << +cOffset ;
                 }
-
-                // fOffsetMap[cCbc] = cCbcOffsetMap;
             }
         }
     }
@@ -966,6 +1030,9 @@ void PedeNoise::makeTestGroups ( bool pAllChan )
                 if ( ctemp2 < 254 )  tempchannelVec.push_back ( ctemp2 );
 
             }
+
+            for (auto& c : tempchannelVec)
+                LOG (DEBUG) << +c;
 
             fTestGroupChannelMap[cGId] = tempchannelVec;
 
