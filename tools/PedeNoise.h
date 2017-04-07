@@ -44,7 +44,7 @@ class PedeNoise : public Tool
   public:
     PedeNoise()
     {
-        this->makeTestGroups ( false );
+        this->MakeTestGroups ( false );
     }
 
     ~PedeNoise()
@@ -69,7 +69,6 @@ class PedeNoise : public Tool
     //histogram to divide the Scurves by to get proper binomial errors
     TH2F*    fNormHist;
 
-    TestGroupChannelMap fTestGroupChannelMap;
     //have a map of thresholds and hit counts
     std::map<Cbc*, uint16_t> fThresholdMap;
     std::map<Cbc*, uint32_t> fHitCountMap;
@@ -87,7 +86,6 @@ class PedeNoise : public Tool
 
   protected:
     //handling offsets
-    void makeTestGroups ( bool pAllChan );
     void saveInitialOffsets();
     void setInitialOffsets();
     void enableTestGroupforNoise ( int  pTGrpId );

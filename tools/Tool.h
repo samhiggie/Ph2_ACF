@@ -28,6 +28,7 @@ using namespace Ph2_System;
 using CbcHistogramMap = std::map<Cbc*, std::map<std::string, TObject*> >;
 using ModuleHistogramMap = std::map<Module*, std::map<std::string, TObject*> >;
 using CanvasMap = std::map<Ph2_HwDescription::FrontEndDescription*, TCanvas*>;
+using TestGroupChannelMap =  std::map< int, std::vector<uint8_t> >;
 
 
 /*!
@@ -79,6 +80,7 @@ class Tool : public SystemController
     CbcHistogramMap fCbcHistMap;
     ModuleHistogramMap fModuleHistMap;
     ChipType fType;
+    TestGroupChannelMap fTestGroupChannelMap;
 
 
     /*!
@@ -161,7 +163,8 @@ class Tool : public SystemController
     void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool pTPState = false, bool pHoleMode = false );
     //enable commissioning loops and Test Pulse
     void setFWTestPulse();
-
+    // make test groups for everything Test pulse or Calibration
+    void MakeTestGroups ( bool pAllChan = false );
     // helper methods
     void setRegBit ( uint16_t& pRegValue, uint8_t pPos, bool pValue )
     {

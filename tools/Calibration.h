@@ -53,8 +53,6 @@ class Calibration : public Tool
 
 
   protected:
-    void MakeTestGroups ( bool pAllChan = false );
-
     void bitwiseVplus ( int pTGroup );
 
     void bitwiseVCth ( int pTGroup );
@@ -88,7 +86,6 @@ class Calibration : public Tool
     TCanvas* fOccupancyCanvas;
 
     // Containers
-    TestGroupChannelMap fTestGroupChannelMap;
     std::map<Cbc*, uint16_t> fVplusMap;
 
     // Counters

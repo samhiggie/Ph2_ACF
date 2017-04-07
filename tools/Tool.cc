@@ -321,3 +321,47 @@ void Tool::setFWTestPulse()
         fBeBoardInterface->WriteBoardMultReg (cBoard, cRegVec);
     }
 }
+
+void Tool::MakeTestGroups ( bool pAllChan )
+{
+    if ( !pAllChan )
+    {
+        for ( int cGId = 0; cGId < 8; cGId++ )
+        {
+            std::vector<uint8_t> tempchannelVec;
+
+            for ( int idx = 0; idx < 16; idx++ )
+            {
+                int ctemp1 = idx * 16 + cGId * 2;
+                int ctemp2 = ctemp1 + 1;
+
+                if ( ctemp1 < 254 ) tempchannelVec.push_back ( ctemp1 );
+
+                if ( ctemp2 < 254 )  tempchannelVec.push_back ( ctemp2 );
+
+            }
+
+            fTestGroupChannelMap[cGId] = tempchannelVec;
+
+        }
+
+        int cGId = -1;
+        std::vector<uint8_t> tempchannelVec;
+
+        for ( int idx = 0; idx < 254; idx++ )
+            tempchannelVec.push_back ( idx );
+
+        fTestGroupChannelMap[cGId] = tempchannelVec;
+    }
+    else
+    {
+        int cGId = -1;
+        std::vector<uint8_t> tempchannelVec;
+
+        for ( int idx = 0; idx < 254; idx++ )
+            tempchannelVec.push_back ( idx );
+
+        fTestGroupChannelMap[cGId] = tempchannelVec;
+
+    }
+}
