@@ -250,6 +250,8 @@ namespace Ph2_HwInterface {
 
         void CbcTrigger() {}
 
+	void CbcTestPulse() {}
+
         ///////////////////////////////////////////////////////
         //      FPGA CONFIG                                 //
         /////////////////////////////////////////////////////

@@ -6,14 +6,14 @@
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         
         <CBC_Files path="./settings/" />
-        <CBC Id="0" configfile="Cbc_default_hole.txt" />
-        <CBC Id="1" configfile="Cbc_default_hole.txt" />
-        <CBC Id="2" configfile="Cbc_default_hole.txt" />
-        <CBC Id="3" configfile="Cbc_default_hole.txt" />
-        <CBC Id="4" configfile="Cbc_default_hole.txt" />
-        <CBC Id="5" configfile="Cbc_default_hole.txt" />
-        <CBC Id="6" configfile="Cbc_default_hole.txt" />
-        <CBC Id="7" configfile="Cbc_default_hole.txt" />
+        <CBC Id="0" configfile="Cbc_default_hole_FC7DAQ.txt" />
+        <CBC Id="1" configfile="Cbc_default_hole_FC7DAQ.txt" />
+        <CBC Id="2" configfile="Cbc_default_hole_FC7DAQ.txt" />
+        <CBC Id="3" configfile="Cbc_default_hole_FC7DAQ.txt" />
+        <CBC Id="4" configfile="Cbc_default_hole_FC7DAQ.txt" />
+        <CBC Id="5" configfile="Cbc_default_hole_FC7DAQ.txt" />
+        <CBC Id="6" configfile="Cbc_default_hole_FC7DAQ.txt" />
+        <CBC Id="7" configfile="Cbc_default_hole_FC7DAQ.txt" />
     </Module>
 
     <!--CONFIG-->
@@ -24,27 +24,33 @@
 		<Register name="trigger_source"> 3 </Register>
 		<Register name="user_trigger_frequency"> 1 </Register>
 		<Register name="stubs_mask"> 0 </Register>
+                <Register name="test_pulse">
+                    <Register name="delay_after_fast_reset"> 50 </Register>
+                    <Register name="delay_after_test_pulse"> 200 </Register>
+                </Register>
         </Register>
 	<!-- I2C manager -->
         <Register name="command_processor_block">
                 <Register name="i2c_write_mask"> 0xFF </Register>
 	</Register>
     </Register>
+            <!-- temporary, this has to be CNFG register!! -->
+            <Register name="fc7_daq_ctrl">
+                    <!-- Readout Block -->
+                    <Register name="readout_block">
+                            <Register name="packet_nbr"> 0 </Register>
+                            <Register name="control">
+                                    <Register name="int_trig_enable"> 0 </Register>
+                                    <Register name="int_trig_rate"> 0 </Register>
+                                    <Register name="trigger_type"> 0 </Register>
+                                    <Register name="data_type"> 0 </Register>
+                                    <Register name="common_stubdata_delay"> 0 </Register>
+                            </Register>
+                    </Register>
+            </Register>
   </BeBoard>
 </HwDescription>
 
 <Settings>
-    <Setting name="TargetVcth">550</Setting>
-    <!--<Setting name="TargetOffset">0x50</Setting>-->
-    <!--<Setting name="TestPulsePotentiometer">0x00</Setting>-->
-    <Setting name="HoleMode">0</Setting>
-    <Setting name="VerificationLoop">1</Setting>
-    <!--PulseShape-->
-    <Setting name="Nevents" > 200 </Setting>
-    <!--<Setting name="Vplus" > 0x50 </Setting>-->
-    <!--<Setting name="TPAmplitude" > 0x0C </Setting>-->
-    <!--<Setting name="TestGroup" > 1 </Setting>-->
-    <!--<Setting name="ChannelOffset" > 0x40 </Setting>-->
-    <!--<Setting name="StepSize" > 15 </Setting>-->
-    <Setting name="FitSCurves" > 0 </Setting>
+
 </Settings>

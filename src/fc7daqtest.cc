@@ -10,6 +10,22 @@ using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 using namespace CommandLineProcessing;
 INITIALIZE_EASYLOGGINGPP
+
+void set_channel_group(SystemController &cSystemController, BeBoard* pBoard, int i) {
+    //* RegName                                    	Page	Addr	Defval	Value
+    //SelTestPulseDel&ChanGroup                    	0x00	0x0E	0x00	0xC0
+    uint8_t pPage = 0x00;
+    uint8_t pAddress = 0x0E;
+    uint8_t pDefValue = 0x00;
+    uint8_t pValue = 0xC0;
+    CbcRegItem select_channel(pPage, pAddress, pDefValue, pValue+i);
+
+    std::vector<uint32_t> encoded_value;
+    cSystemController.fBeBoardFWMap.at(0)->BCEncodeReg(select_channel,0,encoded_value,false,true);
+    cSystemController.fBeBoardInterface->WriteBoardReg(pBoard, "fc7_daq_ctrl.command_processor_block.i2c.command_fifo", encoded_value.at(0));
+    usleep(10000);
+}
+
 int main ( int argc, char** argv )
 {
     //configure the logger
@@ -52,7 +68,6 @@ int main ( int argc, char** argv )
     if (cToBeConfigured) cSystemController.ConfigureHw();
 
     BeBoard* pBoard = cSystemController.fBoardVector.at(0);
-    //cSystemController.fBeBoardInterface->ConfigureBoard (pBoard);
 
     //Trigger Test
     /*cSystemController.fBeBoardInterface->Start(pBoard);
@@ -62,6 +77,24 @@ int main ( int argc, char** argv )
     LOG (INFO) << BOLDCYAN << "Trigger Stopped" << RESET;*/
     cSystemController.fBeBoardInterface->getBoardInfo(pBoard);
 
+    const std::vector<Event*>* pEvents ;
+    uint32_t cN = 0;
+
+    for (int i=0; i<4; i++) {
+        set_channel_group(cSystemController, pBoard, i);
+        cSystemController.fBeBoardInterface->CbcTestPulse(pBoard);
+    }
+    cSystemController.ReadData(pBoard);
+
+    pEvents = &cSystemController.GetEvents ( pBoard );
+
+    for ( auto& ev : *pEvents )
+    {
+        LOG (INFO) << ">>> Event #" << cN++ ;
+        outp.str ("");
+        outp << *ev;
+        LOG (INFO) << outp.str();
+    }
 
     LOG (INFO) << "*** End of the DAQ test ***" ;
     cSystemController.Destroy();

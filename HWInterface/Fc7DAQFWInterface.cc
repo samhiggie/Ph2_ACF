@@ -255,13 +255,60 @@ namespace Ph2_HwInterface {
 
     uint32_t Fc7DAQFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
     {
-        ;
+        //ok, first query the number of events to read from FW and if it is 0, wait for half a second
+        //in other words, poll for the ring buffer to be NOT empty
+        uint32_t cNEvents = ReadReg ("fc7_daq_stat.be_proc.general.evnt_cnt");
+        //this->CbcTrigger();
+
+        while (cNEvents == 0)
+        {
+            std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+            cNEvents = ReadReg ("fc7_daq_stat.be_proc.general.evnt_cnt");
+            //LOG (DEBUG) << cNEvents;
+        }
+
+        uint32_t cNWords = cNEvents*computeEventSize(pBoard);
+        pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
+
+        if (fSaveToFile)
+        {
+            fFileHandler->set (pData);
+            //fFileHandler->writeFile();
+        }
+
+        return cNEvents;
     }
 
 
     void Fc7DAQFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
     {
         ;
+    }
+
+    /** compute the block size according to the number of CBC's on this board
+     * this will have to change with a more generic FW */
+    uint32_t Fc7DAQFWInterface::computeEventSize ( BeBoard* pBoard )
+    {
+        //use a counting visitor to find out the number of CBCs
+        struct CbcCounter : public HwDescriptionVisitor
+        {
+            uint32_t fNCbc = 0;
+
+            void visit ( Cbc& pCbc )
+            {
+                fNCbc++;
+            }
+            uint32_t getNCbc()
+            {
+                return fNCbc;
+            }
+        };
+
+        CbcCounter cCounter;
+        pBoard->accept ( cCounter );
+
+        //return 7 words header + fNCbc * CBC Event Size  (11 words)
+        return cCounter.getNCbc() * CBC_EVENT_SIZE_32_CBC3 + FC7DAQ_EVENT_HEADER_SIZE_32_CBC3;
     }
 
     std::vector<uint32_t> Fc7DAQFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )

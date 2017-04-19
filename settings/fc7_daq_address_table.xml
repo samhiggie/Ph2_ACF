@@ -27,18 +27,57 @@
         <node id="physical_interface_block"     address="0x3000">
         </node>
 
-        <node id="hybrid_block"                 address="0x4000">
-        </node>
-
-        <node id="be_data_block"                address="0x5000">
+        <node id="readout_block"                address="0x5000">
         </node>
 
         <node id="dio5_block"                   address="0x6000">
+            <node id="ch1"                              address="0x000">
+                <node id="out_enable"                       mask="0x00000001"/>
+                <node id="term_enable"                      mask="0x00000002"/>
+                <node id="threshold"                        mask="0x0000ff00"/>
+            </node>
+            <node id="ch2"                              address="0x001">
+                <node id="out_enable"                       mask="0x00000001"/>
+                <node id="term_enable"                      mask="0x00000002"/>
+                <node id="threshold"                        mask="0x0000ff00"/>
+            </node>
+            <node id="ch3"                              address="0x002">
+                <node id="out_enable"                       mask="0x00000001"/>
+                <node id="term_enable"                      mask="0x00000002"/>
+                <node id="threshold"                        mask="0x0000ff00"/>
+            </node>
+            <node id="ch4"                              address="0x003">
+                <node id="out_enable"                       mask="0x00000001"/>
+                <node id="term_enable"                      mask="0x00000002"/>
+                <node id="threshold"                        mask="0x0000ff00"/>
+            </node>
+            <node id="ch5"                              address="0x004">
+                <node id="out_enable"                       mask="0x00000001"/>
+                <node id="term_enable"                      mask="0x00000002"/>
+                <node id="threshold"                        mask="0x0000ff00"/>
+            </node>
         </node>
-
     </node>
 
     <node id="fc7_daq_ctrl" address="0x40020000" permission="rw" >
+
+        <node id="global"                       address="0x0000">
+            <node id="clock_generator"                  address="0x001">
+                <node id="clk40_reset"                      mask="0x00000001"/>
+                <node id="clk40_mux"                        mask="0x00000002"/>
+                <node id="refclk_reset"                     mask="0x00000004"/>
+            </node>
+
+            <node id="ttc"                              address="0x002">
+                <node id="dec_reset"                        mask="0x00000001"/>
+            </node>
+
+            <node id="amc13"                            address="0x003">
+                <node id="link_reset"                       mask="0x00000001"/>
+                <node id="sw_tts_state_valid"               mask="0x00000002"/>
+                <node id="sw_tts_state"                     mask="0x000000f0"/>
+            </node>
+        </node>
 
         <node id="command_processor_block"      address="0x1000">
             <node id="global"                           address="0x000">
@@ -71,13 +110,24 @@
         <node id="physical_interface_block"     address="0x3000">
         </node>
 
-        <node id="hybrid_block"                 address="0x4000">
-        </node>
-
-        <node id="be_data_block"                address="0x5000">
+        <node id="readout_block"                address="0x5000">
+            <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>
+            <node id="control"                          address="0x001">
+                <node id="readout_reset"                    mask="0x00000001"/>
+                <node id="readout_done"                     mask="0x00000002"/>
+                <node id="int_trig_enable"                  mask="0x00000004"/>
+                <node id="int_trig_rate"                    mask="0x000001f0"/>
+                <node id="trigger_type"                     mask="0x0000f000"/>
+                <node id="data_type"                        mask="0x000f0000"/>
+                <node id="common_stubdata_delay"            mask="0x0ff00000"/>
+            </node>
+            <node id="readout_fifo"                     address="0x002" permission="r" mode="non-incremental" description="data fifo"/>
         </node>
 
         <node id="dio5_block"                   address="0x6000">
+            <node id="control"                          address="0x000">
+                <node id="load_config"                      mask="0x00000001"/>
+            </node>
         </node>
 
     </node>
@@ -94,6 +144,17 @@
                 <node id="cbc_version"                      mask="0x000000f0"/>
                 <node id="num_hybrids"                      mask="0x0000ff00"/>
                 <node id="num_chips"                        mask="0x00ff0000"/>
+            </node>
+
+            <node id="clock_generator"                  address="0x003">
+                <node id="clk_40_locked"                    mask="0x00000001"/>
+                <node id="ref_clk_locked"                   mask="0x00000002"/>
+            </node>
+
+            <node id="ttc">
+                <node id="ready"                        address="0x004" mask="0x00000001"/>
+                <node id="dec_single_err_cnt"           address="0x005" mask="0x0000ffff"/>
+                <node id="dec_double_err_cnt"           address="0x005" mask="0xffff0000"/>
             </node>
         </node>
 
@@ -123,31 +184,27 @@
         <node id="physical_interface_block"     address="0x3000">
         </node>
 
-        <node id="hybrid_block"                 address="0x4000">
+        <node id="be_proc"                      address="0x4000">
+            <node id="general"                          address="0x000">
+                <node id="evnt_cnt"                         mask="0x00ffffff"/>
+                <node id="evnt_cnt_buf_empty"               mask="0x01000000"/>
+                <node id="data_payload_buf_empty"           mask="0x02000000"/>
+                <node id="trigdata_buf_empty"               mask="0x04000000"/>
+            </node>
         </node>
 
-        <node id="be_data_block"                address="0x5000">
+        <node id="readout_block"                address="0x5000">
+            <node id="general"                          address="0x000">
+                <node id="readout_req"                      mask="0x00000001"/>
+                <node id="fsm_status"                       mask="0x00000ff0"/>
+            </node>
         </node>
 
         <node id="dio5_block"                   address="0x6000">
-        </node>
-
-        <node id="test_data"                    address="0xe000" description="temporary block for data readout of hyb0 chip0">
-            <node id="general"                          address="0x000">
-                <node id="latency_error"                    mask="0x80000000"/>
-                <node id="overflow"                         mask="0x40000000"/>
-                <node id="pipe_address"                     mask="0x000001ff"/>
-                <node id="latency"                          mask="0x0003fe00"/>
-                <node id="trigger_counter"                  mask="0x07fc0000"/>
+            <node id="status"                           address="0x000">
+                <node id="not_ready"                        mask="0x00000001"/>
+                <node id="error"                            mask="0x00000002"/>
             </node>
-            <node id="channels_data_1"                  address="0x001"/>
-            <node id="channels_data_2"                  address="0x002"/>
-            <node id="channels_data_3"                  address="0x003"/>
-            <node id="channels_data_4"                  address="0x004"/>
-            <node id="channels_data_5"                  address="0x005"/>
-            <node id="channels_data_6"                  address="0x006"/>
-            <node id="channels_data_7"                  address="0x007"/>
-            <node id="channels_data_8"                  address="0x008"/>
         </node>
 
         <node id="test_clock"                   address="0xf000">

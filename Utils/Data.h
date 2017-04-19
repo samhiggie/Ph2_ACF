@@ -20,6 +20,7 @@
 #include "../Utils/Event.h"
 #include "../Utils/Cbc2Event.h"
 #include "../Utils/Cbc3Event.h"
+#include "../Utils/Cbc3EventFC7DAQ.h"
 #include "../Utils/easylogging++.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWDescription/Definition.h"

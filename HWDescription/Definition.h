@@ -70,6 +70,12 @@
 #define EVENT_HEADER_TDC_SIZE_32_CBC3    3 // total of 6 32 bit words for HEADER + TDC
 #define EVENT_HEADER_SIZE_32_CBC3    3  // 5 words for the header
 
+//FC7 DAQ event header size
+#define FC7DAQ_EVENT_HEADER_SIZE_32_CBC3 7
+// points to bufferoverlow
+#define FC7DAQ_OFFSET_ERROR_CBC3              8*32+1
+
+
 //Event
 //#define OFFSET_BUNCH               8
 //#define WIDTH_BUNCH                24

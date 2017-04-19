@@ -173,6 +173,12 @@ namespace Ph2_HwInterface {
         void CbcTrigger ( const BeBoard* pBoard );
 
         /*!
+         * \brief Send Cbc TestPulse
+         * \param pCbc
+         */
+        void CbcTestPulse ( const BeBoard* pBoard );
+
+        /*!
          * \brief Start a DAQ
          * \param pBoard
          */
