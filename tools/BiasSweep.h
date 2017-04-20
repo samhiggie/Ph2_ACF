@@ -33,6 +33,7 @@ using namespace Ph2_System;
 #include "Ke2110Controller.h"
 #include "HMP4040Client.h"
 #include "ArdNanoController.h"
+using namespace Ph2_UsbInst;
 #endif
 
 #ifdef __MAKECINT__
@@ -40,7 +41,6 @@ using namespace Ph2_System;
 #pragma link C++ class vector<uint16_t>+;
 #endif
 
-using namespace Ph2_UsbInst;
 
 class AmuxSetting
 {

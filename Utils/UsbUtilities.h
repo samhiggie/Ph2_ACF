@@ -15,7 +15,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <math.h>
-#include <thread> 
+#include <thread>
 #include <chrono>
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -27,6 +27,7 @@
 #include "pugixml.hpp"
 #include "Utilities.h"
 #include "ConsoleColor.h"
+#include "easylogging++.h"
 
 #include "Timer.h"
 #include "../HWDescription/Definition.h"
@@ -38,7 +39,7 @@
 #include <sys/wait.h>
 
 #ifdef __USBINST__
-  #include "AppLock.cc"
+#include "AppLock.cc"
 #endif
 
 
@@ -55,7 +56,7 @@ std::string return_InstDriverHomeDirectory();
 
 
 // Generic functions to launch/query servers
-bool InitializeMonitoring(std::string pHostname , std::string pDevName , PortsInfo& pPortsInfo, int pMonitorInterval = 5, std::string pLogFile = "");
+bool InitializeMonitoring (std::string pHostname, std::string pDevName, PortsInfo& pPortsInfo, int pMonitorInterval = 5, std::string pLogFile = "");
 
 // function returns port information <zmqPort,httpPort> from server that is running [ pInfo is the return value of AppLock::get_info() ]
 PortsInfo parse_ServerInfo ( std::string pInfo );
@@ -64,12 +65,12 @@ PortsInfo parse_ServerInfo ( std::string pInfo );
 void query_Server ( std::string pConfigFile, std::string pInstrumentName, std::string pHostname, int pMeasureInterval_s, std::string pLogFile = "");
 
 // launches server
-int launch_HMPServer ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s , std::string pLogFile = "./Current_log.txt" );
-int  launch_DMMServer ( std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s , std::string pLogFile = "./Temperature_log.txt");
+int launch_HMPServer ( std::string pConfigFile, std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s, std::string pLogFile = "./Current_log.txt" );
+int  launch_DMMServer ( std::string pHostname, PortsInfo& pPortsInfo, int pMeasureInterval_s, std::string pLogFile = "./Temperature_log.txt");
 
 
 // Device specific functions
-void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s  , std::string pLogFile = "./Current_log.txt" );
-void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s  , std::string pLogFile = "./Temperature_log.txt");
+void HMP4040server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s, std::string pLogFile = "./Current_log.txt" );
+void Ke2110server_tmuxSession (std::string pInitScript, std::string pConfigFile, std::string pHostname, PortsInfo pPortsInfo, int pMeasureInterval_s, std::string pLogFile = "./Temperature_log.txt");
 
 #endif

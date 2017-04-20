@@ -1,5 +1,5 @@
 Objs            = Exception.o Utilities.o Watchdog.o Event.o Cbc2Event.o Cbc3Event.o Data.o argvparser.o FileHandler.o
-ObjsExt      	= UsbUtilities
+ObjsExt      	= UsbUtilities.o
 CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC -Wcpp
@@ -27,6 +27,7 @@ ifneq ("$(wildcard $(USBINSTDIR))","")
 	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils $(USBINSTDIR)/Drivers 
 	ExternalObjects +=  -pthread -lboost_thread -lPh2_Drivers -lPh2_HMP4040 -lPh2_Ke2110 $(USBINSTFlag) 
 	USBINSTLIBINSTALLED = yes
+	Objs += $(ObjsExt)
 else
 	USBINSTLIBINSTALLED = no
 endif
@@ -36,15 +37,19 @@ LibraryPaths = $(LibraryDirs:%=-L%)
 
 .PHONY: clean print
 
-all: print $(Objs) $(ObjsExt).o ../HWDescription/Definition.h
-	$(CC) -std=c++11 -pthread -shared $(LibraryPaths) $(IncludePaths) $(ExternalObjects) -L/usr/lib64/ -o libPh2_Utils.so $(Objs) $(ObjsExt).o
+#all: print $(Objs) $(ObjsExt).o ../HWDescription/Definition.h
+	#$(CC) -std=c++11 -pthread -shared $(LibraryPaths) $(IncludePaths) $(ExternalObjects) -L/usr/lib64/ -o libPh2_Utils.so $(Objs) $(ObjsExt).o
+	#mv libPh2_Utils.so ../lib
+
+all: print $(Objs) ../HWDescription/Definition.h
+	$(CC) -std=c++11 -pthread -shared $(LibraryPaths) $(IncludePaths) $(ExternalObjects) -L/usr/lib64/ -o libPh2_Utils.so $(Objs)
 	mv libPh2_Utils.so ../lib
 
 %.o: %.cc %.h 
 	$(CXX) -std=c++11 $(CCFlags) -c -o $@ $<
 
-$(ObjsExt).o: $(ObjsExt).cc $(ObjsExt).h 
-	$(CXX) -std=c++11 $(CCFlags) $(IncludePaths) $(LibraryPaths) $(ExternalObjects) -c -o $@ $<
+#$(ObjsExt).o: $(ObjsExt).cc $(ObjsExt).h 
+	#$(CXX) -std=c++11 $(CCFlags) $(IncludePaths) $(LibraryPaths) $(ExternalObjects) -c -o $@ $<
 
 print:
 	@echo '****************************'
