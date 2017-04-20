@@ -71,9 +71,9 @@
 #define EVENT_HEADER_SIZE_32_CBC3    3  // 5 words for the header
 
 //FC7 DAQ event header size
-#define FC7DAQ_EVENT_HEADER_SIZE_32_CBC3 7
+#define D19C_EVENT_HEADER_SIZE_32_CBC3 7
 // points to bufferoverlow
-#define FC7DAQ_OFFSET_ERROR_CBC3              8*32+1
+#define D19C_OFFSET_ERROR_CBC3              8*32+1
 
 
 //Event
@@ -101,7 +101,7 @@
 #define WIDTH_CBCSTUBDATA         12
 //------------------------------------------------------------------------------
 
-enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7, FC7DAQ, SUPERVISOR};
+enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7, D19C, SUPERVISOR};
 enum class ChipType {UNDEFINED = 0, CBC2, CBC3};
 
 #endif

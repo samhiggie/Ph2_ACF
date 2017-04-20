@@ -22,7 +22,7 @@
 #include "../HWInterface/CtaFWInterface.h"
 #include "../HWInterface/ICFc7FWInterface.h"
 #include "../HWInterface/Cbc3Fc7FWInterface.h"
-#include "../HWInterface/Fc7DAQFWInterface.h"
+#include "../HWInterface/D19cFWInterface.h"
 #include "../HWDescription/Definition.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/picojson.h"

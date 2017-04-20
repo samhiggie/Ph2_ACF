@@ -1,7 +1,7 @@
 /*!
 
-        \file                           Fc7DAQFWInterface.h
-        \brief                          Fc7DAQFWInterface init/config of the FC7 and its Cbc's
+        \file                           D19cFWInterface.h
+        \brief                          D19cFWInterface init/config of the FC7 and its Cbc's
         \author                         G. Auzinger, K. Uchida, M. Haranko
         \version            1.0
         \date                           24.03.2017
@@ -14,14 +14,14 @@
 #include <time.h>
 #include <chrono>
 #include <uhal/uhal.hpp>
-#include "Fc7DAQFWInterface.h"
+#include "D19cFWInterface.h"
 #include "CtaFpgaConfig.h"
 //#include "CbcInterface.h"
 
 
 namespace Ph2_HwInterface {
 
-    Fc7DAQFWInterface::Fc7DAQFWInterface ( const char* puHalConfigFileName,
+    D19cFWInterface::D19cFWInterface ( const char* puHalConfigFileName,
             uint32_t pBoardId ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
@@ -31,7 +31,7 @@ namespace Ph2_HwInterface {
     {}
 
 
-    Fc7DAQFWInterface::Fc7DAQFWInterface ( const char* puHalConfigFileName,
+    D19cFWInterface::D19cFWInterface ( const char* puHalConfigFileName,
             uint32_t pBoardId,
             FileHandler* pFileHandler ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
@@ -45,7 +45,7 @@ namespace Ph2_HwInterface {
         else fSaveToFile = true;
     }
 
-    Fc7DAQFWInterface::Fc7DAQFWInterface ( const char* pId,
+    D19cFWInterface::D19cFWInterface ( const char* pId,
             const char* pUri,
             const char* pAddressTable ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
@@ -56,7 +56,7 @@ namespace Ph2_HwInterface {
     {}
 
 
-    Fc7DAQFWInterface::Fc7DAQFWInterface ( const char* pId,
+    D19cFWInterface::D19cFWInterface ( const char* pId,
             const char* pUri,
             const char* pAddressTable,
             FileHandler* pFileHandler ) :
@@ -71,7 +71,7 @@ namespace Ph2_HwInterface {
         else fSaveToFile = true;
     }
 
-    void Fc7DAQFWInterface::setFileHandler (FileHandler* pHandler)
+    void D19cFWInterface::setFileHandler (FileHandler* pHandler)
     {
         if (pHandler != nullptr )
         {
@@ -81,7 +81,7 @@ namespace Ph2_HwInterface {
         else LOG (INFO) << "Error, can not set NULL FileHandler" ;
     }
 
-    uint32_t Fc7DAQFWInterface::getBoardInfo()
+    uint32_t D19cFWInterface::getBoardInfo()
     {
         // firmware info
         LOG (INFO) << GREEN << "============================" << RESET;
@@ -158,7 +158,7 @@ namespace Ph2_HwInterface {
         return cVersionWord;
     }
 
-    void Fc7DAQFWInterface::ConfigureBoard ( const BeBoard* pBoard )
+    void D19cFWInterface::ConfigureBoard ( const BeBoard* pBoard )
     {
         WriteReg ("fc7_daq_ctrl.command_processor_block.global.reset", 0x1);
 
@@ -224,36 +224,36 @@ namespace Ph2_HwInterface {
         if (!cWordCorrect) LOG (ERROR) << "CBC's ids are not correect!";
     }
 
-    void Fc7DAQFWInterface::FindPhase()
+    void D19cFWInterface::FindPhase()
     {
         ;
     }
 
 
-    void Fc7DAQFWInterface::Start()
+    void D19cFWInterface::Start()
     {
 
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
 
-    void Fc7DAQFWInterface::Stop()
+    void D19cFWInterface::Stop()
     {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
     }
 
 
-    void Fc7DAQFWInterface::Pause()
+    void D19cFWInterface::Pause()
     {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
     }
 
 
-    void Fc7DAQFWInterface::Resume()
+    void D19cFWInterface::Resume()
     {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
 
-    uint32_t Fc7DAQFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
+    uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
     {
         //ok, first query the number of events to read from FW and if it is 0, wait for half a second
         //in other words, poll for the ring buffer to be NOT empty
@@ -280,14 +280,14 @@ namespace Ph2_HwInterface {
     }
 
 
-    void Fc7DAQFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
+    void D19cFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
     {
         ;
     }
 
     /** compute the block size according to the number of CBC's on this board
      * this will have to change with a more generic FW */
-    uint32_t Fc7DAQFWInterface::computeEventSize ( BeBoard* pBoard )
+    uint32_t D19cFWInterface::computeEventSize ( BeBoard* pBoard )
     {
         //use a counting visitor to find out the number of CBCs
         struct CbcCounter : public HwDescriptionVisitor
@@ -308,17 +308,17 @@ namespace Ph2_HwInterface {
         pBoard->accept ( cCounter );
 
         //return 7 words header + fNCbc * CBC Event Size  (11 words)
-        return cCounter.getNCbc() * CBC_EVENT_SIZE_32_CBC3 + FC7DAQ_EVENT_HEADER_SIZE_32_CBC3;
+        return cCounter.getNCbc() * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER_SIZE_32_CBC3;
     }
 
-    std::vector<uint32_t> Fc7DAQFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
+    std::vector<uint32_t> D19cFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
     {
         uhal::ValVector<uint32_t> valBlock = ReadBlockReg ( pRegNode, pBlocksize );
         std::vector<uint32_t> vBlock = valBlock.value();
         return vBlock;
     }
 
-    bool Fc7DAQFWInterface::WriteBlockReg ( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
+    bool D19cFWInterface::WriteBlockReg ( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
     {
         bool cWriteCorr = RegManager::WriteBlockReg ( pRegNode, pValues );
         return cWriteCorr;
@@ -330,7 +330,7 @@ namespace Ph2_HwInterface {
     //TODO: check what to do with fFMCid and if I need it!
     // this is clearly for addressing individual CBCs, have to see how to deal with broadcast commands
 
-    void Fc7DAQFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
+    void D19cFWInterface::EncodeReg ( const CbcRegItem& pRegItem,
                                          uint8_t pCbcId,
                                          std::vector<uint32_t>& pVecReq,
                                          bool pReadBack,
@@ -342,7 +342,7 @@ namespace Ph2_HwInterface {
         pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue);
     }
 
-    void Fc7DAQFWInterface::EncodeReg (const CbcRegItem& pRegItem,
+    void D19cFWInterface::EncodeReg (const CbcRegItem& pRegItem,
                                          uint8_t pFeId,
                                          uint8_t pCbcId,
                                          std::vector<uint32_t>& pVecReq,
@@ -354,7 +354,7 @@ namespace Ph2_HwInterface {
         pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
-    void Fc7DAQFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
+    void D19cFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
                                            uint8_t pNCbc,
                                            std::vector<uint32_t>& pVecReq,
                                            bool pReadBack,
@@ -366,7 +366,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    void Fc7DAQFWInterface::DecodeReg ( CbcRegItem& pRegItem,
+    void D19cFWInterface::DecodeReg ( CbcRegItem& pRegItem,
                                          uint8_t& pCbcId,
                                          uint32_t pWord,
                                          bool& pRead,
@@ -381,7 +381,7 @@ namespace Ph2_HwInterface {
         pRegItem.fValue   =  ( pWord & 0x000000FF );
     }
 
-    bool Fc7DAQFWInterface::ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies)
+    bool D19cFWInterface::ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies)
     {
         usleep (SINGLE_I2C_WAIT * pNReplies );
 
@@ -410,7 +410,7 @@ namespace Ph2_HwInterface {
         return cFailed;
     }
 
-    bool Fc7DAQFWInterface::WriteI2C ( std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pReadback, bool pBroadcast )
+    bool D19cFWInterface::WriteI2C ( std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pReadback, bool pBroadcast )
     {
         bool cFailed ( false );
         //reset the I2C controller
@@ -433,8 +433,7 @@ namespace Ph2_HwInterface {
     }
 
 
-
-    bool Fc7DAQFWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts, bool pReadback)
+    bool D19cFWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts, bool pReadback)
     {
 
         uint8_t cMaxWriteAttempts = 5;
@@ -468,7 +467,7 @@ namespace Ph2_HwInterface {
             //getOddElements (cReplies, cOdd);
 
             //now use the Template from BeBoardFWInterface to return a vector with all written words that have been read back incorrectly
-            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Fc7DAQFWInterface::cmd_reply_comp);
+            cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), D19cFWInterface::cmd_reply_comp);
 
             // now clear the initial cmd Vec and set the read-back
             pVecReg.clear();
@@ -478,7 +477,7 @@ namespace Ph2_HwInterface {
         {
             //since I do not read back, I can safely just check that the info bit of the reply is 0 and that it was an actual write reply
             //then i put the replies in pVecReg so I can decode later in CBCInterface
-            //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), Fc7DAQFWInterface::cmd_reply_ack);
+            //cWriteAgain = get_mismatches (pVecReg.begin(), pVecReg.end(), cReplies.begin(), D19cFWInterface::cmd_reply_ack);
             pVecReg.clear();
             pVecReg = cReplies;
         }
@@ -511,7 +510,7 @@ namespace Ph2_HwInterface {
         return cSuccess;
     }
 
-    bool Fc7DAQFWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
+    bool D19cFWInterface::BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback)
     {
         std::vector<uint32_t> cReplies;
         bool cSuccess = !WriteI2C ( pVecReg, cReplies, false, true );
@@ -547,7 +546,7 @@ namespace Ph2_HwInterface {
         return cSuccess;
     }
 
-    void Fc7DAQFWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg )
+    void D19cFWInterface::ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg )
     {
         std::vector<uint32_t> cReplies;
         //it sounds weird, but ReadI2C is called inside writeI2c, therefore here I have to write and disable the readback. The actual read command is in the words of the vector, no broadcast, maybe I can get rid of it
@@ -556,59 +555,59 @@ namespace Ph2_HwInterface {
         pVecReg = cReplies;
     }
 
-    void Fc7DAQFWInterface::CbcFastReset()
+    void D19cFWInterface::CbcFastReset()
     {
         WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_reset", 0x1 );
     }
 
-    void Fc7DAQFWInterface::CbcHardReset()
+    void D19cFWInterface::CbcHardReset()
     {
         ;
     }
 
-    void Fc7DAQFWInterface::CbcTestPulse()
+    void D19cFWInterface::CbcTestPulse()
     {
         WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_test_pulse", 0x1 );
     }
 
-    void Fc7DAQFWInterface::CbcTrigger()
+    void D19cFWInterface::CbcTrigger()
     {
         WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_trigger", 0x1 );
     }
 
-    void Fc7DAQFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
+    void D19cFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )
     {
         checkIfUploading();
 
         fpgaConfig->runUpload ( strConfig, pstrFile );
     }
 
-    void Fc7DAQFWInterface::JumpToFpgaConfig ( const std::string& strConfig)
+    void D19cFWInterface::JumpToFpgaConfig ( const std::string& strConfig)
     {
         checkIfUploading();
 
         fpgaConfig->jumpToImage ( strConfig);
     }
 
-    void Fc7DAQFWInterface::DownloadFpgaConfig ( const std::string& strConfig, const std::string& strDest)
+    void D19cFWInterface::DownloadFpgaConfig ( const std::string& strConfig, const std::string& strDest)
     {
         checkIfUploading();
         fpgaConfig->runDownload ( strConfig, strDest.c_str() );
     }
 
-    std::vector<std::string> Fc7DAQFWInterface::getFpgaConfigList()
+    std::vector<std::string> D19cFWInterface::getFpgaConfigList()
     {
         checkIfUploading();
         return fpgaConfig->getFirmwareImageNames( );
     }
 
-    void Fc7DAQFWInterface::DeleteFpgaConfig ( const std::string& strId)
+    void D19cFWInterface::DeleteFpgaConfig ( const std::string& strId)
     {
         checkIfUploading();
         fpgaConfig->deleteFirmwareImage ( strId);
     }
 
-    void Fc7DAQFWInterface::checkIfUploading()
+    void D19cFWInterface::checkIfUploading()
     {
         if ( fpgaConfig && fpgaConfig->getUploadingFpga() > 0 )
             throw Exception ( "This board is uploading an FPGA configuration" );
@@ -617,7 +616,7 @@ namespace Ph2_HwInterface {
             fpgaConfig = new CtaFpgaConfig ( this );
     }
 
-    bool Fc7DAQFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
+    bool D19cFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
         //TODO: cleanup
         //if ( (cWord1 & 0x0F00FFFF) != (cWord2 & 0x0F00FFFF) )
@@ -635,7 +634,7 @@ namespace Ph2_HwInterface {
 
     }
 
-    bool Fc7DAQFWInterface::cmd_reply_ack (const uint32_t& cWord1, const
+    bool D19cFWInterface::cmd_reply_ack (const uint32_t& cWord1, const
                                             uint32_t& cWord2)
     {
         // if it was a write transaction (>>17 == 0) and

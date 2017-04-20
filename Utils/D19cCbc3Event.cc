@@ -9,7 +9,7 @@
 
  */
 
-#include "../Utils/Cbc3EventFC7DAQ.h"
+#include "../Utils/D19cCbc3Event.h"
 
 using namespace Ph2_HwDescription;
 
@@ -17,13 +17,13 @@ using namespace Ph2_HwDescription;
 namespace Ph2_HwInterface {
 
     // Event implementation
-    Cbc3EventFC7DAQ::Cbc3EventFC7DAQ ( const BeBoard* pBoard,  uint32_t pNbCbc, const std::vector<uint32_t>& list )
+    D19cCbc3Event::D19cCbc3Event ( const BeBoard* pBoard,  uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
         SetEvent ( pBoard, pNbCbc, list );
     }
 
 
-    //Cbc3EventFC7DAQ::Cbc3EventFC7DAQ ( const Event& pEvent ) :
+    //D19cCbc3Event::D19cCbc3Event ( const Event& pEvent ) :
     //fBunch ( pEvent.fBunch ),
     //fOrbit ( pEvent.fOrbit ),
     //fLumi ( pEvent.fLumi ),
@@ -37,9 +37,9 @@ namespace Ph2_HwInterface {
     //}
 
     // NOT READY (still need to add some additional checks and additional variables)
-    int Cbc3EventFC7DAQ::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
+    int D19cCbc3Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
-        fEventSize = pNbCbc *  CBC_EVENT_SIZE_32  + FC7DAQ_EVENT_HEADER_SIZE_32_CBC3;
+        fEventSize = pNbCbc *  CBC_EVENT_SIZE_32  + D19C_EVENT_HEADER_SIZE_32_CBC3;
 
         //now decode the header info
         fBunch = 0;
@@ -89,7 +89,7 @@ namespace Ph2_HwInterface {
 
                 uint16_t cKey = encodeId (cFeId, cCbcId);
 
-                uint32_t begin = FC7DAQ_EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3;
+                uint32_t begin = D19C_EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3;
                 uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
 
                 std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
@@ -99,7 +99,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    std::string Cbc3EventFC7DAQ::HexString() const
+    std::string D19cCbc3Event::HexString() const
     {
         //std::stringbuf tmp;
         //std::ostream os ( &tmp );
@@ -114,7 +114,7 @@ namespace Ph2_HwInterface {
         //return tmp.str();
     }
 
-    std::string Cbc3EventFC7DAQ::DataHexString ( uint8_t pFeId, uint8_t pCbcId ) const
+    std::string D19cCbc3Event::DataHexString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         std::stringbuf tmp;
         std::ostream os ( &tmp );
@@ -150,12 +150,12 @@ namespace Ph2_HwInterface {
     }
 
     // NOT READY (what is i??????????)
-    bool Cbc3EventFC7DAQ::Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const
+    bool D19cCbc3Event::Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const
     {
-        return Bit( pFeId, pCbcId, FC7DAQ_OFFSET_ERROR_CBC3 );
+        return Bit( pFeId, pCbcId, D19C_OFFSET_ERROR_CBC3 );
     }
 
-    uint32_t Cbc3EventFC7DAQ::Error ( uint8_t pFeId, uint8_t pCbcId ) const
+    uint32_t D19cCbc3Event::Error ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
         EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
@@ -173,7 +173,7 @@ namespace Ph2_HwInterface {
         }
     }
 
-    uint32_t Cbc3EventFC7DAQ::PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) const
+    uint32_t D19cCbc3Event::PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
         EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
@@ -190,7 +190,7 @@ namespace Ph2_HwInterface {
         }
     }
 
-    bool Cbc3EventFC7DAQ::DataBit ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const
+    bool D19cCbc3Event::DataBit ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const
     {
         if ( i >= NCHANNELS )
             return 0;
@@ -217,7 +217,7 @@ namespace Ph2_HwInterface {
         //return Bit ( pFeId, pCbcId, i + OFFSET_CBCDATA );
     }
 
-    std::string Cbc3EventFC7DAQ::DataBitString ( uint8_t pFeId, uint8_t pCbcId ) const
+    std::string D19cCbc3Event::DataBitString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
         EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
@@ -250,7 +250,7 @@ namespace Ph2_HwInterface {
         //return BitString ( pFeId, pCbcId, OFFSET_CBCDATA, WIDTH_CBCDATA );
     }
 
-    std::vector<bool> Cbc3EventFC7DAQ::DataBitVector ( uint8_t pFeId, uint8_t pCbcId ) const
+    std::vector<bool> D19cCbc3Event::DataBitVector ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         std::vector<bool> blist;
         uint16_t cKey = encodeId (pFeId, pCbcId);
@@ -278,7 +278,7 @@ namespace Ph2_HwInterface {
         return blist;
     }
 
-    std::vector<bool> Cbc3EventFC7DAQ::DataBitVector ( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const
+    std::vector<bool> D19cCbc3Event::DataBitVector ( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const
     {
         std::vector<bool> blist;
 
@@ -305,13 +305,13 @@ namespace Ph2_HwInterface {
         return blist;
     }
 
-    std::string Cbc3EventFC7DAQ::GlibFlagString ( uint8_t pFeId, uint8_t pCbcId ) const
+    std::string D19cCbc3Event::GlibFlagString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         return "";
     }
 
 
-    std::string Cbc3EventFC7DAQ::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
+    std::string D19cCbc3Event::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         std::ostringstream os;
 
@@ -326,7 +326,7 @@ namespace Ph2_HwInterface {
         //return BitString ( pFeId, pCbcId, OFFSET_CBCSTUBDATA, WIDTH_CBCSTUBDATA );
     }
 
-    bool Cbc3EventFC7DAQ::StubBit ( uint8_t pFeId, uint8_t pCbcId ) const
+    bool D19cCbc3Event::StubBit ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         //here just OR the stub positions
         uint16_t cKey = encodeId (pFeId, pCbcId);
@@ -346,7 +346,7 @@ namespace Ph2_HwInterface {
         }
     }
 
-    std::vector<Stub> Cbc3EventFC7DAQ::StubVector (uint8_t pFeId, uint8_t pCbcId) const
+    std::vector<Stub> D19cCbc3Event::StubVector (uint8_t pFeId, uint8_t pCbcId) const
     {
         std::vector<Stub> cStubVec;
         //here create stubs and return the vector
@@ -375,7 +375,7 @@ namespace Ph2_HwInterface {
         return cStubVec;
     }
 
-    uint32_t Cbc3EventFC7DAQ::GetNHits (uint8_t pFeId, uint8_t pCbcId) const
+    uint32_t D19cCbc3Event::GetNHits (uint8_t pFeId, uint8_t pCbcId) const
     {
         uint32_t cNHits = 0;
         uint16_t cKey = encodeId (pFeId, pCbcId);
@@ -400,7 +400,7 @@ namespace Ph2_HwInterface {
         return cNHits;
     }
 
-    std::vector<uint32_t> Cbc3EventFC7DAQ::GetHits (uint8_t pFeId, uint8_t pCbcId) const
+    std::vector<uint32_t> D19cCbc3Event::GetHits (uint8_t pFeId, uint8_t pCbcId) const
     {
         std::vector<uint32_t> cHits;
         uint16_t cKey = encodeId (pFeId, pCbcId);
@@ -426,7 +426,7 @@ namespace Ph2_HwInterface {
     }
 
     // NOT READY ( we don't have this header info)
-    void Cbc3EventFC7DAQ::printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const
+    void D19cCbc3Event::printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
         EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
@@ -445,9 +445,9 @@ namespace Ph2_HwInterface {
 
     }
 
-    void Cbc3EventFC7DAQ::print ( std::ostream& os) const
+    void D19cCbc3Event::print ( std::ostream& os) const
     {
-        os << BOLDGREEN << "EventType: CBC3 FC7DAQ" << RESET << std::endl;
+        os << BOLDGREEN << "EventType: d19c CBC3" << RESET << std::endl;
         os << BOLDBLUE <<  "L1A Counter: " << this->GetEventCount() << RESET << std::endl;
         os << "          Be Id: " << +this->GetBeId() << std::endl;
         os << "          Be FW: " << +this->GetFWType() << std::endl;
@@ -547,7 +547,7 @@ namespace Ph2_HwInterface {
         os << std::endl;
     }
 
-    std::vector<Cluster> Cbc3EventFC7DAQ::getClusters ( uint8_t pFeId, uint8_t pCbcId) const
+    std::vector<Cluster> D19cCbc3Event::getClusters ( uint8_t pFeId, uint8_t pCbcId) const
     {
         std::vector<Cluster> result;
 

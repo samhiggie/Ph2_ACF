@@ -39,7 +39,7 @@ int main ( int argc, char** argv )
     cmd.addErrorCode ( 1, "Error" );
     // options
     cmd.setHelpOption ( "h", "help", "Print this help page" );
-    cmd.defineOption ( "file", "Hw Description File . Default value: settings/FC7DAQHWDescription.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOption ( "file", "Hw Description File . Default value: settings/D19CHWDescription.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "file", "f" );
     cmd.defineOption ( "output", "Output Directory . Default value: Results", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "output", "o" );
@@ -53,7 +53,7 @@ int main ( int argc, char** argv )
         exit ( 1 );
     }
     // now query the parsing results
-    std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/FC7DAQHWDescription.xml";
+    std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/D19CHWDescription.xml";
 
     std::stringstream outp;
 

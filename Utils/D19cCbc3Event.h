@@ -9,8 +9,8 @@
 
  */
 
-#ifndef __Cbc3EventFC7DAQ_H__
-#define __Cbc3EventFC7DAQ_H__
+#ifndef __D19cCbc3Event_H__
+#define __D19cCbc3Event_H__
 
 #include "Event.h"
 
@@ -23,7 +23,7 @@ namespace Ph2_HwInterface {
      * \class Cbc3Event
      * \brief Event container to manipulate event flux from the Cbc2
      */
-    class Cbc3EventFC7DAQ : public Event
+    class D19cCbc3Event : public Event
     {
       public:
         /*!
@@ -32,7 +32,7 @@ namespace Ph2_HwInterface {
          * \param pNbCbc
          * \param pEventBuf : the pointer to the raw Event buffer of this Event
          */
-        Cbc3EventFC7DAQ ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list );
+        D19cCbc3Event ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list );
         /*!
          * \brief Copy Constructor of the Event Class
          */
@@ -40,7 +40,7 @@ namespace Ph2_HwInterface {
         /*!
          * \brief Destructor of the Event Class
          */
-        ~Cbc3EventFC7DAQ()
+        ~D19cCbc3Event()
         {
         }
         /*!

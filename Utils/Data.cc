@@ -41,7 +41,7 @@ namespace Ph2_HwInterface {
         fNevents = static_cast<uint32_t> ( pNevents );
         fEventSize = static_cast<uint32_t> ( (pData.size() ) / fNevents );
 
-        if (pType == BoardType::FC7DAQ) fNCbc = (fEventSize - FC7DAQ_EVENT_HEADER_SIZE_32_CBC3) / (CBC_EVENT_SIZE_32_CBC3);
+        if (pType == BoardType::D19C) fNCbc = (fEventSize - D19C_EVENT_HEADER_SIZE_32_CBC3) / (CBC_EVENT_SIZE_32_CBC3);
         else if (pType == BoardType::CBC3FC7) fNCbc = (fEventSize - (EVENT_HEADER_SIZE_32_CBC3) ) / (CBC_EVENT_SIZE_32_CBC3);
         else fNCbc = ( fEventSize - ( EVENT_HEADER_TDC_SIZE_32 ) ) / ( CBC_EVENT_SIZE_32 );
 
@@ -78,8 +78,8 @@ namespace Ph2_HwInterface {
 
             if ( cWordIndex > 0 &&  (cWordIndex + 1) % fEventSize == 0 )
             {
-                if (pType == BoardType::FC7DAQ)
-                    fEventList.push_back ( new Cbc3EventFC7DAQ ( pBoard, fNCbc, lvec ) );
+                if (pType == BoardType::D19C)
+                    fEventList.push_back ( new D19cCbc3Event ( pBoard, fNCbc, lvec ) );
                 else if (pType == BoardType::CBC3FC7)
                     fEventList.push_back ( new Cbc3Event ( pBoard, fNCbc, lvec ) );
                 else

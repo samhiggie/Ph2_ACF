@@ -1,8 +1,8 @@
 
 /*!
 
-        \file                           Fc7DAQFWInterface.h
-        \brief                          Fc7DAQFWInterface init/config of the FC7 and its Cbc's
+        \file                           D19cFWInterface.h
+        \brief                          D19cFWInterface init/config of the FC7 and its Cbc's
         \author                         G. Auzinger, K. Uchida, M. Haranko
         \version            1.0
         \date                           24.03.2017
@@ -11,8 +11,8 @@
 
  */
 
-#ifndef _FC7DAQFWINTERFACE_H__
-#define _FC7DAQFWINTERFACE_H__
+#ifndef _D19CFWINTERFACE_H__
+#define _D19CFWINTERFACE_H__
 
 #include <string>
 #include <map>
@@ -37,7 +37,7 @@ namespace Ph2_HwInterface {
      *
      * \brief init/config of the Fc7 and its Cbc's
      */
-    class Fc7DAQFWInterface : public BeBoardFWInterface
+    class D19cFWInterface : public BeBoardFWInterface
     {
 
       private:
@@ -58,8 +58,8 @@ namespace Ph2_HwInterface {
          * \param pBoardId
          */
 
-        Fc7DAQFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
-        Fc7DAQFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
+        D19cFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId );
+        D19cFWInterface ( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
         /*!
          *
         * \brief Constructor of the Cbc3Fc7FWInterface class
@@ -68,8 +68,8 @@ namespace Ph2_HwInterface {
         * \param pAddressTable: address tabel string
         */
 
-        Fc7DAQFWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
-        Fc7DAQFWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
+        D19cFWInterface ( const char* pId, const char* pUri, const char* pAddressTable );
+        D19cFWInterface ( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
         void setFileHandler (FileHandler* pHandler);
 
         /*!
@@ -77,7 +77,7 @@ namespace Ph2_HwInterface {
          * \brief Destructor of the Cbc3Fc7FWInterface class
          */
 
-        ~Fc7DAQFWInterface()
+        ~D19cFWInterface()
         {
             if (fFileHandler) delete fFileHandler;
         }
@@ -101,7 +101,7 @@ namespace Ph2_HwInterface {
 
         BoardType getBoardType() const
         {
-            return BoardType::FC7DAQ;
+            return BoardType::D19C;
         }
         /*!
          * \brief Configure the board with its Config File
