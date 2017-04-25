@@ -28,6 +28,14 @@
         </node>
 
         <node id="readout_block"                address="0x5000">
+            <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>
+            <node id="global"                          address="0x001">                
+                <node id="int_trig_enable"                  mask="0x00000004"/>
+                <node id="int_trig_rate"                    mask="0x000001f0"/>
+                <node id="trigger_type"                     mask="0x0000f000"/>
+                <node id="data_type"                        mask="0x000f0000"/>
+                <node id="common_stubdata_delay"            mask="0x0ff00000"/>
+            </node>
         </node>
 
         <node id="dio5_block"                   address="0x6000">
@@ -111,17 +119,11 @@
         </node>
 
         <node id="readout_block"                address="0x5000">
-            <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>
-            <node id="control"                          address="0x001">
+            <node id="control"                          address="0x000">
                 <node id="readout_reset"                    mask="0x00000001"/>
                 <node id="readout_done"                     mask="0x00000002"/>
-                <node id="int_trig_enable"                  mask="0x00000004"/>
-                <node id="int_trig_rate"                    mask="0x000001f0"/>
-                <node id="trigger_type"                     mask="0x0000f000"/>
-                <node id="data_type"                        mask="0x000f0000"/>
-                <node id="common_stubdata_delay"            mask="0x0ff00000"/>
             </node>
-            <node id="readout_fifo"                     address="0x002" permission="r" mode="non-incremental" description="data fifo"/>
+	    <node id="readout_fifo"                     address="0x001" permission="r" mode="non-incremental" description="data fifo"/>
         </node>
 
         <node id="dio5_block"                   address="0x6000">

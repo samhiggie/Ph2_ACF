@@ -33,21 +33,18 @@
         <Register name="command_processor_block">
                 <Register name="i2c_write_mask"> 0xFF </Register>
 	</Register>
-    </Register>
-            <!-- temporary, this has to be CNFG register!! -->
-            <Register name="fc7_daq_ctrl">
-                    <!-- Readout Block -->
-                    <Register name="readout_block">
-                            <Register name="packet_nbr"> 0 </Register>
-                            <Register name="control">
-                                    <Register name="int_trig_enable"> 0 </Register>
-                                    <Register name="int_trig_rate"> 0 </Register>
-                                    <Register name="trigger_type"> 0 </Register>
-                                    <Register name="data_type"> 0 </Register>
-                                    <Register name="common_stubdata_delay"> 0 </Register>
-                            </Register>
-                    </Register>
+	<!-- Readout Block -->
+    	<Register name="readout_block">
+            <Register name="packet_nbr"> 0 </Register>
+            <Register name="global">
+                    <Register name="int_trig_enable"> 0 </Register>
+                    <Register name="int_trig_rate"> 0 </Register>
+                    <Register name="trigger_type"> 0 </Register>
+                    <Register name="data_type"> 0 </Register>
+                    <Register name="common_stubdata_delay"> 0 </Register>
             </Register>
+    	</Register>
+    </Register>
   </BeBoard>
 </HwDescription>
 
