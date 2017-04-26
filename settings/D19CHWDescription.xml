@@ -37,6 +37,7 @@
     	<Register name="readout_block">
             <Register name="packet_nbr"> 0 </Register>
             <Register name="global">
+		    <Register name="data_handshake_enable"> 0 </Register>
                     <Register name="int_trig_enable"> 0 </Register>
                     <Register name="int_trig_rate"> 0 </Register>
                     <Register name="trigger_type"> 0 </Register>

@@ -29,7 +29,8 @@
 
         <node id="readout_block"                address="0x5000">
             <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>
-            <node id="global"                          address="0x001">                
+            <node id="global"                          address="0x001">
+		<node id="data_handshake_enable"            mask="0x00000001"/>                
                 <node id="int_trig_enable"                  mask="0x00000004"/>
                 <node id="int_trig_rate"                    mask="0x000001f0"/>
                 <node id="trigger_type"                     mask="0x0000f000"/>
@@ -137,26 +138,26 @@
     <node id="fc7_daq_stat" address="0x40030000" permission="r" >
 
         <node id="general"                     address="0x0000">
-            <node id="error"                            address="0x001">
-                <node id="block_id"                         mask="0x0000000f"/>
-                <node id="code"                             mask="0x00000ff0"/>
+            <node id="global_error">
+		<node id="full_error"			address="0x001"   mode="non-incremental"/>
+		<node id="counter"			address="0x002"   mask="0x000001ff"/>
             </node>
-            <node id="info"                             address="0x002">
+            <node id="info"                             address="0x003">
                 <node id="implementation"                   mask="0x0000000f"/>
                 <node id="cbc_version"                      mask="0x000000f0"/>
                 <node id="num_hybrids"                      mask="0x0000ff00"/>
                 <node id="num_chips"                        mask="0x00ff0000"/>
             </node>
 
-            <node id="clock_generator"                  address="0x003">
+            <node id="clock_generator"                  address="0x004">
                 <node id="clk_40_locked"                    mask="0x00000001"/>
                 <node id="ref_clk_locked"                   mask="0x00000002"/>
             </node>
 
             <node id="ttc">
-                <node id="ready"                        address="0x004" mask="0x00000001"/>
-                <node id="dec_single_err_cnt"           address="0x005" mask="0x0000ffff"/>
-                <node id="dec_double_err_cnt"           address="0x005" mask="0xffff0000"/>
+                <node id="ready"                        address="0x005" mask="0x00000001"/>
+                <node id="dec_single_err_cnt"           address="0x006" mask="0x0000ffff"/>
+                <node id="dec_double_err_cnt"           address="0x006" mask="0xffff0000"/>
             </node>
         </node>
 

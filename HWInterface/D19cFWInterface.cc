@@ -109,14 +109,18 @@ namespace Ph2_HwInterface {
         LOG (INFO) << YELLOW << "============================" << RESET;
         LOG (INFO) << BOLDYELLOW << "Current Status" << RESET;
 
-        int error_block_id = ReadReg("fc7_daq_stat.general.error.block_id");
-        int error_code = ReadReg("fc7_daq_stat.general.error.code");
-        if (error_block_id == 0) {
+        int error_counter = ReadReg("fc7_daq_stat.general.global_error.counter");
+        if (error_counter == 0) {
             LOG (INFO) << "No Errors detected";
         }
         else {
-            LOG (ERROR) << "Error Block: " << BOLDRED << error_block_id << RESET;
-            LOG (ERROR) << "Error Code: " << BOLDRED << error_code << RESET;
+            std::vector<uint32_t> pErrors = ReadBlockRegValue("fc7_daq_stat.general.global_error.full_error", error_counter);
+            for (auto& cError : pErrors)
+            {
+                int error_block_id = (cError & 0x0000000f);
+                int error_code = ((cError & 0x00000ff0) >> 4);
+                LOG (ERROR) << "Block: " << BOLDRED << error_block_id << RESET << ", Code: " << BOLDRED << error_code << RESET;
+            }
         }
 
         int source_id = ReadReg("fc7_daq_stat.fast_command_block.general.source");
@@ -221,7 +225,7 @@ namespace Ph2_HwInterface {
         if (cReadSuccess && cWordCorrect) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
 
         if (!cReadSuccess) LOG (ERROR) << "Did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() ;
-        if (!cWordCorrect) LOG (ERROR) << "CBC's ids are not correect!";
+        if (!cWordCorrect) LOG (ERROR) << "CBC's ids are not correct!";
     }
 
     void D19cFWInterface::FindPhase()
