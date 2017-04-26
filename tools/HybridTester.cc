@@ -66,9 +66,9 @@ void HybridTester::ReconfigureCBCRegisters (std::string pDirectoryName )
                 char buffer[120];
 
                 if ( pDirectoryName.empty() )
-                    sprintf (buffer, "%s/FE%dCBC%d.txt" , fDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                    sprintf (buffer, "%s/FE%dCBC%d.txt", fDirectoryName.c_str(), cCbc->getFeId(), cCbc->getCbcId() );
                 else
-                    sprintf (buffer, "%s/FE%dCBC%d.txt" , pDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                    sprintf (buffer, "%s/FE%dCBC%d.txt", pDirectoryName.c_str(), cCbc->getFeId(), cCbc->getCbcId() );
 
                 pRegFile = buffer;
                 cCbc->loadfRegMap (pRegFile);
@@ -107,7 +107,7 @@ void HybridTester::InitializeHists()
 
     if ( fHistTopMerged ) delete fHistTopMerged;
 
-    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
     fHistTopMerged->SetFillColor ( 4 );
     fHistTopMerged->SetFillStyle ( 3001 );
 
@@ -116,7 +116,7 @@ void HybridTester::InitializeHists()
 
     if ( fHistBottomMerged ) delete fHistBottomMerged;
 
-    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
     fHistBottomMerged->SetFillColor ( 4 );
     fHistBottomMerged->SetFillStyle ( 3001 );
 
@@ -125,7 +125,7 @@ void HybridTester::InitializeHists()
 
     if ( fHistOccupancyBottom ) delete fHistOccupancyBottom;
 
-    fHistOccupancyBottom = new TH1F ( cOccupancyBottom, "Back Pad Channels.", (int) ( 110 / 1.0 ) , -0.5 , 110.0 - 0.5 );
+    fHistOccupancyBottom = new TH1F ( cOccupancyBottom, "Back Pad Channels.", (int) ( 110 / 1.0 ), -0.5, 110.0 - 0.5 );
     fHistOccupancyBottom->SetStats (1);
     fHistOccupancyBottom->SetFillColor ( 4 );
     fHistOccupancyBottom->SetLineColor ( 4 );
@@ -139,7 +139,7 @@ void HybridTester::InitializeHists()
 
     if ( fHistOccupancyTop ) delete fHistOccupancyTop;
 
-    fHistOccupancyTop = new TH1F ( cOccupancyTop, "Top Pad Channels.", (int) ( 110 / 1.0 ) , -0.5 , 110.0 - 0.5 );
+    fHistOccupancyTop = new TH1F ( cOccupancyTop, "Top Pad Channels.", (int) ( 110 / 1.0 ), -0.5, 110.0 - 0.5 );
     fHistOccupancyTop->SetStats (1);
     fHistOccupancyTop->SetFillColor ( 3 );
     fHistOccupancyTop->SetLineColor ( 3 );
@@ -330,7 +330,7 @@ void HybridTester::ScanThresholds()
                     HistogramFiller cFiller ( fHistBottom, fHistTop, cEvent );
                     pBoard->accept ( cFiller );
 
-                    fillSCurves ( pBoard,  cEvent , cVcth );
+                    fillSCurves ( pBoard,  cEvent, cVcth );
 
                     if ( cN % 100 == 0 )
                     {
@@ -596,9 +596,6 @@ void HybridTester::processSCurves ( uint32_t pEventsperVcth )
 
     fSCurveCanvas->Update();
 
-#ifdef __HTTP__
-    fHttpServer->ProcessRequests();
-#endif
 
     // Write and Save the Canvas as PDF
     fSCurveCanvas->Write ( fSCurveCanvas->GetName(), TObject::kOverwrite );
@@ -641,9 +638,6 @@ void HybridTester::updateSCurveCanvas ( BeBoard* pBoard )
 
     fSCurveCanvas->Update();
 
-#ifdef __HTTP__
-    fHttpServer->ProcessRequests();
-#endif
 }
 
 
@@ -1105,7 +1099,7 @@ void HybridTester::Measure()
     LOG (INFO) << "\t\tMean occupancy for the Botton side: " << fHistOccupancyBottom->GetMean() << " ± " <<  fHistOccupancyBottom->GetRMS()  << RESET ;
     ClassifyChannels();
 }
-void HybridTester::ClassifyChannels (double pNoiseLevel , double pDeadLevel )
+void HybridTester::ClassifyChannels (double pNoiseLevel, double pDeadLevel )
 {
     for ( int i = 1 ; i < ( fNCbc / 2 * 254 ) ; i++ )
     {
@@ -1296,7 +1290,7 @@ void HybridTester::SaveTestingResults (std::string pHybridId)
     myfile.close();
     LOG (INFO) << std::endl << "Summary testing report written to: " << std::endl << filename ;
 }
-void HybridTester::SaveResults()
+void HybridTester::writeObjects()
 {
     fResultFile->cd();
     fHistTop->Write ( fHistTop->GetName(), TObject::kOverwrite );
@@ -1322,4 +1316,7 @@ void HybridTester::SaveResults()
         cPdfName = fDirectoryName + "/ThresholdScanResults.pdf";
         fSCurveCanvas->SaveAs ( cPdfName.c_str() );
     }
+
+    this->SaveResults();
+    fResultFile->Flush();
 }

@@ -171,9 +171,6 @@ void SignalScan::updateHists ( std::string pHistName, bool pFinal )
             cCanvas.second->Update();
         }
 
-#ifdef __HTTP__
-        fHttpServer->ProcessRequests();
-#endif
     }
 }
 

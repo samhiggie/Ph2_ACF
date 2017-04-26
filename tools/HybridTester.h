@@ -130,7 +130,7 @@ class HybridTester : public Tool
     /*!
     * \brief Save the results to the file created with SystemController::InitializeResultFile
     */
-    void SaveResults();
+    void writeObjects();
     void ReconfigureCBCRegisters (std::string pDirectoryName = "");
     /*!
     * \brief re-configure only the Vcth value on the CBCs
@@ -174,7 +174,6 @@ class HybridTester : public Tool
     int fSigmas;
     uint8_t fVcth;
     double fDecisionThreshold = 10.0;   /*!< Decision Threshold for channels occupancy based tests, values from 1 to 100 as % */
-    ChipType fType;
 
     void SetBeBoardForShortsFinding (BeBoard* pBoard);
     void ReconstructShorts (std::array<std::vector<std::array<int, 5>>, 8> pShortedGroupsArray);
@@ -187,7 +186,7 @@ class HybridTester : public Tool
     /*!
     * \brief private method that classifies the channels on the top/bottom sensors into "Noisy/Dead"
     */
-    void ClassifyChannels (double pNoiseLevel = 65 , double pDeadLevel = 25 );
+    void ClassifyChannels (double pNoiseLevel = 65, double pDeadLevel = 25 );
 
     //double fChannelDiagnosisThreshold;
     /*!

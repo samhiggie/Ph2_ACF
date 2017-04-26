@@ -109,7 +109,7 @@ int main ( int argc, char* argv[] )
     if ( cVplus ) cCalibration.FindVplus();
 
     cCalibration.FindOffsets();
-    cCalibration.SaveResults();
+    cCalibration.writeObjects();
     cCalibration.dumpConfigFiles();
     t.stop();
     t.show ( "Time to Calibrate the system: " );
@@ -121,11 +121,15 @@ int main ( int argc, char* argv[] )
         //tool provides an Inherit(Tool* pTool) for this purpose
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        cPedeNoise.ConfigureHw ();
+        //cPedeNoise.ConfigureHw ();
         cPedeNoise.Initialise(); // canvases etc. for fast calibration
         cPedeNoise.measureNoise();
+
+        cPedeNoise.sweepSCurves (225);
+        cPedeNoise.sweepSCurves (205);
+
         cPedeNoise.Validate();
-        cPedeNoise.SaveResults( );
+        cPedeNoise.writeObjects( );
         cPedeNoise.dumpConfigFiles();
         t.stop();
         t.show ( "Time to Scan Pedestals and Noise" );

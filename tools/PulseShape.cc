@@ -38,7 +38,7 @@ void PulseShape::Initialize()
                 ctmpCanvas->cd ( 2 );
                 cFrame->Draw( );
                 bookHistogram ( cCbc, "frame", cFrame );
-                std::cerr << "Initializing map fCanvasMap[" << Form ( "0x%x", cCbc ) << "] = " << Form ( "0x%x", ctmpCanvas ) ;
+                LOG (ERROR) << "Initializing map fCanvasMap[" << Form ( "0x%x", cCbc ) << "] = " << Form ( "0x%x", ctmpCanvas ) ;
                 // Create Multigraph Object for each CBC
                 TString cName =  Form ( "g_cbc_pulseshape_MultiGraph_Fe%dCbc%d", cFeId, cCbcId );
                 TObject* cObj = gROOT->FindObject ( cName );
@@ -243,6 +243,7 @@ void PulseShape::fitGraph ( int pLow )
             cChannel->fPulse->Write ( cChannel->fPulse->GetName(), TObject::kOverwrite );
             cPulseFit->Write ( cPulseFit->GetName(), TObject::kOverwrite );
             fResultFile->cd();
+            fResultFile->Flush();
         }
 
     }
@@ -301,7 +302,7 @@ void PulseShape::setDelayAndTesGroup ( uint32_t pDelay )
     for (auto& cBoard : fBoardVector)
     {
         //potentially have to reset the IC FW commissioning cycle state machine?
-        fBeBoardInterface->WriteBoardReg (cBoard, getDelAfterTPString (cBoard->getBoardType() ) , cCoarseDelay);
+        fBeBoardInterface->WriteBoardReg (cBoard, getDelAfterTPString (cBoard->getBoardType() ), cCoarseDelay);
     }
 
     CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", to_reg ( cFineDelay, fTestGroup ) );
@@ -528,9 +529,6 @@ void PulseShape::updateHists ( std::string pHistName, bool pFinal )
         cCanvas.second->Update();
     }
 
-    //#ifdef __HTTP__
-    //fHttpServer->ProcessRequests();
-    //#endif
 }
 
 double pulseshape ( double* x, double* par )

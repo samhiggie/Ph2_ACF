@@ -70,8 +70,8 @@ double MyErf ( double* x, double* par )
 
     // if ( x[0] < x0 ) fitval = 0.5 * TMath::Erfc( ( x0 - x[0] ) / width );
     // else fitval = 0.5 + 0.5 * TMath::Erf( ( x[0] - x0 ) / width );
-    if ( x[0] < x0 ) fitval = 0.5 * erfc ( ( x0 - x[0] ) / width );
-    else fitval = 0.5 + 0.5 * erf ( ( x[0] - x0 ) / width );
+    if ( x[0] < x0 ) fitval = 0.5 * erfc ( ( x0 - x[0] ) / (sqrt (2.) * width ) );
+    else fitval = 0.5 + 0.5 * erf ( ( x[0] - x0 ) / (sqrt (2.) * width ) );
 
     return fitval;
 }
@@ -119,4 +119,32 @@ uint8_t reverseBits (uint8_t cValue)
     cValue = (cValue & 0xCC) >> 2 | (cValue & 0x33) << 2;
     cValue = (cValue & 0xAA) >> 1 | (cValue & 0x55) << 1;
     return cValue;
+}
+
+
+//
+void tokenize ( const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters )
+{
+    std::vector<std::string> cTokens;
+    cTokens.clear();
+
+    // Skip delimiters at beginning.
+    std::string::size_type lastPos = str.find_first_not_of ( delimiters, 0 );
+
+    // Find first "non-delimiter".
+    std::string::size_type pos = str.find_first_of ( delimiters, lastPos );
+
+    while ( std::string::npos != pos || std::string::npos != lastPos )
+    {
+        // Found a token, add it to the vector.
+        cTokens.push_back ( str.substr ( lastPos, pos - lastPos ) );
+
+        // Skip delimiters.  Note the "not_of"
+        lastPos = str.find_first_not_of ( delimiters, pos );
+
+        // Find next "non-delimiter"
+        pos = str.find_first_of ( delimiters, lastPos );
+    }
+
+    tokens = cTokens;
 }

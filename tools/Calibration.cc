@@ -3,7 +3,7 @@
 void Calibration::Initialise ( bool pAllChan )
 {
     // Initialize the TestGroups
-    MakeTestGroups ( pAllChan );
+    this->MakeTestGroups ( pAllChan );
 
     // now read the settings from the map
     auto cSetting = fSettingsMap.find ( "HoleMode" );
@@ -24,7 +24,7 @@ void Calibration::Initialise ( bool pAllChan )
 
 
     // Canvases
-    fVplusCanvas = new TCanvas ( "VPlus", "VPlus", 515, 0, 500, 500 );
+    //fVplusCanvas = new TCanvas ( "VPlus", "VPlus", 515, 0, 500, 500 );
     fOffsetCanvas = new TCanvas ( "Offset", "Offset", 10, 0, 500, 500 );
     fOccupancyCanvas = new TCanvas ( "Occupancy", "Occupancy", 10, 525, 500, 500 );
 
@@ -60,7 +60,7 @@ void Calibration::Initialise ( bool pAllChan )
                 TString cTitle;
 
                 if (fType == ChipType::CBC2) cTitle = Form ( "Vplus Values for Test Groups FE%d CBC%d ; Test Group; Vplus", cFeId, cCbcId );
-                else if (fType == ChipType::CBC3) cTitle = Form ( "Vth Values for Test Groups FE%d CBC%d ; Test Group; Vth", cFeId, cCbcId );
+                else if (fType == ChipType::CBC3) cTitle = Form ( "VCth Values for Test Groups FE%d CBC%d ; Test Group; Vth", cFeId, cCbcId );
 
                 TProfile* cHist = new TProfile ( cName, cTitle, 9, -1.5, 7.5 );
                 cHist->SetMarkerStyle ( 20 );
@@ -75,8 +75,10 @@ void Calibration::Initialise ( bool pAllChan )
                 TProfile* cOffsetHist = new TProfile ( cName, Form ( "Offsets FE%d CBC%d ; Channel; Offset", cFeId, cCbcId ), 254, -.5, 253.5  );
                 uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
 
-                for ( int iBin = 0; iBin < NCHANNELS; iBin++ )
+                for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
                 {
+                    //suggested B. Schneider
+                    int iBin = cOffsetHist->FindBin (iChan);
                     cOffsetHist->SetBinContent ( iBin, cOffset );
                     cOffsetHist->SetBinEntries ( iBin, 1 );
                 }
@@ -88,7 +90,7 @@ void Calibration::Initialise ( bool pAllChan )
 
                 if ( cObj ) delete cObj;
 
-                TH1F* cOccHist = new TH1F ( cName, Form ( "Occupancy FE%d CBC%d ; Channel; Occupancy", cFeId, cCbcId ), 254, -.5, 254.5 );
+                TH1F* cOccHist = new TH1F ( cName, Form ( "Occupancy FE%d CBC%d ; Channel; Occupancy", cFeId, cCbcId ), 254, -.5, 253.5 );
                 bookHistogram ( cCbc, "Occupancy", cOccHist );
             }
         }
@@ -99,7 +101,7 @@ void Calibration::Initialise ( bool pAllChan )
 
     uint32_t cPads = ( cCbcIdMax > cCbcCount ) ? cCbcIdMax : cCbcCount;
 
-    fVplusCanvas->DivideSquare ( cPads );
+    //fVplusCanvas->DivideSquare ( cPads );
     fOffsetCanvas->DivideSquare ( cPads );
     fOccupancyCanvas->DivideSquare ( cPads );
 
@@ -126,50 +128,6 @@ void Calibration::Initialise ( bool pAllChan )
     }
 }
 
-void Calibration::MakeTestGroups ( bool pAllChan )
-{
-    if ( !pAllChan )
-    {
-        for ( int cGId = 0; cGId < 8; cGId++ )
-        {
-            std::vector<uint8_t> tempchannelVec;
-
-            for ( int idx = 0; idx < 16; idx++ )
-            {
-                int ctemp1 = idx * 16 + cGId * 2;
-                int ctemp2 = ctemp1 + 1;
-
-                if ( ctemp1 < 254 ) tempchannelVec.push_back ( ctemp1 );
-
-                if ( ctemp2 < 254 )  tempchannelVec.push_back ( ctemp2 );
-
-            }
-
-            fTestGroupChannelMap[cGId] = tempchannelVec;
-
-        }
-
-        int cGId = -1;
-        std::vector<uint8_t> tempchannelVec;
-
-        for ( int idx = 0; idx < 254; idx++ )
-            tempchannelVec.push_back ( idx );
-
-        fTestGroupChannelMap[cGId] = tempchannelVec;
-    }
-    else
-    {
-        int cGId = -1;
-        std::vector<uint8_t> tempchannelVec;
-
-        for ( int idx = 0; idx < 254; idx++ )
-            tempchannelVec.push_back ( idx );
-
-        fTestGroupChannelMap[cGId] = tempchannelVec;
-
-    }
-}
-
 
 void Calibration::FindVplus()
 {
@@ -180,7 +138,7 @@ void Calibration::FindVplus()
     // now all offsets are either off (0x00 in holes mode, 0xFF in electrons mode)
     // next a group needs to be enabled - therefore now the group loop
     if (fType == ChipType::CBC2) LOG (INFO) << BOLDBLUE << "Extracting Vplus ..." << RESET ;
-    else if (fType == ChipType::CBC3) LOG (INFO) << BOLDBLUE << "Extracting Target Vth ..." << RESET ;
+    else if (fType == ChipType::CBC3) LOG (INFO) << BOLDBLUE << "Extracting Target VCth ..." << RESET ;
 
     uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
     LOG (INFO) << "Disabling all channels by setting offsets to " << std::hex << "0x" << +cOffset << std::dec;
@@ -202,7 +160,7 @@ void Calibration::FindVplus()
             //updateHists ( "Offsets" );
 
             if (fType == ChipType::CBC2) bitwiseVplus ( cTGroup.first );
-            else if (fType == ChipType::CBC3) bitwiseVth ( cTGroup.first );
+            else if (fType == ChipType::CBC3) bitwiseVCth ( cTGroup.first );
 
             LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
             setOffset ( cOffset, cTGroup.first, true );
@@ -214,7 +172,7 @@ void Calibration::FindVplus()
                 cTmpProfile->Fill ( cTGroup.first, cCbc.second ); // fill Vplus value for each test group
             }
 
-            updateHists ( "Vplus" );
+            //updateHists ( "Vplus" );
             //
         }
     }
@@ -237,7 +195,7 @@ void Calibration::FindVplus()
             LOG (INFO) << BOLDGREEN <<  "Mean Vplus value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
         }
         else if (fType == ChipType::CBC3)
-            LOG (INFO) << BOLDGREEN <<  "Mean Vth value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
+            LOG (INFO) << BOLDGREEN <<  "Mean VCth value for FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " is " << BOLDRED << +cCbc.second << RESET ;
     }
 
     if (fType == ChipType::CBC2)
@@ -248,7 +206,7 @@ void Calibration::FindVplus()
         fTargetVcth = static_cast<uint16_t> (cMeanValue / fNCbc);
         cThresholdVisitor.setThreshold (fTargetVcth);
         this->accept (cThresholdVisitor);
-        LOG (INFO) << BOLDBLUE << "Mean Vth value of all chips is " << static_cast<uint16_t> (cMeanValue / fNCbc) << " - using as TargetVcth value for all chips!" << RESET;
+        LOG (INFO) << BOLDBLUE << "Mean VCth value of all chips is " << static_cast<uint16_t> (cMeanValue / fNCbc) << " - using as TargetVcth value for all chips!" << RESET;
     }
 }
 
@@ -320,7 +278,7 @@ void Calibration::bitwiseVplus ( int pTGroup )
     else LOG (ERROR) << "ERROR, this should never be called!";
 }
 
-void Calibration::bitwiseVth ( int pTGroup )
+void Calibration::bitwiseVCth ( int pTGroup )
 {
     if (fType == ChipType::CBC3)
     {
@@ -565,8 +523,13 @@ void Calibration::setOffset ( uint8_t pOffset, int  pGroup, bool pVPlus )
 
                     if ( pVPlus )
                     {
-                        cOffsetHist->SetBinContent ( cChannel, pOffset );
-                        cOffsetHist->SetBinEntries ( cChannel, 1 );
+                        //original
+                        //cOffsetHist->SetBinContent ( cChannel, pOffset );
+                        //cOffsetHist->SetBinEntries ( cChannel, 1 );
+                        //suggested by B. Schneider
+                        int iBin = cOffsetHist->FindBin (cChannel);
+                        cOffsetHist->SetBinContent ( iBin, pOffset );
+                        cOffsetHist->SetBinEntries ( iBin, 1 );
                     }
                 }
 
@@ -603,14 +566,23 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                     if ( pBegin )
                     {
                         // get the offset
-                        uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
+                        // Fix suggested by B. Schneider
+                        int iBin = cOffsetHist->FindBin (cChannel);
+                        uint16_t cOffset = cOffsetHist->GetBinContent (iBin);
+                        //original
+                        //uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
 
                         // toggle Bit i
                         toggleRegBit ( cOffset, pBit );
 
                         // modify the histogram
-                        cOffsetHist->SetBinContent ( cChannel, cOffset );
-                        cOffsetHist->SetBinEntries ( cChannel, 1 );
+                        // original
+                        //cOffsetHist->SetBinContent ( cChannel, cOffset );
+                        //cOffsetHist->SetBinEntries ( cChannel, 1 );
+                        //suggested B. Schneider
+                        iBin = cOffsetHist->FindBin (cChannel);
+                        cOffsetHist->SetBinContent ( iBin, cOffset );
+                        cOffsetHist->SetBinEntries ( iBin, 1 );
 
                         // push in a vector for CBC write transaction
                         cRegVec.push_back ( {cRegName.Data(), static_cast<uint8_t> (cOffset) } );
@@ -619,10 +591,15 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                     {
                         // if the occupancy is larger than 50%, flip the bit back, if it is smaller, don't do anything
                         // get the offset
-                        uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
+                        // original
+                        //uint16_t cOffset = cOffsetHist->GetBinContent ( cChannel );
+                        //suggested B. Schneider
+                        int iBin = cOffsetHist->FindBin (cChannel);
+                        uint16_t cOffset = cOffsetHist->GetBinContent ( iBin );
 
                         // get the occupancy
-                        int iBin = cOccHist->GetXaxis()->FindBin ( cChannel );
+                        // original
+                        iBin = cOccHist->FindBin ( cChannel );
                         float cOccupancy = cOccHist->GetBinContent ( iBin );
                         //LOG (DEBUG) << "Bit " << +pBit << " Offset " << +cOffset << " Occupancy " << +cOccupancy;
 
@@ -630,8 +607,13 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                         if ( cOccupancy > 0.57 * fEventsPerPoint )
                         {
                             toggleRegBit ( cOffset, pBit ); // toggle the bit back that was previously flipped
-                            cOffsetHist->SetBinContent ( cChannel, cOffset );
-                            cOffsetHist->SetBinEntries ( cChannel, 1 );
+                            //sugested B. Schneider
+                            int iBin = cOffsetHist->FindBin (cChannel);
+                            cOffsetHist->SetBinContent ( iBin, cOffset );
+                            cOffsetHist->SetBinEntries ( iBin, 1 );
+                            //original
+                            //cOffsetHist->SetBinContent ( cChannel, cOffset );
+                            //cOffsetHist->SetBinEntries ( cChannel, 1 );
                             cRegVec.push_back ( {cRegName.Data(), static_cast<uint16_t> (cOffset) } );
                         }
 
@@ -657,13 +639,13 @@ void Calibration::updateHists ( std::string pHistname )
         if ( cHist != std::end ( cCbc.second ) )
         {
             // now cHist.second is the Histogram
-            if ( pHistname == "Vplus" )
-            {
-                fVplusCanvas->cd ( cCbc.first->getCbcId() + 1 );
-                TProfile* cTmpProfile = static_cast<TProfile*> ( cHist->second );
-                cTmpProfile->DrawCopy ( "H P0 E" );
-                fVplusCanvas->Update();
-            }
+            //if ( pHistname == "Vplus" )
+            //{
+            //fVplusCanvas->cd ( cCbc.first->getCbcId() + 1 );
+            //TProfile* cTmpProfile = static_cast<TProfile*> ( cHist->second );
+            //cTmpProfile->DrawCopy ( "H P0 E" );
+            //fVplusCanvas->Update();
+            //}
 
             if ( pHistname == "Offsets" )
             {
@@ -684,9 +666,6 @@ void Calibration::updateHists ( std::string pHistname )
         else LOG (INFO) << "Error, could not find Histogram with name " << pHistname ;
     }
 
-#ifdef __HTTP__
-    //fHttpServer->ProcessRequests();
-#endif
 }
 
 void Calibration::setRegValues()
@@ -704,20 +683,32 @@ void Calibration::setRegValues()
                 // first, find the offset Histogram for this CBC
                 TProfile* cOffsetHist = static_cast<TProfile*> ( getHist ( cCbc, "Offsets" ) );
 
+                RegisterVector cRegVec;   // vector of pairs for the write operation
+
                 for ( int iChan = 0; iChan < NCHANNELS; iChan++ )
                 {
-                    uint8_t cOffset = cOffsetHist->GetBinContent ( iChan );
-                    cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
-                    //LOG(INFO) << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET ;
+                    //original
+                    //uint8_t cOffset = cOffsetHist->GetBinContent ( iChan );
+                    //suggested B. Schneider
+                    int iBin = cOffsetHist->FindBin (iChan);
+                    uint8_t cOffset = cOffsetHist->GetBinContent ( iBin );
+                    //cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
+                    TString cRegName = Form ( "Channel%03d", iChan + 1 );
+                    cRegVec.push_back ( {cRegName.Data(), cOffset} );
+                    //LOG (INFO) << GREEN << "Offset for CBC " << cCbc->getCbcId() << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << " -applying to chip" << RESET ;
                 }
 
+                fCbcInterface->WriteCbcMultReg ( cCbc, cRegVec );
             }
         }
     }
+
+    LOG (INFO) << BOLDGREEN << "Applying final offsets determined by tuning to chip - no re-configure necessary!" << RESET;
 }
 
-void Calibration::writeGraphs()
+void Calibration::writeObjects()
 {
+    this->SaveResults();
     fResultFile->cd();
     // Save hist maps for CBCs
 
@@ -727,4 +718,5 @@ void Calibration::writeGraphs()
     //fVplusCanvas->Write ( fVplusCanvas->GetName(), TObject::kOverwrite );
     fOffsetCanvas->Write ( fOffsetCanvas->GetName(), TObject::kOverwrite );
     fOccupancyCanvas->Write ( fOccupancyCanvas->GetName(), TObject::kOverwrite );
+    fResultFile->Flush();
 }

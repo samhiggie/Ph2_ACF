@@ -239,7 +239,10 @@ namespace Ph2_System {
             this->parseCbcSettings (pModuleNode.child ("CBC"), cCbc, os);
 
             for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
-                cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), atoi ( cCbcRegisterNode.first_child().value() ) );
+            {
+                cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), convertAnyInt ( cCbcRegisterNode.first_child().value() ) );
+                os << BLUE << "|\t|\t|\t|----Register: " << std::string ( cCbcRegisterNode.attribute ( "name" ).value() ) << " : " << RED << std::hex << "0x" <<  convertAnyInt ( cCbcRegisterNode.first_child().value() ) << RESET << std::dec << std::endl;
+            }
 
             // here parese the GlobalCbcSettings so that Global CBC regisers take precedence over Global CBC settings which take precedence over CBC specific settings
             //for ( pugi::xml_node cCbcGlobalNode = pModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != pModuleNode.child ( "CBC" ) && cCbcGlobalNode != pModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
@@ -326,8 +329,8 @@ namespace Ph2_System {
             }
             else if (cType == ChipType::CBC3)
             {
-                pCbc->setReg ("Vth1", (cThreshold & 0x00FF) );
-                pCbc->setReg ("Vth2", (cThreshold & 0x0300) >> 8);
+                pCbc->setReg ("VCth1", (cThreshold & 0x00FF) );
+                pCbc->setReg ("VCth2", (cThreshold & 0x0300) >> 8);
                 pCbc->setReg ("TriggerLatency1", (cLatency & 0x00FF) );
                 uint8_t cLatReadValue = pCbc->getReg ("FeCtrl&TrgLat2") & 0xFE;
                 pCbc->setReg ("FeCtrl&TrgLat2", (cLatReadValue | ( (cLatency & 0x0100) >> 8) ) );
@@ -415,14 +418,16 @@ namespace Ph2_System {
 
         if (cMiscNode != nullptr)
         {
-            uint8_t cPipeLogic, cStubLogic, cOr254, cTpgClock, cDll;
+            uint8_t cPipeLogic, cStubLogic, cOr254, cTestClock, cTpgClock, cDll;
             uint8_t cAmuxValue;
 
             cPipeLogic = convertAnyInt (cMiscNode.attribute ("pipelogic").value() );
             cStubLogic = convertAnyInt (cMiscNode.attribute ("stublogic").value() );
             cOr254 = convertAnyInt (cMiscNode.attribute ("or254").value() );
+            cDll = reverseBits (static_cast<uint8_t> (convertAnyInt (cMiscNode.attribute ("dll").value() ) ) & 0x1F ) >> 3;
+            //LOG (DEBUG) << convertAnyInt (cMiscNode.attribute ("dll").value() ) << " " << +cDll << " " << std::bitset<5> (cDll);
             cTpgClock = convertAnyInt (cMiscNode.attribute ("tpgclock").value() );
-            cDll = convertAnyInt (cMiscNode.attribute ("dll").value() );
+            cTestClock = convertAnyInt (cMiscNode.attribute ("testclock").value() );
             cAmuxValue = convertAnyInt (cMiscNode.attribute ("analogmux").value() );
 
             if (cType == ChipType::CBC2)
@@ -434,14 +439,15 @@ namespace Ph2_System {
             }
             else if (cType == ChipType::CBC3)
             {
-                pCbc->setReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | cDll & 0x1F) );
+                pCbc->setReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | (cTestClock & 0x01) << 5 | cDll & 0x1F) );
+                //LOG (DEBUG) << BOLDRED << std::bitset<8> (pCbc->getReg ("40MhzClk&Or254") ) << RESET;
                 uint8_t cPtWidthRead = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
-                pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) >> 4) | cPtWidthRead & 0x0F) );
+                pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) << 4) | (cPtWidthRead & 0x0F) ) );
 
                 uint8_t cAmuxRead = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
                 pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", (cAmuxRead & 0xE0 | (cAmuxValue & 0x1F) ) );
 
-                os << GREEN << "|\t|\t|\t|----Misc Settings: " << " PipelineLogicSource: " << RED << +cPipeLogic << GREEN << ", StubLogicSource: " << RED << +cStubLogic << GREEN << ", OR254: " << RED << +cOr254 << GREEN << ", TPG Clock: " << RED << +cTpgClock << GREEN << ", DLL: " << RED << +cDll << RESET << std::endl;
+                os << GREEN << "|\t|\t|\t|----Misc Settings: " << " PipelineLogicSource: " << RED << +cPipeLogic << GREEN << ", StubLogicSource: " << RED << +cStubLogic << GREEN << ", OR254: " << RED << +cOr254 << GREEN << ", TPG Clock: " << RED << +cTpgClock << GREEN  << ", Test Clock 40: " << RED << +cTestClock << GREEN << ", DLL: " << RED << convertAnyInt (cMiscNode.attribute ("dll").value() ) << RESET << std::endl;
             }
 
             os << GREEN << "|\t|\t|\t|----Analog Mux " << "value: " << RED << +cAmuxValue << " (0x" << std::hex << +cAmuxValue << std::dec << ", 0b" << std::bitset<5> (cAmuxValue) << ")" << RESET << std::endl;

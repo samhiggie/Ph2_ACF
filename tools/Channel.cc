@@ -78,16 +78,10 @@ void Channel::initializeHist ( uint16_t pValue, TString pParameter )
 {
 
     TString histname;
-    TString fitname;
-    TString graphname;
 
     pParameter += Form ( "%d", pValue );
     histname = Form ( "Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId );
     histname += pParameter;
-    fitname = Form ( "Fit_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId );
-    fitname += pParameter;
-    graphname = Form ( "fDerivative_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId );
-    graphname += pParameter;
 
 
     fScurve = dynamic_cast<TH1F*> ( gROOT->FindObject ( histname ) );
@@ -98,23 +92,10 @@ void Channel::initializeHist ( uint16_t pValue, TString pParameter )
     fScurve->GetXaxis()->SetTitle ( pParameter );
     fScurve->GetYaxis()->SetTitle ( "Occupancy" );
 
-    fDerivative = dynamic_cast<TH1F*> ( gROOT->FindObject ( graphname ) );
-
-    if ( fDerivative ) delete fDerivative;
-
-    fDerivative = new TH1F ( graphname, Form ( "Derivative_Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 1023, 0, 1023 );
-    fDerivative->GetXaxis()->SetTitle ( pParameter );
-    fDerivative->GetYaxis()->SetTitle ( "Slope" );
 
     fScurve->SetMarkerStyle ( 7 );
     fScurve->SetMarkerSize ( 2 );
 
-    fFit = dynamic_cast< TF1* > ( gROOT->FindObject ( fitname ) );
-
-    if ( fFit ) delete fFit;
-
-    // TF1 *f1=gROOT->GetFunction("myfunc");
-    fFit = new TF1 ( fitname, MyErf, 0, 1023, 2 );
 }
 
 
@@ -126,8 +107,15 @@ void Channel::fillHist ( uint16_t pVcth )
 void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TString pParameter, TFile* pResultfile )
 {
     fFitted = true;
+    TString fitname;
 
-    if ( fScurve != nullptr && fFit != nullptr )
+    fitname = Form ( "Fit_Be%d_Fe%d_Cbc%d_Channel%d%s%d", fBeId, fFeId, fCbcId, fChannelId, pParameter.Data(), pValue );
+
+    fFit = dynamic_cast< TF1* > ( gROOT->FindObject ( fitname ) );
+
+    if ( fFit ) delete fFit;
+
+    if ( fScurve != nullptr && fFit == nullptr )
     {
 
         // Normalize first
@@ -141,7 +129,7 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
         // Not Hole Mode
         if ( !pHole )
         {
-            for ( Int_t cBin = 1; cBin <= fScurve->GetNbinsX(); cBin++ )
+            for ( Int_t cBin = 1; cBin < fScurve->GetNbinsX() - 1; cBin++ )
             {
                 double cContent = fScurve->GetBinContent ( cBin );
 
@@ -159,7 +147,7 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
         // Hole mode
         else
         {
-            for ( Int_t cBin = fScurve->GetNbinsX(); cBin >= 1; cBin-- )
+            for ( Int_t cBin = fScurve->GetNbinsX() - 1; cBin > 1; cBin-- )
             {
                 double cContent = fScurve->GetBinContent ( cBin );
 
@@ -179,11 +167,17 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
         double cMid = ( cFirst1 + cFirstNon0 ) * 0.5;
         double cWidth = ( cFirst1 - cFirstNon0 ) * 0.5;
 
+        if (!pHole)
+            fFit = new TF1 ( fitname, MyErf, cFirstNon0 - 10, cFirst1 + 10, 2 );
+        else
+            fFit = new TF1 ( fitname, MyErf, cFirst1 - 10, cFirstNon0 + 10, 2 );
+
         fFit->SetParameter ( 0, cMid );
-        fFit->SetParameter ( 1, cWidth );
+        fFit->SetParameter ( 1, sqrt (2) *cWidth );
 
         // Fit
         fScurve->Fit ( fFit, "RNQ+" );
+        //fScurve->Fit ( fFit, "RQ+" );
 
         // Eventually add TFitResultPointer
         // create a Directory in the file for the current Offset and save the channel Data
@@ -197,8 +191,9 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
 
         fScurve->SetDirectory ( cDir );
         // fFit->SetDirectory( cDir );
+        fScurve->Write (fScurve->GetName(), TObject::kOverwrite);
         fFit->Write ( fFit->GetName(), TObject::kOverwrite );
-        // pResultfile->Flush();
+        pResultfile->Flush();
 
         pResultfile->cd();
     }
@@ -210,7 +205,19 @@ void Channel::fitHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TS
 
 void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t pValue, TString pParameter, TFile* pResultfile )
 {
+    //TODO
     fFitted = false;
+    TString graphname;
+
+    graphname = Form ( "fDerivative_Be%d_Fe%d_Cbc%d_Channel%d%s%d", fBeId, fFeId, fCbcId, fChannelId, pParameter.Data(), pValue );
+
+    fDerivative = dynamic_cast<TH1F*> ( gROOT->FindObject ( graphname ) );
+
+    if ( fDerivative ) delete fDerivative;
+
+    fDerivative = new TH1F ( graphname, Form ( "Derivative_Scurve_Be%d_Fe%d_Cbc%d_Channel%d", fBeId, fFeId, fCbcId, fChannelId ), 1024, 0, 1024 );
+    fDerivative->GetXaxis()->SetTitle ( pParameter );
+    fDerivative->GetYaxis()->SetTitle ( "Slope" );
 
     if ( fScurve != nullptr && fFit != nullptr )
     {
@@ -233,17 +240,21 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
 
         if ( pHole )
         {
-            cPrev = fScurve->GetBinContent ( fScurve->GetBin ( -0.5 ) );
+            cPrev = fScurve->GetBinContent ( fScurve->FindBin ( 0 ) );
             cActive = false;
 
-            for ( cBin = 0; cBin <= 1023; cBin++ )
+            for ( cBin = fScurve->FindBin (0); cBin <= fScurve->FindBin (1023); cBin++ )
             {
-                cCurrent = fScurve->GetBinContent ( fScurve->GetBin ( cBin ) );
+                cCurrent = fScurve->GetBinContent (cBin);
                 cDiff = cPrev - cCurrent;
 
                 if ( cPrev > 0.75 ) cActive = true; // sampling begins
 
-                if ( cActive ) fDerivative->SetBinContent ( fDerivative->GetBin ( cBin - 0.5 ),  cDiff  );
+                int iBinDerivative = fDerivative->FindBin ( (fScurve->GetBinCenter (cBin + 1) + fScurve->GetBinCenter (cBin) ) / 2);
+
+                if ( cActive ) fDerivative->SetBinContent ( iBinDerivative, cDiff  );
+
+                //if ( cActive ) fDerivative->SetBinContent ( cBin + 1,  cDiff  );
 
                 if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 
@@ -254,17 +265,23 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
         }
         else
         {
-            cPrev = fScurve->GetBinContent ( fScurve->GetBin ( 1023.5 ) );
+            cPrev = fScurve->GetBinContent ( fScurve->FindBin ( 1023 ) );
             cActive = false;
 
-            for ( cBin = 1023; cBin >= 0; cBin-- )
+            for ( cBin = fScurve->FindBin (1023); cBin >= fScurve->FindBin ( 0); cBin-- )
             {
-                cCurrent = fScurve->GetBinContent ( fScurve->GetBin ( cBin ) );
-                cDiff = cCurrent - cPrev;
+                cCurrent = fScurve->GetBinContent (cBin);
+                cDiff = cPrev - cCurrent;
 
                 if ( cPrev > 0.75 ) cActive = true; // sampling begins
 
-                if ( cActive ) fDerivative->SetBinContent ( fDerivative->GetBin ( cBin - 0.5 ),   cDiff  );
+                int iBinDerivative = fDerivative->FindBin ( (fScurve->GetBinCenter (cBin - 1 ) + fScurve->GetBinCenter (cBin ) ) / 2.0);
+
+                if ( cActive ) fDerivative->SetBinContent ( iBinDerivative, cDiff  );
+
+                //original
+                //if ( cActive ) fDerivative->SetBinContent ( fDerivative->FindBin ( cBin - 0.5 ),   cDiff  );
+                //if ( cActive ) fDerivative->SetBinContent ( cBin - 1,   cDiff  );
 
                 if ( cActive && cDiff == 0 && cCurrent == 0 ) cDiffCounter++;
 
@@ -286,8 +303,9 @@ void Channel::differentiateHist ( uint32_t pEventsperVcth, bool pHole, uint16_t 
 
         fScurve->SetDirectory ( cDir );
         fDerivative->SetDirectory ( cDir );
-        // fDerivative->Write( fDerivative->GetName(), TObject::kOverwrite );
-        // pResultfile->Flush();
+        fScurve->Write (fScurve->GetName(), TObject::kOverwrite);
+        fDerivative->Write ( fDerivative->GetName(), TObject::kOverwrite );
+        pResultfile->Flush();
 
         pResultfile->cd();
     }

@@ -32,23 +32,25 @@ namespace Ph2_System {
         {
             if (fFileHandler->file_open() ) fFileHandler->closeFile();
 
-            delete fFileHandler;
+            if (fFileHandler) delete fFileHandler;
         }
 
-        delete fBeBoardInterface;
-        delete fCbcInterface;
+        if (fBeBoardInterface) delete fBeBoardInterface;
+
+        if (fCbcInterface) delete fCbcInterface;
+
         fBeBoardFWMap.clear();
         fSettingsMap.clear();
 
         for ( auto& el : fBoardVector )
-            delete el;
+            if (el) delete el;
 
         fBoardVector.clear();
 
         if (fData) delete fData;
     }
 
-    void SystemController::addFileHandler ( const std::string& pFilename , char pOption )
+    void SystemController::addFileHandler ( const std::string& pFilename, char pOption )
     {
         //if the opion is read, create a handler object and use it to read the
         //file in the method below!
@@ -106,7 +108,8 @@ namespace Ph2_System {
         for (auto& cBoard : fBoardVector)
         {
             fBeBoardInterface->ConfigureBoard ( cBoard );
-            fBeBoardInterface->CbcHardReset ( cBoard );
+            fBeBoardInterface->CbcFastReset ( cBoard );
+            //fBeBoardInterface->CbcHardReset ( cBoard );
 
             if ( cCheck && cBoard->getBoardType() == BoardType::GLIB)
             {
@@ -180,6 +183,15 @@ namespace Ph2_System {
             //finally set the handler
             fBeBoardInterface->SetFileHandler (cBoard, cHandler);
         }
+    }
+
+    void SystemController::Start (BeBoard* pBoard)
+    {
+        fBeBoardInterface->Start (pBoard);
+    }
+    void SystemController::Stop (BeBoard* pBoard)
+    {
+        fBeBoardInterface->Stop (pBoard);
     }
 
     uint32_t SystemController::ReadData (BeBoard* pBoard)

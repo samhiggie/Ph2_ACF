@@ -109,7 +109,7 @@ namespace Ph2_System {
             else return nullptr;
         }
 
-      private:
+      public:
         /*!
         * \brief issues a FileHandler for writing files to every BeBoardFWInterface if addFileHandler was called
         */
@@ -154,7 +154,7 @@ namespace Ph2_System {
          * \brief Run a DAQ
          * \param pBeBoard
          */
-        void Run ( BeBoard* pBoard );
+        //void Run ( BeBoard* pBoard );
 
         /*!
          * \brief Read Data from pBoard
@@ -162,6 +162,9 @@ namespace Ph2_System {
          * \return: number of packets
          */
         uint32_t ReadData (BeBoard* pBoard);
+
+        void Start (BeBoard* pBoard);
+        void Stop (BeBoard* pBoard);
 
         /*!
          * \brief Read Data from all boards

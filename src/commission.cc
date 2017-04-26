@@ -3,6 +3,7 @@
 
 //#include "../Utils/easylogging++.h"
 #include "../Utils/Utilities.h"
+#include "../Utils/Timer.h"
 #include "../tools/SignalScan.h"
 #include "../tools/LatencyScan.h"
 #include "../tools/PedeNoise.h"
@@ -102,7 +103,7 @@ int main ( int argc, char* argv[] )
 
     std::stringstream outp;
     Tool cTool;
-    cTool.InitializeHw ( cHWFile , outp);
+    cTool.InitializeHw ( cHWFile, outp);
     cTool.InitializeSettings ( cHWFile, outp );
     LOG (INFO) << outp.str();
     cTool.CreateResultDirectory ( cDirectory );
@@ -132,13 +133,17 @@ int main ( int argc, char* argv[] )
 
     else if ( cNoise )
     {
+        Timer t;
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        cPedeNoise.ConfigureHw ();
+        //cPedeNoise.ConfigureHw ();
         cPedeNoise.Initialise(); // canvases etc. for fast calibration
+        t.start();
         cPedeNoise.measureNoise();
+        t.stop();
+        t.show ("Time for noise measurement");
         cPedeNoise.Validate();
-        cPedeNoise.SaveResults( );
+        cPedeNoise.writeObjects( );
         cPedeNoise.dumpConfigFiles();
     }
 

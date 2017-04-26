@@ -151,15 +151,12 @@ int main ( int argc, char* argv[] )
     if ( cVcth != 0 )
     {
         t.start();
-
-
-        CbcRegWriter cWriter ( cSystemController.fCbcInterface, "VCth", uint8_t ( cVcth ) );
-        cSystemController.accept ( cWriter );
+        ThresholdVisitor cVisitor (cSystemController.fCbcInterface, 0);
+        cVisitor.setThreshold (cVcth);
+        cSystemController.accept (cVisitor);
 
         t.stop();
         t.show ( "Time for changing VCth on all CBCs:" );
-        CbcRegReader cReader ( cSystemController.fCbcInterface, "VCth" );
-        cSystemController.accept ( cReader );
     }
 
     BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );

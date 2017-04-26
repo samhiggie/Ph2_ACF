@@ -22,7 +22,7 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency ,  pStartLatency + (pLatencyRange )  * fTDCBins );
+            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency,  pStartLatency + (pLatencyRange )  * fTDCBins );
             //modify the axis labels
             uint32_t pLabel = pStartLatency;
 
@@ -310,9 +310,6 @@ void LatencyScan::updateHists ( std::string pHistName, bool pFinal )
             cCanvas.second->Update();
         }
 
-#ifdef __HTTP__
-        fHttpServer->ProcessRequests();
-#endif
     }
 }
 

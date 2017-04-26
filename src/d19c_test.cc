@@ -2,7 +2,6 @@
 #include "../Utils/CommonVisitors.h"
 #include "../Utils/argvparser.h"
 #include "../Utils/Timer.h"
-#include "../tools/BiasSweep.h"
 #include "TROOT.h"
 #include "TApplication.h"
 using namespace Ph2_HwDescription;
@@ -33,7 +32,7 @@ int main ( int argc, char** argv )
     el::Loggers::reconfigureAllLoggers (conf);
     ArgvParser cmd;
     // init
-    cmd.setIntroductoryDescription ( "CMS Ph2_ACF FC7 DAQ Test Application" );
+    cmd.setIntroductoryDescription ( "CMS Ph2_ACF d19c Testboard Firmware Test Application" );
     // error codes
     cmd.addErrorCode ( 0, "Success" );
     cmd.addErrorCode ( 1, "Error" );
@@ -64,8 +63,9 @@ int main ( int argc, char** argv )
     LOG (INFO) << outp.str();
     outp.str ("");
 
-    bool cToBeConfigured = ( cmd.foundOption ( "configure" ) ) ? true : false;
-    if (cToBeConfigured) cSystemController.ConfigureHw();
+    //bool cToBeConfigured = ( cmd.foundOption ( "configure" ) ) ? true : false;
+    //if (cToBeConfigured) cSystemController.ConfigureHw();
+    cSystemController.ConfigureHw();
 
     BeBoard* pBoard = cSystemController.fBoardVector.at(0);
 

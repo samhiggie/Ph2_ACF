@@ -39,6 +39,12 @@ namespace Ph2_HwInterface {
 
     int Cbc3Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
+        //if (list.at (0) == list.at (13) )
+        //{
+        //for (auto cWord : list)
+        //LOG (DEBUG) << std::bitset<32> (cWord);
+        //}
+
         fEventSize = pNbCbc *  CBC_EVENT_SIZE_32  + EVENT_HEADER_TDC_SIZE_32;
 
         //now decode the header info
@@ -50,7 +56,8 @@ namespace Ph2_HwInterface {
         fEventCountCBC = 0;
         fTDC = (0xE0000000 & list.at (2) ) >> 29;
 
-        fBeId = ( (0x0FE00000 & list.at (0) ) >> 21) - 1;
+        //fBeId = ( (0x0FE00000 & list.at (0) ) >> 21) - 1;
+        fBeId = ( (0x03E00000 & list.at (0) ) >> 21) - 1;
         fBeFWType = (0x001C0000 & list.at (0) ) >> 18;
         fCBCDataType = (0x00030000 & list.at (0) ) >> 16;
         fNCbc = (0x0000F000 & list.at (0) ) >> 12;
@@ -62,7 +69,7 @@ namespace Ph2_HwInterface {
         uint8_t cBeId = pBoard->getBeId();
 
         //TODO
-        //if (cBeId != fBeId) LOG (INFO) << "Warning, BeId from Event header and from Memory do not match! - check your configuration!";
+        if (cBeId != fBeId) LOG (INFO) << "Warning, BeId from Event header and from Memory do not match! - check your configuration!";
 
         uint32_t cNFe = static_cast<uint32_t> ( pBoard->getNFe() );
 
@@ -82,7 +89,8 @@ namespace Ph2_HwInterface {
             {
                 //Sanity Check with CBC header
                 //first, get the BeID, FeId, CbcId and CBCDataSize from the data frame CBC header and check against the Software
-                uint8_t cBeId_Data = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x07F00000) >> 20;
+                uint8_t cBeId_Data = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x01F00000) >> 20;
+                //uint8_t cBeId_Data = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x07F00000) >> 20;
                 uint8_t cFeId_Data = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x000E0000) >> 17;
                 uint8_t cCbcId_Data = (list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) & 0x0001F000) >> 12;
                 uint16_t cCbcDataSize = list.at (EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3) &  0x00000FFF;
@@ -320,7 +328,6 @@ namespace Ph2_HwInterface {
         return "";
     }
 
-
     std::string Cbc3Event::StubBitString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         std::ostringstream os;
@@ -374,6 +381,7 @@ namespace Ph2_HwInterface {
             uint8_t bend1 = (cData->second.at (1) & 0x0F000000) >> 24;
             uint8_t bend2 = (cData->second.at (1) & 0xF0000000) >> 28;
             uint8_t bend3 = (cData->second.at (2) & 0x0000000F);
+            //LOG (DEBUG)  << "\t" << MAGENTA << std::bitset<32> (cData->second.at (2)) << "|" << std::bitset<32> (cData->second.at (1)) << " " << RED << std::bitset<8> (bend1)  << GREEN << " " <<  std::bitset<8> (bend2) << BLUE << " " <<  std::bitset<8> (bend3) << RESET;
 
             cStubVec.emplace_back (pos1, bend1) ;
             cStubVec.emplace_back (pos2, bend2) ;
@@ -440,7 +448,8 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint8_t cBeId =  ( (cData->second.at (0) & 0x07F00000) >> 20) - 1;
+            //uint8_t cBeId =  ( (cData->second.at (0) & 0x07F00000) >> 20) - 1;
+            uint8_t cBeId =  ( (cData->second.at (0) & 0x01F00000) >> 20) - 1;
             uint8_t cFeId =  ( (cData->second.at (0) & 0x000E0000) >> 17) - 1;
             uint8_t cCbcId = ( (cData->second.at (0) & 0x0001F000) >> 12) - 1;
             uint16_t cCbcDataSize = cData->second.at (0) & 0x00000FFF;
@@ -552,6 +561,12 @@ namespace Ph2_HwInterface {
         }
 
         os << std::endl;
+
+        //for (auto const& cKey : this->fEventDataMap)
+        //{
+        //for (auto cWord : cKey.second)
+        //LOG (DEBUG) << std::bitset<32> (cWord);
+        //}
     }
 
     std::vector<Cluster> Cbc3Event::getClusters ( uint8_t pFeId, uint8_t pCbcId) const

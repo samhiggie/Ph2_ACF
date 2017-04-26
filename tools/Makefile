@@ -1,20 +1,22 @@
-AntennaFlag = -D__ANTENNA__
-Amc13Flag     = -D__AMC13__
+CC              = g++
+CXX             = g++
+CCFlags         = -g -O1 -w -Wall -pedantic -pthread -fPIC `root-config --cflags --evelibs` 
+
+Objs            = Tool.o Calibration.o Channel.o HybridTester.o CMTester.o LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o StubSweep.o
 
 ROOTVERSION := $(shell root-config --has-http)
-Objs            = Tool.o SCurve.o Calibration.o Channel.o HybridTester.o CMTester.o  LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o
+RootLibraryDirs = $(ROOTLIB)
+RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
-RootLibraryDirs = /usr/local/lib/root
+IncludeDirs = $(CACTUSINCLUDE) ../
 LibraryDirs = ../lib 
-#ExternalObjects = -lPh1_Utils -lPh2_System -lPh2_Interface -lPh2_Description
-ExternalObjects = 
-IncludeDirs = /opt/cactus/include ../
+ExternalObjects = -lboost_thread -lboost_filesystem -lPh2_System -lPh2_Description -lPh2_Interface -lPh2_Utils
 
 ##################################################
 ## check if Root has Http
 ##################################################
 ifneq (,$(findstring yes,$(ROOTVERSION)))
-	ExtObjectsRoot= -lRHTTP -D__HTTP__
+	ExtObjectsRoot= -lRHTTP $(HttpFlag)
 else
 	ExtObjectsRoot= 
 endif
@@ -25,7 +27,7 @@ endif
 ifneq ("$(wildcard $(ANTENNADIR))","")
 	ANTENNAINSTALLED = yes
 	IncludeDirs     +=  $(ANTENNADIR) 
-	LibraryDirs += ../CMSPh2_AntennaDriver/lib
+	LibraryDirs += $(ANTENNALIB)
 	ExternalObjects += -lusb -lPh2_Antenna $(AntennaFlag)
 else
 	ANTENNAINSTALLED = no
@@ -45,32 +47,32 @@ endif
 ## check if the Ph2_USBInstDriver drivers are installed
 ##################################################
 ifneq ("$(wildcard $(USBINSTDIR))","")
-	LibraryDirs += $(USBINSTDIR)/lib $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils 
-	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/Utils #$(USBINSTDIR)/Drivers 
-	ExternalObjects += -lpthread -lboost_thread -lPh2_HMP4040 -lPh2_Ke2110 $(USBINSTFlag) -lPh2_Drivers -lPh2_USBUtils 
+	LibraryDirs += $(BOOST_LIB) $(USBINSTLIB)
+	IncludeDirs += $(BOOST_INCLUDE) $(USBINSTDIR)/HMP4040 $(USBINSTDIR)/Ke2110 $(USBINSTDIR)/ArdNano
+	ExternalObjects += -lPh2_Drivers -lPh2_USBUtils -lPh2_HMP4040 -lPh2_Ke2110 -lPh2_ArdNano $(USBINSTFlag)
 	USBINSTLIBINSTALLED = yes
 	Objs += BiasSweep.o
 else
 	USBINSTLIBINSTALLED = no
 endif
 
-CC              = g++
-CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -fPIC `root-config --cflags --evelibs` 
-
-
-#DevFlags                   = -D__CBCDAQ_DEV__
-DevFlags		=
-
+##################################################
+## check if ZMQ library is available on this machine
+##################################################
+ifneq ("$(wildcard $(ZMQ_HEADER_PATH))","")
+	ExternalObjects += -lzmq $(ZmqFlag)
+	ZMQINSTALLED = yes
+else
+	ZMQINSTRUCTIONS = ZeroMQ library is required to build the lvSupervisor with the server option - get it with \'sudo yum install zeromq-devel\'
+endif
 
 LibraryPaths = $(LibraryDirs:%=-L%) 
 IncludePaths = $(IncludeDirs:%=-I%)
-RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 .PHONY: print clean
 
 %.o: %.cc %.h
-	$(CXX) -std=c++0x  $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(LibraryPaths) $(ExternalObjects) $(RootLibraryPaths) $(ExtObjectsRoot) -c -o $@ $<
+	$(CXX) -std=c++0x $(CCFlags) $(IncludePaths) $(LibraryPaths) $(ExternalObjects) $(RootLibraryPaths) $(ExtObjectsRoot) -c -o $@ $<
 
 all: print $(Objs) ../HWDescription/Definition.h
 	$(CC) -std=c++0x -shared -o libPh2_Tools.so $(Objs) -pthread

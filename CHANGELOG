@@ -169,3 +169,16 @@
  - 11.01.2017:
     - added a new Settings node in the HWDescription.xml file to set up the CBC test pulse and most common settings without having to manually set bits in individual registers
     - Cbc Registers nodes take precedence over Cbc Setting nodes, Global settings take precedence over individual CBC settins and Global CBC Registers take precedence over everything else - this is supposed to be the expert mode
+ - 17.01.2017:
+    - added and Debugged BiasSweep Tool class that should work with both versions of the CBC - in addition to TGraphs, a TTree with the bias sweep data is stored (biasname, FeId, CbcId, Timestamp, vectors of x and y data)
+    - implemented full functionality to sweep biases with external instruments: HMP4040, Ke2110, ArduinoNano
+    - Calibration et al work
+    - added StubSweep tool to check Stub addresses
+ - 07.02.2017:
+    - added new address table for FC7 FW v2
+    - cleaned up root file handling
+    - cleaned up histogram binning in Calibration, PedeNoise and Channel classes
+    - added cbc3irrad binary to run the complete radiation test cycle
+    - added UsbUtilities helper functions to launch and query Ke2110 and HMP4040 servers running in Tmux
+    - renamed Vth to VCth for CBC3 too
+

@@ -49,6 +49,17 @@ namespace Ph2_HwInterface {
         setBoard (pBoard->getBeBoardIdentifier() );
         fBoardFW->setFileHandler (pHandler);
     }
+    void BeBoardInterface::enableFileHandler (BeBoard* pBoard)
+    {
+        setBoard (pBoard->getBeBoardIdentifier() );
+        fBoardFW->enableFileHandler();
+    }
+
+    void BeBoardInterface::disableFileHandler (BeBoard* pBoard)
+    {
+        setBoard (pBoard->getBeBoardIdentifier() );
+        fBoardFW->disableFileHandler();
+    }
 
     void BeBoardInterface::WriteBoardReg ( BeBoard* pBoard, const std::string& pRegNode, const uint32_t& pVal )
     {

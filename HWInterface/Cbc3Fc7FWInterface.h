@@ -46,6 +46,7 @@ namespace Ph2_HwInterface {
         uint32_t fBroadcastCbcId;
         uint32_t fNCbc;
         uint32_t fFMCId;
+        uint8_t fStubLogicInput;
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
 

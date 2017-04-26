@@ -99,7 +99,7 @@ namespace Ph2_HwInterface {
     void Data::Reset()
     {
         for ( auto& pevt : fEventList )
-            delete pevt;
+            if (pevt) delete pevt;
 
         fEventList.clear();
         fCurrentEvent = 0;

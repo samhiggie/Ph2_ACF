@@ -81,7 +81,7 @@ class AntennaTester : public Tool
     };
 
 
-    void SaveResults();
+    void writeObjects();
   private :
     // initializing functions/methods
     void InitialiseSettings();
@@ -90,7 +90,6 @@ class AntennaTester : public Tool
     // histogram drawing functions
     void UpdateHists();
     void UpdateHistsMerged();
-    void writeGraphs();
 
     /*!
     * \brief private method that checks channels malfunction based on occupancy histograms, produces output report in .txt format
