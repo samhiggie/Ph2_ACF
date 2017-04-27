@@ -27,6 +27,8 @@
                 <Register name="test_pulse">
                     <Register name="delay_after_fast_reset"> 50 </Register>
                     <Register name="delay_after_test_pulse"> 200 </Register>
+	            <Register name="delay_before_next_pulse"> 400 </Register>
+		    <Register name="number_of_test_pulses"> 1 </Register>
                 </Register>
         </Register>
 	<!-- I2C manager -->
@@ -50,5 +52,9 @@
 </HwDescription>
 
 <Settings>
+    <!--Calibration-->
+    <Setting name="Nevents" > 10 </Setting>
+    <Setting name="VerificationLoop">1</Setting>
+    <Setting name="FitSCurves" > 1 </Setting>
 
 </Settings>

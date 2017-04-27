@@ -21,6 +21,8 @@
             <node id="test_pulse" description="configuration of the test pulse delays.">
                 <node id="delay_after_fast_reset"       address="0x004" description="delay between fast reset and following test pulse command"/>
                 <node id="delay_after_test_pulse"       address="0x005" description="delay after test pulse command before l1a signal sent to readout the data"/>
+		<node id="delay_before_next_pulse"      address="0x006" description="delay before next pulse"/>
+		<node id="number_of_test_pulses"        address="0x007" description="number of the test pulses to be sent at once"/>
             </node>
         </node>
 
@@ -197,10 +199,12 @@
         </node>
 
         <node id="readout_block"                address="0x5000">
-            <node id="general"                          address="0x000">
-                <node id="readout_req"                      mask="0x00000001"/>
-                <node id="fsm_status"                       mask="0x00000ff0"/>
+            <node id="general">
+                <node id="readout_req"                   address="0x000" mask="0x00000001"/>
+                <node id="fsm_status"                    address="0x000" mask="0x00000ff0"/>
+		<node id="words_cnt"                     address="0x001" mask="0xffffffff"/>
             </node>
+	    
         </node>
 
         <node id="dio5_block"                   address="0x6000">

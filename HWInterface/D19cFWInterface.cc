@@ -81,6 +81,22 @@ namespace Ph2_HwInterface {
         else LOG (INFO) << "Error, can not set NULL FileHandler" ;
     }
 
+    void D19cFWInterface::ReadErrors() {
+        int error_counter = ReadReg("fc7_daq_stat.general.global_error.counter");
+        if (error_counter == 0) {
+            LOG (INFO) << "No Errors detected";
+        }
+        else {
+            std::vector<uint32_t> pErrors = ReadBlockRegValue("fc7_daq_stat.general.global_error.full_error", error_counter);
+            for (auto& cError : pErrors)
+            {
+                int error_block_id = (cError & 0x0000000f);
+                int error_code = ((cError & 0x00000ff0) >> 4);
+                LOG (ERROR) << "Block: " << BOLDRED << error_block_id << RESET << ", Code: " << BOLDRED << error_code << RESET;
+            }
+        }
+    }
+
     uint32_t D19cFWInterface::getBoardInfo()
     {
         // firmware info
@@ -109,19 +125,7 @@ namespace Ph2_HwInterface {
         LOG (INFO) << YELLOW << "============================" << RESET;
         LOG (INFO) << BOLDYELLOW << "Current Status" << RESET;
 
-        int error_counter = ReadReg("fc7_daq_stat.general.global_error.counter");
-        if (error_counter == 0) {
-            LOG (INFO) << "No Errors detected";
-        }
-        else {
-            std::vector<uint32_t> pErrors = ReadBlockRegValue("fc7_daq_stat.general.global_error.full_error", error_counter);
-            for (auto& cError : pErrors)
-            {
-                int error_block_id = (cError & 0x0000000f);
-                int error_code = ((cError & 0x00000ff0) >> 4);
-                LOG (ERROR) << "Block: " << BOLDRED << error_block_id << RESET << ", Code: " << BOLDRED << error_code << RESET;
-            }
-        }
+        ReadErrors();
 
         int source_id = ReadReg("fc7_daq_stat.fast_command_block.general.source");
         double user_frequency = ReadReg("fc7_daq_cnfg.fast_command_block.user_trigger_frequency");
@@ -259,26 +263,26 @@ namespace Ph2_HwInterface {
 
     uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
     {
-        //ok, first query the number of events to read from FW and if it is 0, wait for half a second
-        //in other words, poll for the ring buffer to be NOT empty
-        uint32_t cNEvents = ReadReg ("fc7_daq_stat.be_proc.general.evnt_cnt");
-        //this->CbcTrigger();
+        uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
-        while (cNEvents == 0)
+        while (cNWords == 0)
         {
-            std::this_thread::sleep_for (std::chrono::milliseconds (500) );
-            cNEvents = ReadReg ("fc7_daq_stat.be_proc.general.evnt_cnt");
-            //LOG (DEBUG) << cNEvents;
+            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
         }
 
-        uint32_t cNWords = cNEvents*computeEventSize(pBoard);
         pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
 
         if (fSaveToFile)
-        {
             fFileHandler->set (pData);
-            //fFileHandler->writeFile();
-        }
+
+        //need to return the number of events read
+        uint32_t cEventSize = computeEventSize (pBoard);
+        uint32_t cNEvents = 0;
+
+        if (cNWords % cEventSize == 0 ) cNEvents = cNWords / cEventSize;
+        else
+            LOG (ERROR) << "Packet Size is not a multiple of the event size!";
 
         return cNEvents;
     }
@@ -286,7 +290,33 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
     {
-        ;
+
+        // first write the amount of the test pulses to be sent
+        std::vector< std::pair<std::string, uint32_t> > cVecReg;
+        cVecReg.push_back ({"fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents});
+        cVecReg.push_back ({"fc7_daq_ctrl.fast_command_block.control.load_config", 0x1});
+        WriteStackReg ( cVecReg );
+        cVecReg.clear();
+
+        // send N test pulses now
+        // TODO does ReadNEvents has to send test pulses???
+        this->CbcTestPulse();
+
+        uint32_t cEventSize = computeEventSize (pBoard);
+        uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+
+        while (cNWords < pNEvents * cEventSize)
+        {
+            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+        }
+
+        if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
+
+        pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
+
+        if (fSaveToFile)
+            fFileHandler->set (pData);
     }
 
     /** compute the block size according to the number of CBC's on this board
@@ -398,6 +428,7 @@ namespace Ph2_HwInterface {
         if (cNReplies != pNReplies)
         {
             LOG (INFO) << "Error: Read " << cNReplies << " I2C replies whereas " << pNReplies << " are expected!" ;
+            ReadErrors();
             cFailed = true;
         }
 

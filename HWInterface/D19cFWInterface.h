@@ -48,7 +48,7 @@ namespace Ph2_HwInterface {
         uint32_t fNCbc;
         uint32_t fFMCId;
 
-        const uint32_t SINGLE_I2C_WAIT = 1500; //usec for 0.1MHz I2C
+        const uint32_t SINGLE_I2C_WAIT = 2000; //used for 0.1MHz I2C
 
       public:
         /*!
@@ -192,6 +192,8 @@ namespace Ph2_HwInterface {
                 return ctoggle = !ctoggle;
             });
         }
+
+        void ReadErrors();
 
 
       public:
