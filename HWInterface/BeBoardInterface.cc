@@ -197,6 +197,12 @@ namespace Ph2_HwInterface {
         fBoardFW->CbcTrigger();
     }
 
+    void BeBoardInterface::CbcTestPulse ( const BeBoard* pBoard )
+    {
+        setBoard ( pBoard->getBeBoardIdentifier() );
+        fBoardFW->CbcTestPulse();
+    }
+
     void BeBoardInterface::CbcHardReset ( const BeBoard* pBoard )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
