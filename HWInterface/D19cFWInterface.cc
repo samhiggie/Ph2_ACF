@@ -292,11 +292,10 @@ namespace Ph2_HwInterface {
     {
 
         // first write the amount of the test pulses to be sent
-        std::vector< std::pair<std::string, uint32_t> > cVecReg;
-        cVecReg.push_back ({"fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents});
-        cVecReg.push_back ({"fc7_daq_ctrl.fast_command_block.control.load_config", 0x1});
-        WriteStackReg ( cVecReg );
-        cVecReg.clear();
+        WriteReg("fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents);
+        usleep(100);
+        WriteReg("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
+        usleep(100);
 
         // send N test pulses now
         // TODO does ReadNEvents has to send test pulses???
@@ -309,6 +308,7 @@ namespace Ph2_HwInterface {
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+            LOG(INFO) << "Need: " << pNEvents*cEventSize << "words, Get: " << cNWords;
         }
 
         if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
