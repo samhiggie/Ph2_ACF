@@ -53,8 +53,11 @@
 
 <Settings>
     <!--Calibration-->
-    <Setting name="Nevents" > 10 </Setting>
+   <Setting name="TargetVcth">0x78</Setting>
+    <Setting name="TargetOffset">0x50</Setting>
+    <Setting name="Nevents">50</Setting>
+    <Setting name="TestPulsePotentiometer">0x00</Setting>
+    <Setting name="HoleMode">1</Setting>
     <Setting name="VerificationLoop">1</Setting>
-    <Setting name="FitSCurves" > 1 </Setting>
 
 </Settings>

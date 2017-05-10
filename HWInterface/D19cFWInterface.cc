@@ -295,6 +295,11 @@ namespace Ph2_HwInterface {
         WriteReg("fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents);
         usleep(100);
         WriteReg("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
+        usleep(1000);
+
+        WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
+        usleep(100);
+        WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
         usleep(100);
 
         // send N test pulses now
@@ -304,11 +309,26 @@ namespace Ph2_HwInterface {
         uint32_t cEventSize = computeEventSize (pBoard);
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
+        int i = 0;
         while (cNWords < pNEvents * cEventSize)
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
             LOG(INFO) << "Need: " << pNEvents*cEventSize << "words, Get: " << cNWords;
+            if (i==2) {
+                WriteReg("fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents);
+                usleep(100);
+                WriteReg("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
+                usleep(1000);
+                WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
+                usleep(100);
+                WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
+                usleep(100);
+
+                this->CbcTestPulse();
+                i = 0;
+            }
+            else i++;
         }
 
         if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
