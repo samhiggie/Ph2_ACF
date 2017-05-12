@@ -80,7 +80,7 @@ int main ( int argc, char** argv )
     const std::vector<Event*>* pEvents ;
     uint32_t cN = 0;
 
-    for (int i=0; i<4; i++) {
+    for (int i=0; i<8; i++) {
         set_channel_group(cSystemController, pBoard, i);
         cSystemController.fBeBoardInterface->CbcTestPulse(pBoard);
     }
@@ -95,6 +95,8 @@ int main ( int argc, char** argv )
         outp << *ev;
         LOG (INFO) << outp.str();
     }
+
+    //cSystemController.ReadNEvents(pBoard,300);
 
     LOG (INFO) << "*** End of the DAQ test ***" ;
     cSystemController.Destroy();

@@ -293,14 +293,9 @@ namespace Ph2_HwInterface {
 
         // first write the amount of the test pulses to be sent
         WriteReg("fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents);
-        usleep(100);
-        WriteReg("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
-        usleep(1000);
-
-        WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-        usleep(100);
-        WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-        usleep(100);
+        usleep(1);
+        this->CbcI2CRefresh();
+        usleep(1);
 
         // send N test pulses now
         // TODO does ReadNEvents has to send test pulses???
@@ -310,20 +305,21 @@ namespace Ph2_HwInterface {
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
         int i = 0;
-        while (cNWords < pNEvents * cEventSize)
+        while (cNWords != pNEvents * cEventSize)
         {
             std::this_thread::sleep_for (std::chrono::milliseconds (100) );
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            LOG(INFO) << "Need: " << pNEvents*cEventSize << "words, Get: " << cNWords;
+
             if (i==2) {
-                WriteReg("fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents);
-                usleep(100);
-                WriteReg("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
-                usleep(1000);
+                if ((pNEvents*cEventSize) != cNWords) {LOG(ERROR) << "Need: " << pNEvents*cEventSize << " words, Get: " << cNWords << ". Resetting the readout and sending test pulse again";}
+
                 WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-                usleep(100);
+                usleep(10);
                 WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-                usleep(100);
+                usleep(10);
+
+                WriteReg("fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents);
+                usleep(10);
 
                 this->CbcTestPulse();
                 i = 0;
@@ -470,7 +466,7 @@ namespace Ph2_HwInterface {
         bool cFailed ( false );
         //reset the I2C controller
         WriteReg ("fc7_daq_ctrl.command_processor_block.i2c.control.reset_fifos", 0x1);
-
+        usleep(10);
         try
         {
             WriteBlockReg ( "fc7_daq_ctrl.command_processor_block.i2c.command_fifo", pVecSend );
@@ -480,7 +476,14 @@ namespace Ph2_HwInterface {
             throw except;
         }
 
-        uint32_t cNReplies = pVecSend.size() * ( pReadback ? 1 : 0 ) * ( pBroadcast ? fNCbc : 1 );
+        uint32_t cNReplies = 0;
+        for(auto word: pVecSend) {
+            // if read or readback for write == 1, then count
+            if ( (((word & 0x00010000) >> 16) == 1) or (((word & 0x00080000) >> 19) == 1) ) {
+                if (pBroadcast) cNReplies += fNCbc;
+                else cNReplies += 1;
+            }
+        }
 
         cFailed = ReadI2C (  cNReplies, pReplies) ;
 
@@ -613,6 +616,11 @@ namespace Ph2_HwInterface {
     void D19cFWInterface::CbcFastReset()
     {
         WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_reset", 0x1 );
+    }
+
+    void D19cFWInterface::CbcI2CRefresh()
+    {
+        WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_i2c_refresh", 0x1 );
     }
 
     void D19cFWInterface::CbcHardReset()
