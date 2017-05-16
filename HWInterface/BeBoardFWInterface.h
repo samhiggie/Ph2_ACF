@@ -201,6 +201,10 @@ namespace Ph2_HwInterface {
          */
         virtual void CbcTrigger() = 0;
         /*!
+         * \brief Send a CBC trigger
+         */
+        virtual void CbcTestPulse() = 0;
+        /*!
          * \brief Start an acquisition in a separate thread
          * \param pBoard Board running the acquisition
          * \param uNbAcq Number of acquisition iterations (each iteration will get CBC_DATA_PACKET_NUMBER + 1 events)

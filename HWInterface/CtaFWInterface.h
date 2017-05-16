@@ -258,6 +258,8 @@ namespace Ph2_HwInterface {
 
         void CbcTrigger() {}
 
+	void CbcTestPulse() {}
+
         void checkIfUploading();
         /*! \brief Upload a firmware (FPGA configuration) from a file in MCS format into a given configuration
          * \param strConfig FPGA configuration name
