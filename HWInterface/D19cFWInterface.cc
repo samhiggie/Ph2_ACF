@@ -433,19 +433,27 @@ namespace Ph2_HwInterface {
 
     bool D19cFWInterface::ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies)
     {
-        usleep (SINGLE_I2C_WAIT * pNReplies );
+        bool cFailed (false);        
 
-        bool cFailed (false);
+        uint32_t single_WaitingTime = SINGLE_I2C_WAIT*pNReplies;
+        uint32_t max_Attempts = 100;
+        uint32_t counter_Attempts = 0;
 
         //read the number of received replies from ndata and use this number to compare with the number of expected replies and to read this number 32-bit words from the reply FIFO
+        usleep(single_WaitingTime);
         uint32_t cNReplies = ReadReg ("fc7_daq_stat.command_processor_block.i2c.nreplies");
-
-
-        if (cNReplies != pNReplies)
+        while (cNReplies != pNReplies)
         {
-            LOG (INFO) << "Error: Read " << cNReplies << " I2C replies whereas " << pNReplies << " are expected!" ;
-            ReadErrors();
-            cFailed = true;
+            if (counter_Attempts > max_Attempts) {
+                LOG (INFO) << "Error: Read " << cNReplies << " I2C replies whereas " << pNReplies << " are expected!" ;
+                ReadErrors();
+                cFailed = true;
+                break;
+            }
+
+            usleep(single_WaitingTime);
+            cNReplies = ReadReg ("fc7_daq_stat.command_processor_block.i2c.nreplies");
+            counter_Attempts++;
         }
 
         try
