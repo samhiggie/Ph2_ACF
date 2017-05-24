@@ -493,14 +493,14 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
             if (!cAllZero && cAllZeroCounter == cMinBreakCount )
             {
                 cAllZero = true;
-                cSign *= (-1);
+                cSign = fHoleMode ? -1 : 1;
                 cIncrement = 0;
             }
 
             if (!cAllOne && cAllOneCounter == cMinBreakCount)
             {
                 cAllOne = true;
-                cSign *= (-1);
+                cSign = fHoleMode ? 1 : -1;
                 cIncrement = 0;
             }
 

@@ -311,7 +311,7 @@ namespace Ph2_HwInterface {
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
             if (i==2) {
-                if ((pNEvents*cEventSize) != cNWords) {LOG(ERROR) << "Need: " << pNEvents*cEventSize << " words, Get: " << cNWords << ". Resetting the readout and sending test pulse again";}
+                if ((pNEvents*cEventSize) != cNWords) {LOG(ERROR) << "Need: " << pNEvents*cEventSize << " words, Get: " << cNWords << ". Resetting the readout and sending trigger again";}
 
                 WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
                 usleep(10);
