@@ -16,6 +16,7 @@
 #include <uhal/uhal.hpp>
 #include "D19cFWInterface.h"
 #include "CtaFpgaConfig.h"
+
 //#include "CbcInterface.h"
 
 
@@ -174,24 +175,42 @@ namespace Ph2_HwInterface {
 
         // read info about current firmware
         int cbc_version = ReadReg("fc7_daq_stat.general.info.cbc_version");
-        int num_hybrids = ReadReg("fc7_daq_stat.general.info.num_hybrids");
-        int num_chips = ReadReg("fc7_daq_stat.general.info.num_chips");
+        fFWNHybrids = ReadReg("fc7_daq_stat.general.info.num_hybrids");
+        fFWNChips = ReadReg("fc7_daq_stat.general.info.num_chips");
 
         fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
+        LOG (INFO) << BOLDGREEN << "According to the Firmware status registers, it was compiled for: " << fFWNHybrids << " hybrid(s), " << fFWNChips << " CBC" << cbc_version << " chip(s) per hybrid" << RESET;
+
+        int fNHybrids = 0;
+        uint16_t hybrid_enable = 0;
+        uint8_t *chips_enable = new uint8_t[16];
+        for(int i=0; i<16; i++) chips_enable[i] = 0;
         //then loop the HWDescription and find out about our Connected CBCs
         for (Module* cFe : pBoard->fModuleVector)
         {
+            fNHybrids++;
+            LOG (INFO) << "Enabling Hybrid " << (int)cFe->getFeId();
+            hybrid_enable |= 1 << cFe->getFeId();
             //configure the CBCs - preliminary FW only supports 1 CBC but put the rest of the code there and comment
             for ( Cbc* cCbc : cFe->fCbcVector)
             {
+                LOG (INFO) << "     Enabling Chip " << (int)cCbc->getCbcId();
+                chips_enable[cFe->getFeId()] |= 1 << cCbc->getCbcId();
                 //need to increment the NCbc counter for I2C controller
                 fNCbc++;
             }
         }
-
-        if(num_hybrids*num_chips != fNCbc) LOG (ERROR) << "Number of chips in the configuration file doesn't correspond to the number of chips in the firmware. Firmware: " << num_hybrids << " hybrids, " << num_chips << " chips. Configuration file: " << fNCbc << " chips in total.";
+        cVecReg.push_back({"fc7_daq_cnfg.global.hybrid_enable",hybrid_enable});
+        for(uint32_t i=0; i<16; i++) {
+            char name[50];
+            std::sprintf(name, "fc7_daq_cnfg.global.chips_enable_hyb_%02d", i);
+            std::string name_str(name);
+            cVecReg.push_back({name_str, chips_enable[i]});
+        }
+        delete chips_enable;
+        LOG (INFO) << BOLDGREEN << fNHybrids << " hybrid(s) was(were) enabled with the total amount of " << fNCbc << " chip(s)!" << RESET;
 
         //last, loop over the variable registers from the HWDescription.xml file
         //this is where I should get all the clocking and FastCommandInterface settings
@@ -209,7 +228,7 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
 
 
-        // ping cbcs (reads data from registers #0)
+        // ping all cbcs (reads data from registers #0)
         uint32_t cInit = ( ( (2) << 28 ) | (  (0) << 18 )  | ( (0) << 17 ) | ( (1) << 16 ) | (0 << 8 ) | 0);
 
         WriteReg("fc7_daq_ctrl.command_processor_block.i2c.command_fifo", cInit);
@@ -221,7 +240,9 @@ namespace Ph2_HwInterface {
         if (cReadSuccess) {
             for (int i=0; i < pReplies.size(); i++) {
                 cWord = pReplies.at(i);
-                cWordCorrect = ( (((cWord) & 0x00f00000) >> 20) == i%num_chips ) ? true : false;
+                //cWordCorrect = ( (((cWord) & 0x00f00000) >> 20) == i%num_chips ) ? true : false;
+                // has to be reimplemented, because now some chips can be disabled and i doesn't correspond to the actual chip id
+                cWordCorrect = true;
                 if (!cWordCorrect) break;
             }
         }
@@ -340,7 +361,7 @@ namespace Ph2_HwInterface {
     uint32_t D19cFWInterface::computeEventSize ( BeBoard* pBoard )
     {
         //use a counting visitor to find out the number of CBCs
-        struct CbcCounter : public HwDescriptionVisitor
+        /*struct CbcCounter : public HwDescriptionVisitor
         {
             uint32_t fNCbc = 0;
 
@@ -358,7 +379,10 @@ namespace Ph2_HwInterface {
         pBoard->accept ( cCounter );
 
         //return 7 words header + fNCbc * CBC Event Size  (11 words)
-        return cCounter.getNCbc() * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER_SIZE_32_CBC3;
+        return cCounter.getNCbc() * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER_SIZE_32_CBC3;*/
+
+        // ^^^ temporary commented because zero supression has to be implemented in firmware
+        return fFWNHybrids*fFWNChips * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER_SIZE_32_CBC3;
     }
 
     std::vector<uint32_t> D19cFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )

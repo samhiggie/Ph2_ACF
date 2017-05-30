@@ -9,6 +9,26 @@
 
     <node id="fc7_daq_cnfg" address="0x40010000" permission="rw" >
 
+	<node id="global"                       address="0x0000">
+            <node id="hybrid_enable"			address="0x001" mask="0x0000FFFF"/>
+	    <node id="chips_enable_hyb_00"		address="0x002" mask="0x000000FF"/>
+	    <node id="chips_enable_hyb_01"		address="0x002" mask="0x0000FF00"/>
+	    <node id="chips_enable_hyb_02"		address="0x002" mask="0x00FF0000"/>
+            <node id="chips_enable_hyb_03"		address="0x002" mask="0xFF000000"/>
+            <node id="chips_enable_hyb_04"		address="0x003" mask="0x000000FF"/>
+            <node id="chips_enable_hyb_05"		address="0x003" mask="0x0000FF00"/>
+            <node id="chips_enable_hyb_06"		address="0x003" mask="0x00FF0000"/>
+            <node id="chips_enable_hyb_07"		address="0x003" mask="0xFF000000"/>
+	    <node id="chips_enable_hyb_08"		address="0x004" mask="0x000000FF"/>
+	    <node id="chips_enable_hyb_09"		address="0x004" mask="0x0000FF00"/>
+	    <node id="chips_enable_hyb_10"		address="0x004" mask="0x00FF0000"/>
+            <node id="chips_enable_hyb_11"		address="0x004" mask="0xFF000000"/>
+            <node id="chips_enable_hyb_12"		address="0x005" mask="0x000000FF"/>
+            <node id="chips_enable_hyb_13"		address="0x005" mask="0x0000FF00"/>
+            <node id="chips_enable_hyb_14"		address="0x005" mask="0x00FF0000"/>
+            <node id="chips_enable_hyb_15"		address="0x005" mask="0xFF000000"/>	
+        </node>
+
         <node id="command_processor_block"      address="0x1000">
             <node id="i2c_write_mask"                   address="0x001" mask="0x000000FF"/>
         </node>
