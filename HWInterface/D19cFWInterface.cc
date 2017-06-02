@@ -136,6 +136,9 @@ namespace Ph2_HwInterface {
             LOG (INFO) << "Trigger Source: " << BOLDGREEN << "Stubs" << RESET;
         else if (source_id == 3)
             LOG (INFO) << "Trigger Source: " << BOLDGREEN << "User Frequency (" << user_frequency << " kHz)" << RESET;
+        else if (source_id == 4)
+            LOG (INFO) << "Trigger Source: " << BOLDGREEN << "TLU" << RESET;
+        else if (source_id == 5)            LOG (INFO) << "Trigger Source: " << BOLDGREEN << "Ext Trigger (DIO5)" << RESET;
         else
             LOG (WARNING) << " Trigger Source: " << BOLDRED << "Unknown" << RESET;
 
