@@ -433,6 +433,8 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
     int cSign = 1;
     int cIncrement = 0;
 
+    uint16_t cNbits = (fType == ChipType::CBC2) ? 8 : 10;
+    uint16_t cMaxValue = pow(2,cNbits) - 1;
 
     //start with the threshold value found above
     ThresholdVisitor cVisitor (fCbcInterface, cValue);
@@ -502,6 +504,20 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
                 cAllOne = true;
                 cSign = fHoleMode ? 1 : -1;
                 cIncrement = 0;
+            }
+
+            // following checks if we're not going out of bounds
+            if (cSign == 1 && cValue == cMaxValue) {
+                if (fHoleMode) cAllZero = true;
+                else cAllOne = true;
+                cIncrement = 0;
+                cSign = -1*cSign;
+            }
+            if (cSign == -1 && cValue == 0) {
+                if (fHoleMode) cAllOne = true;
+                else cAllZero = true;
+                cIncrement = 0;
+                cSign = -1*cSign;
             }
 
 
