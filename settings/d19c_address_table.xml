@@ -189,6 +189,8 @@
                 <node id="dec_single_err_cnt"           address="0x006" mask="0x0000ffff"/>
                 <node id="dec_double_err_cnt"           address="0x006" mask="0xffff0000"/>
             </node>
+
+            <node id="hybrids_available"                address="0x007" mask="0xffffffff"/>
         </node>
 
         <node id="command_processor_block"      address="0x1000">
