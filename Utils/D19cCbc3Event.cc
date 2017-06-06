@@ -39,7 +39,9 @@ namespace Ph2_HwInterface {
     // NOT READY (still need to add some additional checks and additional variables)
     int D19cCbc3Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
-        fEventSize = pNbCbc *  CBC_EVENT_SIZE_32  + D19C_EVENT_HEADER_SIZE_32_CBC3;
+        uint32_t cNFe = static_cast<uint32_t> ( pBoard->getNFe() );
+
+        fEventSize = cNFe * (pNbCbc *  CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER2_SIZE_32_CBC3)  + D19C_EVENT_HEADER1_SIZE_32_CBC3;
 
         //now decode the header info
         fBunch = 0;
@@ -65,8 +67,6 @@ namespace Ph2_HwInterface {
         //TODO
         //if (cBeId != fBeId) LOG (INFO) << "Warning, BeId from Event header and from Memory do not match! - check your configuration!";
 
-        uint32_t cNFe = static_cast<uint32_t> ( pBoard->getNFe() );
-
         for ( uint8_t cFeId = 0; cFeId < cNFe; cFeId++ )
         {
             // the number of Cbcs is taken from the Event header and compared to the parameter passed above!
@@ -89,7 +89,7 @@ namespace Ph2_HwInterface {
 
                 uint16_t cKey = encodeId (cFeId, cCbcId);
 
-                uint32_t begin = D19C_EVENT_HEADER_SIZE_32_CBC3 + cFeId * CBC_EVENT_SIZE_32_CBC3 * fNCbc + cCbcId * CBC_EVENT_SIZE_32_CBC3;
+                uint32_t begin = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cFeId * (CBC_EVENT_SIZE_32_CBC3 * fNCbc + D19C_EVENT_HEADER2_SIZE_32_CBC3) + cCbcId * CBC_EVENT_SIZE_32_CBC3;
                 uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
 
                 std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );

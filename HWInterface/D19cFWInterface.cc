@@ -385,7 +385,7 @@ namespace Ph2_HwInterface {
         return cCounter.getNCbc() * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER_SIZE_32_CBC3;*/
 
         // ^^^ temporary commented because zero supression has to be implemented in firmware
-        return fFWNHybrids*fFWNChips * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER_SIZE_32_CBC3;
+        return fFWNHybrids* (fFWNChips * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER2_SIZE_32_CBC3) + D19C_EVENT_HEADER1_SIZE_32_CBC3;
     }
 
     std::vector<uint32_t> D19cFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
