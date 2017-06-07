@@ -39,63 +39,89 @@ namespace Ph2_HwInterface {
     // NOT READY (still need to add some additional checks and additional variables)
     int D19cCbc3Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
-        uint32_t cNFe = static_cast<uint32_t> ( pBoard->getNFe() );
-
-        fEventSize = cNFe * (pNbCbc *  CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER2_SIZE_32_CBC3)  + D19C_EVENT_HEADER1_SIZE_32_CBC3;
-
-        //now decode the header info
-        fBunch = 0;
-        fOrbit = 0;
-        fLumi = 0;
-        fEventCount = 0x00FFFFFF &  list.at (6);
-        //TODO: get the value from 1 CBC here?
-        fEventCountCBC = 0;
-        fTDC = (0xFF000000 & list.at (6) ) >> 24;
-
-        fBeId = (0x0000FF00 & list.at(3)) >> 8;
-        fBeFWType = 0;
-        fCBCDataType = (0x00FF0000 & list.at (1) ) >> 16;
-
-        // TODO: here in Laurent's format there're ncbc on hybrid1 and hybrid2. hybrid 1 is used here
-        fNCbc = (0x0000FF00 & list.at (4) ) >> 8;
-        fEventDataSize = 0x0000FFFF & list.at (2);
-        fBeStatus = 0;
-
-        //now decode FEEvents
-        uint8_t cBeId = pBoard->getBeId();
-
-        //TODO
-        //if (cBeId != fBeId) LOG (INFO) << "Warning, BeId from Event header and from Memory do not match! - check your configuration!";
-
-        for ( uint8_t cFeId = 0; cFeId < cNFe; cFeId++ )
-        {
-            // the number of Cbcs is taken from the Event header and compared to the parameter passed above!
-            uint32_t cNCbc = fNCbc;
-
-            if (fNCbc != pNbCbc)
-            {
-                LOG (ERROR) << "Error: the number of CBCs from the Event header do not match what is computed in SW! aborting!";
-                exit (1);
-            }
-
-            //now loop the CBCs and encode the IDs in key
-            for ( uint8_t cCbcId = 0; cCbcId < cNCbc; cCbcId++ )
-            {
-
-                //check the sync bit
-                uint8_t cSyncBit = 1;
-
-                if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
-
-                uint16_t cKey = encodeId (cFeId, cCbcId);
-
-                uint32_t begin = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cFeId * (CBC_EVENT_SIZE_32_CBC3 * fNCbc + D19C_EVENT_HEADER2_SIZE_32_CBC3) + cCbcId * CBC_EVENT_SIZE_32_CBC3;
-                uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
-
-                std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
-                fEventDataMap[cKey] = cCbcData;
-            }
+        fEventSize = 0x0000FFFF & list.at(0);
+        if (fEventSize != list.size()) {
+            LOG (ERROR) << "Vector size doesnt match the BLOCK_SIZE in Header1";
         }
+
+        // Starting from now, as it was proposed by Georg, one module (2hybrids) is considered as 1 Fe containing CBCs from both hybrids.
+        uint32_t cNFe_software = pBoard->getNFe();
+        uint32_t cNFe_event = (0x00FF0000 & list.at(0)) >> 16;
+        if (cNFe_software != cNFe_event) {
+            LOG (ERROR) << "Number of Modules in event header (" << cNFe_event << ") doesnt match the amount of modules defined in firmware. Please, notice, that in the configuration file all one module defined as one Fe containing CBCs from both hybrids";
+        }
+
+        // not iterate through modules
+        uint32_t address_offset = D19C_EVENT_HEADER1_SIZE_32_CBC3;
+        for(uint8_t cFeId = 0; cFeId < cNFe_event; cFeId++) {
+
+            // let's process header 2 now
+            fEventCount = 0x00FFFFFF &  list.at (address_offset+5);
+            fTDC = (0xFF000000 & list.at (address_offset+5) ) >> 24;
+
+            uint8_t cHybNbr = (0x000000FF & list.at(address_offset+3));
+            uint8_t cHybPos = ((0xFF000000) & list.at(address_offset+3)) >> 24;
+
+            // these part is temporary while we have chip number not chip mask, they will be swapped;
+            uint8_t cHyb1_chip_nbr = ((0x0000FF00) & list.at(address_offset+3)) >> 8;
+            uint8_t cHyb2_chip_nbr = ((0x00FF0000) & list.at(address_offset+3)) >> 16;
+            uint8_t cHyb1_chip_mask = 0;
+            uint8_t cHyb2_chip_mask = 0;
+            for(uint8_t bit = 0; bit < cHyb1_chip_nbr; bit++)
+                cHyb1_chip_mask |= 1 << bit;
+            for(uint8_t bit = 0; bit < cHyb2_chip_nbr; bit++)
+                cHyb2_chip_mask |= 1 << bit;
+
+            uint32_t data_offset = address_offset + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+
+            // iterating through the first hybrid chips
+            for(uint8_t cCbcId = 0; cCbcId < 8; cCbcId++ ) {
+                // check if we have data from this chip
+                if ((cHyb1_chip_mask >> cCbcId) & 1) {
+
+                    //check the sync bit
+                    uint8_t cSyncBit = 1;
+                    if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
+
+                    uint16_t cKey = encodeId (cFeId, cCbcId);
+
+                    uint32_t begin = data_offset;
+                    uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
+
+                    std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
+                    fEventDataMap[cKey] = cCbcData;
+
+                    data_offset += CBC_EVENT_SIZE_32_CBC3;
+                }
+            }
+
+            // we need this to shift data of the second hybrid (the id's of the CBCs)
+            // FIXME FIXME it's very stupid - checks if the mask of the first hybrid is completely empty (bits 2-7), then it's probably 2xCBC2
+            uint8_t cNChipsPerHybrid = ((cHyb1_chip_mask & 0xFC) >> 2) == 0 ? 2 : 8;
+            // iterating through the second hybrid chips
+            for(uint8_t cCbcId = 0; cCbcId < 8; cCbcId++ ) {
+                // check if we have data from this chip
+                if ((cHyb2_chip_mask >> cCbcId) & 1) {
+
+                    //check the sync bit
+                    uint8_t cSyncBit = 1;
+                    if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
+
+                    uint16_t cKey = encodeId (cFeId, cCbcId+cNChipsPerHybrid);
+
+                    uint32_t begin = data_offset;
+                    uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
+
+                    std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
+                    fEventDataMap[cKey] = cCbcData;
+
+                    data_offset += CBC_EVENT_SIZE_32_CBC3;
+                }
+            }
+
+            uint32_t address_offset = address_offset + CBC_EVENT_SIZE_32*(cHyb1_chip_nbr+cHyb2_chip_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+        }
+
     }
 
 

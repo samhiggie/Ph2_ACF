@@ -291,23 +291,35 @@ namespace Ph2_HwInterface {
 
         while (cNWords == 0)
         {
-            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+            std::this_thread::sleep_for (std::chrono::milliseconds (10) );
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
         }
 
-        pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
+        uint32_t cNEvents = 0;
+        while(cNWords > 0) {
+            // reading header 1
+            uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
+            uint32_t cEventSize = (0x0000FFFF & header1);
+
+            while (cNWords < cEventSize-1)
+            {
+                LOG(ERROR) << "Need: " << cEventSize-1 << " words for this event, Get: " << cNWords;
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+
+            }
+            pData.push_back(header1);
+            std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize-1);
+            pData.insert(pData.end(), rest_of_data.begin(), rest_of_data.end());
+            cNEvents++;
+            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+        }
+
 
         if (fSaveToFile)
             fFileHandler->set (pData);
 
         //need to return the number of events read
-        uint32_t cEventSize = computeEventSize (pBoard);
-        uint32_t cNEvents = 0;
-
-        if (cNWords % cEventSize == 0 ) cNEvents = cNWords / cEventSize;
-        else
-            LOG (ERROR) << "Packet Size is not a multiple of the event size!";
-
         return cNEvents;
     }
 
@@ -325,35 +337,34 @@ namespace Ph2_HwInterface {
         // TODO does ReadNEvents has to send test pulses???
         this->CbcTestPulse();
 
-        uint32_t cEventSize = computeEventSize (pBoard);
-        uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+        bool failed = false;
+        for(uint32_t event; event < pNEvents; event++) {
+            if (failed) break;
+            uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
-        int i = 0;
-        while (cNWords != pNEvents * cEventSize)
-        {
-            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
-            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-
-            if (i==2) {
-                if ((pNEvents*cEventSize) != cNWords) {LOG(ERROR) << "Need: " << pNEvents*cEventSize << " words, Get: " << cNWords << ". Resetting the readout and sending trigger again";}
-
-                WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-                usleep(10);
-                WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-                usleep(10);
-
-                WriteReg("fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents);
-                usleep(10);
-
-                this->CbcTestPulse();
-                i = 0;
+            while (cNWords < 1)
+            {
+                LOG(ERROR) << "Don't have even a single word...";
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
             }
-            else i++;
+
+            // reading header 1
+            uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
+            uint32_t cEventSize = (0x0000FFFF & header1);
+
+            while (cNWords < cEventSize-1)
+            {
+                LOG(ERROR) << "Need: " << cEventSize-1 << " words for this event, Get: " << cNWords;
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+
+            }
+            pData.push_back(header1);
+            std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize-1);
+            pData.insert(pData.end(), rest_of_data.begin(), rest_of_data.end());
+
         }
-
-        if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
-
-        pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
 
         if (fSaveToFile)
             fFileHandler->set (pData);
