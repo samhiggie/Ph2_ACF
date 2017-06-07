@@ -40,8 +40,9 @@ namespace Ph2_HwInterface {
 
         fNevents = static_cast<uint32_t> ( pNevents );
         fEventSize = static_cast<uint32_t> ( (pData.size() ) / fNevents );
+        uint32_t fNFe = pBoard->getNFe();
 
-        if (pType == BoardType::D19C) fNCbc = (fEventSize - D19C_EVENT_HEADER_SIZE_32_CBC3) / (CBC_EVENT_SIZE_32_CBC3);
+        if (pType == BoardType::D19C) fNCbc = ((fEventSize - D19C_EVENT_HEADER1_SIZE_32_CBC3)/ fNFe - D19C_EVENT_HEADER2_SIZE_32_CBC3) / (CBC_EVENT_SIZE_32_CBC3);
         else if (pType == BoardType::CBC3FC7) fNCbc = (fEventSize - (EVENT_HEADER_SIZE_32_CBC3) ) / (CBC_EVENT_SIZE_32_CBC3);
         else fNCbc = ( fEventSize - ( EVENT_HEADER_TDC_SIZE_32 ) ) / ( CBC_EVENT_SIZE_32 );
 
