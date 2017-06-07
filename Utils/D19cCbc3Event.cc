@@ -119,7 +119,7 @@ namespace Ph2_HwInterface {
                 }
             }
 
-            uint32_t address_offset = address_offset + CBC_EVENT_SIZE_32*(cHyb1_chip_nbr+cHyb2_chip_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+            address_offset = address_offset + CBC_EVENT_SIZE_32*(cHyb1_chip_nbr+cHyb2_chip_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
         }
 
     }
