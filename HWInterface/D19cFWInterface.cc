@@ -338,8 +338,7 @@ namespace Ph2_HwInterface {
         this->CbcTestPulse();
 
         bool failed = false;
-        for(uint32_t event; event < pNEvents; event++) {
-            if (failed) break;
+        for(uint32_t event; event < pNEvents; event++) {            
             uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
             int cNTries = 0;
@@ -348,21 +347,15 @@ namespace Ph2_HwInterface {
             {
                 if(cNTries >= cNTriesMax) {
                     LOG(ERROR) << "After " << cNTriesMax << " clock cycles still no data: resetting and re-trying";
-
-                    pData.clear();
-
-                    WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-                    usleep(10);
-                    WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-                    usleep(10);
-
-                    this->ReadNEvents(pBoard,pNEvents,pData);
+                    failed = true;
+                    break;
                 }
 
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
                 cNTries++;
             }
+            if (failed) break;
 
             // reading header 1
             uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
@@ -377,6 +370,17 @@ namespace Ph2_HwInterface {
             std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize-1);
             pData.insert(pData.end(), rest_of_data.begin(), rest_of_data.end());
 
+        }
+        if(failed) {
+
+            pData.clear();
+
+            WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
+            usleep(10);
+            WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
+            usleep(10);
+
+            this->ReadNEvents(pBoard,pNEvents,pData);
         }
 
         if (fSaveToFile)
