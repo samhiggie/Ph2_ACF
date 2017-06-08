@@ -45,8 +45,8 @@ namespace Ph2_HwInterface {
         }
 
         // Starting from now, as it was proposed by Georg, one module (2hybrids) is considered as 1 Fe containing CBCs from both hybrids.
-        uint32_t cNFe_software = pBoard->getNFe();
-        uint32_t cNFe_event = (0x00FF0000 & list.at(0)) >> 16;
+        uint8_t cNFe_software = static_cast<uint8_t>(pBoard->getNFe());
+        uint8_t cNFe_event = static_cast<uint8_t>((0x00FF0000 & list.at(0)) >> 16);
         if (cNFe_software != cNFe_event) {
             LOG (ERROR) << "Number of Modules in event header (" << cNFe_event << ") doesnt match the amount of modules defined in firmware. Please, notice, that in the configuration file all one module defined as one Fe containing CBCs from both hybrids";
         }
@@ -59,12 +59,12 @@ namespace Ph2_HwInterface {
             fEventCount = 0x00FFFFFF &  list.at (address_offset+5);
             fTDC = (0xFF000000 & list.at (address_offset+5) ) >> 24;
 
-            uint8_t cHybNbr = (0x000000FF & list.at(address_offset+3));
-            uint8_t cHybPos = ((0xFF000000) & list.at(address_offset+3)) >> 24;
+            uint8_t cHybNbr = static_cast<uint8_t>((0x000000FF & list.at(address_offset+3)));
+            uint8_t cHybPos = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+3)) >> 24);
 
             // these part is temporary while we have chip number not chip mask, they will be swapped;
-            uint8_t cHyb1_chip_nbr = ((0x0000FF00) & list.at(address_offset+3)) >> 8;
-            uint8_t cHyb2_chip_nbr = ((0x00FF0000) & list.at(address_offset+3)) >> 16;
+            uint8_t cHyb1_chip_nbr = static_cast<uint8_t>(((0x0000FF00) & list.at(address_offset+3)) >> 8);
+            uint8_t cHyb2_chip_nbr = static_cast<uint8_t>(((0x00FF0000) & list.at(address_offset+3)) >> 16);
             uint8_t cHyb1_chip_mask = 0;
             uint8_t cHyb2_chip_mask = 0;
             for(uint8_t bit = 0; bit < cHyb1_chip_nbr; bit++)
