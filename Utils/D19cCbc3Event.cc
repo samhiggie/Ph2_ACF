@@ -51,20 +51,24 @@ namespace Ph2_HwInterface {
             LOG (ERROR) << "Number of Modules in event header (" << cNFe_event << ") doesnt match the amount of modules defined in firmware. Please, notice, that in the configuration file all one module defined as one Fe containing CBCs from both hybrids";
         }
 
+        fDummySize = 0x000000FF & list.at(1);
+        fEventCount = 0x00FFFFFF &  list.at(2);
+        fBunch = 0xFFFFFFFF & list.at(3);
+        fTDC = 0x000000FF & list.at(4);
+        fTLUTriggerID = (0x00FFFF00 & list.at(4)) >> 8;
+
+
         // not iterate through modules
         uint32_t address_offset = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         for(uint8_t cFeId = 0; cFeId < cNFe_event; cFeId++) {
 
             // let's process header 2 now
-            fEventCount = 0x00FFFFFF &  list.at (address_offset+5);
-            fTDC = (0xFF000000 & list.at (address_offset+5) ) >> 24;
-
-            uint8_t cHybNbr = static_cast<uint8_t>((0x000000FF & list.at(address_offset+3)));
-            uint8_t cHybPos = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+3)) >> 24);
+            uint8_t cHybNbr = static_cast<uint8_t>(((0x00000F00 & list.at(address_offset+0))) >> 8);
+            uint8_t cHybPos = static_cast<uint8_t>(((0x0000F000) & list.at(address_offset+0)) >> 12);
 
             // these part is temporary while we have chip number not chip mask, they will be swapped;
-            uint8_t cHyb1_chip_nbr = static_cast<uint8_t>(((0x0000FF00) & list.at(address_offset+3)) >> 8);
-            uint8_t cHyb2_chip_nbr = static_cast<uint8_t>(((0x00FF0000) & list.at(address_offset+3)) >> 16);
+            uint8_t cHyb1_chip_nbr = static_cast<uint8_t>(((0x00FF0000) & list.at(address_offset+0)) >> 16);
+            uint8_t cHyb2_chip_nbr = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+0)) >> 24);
             uint8_t cHyb1_chip_mask = 0;
             uint8_t cHyb2_chip_mask = 0;
             for(uint8_t bit = 0; bit < cHyb1_chip_nbr; bit++)

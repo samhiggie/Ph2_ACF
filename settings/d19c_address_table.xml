@@ -227,6 +227,18 @@
                 <node id="data_payload_buf_empty"           mask="0x02000000"/>
                 <node id="trigdata_buf_empty"               mask="0x04000000"/>
             </node>
+            <node id="frame_counters">
+                <node id="hybrid0">
+                    <node id="chip0"                    address="0x001" mask="0xffffffff"/>
+                    <node id="chip1"                    address="0x002" mask="0xffffffff"/>
+                    <node id="chip2"                    address="0x003" mask="0xffffffff"/>
+                    <node id="chip3"                    address="0x004" mask="0xffffffff"/>
+                    <node id="chip4"                    address="0x005" mask="0xffffffff"/>
+                    <node id="chip5"                    address="0x006" mask="0xffffffff"/>
+                    <node id="chip6"                    address="0x007" mask="0xffffffff"/>
+                    <node id="chip7"                    address="0x008" mask="0xffffffff"/>
+                </node>
+            </node>
         </node>
 
         <node id="readout_block"                address="0x5000">

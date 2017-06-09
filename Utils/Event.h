@@ -104,6 +104,10 @@ namespace Ph2_HwInterface {
         uint16_t fEventDataSize;
         uint32_t fBeStatus;
 
+        // d19c variables
+        uint16_t fTLUTriggerID;
+        uint8_t fDummySize;
+
 
       public:
         // size of an event
