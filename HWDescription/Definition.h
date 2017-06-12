@@ -72,7 +72,7 @@
 
 //FC7 DAQ event header size
 #define D19C_EVENT_HEADER1_SIZE_32_CBC3 5
-#define D19C_EVENT_HEADER2_SIZE_32_CBC3 2
+#define D19C_EVENT_HEADER2_SIZE_32_CBC3 1
 // points to bufferoverlow
 #define D19C_OFFSET_ERROR_CBC3              8*32+1
 

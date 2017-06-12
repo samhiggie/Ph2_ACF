@@ -44,6 +44,11 @@ namespace Ph2_HwInterface {
             LOG (ERROR) << "Vector size doesnt match the BLOCK_SIZE in Header1";
         }
 
+        uint8_t header1_size = (0xFF000000 & list.at(0)) >> 24;
+        if (header1_size != D19C_EVENT_HEADER1_SIZE_32_CBC3) {
+            LOG (ERROR) << "Header1 size doesnt correspond to the one sent from firmware";
+        }
+
         // Starting from now, as it was proposed by Georg, one module (2hybrids) is considered as 1 Fe containing CBCs from both hybrids.
         uint8_t cNFe_software = static_cast<uint8_t>(pBoard->getNFe());
         uint8_t cNFe_event = static_cast<uint8_t>((0x00FF0000 & list.at(0)) >> 16);
@@ -57,31 +62,38 @@ namespace Ph2_HwInterface {
         fTDC = 0x000000FF & list.at(4);
         fTLUTriggerID = (0x00FFFF00 & list.at(4)) >> 8;
 
+        fBeId = pBoard->getBeId();
+        fBeFWType = 0;
+        fCBCDataType = 3;
+        fBeStatus = 0;
+        fNCbc = pNbCbc;
+        fEventDataSize = fEventSize;
+
 
         // not iterate through modules
         uint32_t address_offset = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         for(uint8_t cFeId = 0; cFeId < cNFe_event; cFeId++) {
 
-            // let's process header 2 now
-            uint8_t cHybNbr = static_cast<uint8_t>(((0x00000F00 & list.at(address_offset+0))) >> 8);
-            uint8_t cHybPos = static_cast<uint8_t>(((0x0000F000) & list.at(address_offset+0)) >> 12);
-
             // these part is temporary while we have chip number not chip mask, they will be swapped;
-            uint8_t cHyb1_chip_nbr = static_cast<uint8_t>(((0x00FF0000) & list.at(address_offset+0)) >> 16);
-            uint8_t cHyb2_chip_nbr = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+0)) >> 24);
-            uint8_t cHyb1_chip_mask = 0;
-            uint8_t cHyb2_chip_mask = 0;
-            for(uint8_t bit = 0; bit < cHyb1_chip_nbr; bit++)
-                cHyb1_chip_mask |= 1 << bit;
-            for(uint8_t bit = 0; bit < cHyb2_chip_nbr; bit++)
-                cHyb2_chip_mask |= 1 << bit;
+            uint8_t chips_with_data_nbr = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+0)) >> 24);
+            uint8_t chip_data_mask = 0;
+            for(uint8_t bit = 0; bit < chips_with_data_nbr; bit++)
+                chip_data_mask |= 1 << bit;
+
+            uint8_t header2_size = (0x00FF0000 & list.at(address_offset+0)) >> 16;
+            if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3) {
+                LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
+            }
+            uint8_t fe_data_size = (0x000000FF & list.at(address_offset+0));
+            if (fe_data_size != CBC_EVENT_SIZE_32_CBC3*chips_with_data_nbr+D19C_EVENT_HEADER2_SIZE_32_CBC3) {
+                LOG (ERROR) << "Event size doesnt correspond to the one sent from firmware";
+            }
 
             uint32_t data_offset = address_offset + D19C_EVENT_HEADER2_SIZE_32_CBC3;
-
             // iterating through the first hybrid chips
             for(uint8_t cCbcId = 0; cCbcId < 8; cCbcId++ ) {
                 // check if we have data from this chip
-                if ((cHyb1_chip_mask >> cCbcId) & 1) {
+                if ((chip_data_mask >> cCbcId) & 1) {
 
                     //check the sync bit
                     uint8_t cSyncBit = 1;
@@ -97,33 +109,9 @@ namespace Ph2_HwInterface {
 
                     data_offset += CBC_EVENT_SIZE_32_CBC3;
                 }
-            }
+            }         
 
-            // we need this to shift data of the second hybrid (the id's of the CBCs)
-            // FIXME FIXME it's very stupid - checks if the mask of the first hybrid is completely empty (bits 2-7), then it's probably 2xCBC2
-            uint8_t cNChipsPerHybrid = ((cHyb1_chip_mask & 0xFC) >> 2) == 0 ? 2 : 8;
-            // iterating through the second hybrid chips
-            for(uint8_t cCbcId = 0; cCbcId < 8; cCbcId++ ) {
-                // check if we have data from this chip
-                if ((cHyb2_chip_mask >> cCbcId) & 1) {
-
-                    //check the sync bit
-                    uint8_t cSyncBit = 1;
-                    if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
-
-                    uint16_t cKey = encodeId (cFeId, cCbcId+cNChipsPerHybrid);
-
-                    uint32_t begin = data_offset;
-                    uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
-
-                    std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
-                    fEventDataMap[cKey] = cCbcData;
-
-                    data_offset += CBC_EVENT_SIZE_32_CBC3;
-                }
-            }
-
-            address_offset = address_offset + CBC_EVENT_SIZE_32_CBC3*(cHyb1_chip_nbr+cHyb2_chip_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+            address_offset = address_offset + CBC_EVENT_SIZE_32_CBC3*(chips_with_data_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
         }
 
     }
@@ -480,13 +468,13 @@ namespace Ph2_HwInterface {
         os << BOLDGREEN << "EventType: d19c CBC3" << RESET << std::endl;
         os << BOLDBLUE <<  "L1A Counter: " << this->GetEventCount() << RESET << std::endl;
         os << "          Be Id: " << +this->GetBeId() << std::endl;
-        os << "          Be FW: " << +this->GetFWType() << std::endl;
-        os << "      Be Status: " << +this->GetBeStatus() << std::endl;
-        os << "  Cbc Data type: " << +this->GetCbcDataType() << std::endl;
-        os << "          N Cbc: " << +this->GetNCbc() << std::endl;
-        os << "Event Data size: " << +this->GetEventDataSize() << "(+1 for header 0)" << std::endl;
+        //os << "          Be FW: " << +this->GetFWType() << std::endl;
+        //os << "      Be Status: " << +this->GetBeStatus() << std::endl;
+        //os << "  Cbc Data type: " << +this->GetCbcDataType() << std::endl;
+        //os << "          N Cbc: " << +this->GetNCbc() << std::endl;
+        os << "Event Data size: " << +this->GetEventDataSize() << std::endl;
         //os << "  CBC Counter: " << this->GetEventCountCBC() << RESET << std::endl;
-        //os << "Bunch Counter: " << this->GetBunch() << std::endl;
+        os << "Bunch Counter: " << this->GetBunch() << std::endl;
         //os << "Orbit Counter: " << this->GetOrbit() << std::endl;
         //os << " Lumi Section: " << this->GetLumi() << std::endl;
         os << BOLDRED << "    TDC Counter: " << +this->GetTDC() << RESET << std::endl;
