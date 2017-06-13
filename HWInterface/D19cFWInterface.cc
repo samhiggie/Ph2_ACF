@@ -303,7 +303,7 @@ namespace Ph2_HwInterface {
 
             while (cNWords < cEventSize-1)
             {
-                LOG(ERROR) << "Need: " << cEventSize-1 << " words for this event, Get: " << cNWords;
+                LOG(INFO) << "Need: " << cEventSize-1 << " words for this event, Get: " << cNWords;
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
@@ -346,7 +346,7 @@ namespace Ph2_HwInterface {
             while (cNWords < 1)
             {
                 if(cNTries >= cNTriesMax) {
-                    LOG(ERROR) << "After " << cNTriesMax << " clock cycles still no data: resetting and re-trying";
+                    LOG(INFO) << "After " << cNTriesMax << " clock cycles still no data: resetting and re-trying";
                     failed = true;
                     break;
                 }
