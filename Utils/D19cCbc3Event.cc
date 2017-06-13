@@ -75,10 +75,13 @@ namespace Ph2_HwInterface {
         for(uint8_t cFeId = 0; cFeId < cNFe_event; cFeId++) {
 
             // these part is temporary while we have chip number not chip mask, they will be swapped;
-            uint8_t chips_with_data_nbr = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+0)) >> 24);
-            uint8_t chip_data_mask = 0;
-            for(uint8_t bit = 0; bit < chips_with_data_nbr; bit++)
-                chip_data_mask |= 1 << bit;
+            uint8_t chip_data_mask = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+0)) >> 24);
+            uint8_t chips_with_data_nbr = 0;
+            for(uint8_t bit = 0; bit < 8; bit++) {
+                if ((chip_data_mask >> bit) & 1) {
+                    chips_with_data_nbr ++;
+                }
+            }
 
             uint8_t header2_size = (0x00FF0000 & list.at(address_offset+0)) >> 16;
             if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3) {
