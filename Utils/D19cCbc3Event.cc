@@ -39,6 +39,10 @@ namespace Ph2_HwInterface {
     // NOT READY (still need to add some additional checks and additional variables)
     int D19cCbc3Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
+        // these two values come from width of the hybrid/cbc enabled mask
+        uint8_t fMaxHybrids = 8;
+        uint8_t fMaxCBCs = 8;
+
         fEventSize = 0x0000FFFF & list.at(0);
         if (fEventSize != list.size()) {
             LOG (ERROR) << "Vector size doesnt match the BLOCK_SIZE in Header1";
@@ -51,9 +55,15 @@ namespace Ph2_HwInterface {
 
         // Starting from now, as it was proposed by Georg, one module (2hybrids) is considered as 1 Fe containing CBCs from both hybrids.
         uint8_t cNFe_software = static_cast<uint8_t>(pBoard->getNFe());
-        uint8_t cNFe_event = static_cast<uint8_t>((0x00FF0000 & list.at(0)) >> 16);
+        uint8_t cFeMask = static_cast<uint8_t>((0x00FF0000 & list.at(0)) >> 16);
+        uint8_t cNFe_event = 0;
+        for(uint8_t bit = 0; bit < fMaxHybrids; bit++) {
+            if ((cFeMask >> bit) & 1) {
+                cNFe_event ++;
+            }
+        }
         if (cNFe_software != cNFe_event) {
-            LOG (ERROR) << "Number of Modules in event header (" << cNFe_event << ") doesnt match the amount of modules defined in firmware. Please, notice, that in the configuration file all one module defined as one Fe containing CBCs from both hybrids";
+            LOG (ERROR) << "Number of Modules in event header (" << cNFe_event << ") doesnt match the amount of modules defined in firmware.";
         }
 
         fDummySize = 0x000000FF & list.at(1);
@@ -72,49 +82,51 @@ namespace Ph2_HwInterface {
 
         // not iterate through modules
         uint32_t address_offset = D19C_EVENT_HEADER1_SIZE_32_CBC3;
-        for(uint8_t cFeId = 0; cFeId < cNFe_event; cFeId++) {
+        for(uint8_t cFeId = 0; cFeId < fMaxHybrids; cFeId++) {
+            if ((cFeMask >> cFeId) & 1) {
 
-            // these part is temporary while we have chip number not chip mask, they will be swapped;
-            uint8_t chip_data_mask = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+0)) >> 24);
-            uint8_t chips_with_data_nbr = 0;
-            for(uint8_t bit = 0; bit < 8; bit++) {
-                if ((chip_data_mask >> bit) & 1) {
-                    chips_with_data_nbr ++;
+                // these part is temporary while we have chip number not chip mask, they will be swapped;
+                uint8_t chip_data_mask = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+0)) >> 24);
+                uint8_t chips_with_data_nbr = 0;
+                for(uint8_t bit = 0; bit < 8; bit++) {
+                    if ((chip_data_mask >> bit) & 1) {
+                        chips_with_data_nbr ++;
+                    }
                 }
-            }
 
-            uint8_t header2_size = (0x00FF0000 & list.at(address_offset+0)) >> 16;
-            if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3) {
-                LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
-            }
-            uint8_t fe_data_size = (0x000000FF & list.at(address_offset+0));
-            if (fe_data_size != CBC_EVENT_SIZE_32_CBC3*chips_with_data_nbr+D19C_EVENT_HEADER2_SIZE_32_CBC3) {
-                LOG (ERROR) << "Event size doesnt correspond to the one sent from firmware";
-            }
-
-            uint32_t data_offset = address_offset + D19C_EVENT_HEADER2_SIZE_32_CBC3;
-            // iterating through the first hybrid chips
-            for(uint8_t cCbcId = 0; cCbcId < 8; cCbcId++ ) {
-                // check if we have data from this chip
-                if ((chip_data_mask >> cCbcId) & 1) {
-
-                    //check the sync bit
-                    uint8_t cSyncBit = 1;
-                    if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
-
-                    uint16_t cKey = encodeId (cFeId, cCbcId);
-
-                    uint32_t begin = data_offset;
-                    uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
-
-                    std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
-                    fEventDataMap[cKey] = cCbcData;
-
-                    data_offset += CBC_EVENT_SIZE_32_CBC3;
+                uint8_t header2_size = (0x00FF0000 & list.at(address_offset+0)) >> 16;
+                if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3) {
+                    LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
                 }
-            }         
+                uint8_t fe_data_size = (0x000000FF & list.at(address_offset+0));
+                if (fe_data_size != CBC_EVENT_SIZE_32_CBC3*chips_with_data_nbr+D19C_EVENT_HEADER2_SIZE_32_CBC3) {
+                    LOG (ERROR) << "Event size doesnt correspond to the one sent from firmware";
+                }
 
-            address_offset = address_offset + CBC_EVENT_SIZE_32_CBC3*(chips_with_data_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+                uint32_t data_offset = address_offset + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+                // iterating through the first hybrid chips
+                for(uint8_t cCbcId = 0; cCbcId < fMaxCBCs; cCbcId++ ) {
+                    // check if we have data from this chip
+                    if ((chip_data_mask >> cCbcId) & 1) {
+
+                        //check the sync bit
+                        uint8_t cSyncBit = 1;
+                        if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
+
+                        uint16_t cKey = encodeId (cFeId, cCbcId);
+
+                        uint32_t begin = data_offset;
+                        uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
+
+                        std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
+                        fEventDataMap[cKey] = cCbcData;
+
+                        data_offset += CBC_EVENT_SIZE_32_CBC3;
+                    }
+                }
+
+                address_offset = address_offset + CBC_EVENT_SIZE_32_CBC3*(chips_with_data_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+            }
         }
 
     }
