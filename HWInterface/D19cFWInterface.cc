@@ -147,6 +147,8 @@ namespace Ph2_HwInterface {
             LOG (INFO) << "Trigger State: " << BOLDGREEN << "Idle" << RESET;
         else if (state_id == 1)
             LOG (INFO) << "Trigger State: " << BOLDGREEN << "Running" << RESET;
+        else if (state_id == 2)
+            LOG (INFO) << "Trigger State: " << BOLDGREEN << "Paused. Waiting for readout" << RESET;
         else
             LOG (WARNING) << " Trigger State: " << BOLDRED << "Unknown" << RESET;
 

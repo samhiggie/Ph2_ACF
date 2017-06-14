@@ -212,8 +212,8 @@
         <node id="fast_command_block"           address="0x2000">
             <node id="general"                          address="0x000">
                 <node id="source"                           mask="0x0000000f"/>
-                <node id="fsm_state"                        mask="0x00000010"/>
-                <node id="configured"                       mask="0x00000020"/>
+                <node id="fsm_state"                        mask="0x00000030"/>
+                <node id="configured"                       mask="0x00000040"/>
             </node>
         </node>
 
