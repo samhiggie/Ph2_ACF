@@ -98,7 +98,7 @@ namespace Ph2_HwInterface {
                 if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3) {
                     LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
                 }
-                uint8_t fe_data_size = (0x000000FF & list.at(address_offset+0));
+                uint8_t fe_data_size = (0x0000FFFF & list.at(address_offset+0));
                 if (fe_data_size != CBC_EVENT_SIZE_32_CBC3*chips_with_data_nbr+D19C_EVENT_HEADER2_SIZE_32_CBC3) {
                     LOG (ERROR) << "Event size doesnt correspond to the one sent from firmware";
                 }
