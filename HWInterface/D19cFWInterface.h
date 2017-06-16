@@ -52,7 +52,7 @@ namespace Ph2_HwInterface {
         int fFWNHybrids;
         int fFWNChips;
 
-        const uint32_t SINGLE_I2C_WAIT = 2000; //used for 0.1MHz I2C
+        const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
       public:
         /*!

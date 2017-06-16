@@ -48,6 +48,9 @@
         </node>
 
         <node id="physical_interface_block"     address="0x3000">
+	    <node id="i2c"				address="0x001">
+		<node id="frequency"			    mask="0x0000ffff"/>
+	    </node>
         </node>
 
         <node id="readout_block"                address="0x5000">

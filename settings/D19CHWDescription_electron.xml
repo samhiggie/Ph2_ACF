@@ -36,6 +36,12 @@
         <Register name="command_processor_block">
                 <Register name="i2c_write_mask"> 0xFF </Register>
 	</Register>
+	<!-- Phy Block -->
+	<Register name="physical_interface_block">
+		<Register name="i2c">
+                	<Register name="frequency"> 4 </Register>
+		</Register>
+	</Register>
 	<!-- Readout Block -->
     	<Register name="readout_block">
             <Register name="packet_nbr"> 0 </Register>
