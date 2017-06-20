@@ -103,5 +103,7 @@
 
 enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7, D19C, SUPERVISOR};
 enum class ChipType {UNDEFINED = 0, CBC2, CBC3};
+enum class SLinkDebugMode {SUMMARY = 0, FULL = 1, ERROR = 2};
+enum class EventType {ZS = 1, VR = 2};
 
 #endif

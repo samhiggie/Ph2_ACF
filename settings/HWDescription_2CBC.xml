@@ -19,6 +19,14 @@
        <CBC Id="1" configfile="Cbc_default_electron.txt" /> 
     </Module>
      
+
+    <ConditionData>
+        <Item type="I2C" register="VCth" FeId="0" CbcId="0"/>
+        <Item type="HV" FeId="0" Sensor="0"> 250 </Item>
+        <Item type="User" UID="0x80"> 0x22 </Item>
+        <Item type="TDC"/>
+    </ConditionData>
+
     <!-- Commissioning Mode -->
     <!-- set to 1 to enable commissioning mode -->
     <Register name="COMMISSIONNING_MODE_RQ">0</Register>
@@ -56,6 +64,7 @@
     <Register name="dio5.fmcdio5_trig_out_50ohms">0</Register>
   </BeBoard>
 </HwDescription>
+
 <Settings>
     <Setting name="Nevents">1000</Setting>
     <Setting name="RunNumber">1</Setting>
