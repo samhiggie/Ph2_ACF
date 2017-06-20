@@ -43,7 +43,6 @@
                 <node id="delay_after_fast_reset"       address="0x004" description="delay between fast reset and following test pulse command"/>
                 <node id="delay_after_test_pulse"       address="0x005" description="delay after test pulse command before l1a signal sent to readout the data"/>
 		<node id="delay_before_next_pulse"      address="0x006" description="delay before next pulse"/>
-		<node id="number_of_test_pulses"        address="0x007" description="number of the test pulses to be sent at once"/>
             </node>
         </node>
 

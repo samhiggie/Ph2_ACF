@@ -138,7 +138,10 @@ namespace Ph2_HwInterface {
             LOG (INFO) << "Trigger Source: " << BOLDGREEN << "User Frequency (" << user_frequency << " kHz)" << RESET;
         else if (source_id == 4)
             LOG (INFO) << "Trigger Source: " << BOLDGREEN << "TLU" << RESET;
-        else if (source_id == 5)            LOG (INFO) << "Trigger Source: " << BOLDGREEN << "Ext Trigger (DIO5)" << RESET;
+        else if (source_id == 5)
+            LOG (INFO) << "Trigger Source: " << BOLDGREEN << "Ext Trigger (DIO5)" << RESET;
+        else if (source_id == 6)
+            LOG (INFO) << "Trigger Source: " << BOLDGREEN << "Test Pulse Trigger" << RESET;
         else
             LOG (WARNING) << " Trigger Source: " << BOLDRED << "Unknown" << RESET;
 
@@ -330,14 +333,14 @@ namespace Ph2_HwInterface {
     {
 
         // first write the amount of the test pulses to be sent
-        WriteReg("fc7_daq_cnfg.fast_command_block.test_pulse.number_of_test_pulses", pNEvents);
+        WriteReg("fc7_daq_cnfg.fast_command_block.triggers_to_accept", pNEvents);
+        WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
         usleep(1);
         this->CbcI2CRefresh();
         usleep(1);
 
-        // send N test pulses now
-        // TODO does ReadNEvents has to send test pulses???
-        this->CbcTestPulse();
+        // start triggering machine which will collect N events
+        this->Start();
 
         bool failed = false;
         for(uint32_t event; event < pNEvents; event++) {            
@@ -376,6 +379,7 @@ namespace Ph2_HwInterface {
         if(failed) {
 
             pData.clear();
+            this->Stop();
 
             WriteReg("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
             usleep(10);
@@ -393,29 +397,7 @@ namespace Ph2_HwInterface {
      * this will have to change with a more generic FW */
     uint32_t D19cFWInterface::computeEventSize ( BeBoard* pBoard )
     {
-        //use a counting visitor to find out the number of CBCs
-        /*struct CbcCounter : public HwDescriptionVisitor
-        {
-            uint32_t fNCbc = 0;
-
-            void visit ( Cbc& pCbc )
-            {
-                fNCbc++;
-            }
-            uint32_t getNCbc()
-            {
-                return fNCbc;
-            }
-        };
-
-        CbcCounter cCounter;
-        pBoard->accept ( cCounter );
-
-        //return 7 words header + fNCbc * CBC Event Size  (11 words)
-        return cCounter.getNCbc() * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER_SIZE_32_CBC3;*/
-
-        // ^^^ temporary commented because zero supression has to be implemented in firmware
-        return fFWNHybrids* (fFWNChips * CBC_EVENT_SIZE_32_CBC3 + D19C_EVENT_HEADER2_SIZE_32_CBC3) + D19C_EVENT_HEADER1_SIZE_32_CBC3;
+        return 0;
     }
 
     std::vector<uint32_t> D19cFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -695,7 +677,7 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::CbcTestPulse()
     {
-        WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_test_pulse", 0x1 );
+        ;
     }
 
     void D19cFWInterface::CbcTrigger()
