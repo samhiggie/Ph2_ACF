@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <bitset>
 #include <mutex>
 #include <queue>
 #include <condition_variable>
@@ -97,11 +98,14 @@ class FileHandler
     */
     bool file_open()
     {
+        std::lock_guard<std::mutex> cLock (fMutex);
         return fFileIsOpened;
     }
 
     void rewind()
     {
+        std::lock_guard<std::mutex> cLock (fMutex);
+
         if (fOption == 'r' && file_open() )
         {
             if (fHeader.fValid == true)

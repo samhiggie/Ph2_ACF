@@ -404,7 +404,7 @@ namespace Ph2_HwInterface {
             }
 
             for (int i = 0; i < LAST_LINE_WIDTH; i += 2)
-                os << data.substr ( FIRST_LINE_WIDTH + LINE_WIDTH * 7 + i , 2 ) << " ";
+                os << data.substr ( FIRST_LINE_WIDTH + LINE_WIDTH * 7 + i, 2 ) << " ";
 
             os << std::endl;
 
@@ -466,4 +466,7 @@ namespace Ph2_HwInterface {
 
         return result;
     }
+
+    SLinkEvent Cbc2Event::GetSlinkEvent (const BeBoard* pBoard, const ConditionDataSet* pSet) const
+    {}
 }

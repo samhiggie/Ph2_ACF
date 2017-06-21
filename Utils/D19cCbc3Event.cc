@@ -50,7 +50,7 @@ namespace Ph2_HwInterface {
         fEventCountCBC = 0;
         fTDC = (0xFF000000 & list.at (6) ) >> 24;
 
-        fBeId = (0x0000FF00 & list.at(3)) >> 8;
+        fBeId = (0x0000FF00 & list.at (3) ) >> 8;
         fBeFWType = 0;
         fCBCDataType = (0x00FF0000 & list.at (1) ) >> 16;
 
@@ -137,9 +137,9 @@ namespace Ph2_HwInterface {
         os << std::setw (8) << cbcData.at (6) << std::endl;
         os << std::setw (8) << (cbcData.at (7) & 0x7FFFFFFF) << std::endl;
         // l1cnt
-        os << std::setw (3) << ((cbcData.at (8) & 0x01FF0000) >> 16) << std::endl;
+        os << std::setw (3) << ( (cbcData.at (8) & 0x01FF0000) >> 16) << std::endl;
         // pipeaddr
-        os << std::setw (3) << ((cbcData.at (8) & 0x00001FF0) >> 4) << std::endl;
+        os << std::setw (3) << ( (cbcData.at (8) & 0x00001FF0) >> 4) << std::endl;
         // stubdata
         os << std::setw (8) << cbcData.at (9) << std::endl;
         os << std::setw (8) << cbcData.at (10) << std::endl;
@@ -152,7 +152,7 @@ namespace Ph2_HwInterface {
     // NOT READY (what is i??????????)
     bool D19cCbc3Event::Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const
     {
-        return Bit( pFeId, pCbcId, D19C_OFFSET_ERROR_CBC3 );
+        return Bit ( pFeId, pCbcId, D19C_OFFSET_ERROR_CBC3 );
     }
 
     uint32_t D19cCbc3Event::Error ( uint8_t pFeId, uint8_t pCbcId ) const
@@ -163,7 +163,7 @@ namespace Ph2_HwInterface {
         if (cData != std::end (fEventDataMap) )
         {
             // buf overflow and lat error
-            uint32_t cError = ((cData->second.at(8) & 0x00000003) >> 0 );;
+            uint32_t cError = ( (cData->second.at (8) & 0x00000003) >> 0 );;
             return cError;
         }
         else
@@ -180,7 +180,7 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint32_t cPipeAddress = ((cData->second.at(8) & 0x00001FF0) >> 4 );
+            uint32_t cPipeAddress = ( (cData->second.at (8) & 0x00001FF0) >> 4 );
             return cPipeAddress;
         }
         else
@@ -197,7 +197,7 @@ namespace Ph2_HwInterface {
 
         uint32_t cWordP = 0;
         uint32_t cBitP = 0;
-        calculate_address(cWordP, cBitP, i);
+        calculate_address (cWordP, cBitP, i);
 
         uint16_t cKey = encodeId (pFeId, pCbcId);
         EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
@@ -231,7 +231,7 @@ namespace Ph2_HwInterface {
 
                 uint32_t cWordP = 0;
                 uint32_t cBitP = 0;
-                calculate_address(cWordP, cBitP, i);
+                calculate_address (cWordP, cBitP, i);
 
                 if ( cWordP >= cData->second.size() ) break;
 
@@ -265,7 +265,7 @@ namespace Ph2_HwInterface {
 
                 uint32_t cWordP = 0;
                 uint32_t cBitP = 0;
-                calculate_address(cWordP, cBitP, i);
+                calculate_address (cWordP, cBitP, i);
 
                 if ( cWordP >= cData->second.size() ) break;
 
@@ -292,7 +292,7 @@ namespace Ph2_HwInterface {
 
                 uint32_t cWordP = 0;
                 uint32_t cBitP = 0;
-                calculate_address(cWordP, cBitP, i);
+                calculate_address (cWordP, cBitP, i);
 
                 if ( cWordP >= cData->second.size() ) break;
 
@@ -412,7 +412,7 @@ namespace Ph2_HwInterface {
             {
                 uint32_t cWordP = 0;
                 uint32_t cBitP = 0;
-                calculate_address(cWordP, cBitP, i);
+                calculate_address (cWordP, cBitP, i);
 
                 if ( cWordP >= cData->second.size() ) break;
 
@@ -597,4 +597,6 @@ namespace Ph2_HwInterface {
 
         return result;
     }
+    SLinkEvent D19cCbc3Event::GetSlinkEvent (const BeBoard* pBoard, const ConditionDataSet* pSet) const
+    {}
 }

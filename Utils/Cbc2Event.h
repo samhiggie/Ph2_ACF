@@ -163,6 +163,8 @@ namespace Ph2_HwInterface {
 
         void print (std::ostream& out) const override;
 
+        SLinkEvent GetSlinkEvent (const BeBoard* pBoard, const ConditionDataSet* pSet) const override;
+
     };
 }
 #endif

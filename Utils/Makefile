@@ -1,4 +1,4 @@
-Objs            = Exception.o Utilities.o Watchdog.o Event.o Cbc2Event.o Cbc3Event.o D19cCbc3Event.o Data.o argvparser.o FileHandler.o
+Objs            = Exception.o Utilities.o Watchdog.o SLinkEvent.o Event.o Cbc2Event.o Cbc3Event.o D19cCbc3Event.o Data.o argvparser.o FileHandler.o
 ObjsExt      	= UsbUtilities.o
 
 CC              = g++

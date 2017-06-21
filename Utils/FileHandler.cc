@@ -4,7 +4,8 @@
 FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption ) :
     fBinaryFileName ( pBinaryFileName ),
     fOption ( pOption ),
-    fFileIsOpened ( false )
+    fFileIsOpened ( false ),
+    fHeader ()
 {
     openFile();
 
@@ -59,6 +60,7 @@ bool FileHandler::openFile( )
 
     if ( !file_open() )
     {
+
         std::lock_guard<std::mutex> cLock (fMutex);
 
         if ( fOption == 'w' )
@@ -98,13 +100,13 @@ bool FileHandler::openFile( )
                 fBinaryFile.seekg ( 0, std::ios::beg );
                 // if the file Header is nullptr I do not get info from it!
             }
-            else LOG (INFO) << "FileHandler: Found a valid header in file " << fBinaryFileName ;
+            else if (fHeader.fValid) LOG (INFO) << "FileHandler: Found a valid header in file " << fBinaryFileName ;
         }
 
         fFileIsOpened = true;
     }
 
-    return file_open();
+    return fFileIsOpened;
 }
 
 void FileHandler::closeFile()

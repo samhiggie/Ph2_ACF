@@ -23,6 +23,14 @@
         </CBC>
     </Module>
 
+    <SLink>
+        <DebugMode type="FULL"/>
+        <ConditionData type="I2C" register="VCth" FeId="0" CbcId="0"/>
+        <ConditionData type="User" UID="0x80" FeId="0" CbcId="0"> 0x22 </ConditionData>
+        <ConditionData type="HV" FeId="0" Sensor="2"> 250 </ConditionData>
+        <ConditionData type="TDC" FeId="0xFF"/>
+    </SLink>
+
     <!--TRIGGER-->
     <Register name="cbc_system_cnfg">
         <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->

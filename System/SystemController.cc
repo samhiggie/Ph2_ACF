@@ -54,6 +54,7 @@ namespace Ph2_System {
     {
         //if the opion is read, create a handler object and use it to read the
         //file in the method below!
+
         if (pOption == 'r')
             fFileHandler = new FileHandler ( pFilename, pOption );
         //if the option is w, remember the filename and construct a new
@@ -63,6 +64,7 @@ namespace Ph2_System {
             fRawFileName = pFilename;
             fWriteHandlerEnabled = true;
         }
+
     }
 
     void SystemController::readFile ( std::vector<uint32_t>& pVec, uint32_t pNWords32 )
