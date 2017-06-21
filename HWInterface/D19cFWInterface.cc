@@ -235,6 +235,8 @@ namespace Ph2_HwInterface {
         // load trigger configuration
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
 
+        // load dio5 configuration
+        WriteReg("fc7_daq_ctrl.dio5_block.control.load_config", 0x1);
 
         // ping all cbcs (reads data from registers #0)
         uint32_t cInit = ( ( (2) << 28 ) | (  (0) << 18 )  | ( (0) << 17 ) | ( (1) << 16 ) | (0 << 8 ) | 0);
@@ -333,10 +335,8 @@ namespace Ph2_HwInterface {
     {
 
         // first write the amount of the test pulses to be sent
-        WriteReg("fc7_daq_cnfg.fast_command_block.triggers_to_accept", pNEvents);
+        WriteReg("fc7_daq_cnfg.fast_command_block.triggers_to_accept", pNEvents);        
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
-        usleep(1);
-        this->CbcI2CRefresh();
         usleep(1);
 
         // start triggering machine which will collect N events
@@ -344,16 +344,20 @@ namespace Ph2_HwInterface {
 
         bool failed = false;
         for(uint32_t event; event < pNEvents; event++) {            
-            uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+            uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");            
 
             int cNTries = 0;
-            int cNTriesMax = 10;
+            int cNTriesMax = 50;
             while (cNWords < 1)
             {
                 if(cNTries >= cNTriesMax) {
-                    LOG(INFO) << "After " << cNTriesMax << " clock cycles still no data: resetting and re-trying";
-                    failed = true;
-                    break;
+                    uint32_t state_id = ReadReg("fc7_daq_stat.fast_command_block.general.fsm_state");
+                    if (state_id == 0) {
+                        LOG(INFO) << "After fsm stopped, still no data: resetting and re-trying";
+                        failed = true;
+                        break;
+                    }
+                    else cNTries = 0;
                 }
 
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );

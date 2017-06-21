@@ -65,6 +65,7 @@
         </node>
 
         <node id="dio5_block"                   address="0x6000">
+	    <node id="dio5_en"				address="0x005" mask="0x00000001"/>
             <node id="ch1"                              address="0x000">
                 <node id="out_enable"                       mask="0x00000001"/>
                 <node id="term_enable"                      mask="0x00000002"/>
