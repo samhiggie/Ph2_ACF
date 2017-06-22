@@ -4,6 +4,7 @@
 #include <bitset>
 #include <deque>
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <set>
 
@@ -33,19 +34,27 @@ class SLinkEvent
     void generateTkHeader (uint32_t& pBeStatus, uint16_t& pNChips, std::set<uint8_t>& pEnabledFe, bool pCondData = false, bool pFake = false);
     // the following 4 are dumb methods in that they just insert a vector of 64 bit words
     // the actual event implementation will have to encode everything in there
-    void generateStatus (std::vector<uint64_t>& pStatus);
-    void generatePayload (std::vector<uint64_t>& pPayload);
-    void generateStubs (std::vector<uint64_t>& pStubList);
+    void generateStatus (std::string& pStatusString);
+    void generatePayload (std::string& pPayloadString);
+    void generateStubs (std::string& pStubString);
     // kind of important
-    void generateConitionData (ConditionDataSet& pSet);
+    void generateConitionData (ConditionDataSet* pSet);
     // sort of
-    void calulateCRC();
     // everything either a define or a member variable so no need to pass anything
     void generateDAQTrailer();
+
     void print()
     {
+        LOG (INFO) << BOLDYELLOW << "SLINK EVENT" << RESET;
+        int cCounter = 0;
+
         for (auto word : fData)
-            LOG (INFO) << static_cast<std::bitset<64>> (word) << "   " << std::hex << word << std::dec;
+        {
+            //char cCountString[3];
+            //sprintf (cCountString, "%03d", cCounter++);
+            LOG (INFO) << BOLDYELLOW << "#" << std::setw (3) << cCounter << RESET << "  " << (static_cast<std::bitset<64>> (word) ) << "  " << BOLDYELLOW << std::setw (16) << std::hex << word << std::dec << RESET;
+            cCounter++;
+        }
     }
 
   private:
@@ -72,6 +81,27 @@ class SLinkEvent
     //ev.print (out);
     //return out;
     //}
+    void calulateCRC ();
+
+    std::vector<uint64_t> convertStringto64 (std::string& pString)
+    {
+        std::vector<uint64_t> cVector;
+
+        if (!pString.empty() )
+        {
+            //now I need to append enough 0s so that the string is full 64 bits long, calculate the number of
+            //64 bit words and split the string into the words
+            int cWords = (pString.length() / 64 + (pString.length() % 64 == 0) ? 0 : 1);
+            int cNeeded0s = 64 - (pString.length() % 64);
+            std::string cExtra0s (cNeeded0s, '0');
+            pString += cExtra0s;
+
+            for (int cIndex = 0; cIndex < pString.length(); cIndex += 64)
+                cVector.push_back (strtoull (pString.substr (cIndex, 64).c_str(), nullptr, 2) );
+        }
+
+        return cVector;
+    }
 };
 
 #endif

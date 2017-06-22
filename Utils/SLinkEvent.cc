@@ -10,6 +10,7 @@ SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pCh
     fFake (0),
     fComplete (false)
 {
+    fData.clear();
     this->generateDAQHeader (pLV1Id, pBXId, pSourceId);
 }
 
@@ -28,7 +29,7 @@ void SLinkEvent::generateTkHeader (uint32_t& pBeStatus, uint16_t& pNChips, std::
     uint64_t cWord1 = 0;
     uint64_t cWord2 = 0;
     // version | format | event type | BeStatus | NChips | Fe Status (8)
-    cWord1 = ( (uint64_t) 0x2 & 0xF) << 60 | ( (uint64_t) fDebugMode & 0x03) << 58 |  ( (uint64_t) fEventType & 0x03) << 56 | (uint64_t) pCondData << 55 | (uint64_t) !pFake << 54 | ( (uint64_t) pBeStatus & 0x3FFFFFFF) << 24 | pNChips << 8 ; // pFeStatus is the end of the
+    cWord1 |= ( (uint64_t) 0x2 & 0xF) << 60 | ( (uint64_t) fDebugMode & 0x03) << 58 |  ( (uint64_t) fEventType & 0x03) << 56 | (uint64_t) pCondData << 55 | (uint64_t) !pFake << 54 | ( (uint64_t) pBeStatus & 0x3FFFFFFF) << 24 | pNChips << 8 ; // pFeStatus is the end of the
 
     for (auto& cFe : pEnabledFe)
     {
@@ -43,38 +44,113 @@ void SLinkEvent::generateTkHeader (uint32_t& pBeStatus, uint16_t& pNChips, std::
     fSize += 2;
 }
 
-void SLinkEvent::generateStatus (std::vector<uint64_t>& pStatus)
+void SLinkEvent::generateStatus (std::string& pStatusString)
 {
-    if (fDebugMode != SLinkDebugMode::SUMMARY)
-        fData.insert (fData.begin() + 3, pStatus.begin(), pStatus.end() );
-
-    fSize += pStatus.size();
+    std::vector<uint64_t> cVec = this->convertStringto64 (pStatusString);
+    fData.insert (fData.begin() + 3, cVec.begin(), cVec.end() );
+    fSize += cVec.size();
 }
 
-void SLinkEvent::generatePayload (std::vector<uint64_t>& pPayload)
+void SLinkEvent::generatePayload (std::string& pPayloadString)
 {
-    fData.insert (fData.end(), pPayload.begin(), pPayload.end() );
-    fSize += pPayload.size();
+    std::vector<uint64_t> cVec = this->convertStringto64 (pPayloadString);
+    fData.insert (fData.end(), cVec.begin(), cVec.end() );
+    fSize += cVec.size();
 }
 
-void SLinkEvent::generateStubs (std::vector<uint64_t>& pStubList)
+void SLinkEvent::generateStubs (std::string& pStubString)
 {
-    //if pStubList.size() == 4: CBC2, 16FE with 16 chips each, 1 bit per chip
-    fData.insert (fData.end(), pStubList.begin(), pStubList.end() );
-    fSize += pStubList.size();
+    std::vector<uint64_t> cVec = this->convertStringto64 (pStubString);
+    fData.insert (fData.end(), cVec.begin(), cVec.end() );
+    fSize += cVec.size();
 }
 
-void SLinkEvent::generateConitionData (ConditionDataSet& pSet)
-{}
+void SLinkEvent::generateConitionData (ConditionDataSet* pSet)
+{
+    //if there are condition data defined
+    if (pSet != nullptr && pSet->fCondDataVector.size() != 0)
+    {
+        std::vector<uint64_t> cVec;
+        cVec.push_back (pSet->fCondDataVector.size() );
 
-void SLinkEvent::calulateCRC()
-{}
+        for (auto cCondItem : pSet->fCondDataVector)
+            cVec.push_back ( ( (uint64_t) cCondItem.fFeId & 0xFF) << 56 | ( (uint64_t) cCondItem.fCbcId & 0xF) << 52 | ( (uint64_t) cCondItem.fPage & 0xF) << 48 | ( (uint64_t) cCondItem.fRegister & 0xFF) << 40 | (  (uint64_t) cCondItem.fUID & 0xFF) << 32 | cCondItem.fValue);
+
+        fData.insert (fData.end(), cVec.begin(), cVec.end() );
+        fSize += cVec.size();
+    }
+}
 
 void SLinkEvent::generateDAQTrailer()
 {
+    this->calulateCRC();
+    fSize += 1;
     uint64_t cWord = 0;
     //EOE_1 | EvtLength | CRC | Event Stat | TTS
-    cWord = ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 32 | fCRCVal << 16 | (TTS_VALUE & 0xF) << 4;
+    cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 12 | ( (uint64_t) fCRCVal & 0xFFFF) << 16 | (TTS_VALUE & 0xF) << 4);
     fData.push_back (cWord);
-    fSize += 1;
 }
+
+void SLinkEvent::calulateCRC ()
+{
+    // i need to split the data vector in octets and then it should work
+    //uint16_t TrackerEvent::Crc16 (const char* Adresse_tab, uint32_t Taille_max, uint16_t Crc = 0xFFFF) const
+    //{
+    //uint16_t Polynome = 0xA001;// Polynome 2^16 + 2^15 + 2^2 + 2^0 = 0x8005.
+    //uint32_t CptOctet;
+    //unsigned char CptBit, Parity;
+
+    //for ( CptOctet = 0 ; CptOctet < Taille_max ; CptOctet++)
+    //{
+    //Crc ^= * ( Adresse_tab + CptOctet); //Ou exculsif entre octet message et CRC
+
+    //for ( CptBit = 0; CptBit <= 7 ; CptBit++) [> Mise a 0 du compteur nombre de bits <]
+    //{
+    //Parity = Crc % 2;
+    //Crc >>= 1; // Decalage a droite du crc
+
+    //if (Parity)
+    //Crc ^= Polynome; // Test si nombre impair -> Apres decalage a droite il y aura une retenue
+    //} // "ou exclusif" entre le CRC et le polynome generateur.
+    //}
+
+    //return (Crc);
+    uint16_t cCRC = 0xFFFF;
+    uint16_t cPolynomial = 0xA001;// Polynomial 2^16 + 2^15 + 2^2 + 2^0 = 0x8005.
+    uint8_t cBit, cParity;
+
+    for (uint32_t cWord = 0; cWord < fData.size(); cWord++) // iterate through data in words
+    {
+        uint8_t cOctetIndex = 0;
+        uint8_t cByte = 0;
+        uint64_t cWord64 = fData[cWord];
+
+        do
+        {
+            //ATTENTION: cByte holds the LSBs first - if this needs to be reversed, keep the code
+            cByte = cWord64 & 0xFF;
+            cCRC ^= cByte;
+
+            for (cBit = 0; cBit < 8; cBit++)
+            {
+                cParity = cCRC % 2;
+                cCRC >>= 1;
+
+                if (cParity)
+                    cCRC ^= cPolynomial;
+            }
+
+            cOctetIndex++;
+        }
+        while (cWord64 >>= 8);
+    }
+
+    fCRCVal = cCRC;
+}
+//original split64_t algorighm
+//https://stackoverflow.com/questions/20041899/how-to-split-a-64-bit-integral-data-type-into-eight-8-bit-types
+//{
+//uint64_t v= _64bitVariable;
+//uint8_t i=0,parts[8]={0};
+//do parts[i++]=v&0xFF; while (v>>=8);
+//}

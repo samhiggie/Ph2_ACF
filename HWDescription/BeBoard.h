@@ -16,6 +16,7 @@
 #include "Module.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/easylogging++.h"
+#include "../Utils/ConditionDataSet.h"
 #include <vector>
 #include <map>
 #include <stdint.h>
@@ -37,7 +38,6 @@ namespace Ph2_HwDescription {
     {
 
       public:
-
         // C'tors: the BeBoard only needs to know about which BE it is
         /*!
          * \brief Default C'tor
@@ -193,6 +193,17 @@ namespace Ph2_HwDescription {
             return fBoardType;
         }
 
+        void addConditionDataSet (ConditionDataSet* pSet)
+        {
+            if (pSet != nullptr)
+                fCondDataSet = pSet;
+        }
+        ConditionDataSet* getConditionDataSet() const
+        {
+            return fCondDataSet;
+        }
+        void updateCondData (uint32_t& pTDCVal) const;
+
         // Vector of FEModules, each module is supposed to know which FMC slot it is connected to...
         std::vector< Module* > fModuleVector;
 
@@ -204,6 +215,7 @@ namespace Ph2_HwDescription {
 
 
         BeBoardRegMap fRegMap;             /*!< Map of BeBoard Register Names vs. Register Values */
+        ConditionDataSet* fCondDataSet;
 
       private:
 

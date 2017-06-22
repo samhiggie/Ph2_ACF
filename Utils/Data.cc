@@ -66,14 +66,14 @@ namespace Ph2_HwInterface {
             //else if (pType == BoardType::CBC3FC7)
             //this->setCbc3Fc7 (word);
 
-            //#ifdef __CBCDAQ_DEV__
+#ifdef __CBCDAQ_DEV__
             //TODO
             LOG (DEBUG) << std::setw (3) << "Original " << cWordIndex << " ### " << std::bitset<32> (pData.at (cWordIndex) );
             //LOG (DEBUG) << std::setw (3) << "Treated  " << cWordIndex << " ### " << std::bitset<32> (word);
 
             if ( (cWordIndex + 1) % fEventSize == 0 && cWordIndex > 0 ) LOG (DEBUG) << std::endl << std::endl;
 
-            //#endif
+#endif
 
             lvec.push_back ( word );
 

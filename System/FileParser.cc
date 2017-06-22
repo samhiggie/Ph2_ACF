@@ -19,7 +19,6 @@ namespace Ph2_System {
             LOG (ERROR) << "Could not parse settings file " << pFilename << " - it is not .xm!" ;
     }
 
-
     void FileParser::parseHWxml ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os )
     {
         pugi::xml_document doc;
@@ -82,7 +81,7 @@ namespace Ph2_System {
             if (!strUhalConfig.empty() )
                 RegManager::setDummyXml (strUhalConfig);
 
-            os << BOLDBLUE << "	" <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " URI: " << BOLDYELLOW << cUri << BOLDBLUE << " Address Table: " << BOLDYELLOW << cAddressTable << std::endl;
+            os << BOLDBLUE << "|" << "       " <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " URI: " << BOLDYELLOW << cUri << BOLDBLUE << " Address Table: " << BOLDYELLOW << cAddressTable << std::endl;
             os << BOLDBLUE << "|\t|----Type: " << BOLDYELLOW << cBoardType << RESET << std::endl << BLUE << "|\t|" << RESET << std::endl;
 
             //else LOG(INFO) << BOLDBLUE << "   " <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " Type: " << BOLDYELLOW << cBoardType << RESET ;
@@ -139,6 +138,9 @@ namespace Ph2_System {
                 }
             }
 
+            //here parse the Slink Node
+            pugi::xml_node cSLinkNode = cBeBoardNode.child ("SLink");
+            this->parseSLink (cSLinkNode, cBeBoard, os);
         }
 
         cNBeBoard++;
@@ -212,6 +214,117 @@ namespace Ph2_System {
 
     }
 
+    void FileParser::parseSLink (pugi::xml_node pSLinkNode, BeBoard* pBoard, std::ostream& os )
+    {
+        ConditionDataSet* cSet = new ConditionDataSet();
+
+        if (pSLinkNode != nullptr && std::string (pSLinkNode.name() ) == "SLink")
+        {
+            os << BLUE << "|" << "	" << "|" << std::endl << "|" << "	" << "|" << "----" << pSLinkNode.name() << RESET << std::endl;
+
+            pugi::xml_node cDebugModeNode = pSLinkNode.child ("DebugMode");
+            std::string cDebugString;
+
+            if (cDebugModeNode != nullptr)
+            {
+                cDebugString = cDebugModeNode.attribute ("type").value();
+
+                if (cDebugString == "FULL" )
+                    cSet->setDebugMode (SLinkDebugMode::FULL);
+                else if (cDebugString == "SUMMARY")
+                    cSet->setDebugMode (SLinkDebugMode::SUMMARY);
+                else if (cDebugString == "ERROR")
+                    cSet->setDebugMode (SLinkDebugMode::ERROR);
+
+            }
+            else
+            {
+                SLinkDebugMode pMode = cSet->getDebugMode();
+
+                if (pMode == SLinkDebugMode::FULL) cDebugString = "FULL";
+                else if (pMode == SLinkDebugMode::SUMMARY) cDebugString = "SUMMARY";
+                else if (pMode == SLinkDebugMode::ERROR) cDebugString = "ERROR";
+            }
+
+            os << BLUE <<  "|" << "	" << "|" << "       " << "|"  << "----"   << pSLinkNode.child ("DebugMode").name() << MAGENTA << " : SLinkDebugMode::" << cDebugString << RESET << std::endl;
+
+            //now loop the condition data node
+            for ( pugi::xml_node cNode = pSLinkNode.child ( "ConditionData" ); cNode; cNode = cNode.next_sibling() )
+            {
+                if (cNode != nullptr)
+                {
+                    uint8_t cUID = 0;
+                    uint8_t cFeId = 0;
+                    uint8_t cCbcId = 0;
+                    uint8_t cPage = 0;
+                    uint8_t cAddress = 0;
+                    uint32_t cValue = 0;
+                    std::string cRegName;
+
+                    std::string cTypeString = cNode.attribute ("type").value();
+
+                    if (cTypeString == "HV")
+                    {
+                        cUID = 5;
+                        cFeId = convertAnyInt (cNode.attribute ("FeId").value() );
+                        cCbcId = convertAnyInt (cNode.attribute ("CbcId").value() );
+                        cValue = convertAnyInt (cNode.first_child().value() );
+                    }
+                    else if (cTypeString == "TDC")
+                    {
+                        cUID = 3;
+                        cFeId = 0xFF;
+                    }
+                    else if (cTypeString == "User")
+                    {
+                        cUID = convertAnyInt (cNode.attribute ("UID").value() );
+                        cFeId = convertAnyInt (cNode.attribute ("FeId").value() );
+                        cCbcId = convertAnyInt (cNode.attribute ("CbcId").value() );
+                        cValue = convertAnyInt (cNode.first_child().value() );
+                    }
+                    else if (cTypeString == "I2C")
+                    {
+                        //here is where it gets nasty
+                        cUID = 1;
+                        cRegName = cNode.attribute ("Register").value();
+                        cFeId = convertAnyInt (cNode.attribute ("FeId").value() );
+                        cCbcId = convertAnyInt (cNode.attribute ("CbcId").value() );
+
+                        //ok, now I need to loop th CBCs to find page & address and the initial value
+                        for (auto cFe : pBoard->fModuleVector )
+                        {
+                            if (cFe->getFeId() != cFeId) continue;
+
+                            for (auto cCbc : cFe->fCbcVector )
+                            {
+                                if (cCbc->getCbcId() != cCbcId) continue;
+                                else if (cCbc->getFeId() == cFeId && cCbc->getCbcId() == cCbcId)
+                                {
+                                    CbcRegItem cRegItem = cCbc->getRegItem ( cRegName );
+                                    cPage = cRegItem.fPage;
+                                    cAddress = cRegItem.fAddress;
+                                    cValue = cRegItem.fValue;
+                                }
+                                else
+                                    LOG (ERROR) << RED << "SLINK ERROR: no Cbc with Id " << +cCbcId << " on Fe " << +cFeId << " - check your SLink Settings!";
+                            }
+                        }
+                    }
+
+                    cSet->addCondData (cRegName, cUID, cFeId, cCbcId, cPage, cAddress, cValue);
+                    os << BLUE <<  "|" << "	" << "|" << "       " << "|"  << "----"   <<  cNode.name() << ": Type " << RED << cTypeString << " " << cRegName << BLUE << ", UID " << RED << +cUID << BLUE << ", FeId " << RED << +cFeId << BLUE << ", CbcId " << RED << +cCbcId << std::hex << BLUE << ", Page " << RED << +cPage << BLUE << ", Address " << RED << +cAddress << BLUE << ", Value " << std::dec << MAGENTA << cValue << RESET << std::endl;
+                }
+
+            }
+
+            //only add if there is condition data defined
+            pBoard->addConditionDataSet (cSet);
+        }
+
+        //else
+        //LOG (ERROR) << "No Slink node found for Board " << +pBoard->getBeId() << " - continuing with default debug mode!";
+    }
+
     void FileParser::parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os )
     {
         pugi::xml_node cCbcPathPrefixNode = pModuleNode.child ( "CBC_Files" );
@@ -225,7 +338,6 @@ namespace Ph2_System {
             os << BOLDCYAN << "|" << "	" << "|" << "	" << "|" << "----" << cCbcNode.name() << "  "
                << cCbcNode.first_attribute().name() << " :" << cCbcNode.attribute ( "Id" ).value()
                << ", File: " << expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() ) << RESET << std:: endl;
-
 
             std::string cFileName;
 

@@ -383,9 +383,11 @@ namespace Ph2_HwInterface {
             uint8_t bend3 = (cData->second.at (2) & 0x0000000F);
             //LOG (DEBUG)  << "\t" << MAGENTA << std::bitset<32> (cData->second.at (2)) << "|" << std::bitset<32> (cData->second.at (1)) << " " << RED << std::bitset<8> (bend1)  << GREEN << " " <<  std::bitset<8> (bend2) << BLUE << " " <<  std::bitset<8> (bend3) << RESET;
 
-            cStubVec.emplace_back (pos1, bend1) ;
-            cStubVec.emplace_back (pos2, bend2) ;
-            cStubVec.emplace_back (pos3, bend3) ;
+            if (pos1 != 0 && bend1 != 0) cStubVec.emplace_back (pos1, bend1) ;
+
+            if (pos2 != 0 && bend2 != 0) cStubVec.emplace_back (pos2, bend2) ;
+
+            if (pos3 != 0 && bend3 != 0) cStubVec.emplace_back (pos3, bend3) ;
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
@@ -620,53 +622,36 @@ namespace Ph2_HwInterface {
         return result;
     }
 
-    SLinkEvent Cbc3Event::GetSlinkEvent (const BeBoard* pBoard, const ConditionDataSet* pSet) const
+    SLinkEvent Cbc3Event::GetSLinkEvent ( const BeBoard* pBoard) const
     {
         int cCbcCounter = 0;
         uint16_t cNCbc = this->fEventDataMap.size();
 
         std::set<uint8_t> cEnabledFe;
-        int cNWordsDebug = 0;
 
-        if (pSet->fDebugMode == SLinkDebugMode::ERROR) //1 bit per cbc
-            cNWordsDebug = (cNCbc / 64) + 1;
-        else if (pSet->fDebugMode == SLinkDebugMode::FULL)
-            cNWordsDebug = ( (cNCbc * 20) / 64) + 1;
+        //stringstream for the status bits
+        std::stringstream cStatusStream;
 
-        std::vector<uint64_t> cCbcStatus (cNWordsDebug, 0);
+        //for the payload and the stubs, I need a string
+        std::string cPayloadString;
+        std::string cStubString;
 
-        int cNFe = pBoard->fModuleVector.size();
-        int cPayloadWords = (cNFe * 16 + cNCbc * 256) / 64 + 1;
-        std::vector<uint64_t> cPayload (cPayloadWords, 0);
-        int cStubWords = (cNFe * 5 + 16 * 3 * cNCbc) / 64 + 1;
-        std::vector<uint64_t> cStubs (cStubWords, 0);
-
-        //index of Status and data words
-        int cCbcDataWordIndex = 0;
-        int cCbcStatusWordIndex = 0;
-
-        int cCbcStubWordIndex = 0;
-        int cFeStubCounterWordIndex = 0;
-
-        //for (auto cKey : this->fEventDataMap)
         for (auto cFe : pBoard->fModuleVector)
         {
             uint8_t cFeId = cFe->getFeId();
-            //this->decodeId (cKey.first, cFeId, cCbcId);
 
             // firt get the list of enabled front ends
             if (cEnabledFe.find (cFeId) == std::end (cEnabledFe) )
                 cEnabledFe.insert (cFeId);
 
-            //shift necessary for 1st CBC status bit and Data bit
-            int cCbcStatusBitIndex = 48;
-            int cCbcDataBitIndex = 47;
-
-            int cCbcStubBitIndex = 42;
-            int cFeStubCounterBitIndex = 59;
-
+            //for the payload, I need a bitset for each FE with the CBC status
+            //and a stringstream for the bits
+            std::bitset<16> cCbcPresenceBits;
+            std::stringstream cPayloadStream;
             //stub counter per FE
             int cFeStubCounter = 0;
+            //another stringstream for the stub string
+            std::stringstream cStubStream;
 
             for (auto cCbc : cFe->fCbcVector)
             {
@@ -676,101 +661,76 @@ namespace Ph2_HwInterface {
 
                 if (cData != std::end (fEventDataMap) )
                 {
+                    uint16_t cError = ( reverse_bits (cData->second.at (2) & 0x00000300) >> 22 ) & 0x00000003;
+
                     //now get the CBC status summary
-                    if (pSet->fDebugMode == SLinkDebugMode::ERROR)
-                    {
-                        //shift a 1 all the way through (bit 63 of the first word is CBC0) if the error is not 0
-                        if (this->Error (cFeId, cCbcId) != 0) cCbcStatus.at (cCbcCounter / 64) |= 1 << ( (cCbcCounter / 64) + 1) * 64 - cCbcCounter - 1;
-                    }
-                    else if (pSet->fDebugMode == SLinkDebugMode::SUMMARY)
+                    if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::ERROR)
+                        cStatusStream << (cError != 0) ? 1 : 0;
+
+                    else if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::FULL)
                     {
                         //assemble the error bits (63, 62, pipeline address and L1A counter) into a status word
-                        //uint8_t cError = this->Error (cFeId, cCbcId) & 0x00000003;
-                        //uint16_t cPipeAddress = this->PipelineAddress (cFeId, cCbcId) & 0x000001FF;
-                        uint16_t cError = ( reverse_bits (cData->second.at (2) & 0x00000300) >> 22 ) & 0x00000003;
                         uint16_t cPipeAddress = ( reverse_bits (cData->second.at (2) & 0x0007FC00) >> 13 ) & 0x000001FF;
                         uint16_t cL1ACounter = ( reverse_bits (cData->second.at (2) & 0x0FF80000) >> 4 ) & 0x000001FF;
                         uint32_t cStatusWord = cError << 18 | cPipeAddress << 9 | cL1ACounter;
-                        //get the shift for the current chip within a 16 chip group
-                        uint8_t cShift = fShift.at (cCbcCounter % 16);
-
-                        //if the shift is larger than 44, the status word needs to wrap
-                        //so the shift-44 MSBs go in the previous word (-1)
-                        //I just have to rightshift by 20-(shift-44) so the bits in the next word underflow automatically
-                        //and the rest goes into the actual word shifted by shift - the
-                        //bits for the previous word overflow automatically
-                        if (cShift > 44)
-                            cCbcStatus.at ( ( (cCbcCounter * 20 + 20) / 64) - 1) |= cStatusWord >> 20 - (cShift - 44);
-
-                        cCbcStatus.at ( (cCbcCounter * 20 + 20) / 64) |= cStatusWord << cShift;
+                        cStatusStream << std::bitset<20> (cStatusWord).to_string();
                     }
-
-                    //generate the payload
-                    //cFeHeaderWord |= 1 << cCbcId;
-                    cPayload.at (cCbcStatusWordIndex) |= 1 << cCbcStatusBitIndex + cCbcId;
-
-                    std::vector<bool> cHits = this->DataBitVector (cFeId, cCbcId);
-
-                    for (auto cHit : cHits)
-                    {
-
-                        if (cHit)
-                            cPayload.at (cCbcDataWordIndex) |= 1 << cCbcDataBitIndex;
-
-                        if (cCbcDataBitIndex-- == 0)
-                        {
-                            cCbcDataBitIndex = 64;
-                            cCbcDataWordIndex += 1;
-                        }
-                    }
-
-                    //2 padding bits after each cbc
-                    //if (cCbcDataBitIndex > 1) cCbcDataBitIndex -= 2;
-                    //else if (cCbcDataBitIndex == 1) cCbcDataBitIndex = 63;
-                    //else if (cCbcDataBitIndex == 0) cCbcDataBitIndex = 62;
-                    cCbcDataBitIndex -= 2;
-
-                    if (cCbcDataBitIndex < 0 ) cCbcDataBitIndex = 64 - cCbcDataBitIndex;
-
-
-                    // generate the stub list
-                    //std::vector<Stub> cStubVec = this->StubVector (cFeId, cCbcId);
-                    //cFeStubCounter += cStubVec.size();
-
-                    //for (auto cStub : cStubVec)
-                    //{
-                    //uint16_t cTmpWord = (cCbcId & 0x0F) << 12 | cStub.getPosition() << 4 | (cStub.getBend() & 0x0F);
-                    //cStub.at (cCbcStubWordIndex) |= (cTmpWord & 0x0FFF) << cCbcStubBitIndex;
-                    //}
-
-                    cCbcCounter++;
-
                 }
-            }
 
-            cCbcStatusWordIndex = cCbcDataWordIndex;
+                //generate the payload
+                //to do this, serialize bits in a stream
+                //if the CBC is present, set the bit in the bitset
+                cCbcPresenceBits.set (cCbcId);
+                //don't forget the two padding 0s
+                cPayloadStream << this->DataBitString (cFeId, cCbcId) << "00";
 
-            cCbcDataBitIndex -= 17;
+                // generate the stub list
+                std::vector<Stub> cStubVec = this->StubVector (cFeId, cCbcId);
+                cFeStubCounter += cStubVec.size();
 
-            if (cCbcDataBitIndex < 0 ) cCbcDataBitIndex = 64 - cCbcDataBitIndex;
+                for (auto cStub : cStubVec)
+                    cStubStream << std::bitset<4> (cCbcId).to_string() << std::bitset<8> (cStub.getPosition() ).to_string() << std::bitset<4> (cStub.getBend() ).to_string() ;
 
-            cCbcStatusBitIndex = cCbcDataBitIndex + 1;
-        }
+                cCbcCounter++;
+            } // end of CBC loop
+
+            // for the payload, I now need to concatenate the bitset and the string
+            std::string cFePayload = cCbcPresenceBits.to_string() + cPayloadStream.str();
+            cPayloadString += cFePayload;
+
+            //for the list of stubs, I now need to prepend the counter for this FE to the string
+            std::string cFeStubString = std::bitset<5> (cFeStubCounter).to_string() + "0" + cStubStream.str();
+
+            //if there are stubs, add part of the string for this fe
+            //if there are no stubs at all, this will remain empty
+            if (cFeStubCounter != 0)
+                cStubString += cFeStubString;
+        } // end of Fe loop
 
         uint32_t cEvtCount = this->GetEventCount();
         uint16_t cBunch = static_cast<uint16_t> (this->GetBunch() );
         uint32_t cBeStatus = this->fBeStatus;
-        SLinkEvent cEvent (EventType::VR, pSet->fDebugMode, ChipType::CBC3, cEvtCount, cBunch, SOURCE_ID );
-        cEvent.generateTkHeader (cBeStatus, cNCbc, cEnabledFe, pSet->fCondData, false);  // Be Status, total number CBC, condition data?, fake data?
+        SLinkEvent cEvent (EventType::VR, pBoard->getConditionDataSet()->getDebugMode(), ChipType::CBC3, cEvtCount, cBunch, SOURCE_ID );
+        cEvent.generateTkHeader (cBeStatus, cNCbc, cEnabledFe, pBoard->getConditionDataSet()->getCondDataEnabled(), false);  // Be Status, total number CBC, condition data?, fake data?
 
         //generate a vector of uint64_t with the chip status
-        if (pSet->fDebugMode != SLinkDebugMode::SUMMARY) // do nothing
-            cEvent.generateStatus (cCbcStatus);
+        if (pBoard->getConditionDataSet()->getDebugMode() != SLinkDebugMode::SUMMARY) // do nothing
+        {
+            std::string cStatusString = cStatusStream.str();
+            cEvent.generateStatus (cStatusString);
+        }
 
-        cEvent.generatePayload (cPayload);
-        //cEvent.generateStubs (cStubs);
-        //cEvent.generateConitionData (pSet);
-        cEvent.calulateCRC();
+        //PAYLOAD
+        cEvent.generatePayload (cPayloadString);
+
+        //STUBS
+        cEvent.generateStubs (cStubString);
+
+        // condition data, first update the values in the vector for I2C values
+        uint32_t cTDC = this->GetTDC();
+        pBoard->updateCondData (cTDC);
+        cEvent.generateConitionData (pBoard->getConditionDataSet() );
+
         cEvent.generateDAQTrailer();
 
         cEvent.print();

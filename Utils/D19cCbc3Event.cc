@@ -597,6 +597,6 @@ namespace Ph2_HwInterface {
 
         return result;
     }
-    SLinkEvent D19cCbc3Event::GetSlinkEvent (const BeBoard* pBoard, const ConditionDataSet* pSet) const
+    SLinkEvent D19cCbc3Event::GetSLinkEvent (const BeBoard* pBoard) const
     {}
 }

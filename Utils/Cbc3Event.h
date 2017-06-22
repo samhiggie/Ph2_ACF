@@ -188,7 +188,7 @@ namespace Ph2_HwInterface {
 
         std::vector<Cluster> getClusters ( uint8_t pFeId, uint8_t pCbcId) const override;
 
-        SLinkEvent GetSlinkEvent (const BeBoard* pBoard, const ConditionDataSet* pSet) const override;
+        SLinkEvent GetSLinkEvent (const BeBoard* pBoard) const override;
 
         void print (std::ostream& out) const override;
 
@@ -203,8 +203,6 @@ namespace Ph2_HwInterface {
             return n;
         }
         void printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const;
-
-        const std::vector<uint8_t> fShift{44, 24, 4, 48, 28, 8, 52, 32, 12, 56, 36, 16, 60, 40, 20, 0};
     };
 }
 #endif

@@ -467,6 +467,6 @@ namespace Ph2_HwInterface {
         return result;
     }
 
-    SLinkEvent Cbc2Event::GetSlinkEvent (const BeBoard* pBoard, const ConditionDataSet* pSet) const
+    SLinkEvent Cbc2Event::GetSLinkEvent (const BeBoard* pBoard) const
     {}
 }

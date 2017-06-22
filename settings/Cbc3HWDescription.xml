@@ -25,7 +25,7 @@
 
     <SLink>
         <DebugMode type="FULL"/>
-        <ConditionData type="I2C" register="VCth" FeId="0" CbcId="0"/>
+        <ConditionData type="I2C" Register="VCth1" FeId="0" CbcId="0"/>
         <ConditionData type="User" UID="0x80" FeId="0" CbcId="0"> 0x22 </ConditionData>
         <ConditionData type="HV" FeId="0" Sensor="2"> 250 </ConditionData>
         <ConditionData type="TDC" FeId="0xFF"/>
