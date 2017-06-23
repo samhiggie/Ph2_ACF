@@ -181,4 +181,7 @@
     - added cbc3irrad binary to run the complete radiation test cycle
     - added UsbUtilities helper functions to launch and query Ke2110 and HMP4040 servers running in Tmux
     - renamed Vth to VCth for CBC3 too
+- 22.06.2017:
+    - new implementation of SLink 64 bit event data format for downstream DAQ chain
+    - ability to parse a SLink node with all the condition data and readout mode, debug level from the config file (Cbc3HWDescription.xml) - this ConditionDataSet object belongs to BeBoard pointers as this makes it easier to update I2C values for every event
 

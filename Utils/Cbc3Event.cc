@@ -702,9 +702,8 @@ namespace Ph2_HwInterface {
             std::string cFeStubString = std::bitset<5> (cFeStubCounter).to_string() + "0" + cStubStream.str();
 
             //if there are stubs, add part of the string for this fe
-            //if there are no stubs at all, this will remain empty
-            if (cFeStubCounter != 0)
-                cStubString += cFeStubString;
+            //if there are no stubs at all, this will only contain an empty header
+            cStubString += cFeStubString;
         } // end of Fe loop
 
         uint32_t cEvtCount = this->GetEventCount();
