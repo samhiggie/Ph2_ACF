@@ -343,7 +343,7 @@ namespace Ph2_HwInterface {
         this->Start();
 
         bool failed = false;
-        for(uint32_t event; event < pNEvents; event++) {            
+        for(uint32_t event = 0; event < pNEvents; event++) {
             uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");            
 
             int cNTries = 0;
