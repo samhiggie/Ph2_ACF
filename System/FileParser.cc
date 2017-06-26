@@ -267,7 +267,7 @@ namespace Ph2_System {
                     {
                         cUID = 5;
                         cFeId = convertAnyInt (cNode.attribute ("FeId").value() );
-                        cCbcId = convertAnyInt (cNode.attribute ("CbcId").value() );
+                        cCbcId = convertAnyInt (cNode.attribute ("Sensor").value() );
                         cValue = convertAnyInt (cNode.first_child().value() );
                     }
                     else if (cTypeString == "TDC")
