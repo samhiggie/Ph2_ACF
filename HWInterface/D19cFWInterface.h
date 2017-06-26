@@ -161,6 +161,11 @@ namespace Ph2_HwInterface {
         static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
         static bool cmd_reply_ack (const uint32_t& cWord1, const uint32_t& cWord2);
 
+        // dedicated method to power on dio5
+        void PowerOnDIO5();
+        // get fmc card name
+        std::string getFMCCardName(uint32_t id);
+
         //template to copy every nth element out of a vector to another vector
         template<class in_it, class out_it>
         out_it copy_every_n ( in_it b, in_it e, out_it r, size_t n)

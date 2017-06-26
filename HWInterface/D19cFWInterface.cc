@@ -98,6 +98,40 @@ namespace Ph2_HwInterface {
         }
     }
 
+    std::string D19cFWInterface::getFMCCardName(uint32_t id)
+    {
+        std::string name = "";
+
+        switch(id) {
+            case 0x0:
+                name = "None";
+                break;
+            case 0x1:
+                name = "DIO5";
+                break;
+            case 0x2:
+                name = "2xCBC2";
+                break;
+            case 0x3:
+                name = "8xCBC2";
+                break;
+            case 0x4:
+                name = "2xCBC3";
+                break;
+            case 0x5:
+                name = "8xCBC3";
+                break;
+            case 0x6:
+                name = "OPTO_QUAD";
+                break;
+            case 0xf:
+                name = "UNKNOWN";
+                break;
+        }
+
+        return name;
+    }
+
     uint32_t D19cFWInterface::getBoardInfo()
     {
         // firmware info
@@ -108,6 +142,8 @@ namespace Ph2_HwInterface {
         int cbc_version = ReadReg("fc7_daq_stat.general.info.cbc_version");
         int num_hybrids = ReadReg("fc7_daq_stat.general.info.num_hybrids");
         int num_chips = ReadReg("fc7_daq_stat.general.info.num_chips");
+        uint32_t fmc1_card_type = ReadReg("fc7_daq_stat.general.info.fmc1_card_type");
+        uint32_t fmc2_card_type = ReadReg("fc7_daq_stat.general.info.fmc2_card_type");
 
         if (implementation == 0)
             LOG (INFO) << "Implementation: " << BOLDGREEN << "Optical" << RESET;
@@ -117,6 +153,9 @@ namespace Ph2_HwInterface {
             LOG (INFO) << "Implementation: " << BOLDGREEN << "CBC3 Emulation" << RESET;
         else
             LOG (WARNING) << "Implementation: " << BOLDRED << "Unknown" << RESET;
+
+        LOG (INFO) << BOLDYELLOW << "FMC1 Card: " << RESET << getFMCCardName(fmc1_card_type);
+        LOG (INFO) << BOLDYELLOW << "FMC2 Card: " << RESET << getFMCCardName(fmc2_card_type);
 
         LOG (INFO) << "CBC Version: " << BOLDGREEN << cbc_version << RESET;
         LOG (INFO) << "Number of Hybrids: " << BOLDGREEN << num_hybrids << RESET;
@@ -224,9 +263,11 @@ namespace Ph2_HwInterface {
         //this is where I should get all the clocking and FastCommandInterface settings
         BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
 
+        bool dio5_enabled = false;
         for ( auto const& it : cGlibRegMap )
         {
             cVecReg.push_back ( {it.first, it.second} );
+            if (it.first == "fc7_daq_cnfg.dio5_block.dio5_en") dio5_enabled = (bool)it.second;
         }
 
         WriteStackReg ( cVecReg );
@@ -236,7 +277,10 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
 
         // load dio5 configuration
-        WriteReg("fc7_daq_ctrl.dio5_block.control.load_config", 0x1);
+        if (dio5_enabled) {
+            PowerOnDIO5();
+            WriteReg("fc7_daq_ctrl.dio5_block.control.load_config", 0x1);
+        }
 
         // ping all cbcs (reads data from registers #0)
         uint32_t cInit = ( ( (2) << 28 ) | (  (0) << 18 )  | ( (0) << 17 ) | ( (1) << 16 ) | (0 << 8 ) | 0);
@@ -261,6 +305,124 @@ namespace Ph2_HwInterface {
 
         if (!cReadSuccess) LOG (ERROR) << "Did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() ;
         if (!cWordCorrect) LOG (ERROR) << "CBC's ids are not correct!";
+    }
+
+    void D19cFWInterface::PowerOnDIO5()
+    {
+        LOG(INFO) << BOLDGREEN << "Powering on DIO5" << RESET;
+
+        uint32_t fmc1_card_type = ReadReg("fc7_daq_stat.general.info.fmc1_card_type");
+        uint32_t fmc2_card_type = ReadReg("fc7_daq_stat.general.info.fmc2_card_type");
+
+        //define constants
+        uint8_t i2c_slv   = 0x2f;
+        uint8_t wr = 1;
+        uint8_t rd = 0;
+
+        uint8_t sel_fmc_l8  = 0;
+        uint8_t sel_fmc_l12 = 1;
+
+        uint8_t p3v3 = 0xff - 0x09;
+        uint8_t p2v5 = 0xff - 0x2b;
+        uint8_t p1v8 = 0xff - 0x67;
+
+        if(fmc1_card_type == 0x1) {
+            LOG(INFO) << "Found DIO5 at L12. Configuring";
+
+            // disable power
+            WriteReg("sysreg.fmc_pwr.l12_pwr_en",0x0);
+
+            // enable i2c
+            WriteReg("sysreg.i2c_settings.i2c_bus_select", 0x0);
+            WriteReg("sysreg.i2c_settings.i2c_prescaler", 1000);
+            WriteReg("sysreg.i2c_settings.i2c_enable", 0x1);
+            //uint32_t i2c_settings_reg_command = (0x1 << 15) | (0x0 << 10) | 1000;
+            //WriteReg("sysreg.i2c_settings", i2c_settings_reg_command);
+
+            // set value
+            uint8_t reg_addr = (sel_fmc_l12<<7)+0x08;
+            uint8_t wrdata = p2v5;
+            uint32_t sys_i2c_command = ( (1 << 24) | (wr << 23) | (i2c_slv << 16) | (reg_addr << 8) | (wrdata) );
+
+            WriteReg("sysreg.i2c_command", sys_i2c_command | 0x80000000);
+            WriteReg("sysreg.i2c_command", sys_i2c_command);
+
+            int status	 = 0; // 0 - busy, 1 -done, 2 - error
+            int attempts = 0;
+            int max_attempts = 1000;
+            usleep(1000);
+            while (status == 0 && attempts < max_attempts) {
+                uint32_t i2c_status = ReadReg("sysreg.i2c_reply.status");
+                attempts = attempts + 1;
+                //
+                if ((int)i2c_status==1){
+                        status = 1;
+                }
+                else if ((int)i2c_status==0){
+                        status = 0;
+                }
+                else {
+                        status = 2;
+                }
+            }
+
+            // disable i2c
+            WriteReg("sysreg.i2c_settings.i2c_enable", 0x0);
+
+            usleep(1000);
+            WriteReg("sysreg.fmc_pwr.l12_pwr_en",0x1);
+        }
+
+        if(fmc2_card_type == 0x1) {
+            LOG(INFO) << "Found DIO5 at L8. Configuring";
+
+            // disable power
+            WriteReg("sysreg.fmc_pwr.l8_pwr_en",0x0);
+
+            // enable i2c
+            WriteReg("sysreg.i2c_settings.i2c_bus_select", 0x0);
+            WriteReg("sysreg.i2c_settings.i2c_prescaler", 1000);
+            WriteReg("sysreg.i2c_settings.i2c_enable", 0x1);
+            //uint32_t i2c_settings_reg_command = (0x1 << 15) | (0x0 << 10) | 1000;
+            //WriteReg("sysreg.i2c_settings", i2c_settings_reg_command);
+
+            // set value
+            uint8_t reg_addr = (sel_fmc_l8<<7)+0x08;
+            uint8_t wrdata = p2v5;
+            uint32_t sys_i2c_command = ( (1 << 24) | (wr << 23) | (i2c_slv << 16) | (reg_addr << 8) | (wrdata) );
+
+            WriteReg("sysreg.i2c_command", sys_i2c_command | 0x80000000);
+            WriteReg("sysreg.i2c_command", sys_i2c_command);
+
+            int status	 = 0; // 0 - busy, 1 -done, 2 - error
+            int attempts = 0;
+            int max_attempts = 1000;
+            usleep(1000);
+            while (status == 0 && attempts < max_attempts) {
+                uint32_t i2c_status = ReadReg("sysreg.i2c_reply.status");
+                attempts = attempts + 1;
+                //
+                if ((int)i2c_status==1){
+                        status = 1;
+                }
+                else if ((int)i2c_status==0){
+                        status = 0;
+                }
+                else {
+                        status = 2;
+                }
+            }
+
+            // disable i2c
+            WriteReg("sysreg.i2c_settings.i2c_enable", 0x0);
+
+            usleep(1000);
+            WriteReg("sysreg.fmc_pwr.l8_pwr_en",0x1);
+        }
+
+        if(fmc1_card_type != 0x1 && fmc2_card_type != 0x1) {
+            LOG(ERROR) << "No DIO5 found, you should disable it in the config file..";
+        }
     }
 
     void D19cFWInterface::FindPhase()

@@ -181,6 +181,8 @@
                 <node id="cbc_version"                      mask="0x000000f0"/>
                 <node id="num_hybrids"                      mask="0x0000ff00"/>
                 <node id="num_chips"                        mask="0x00ff0000"/>
+		<node id="fmc1_card_type"		    mask="0x0f000000"/>
+		<node id="fmc2_card_type"		    mask="0xf0000000"/>
             </node>
 
             <node id="clock_generator"                  address="0x004">

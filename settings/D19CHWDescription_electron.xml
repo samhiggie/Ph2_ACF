@@ -82,6 +82,10 @@
                 <Register name="threshold"> 50 </Register>
             </Register>
 	</Register>
+	<!-- TLU Block -->
+	<Register name="tlu_block">
+		<Register name="handshake_mode"> 2 </Register>
+	</Register>
     </Register>
   </BeBoard>
 </HwDescription>
