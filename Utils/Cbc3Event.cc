@@ -629,12 +629,12 @@ namespace Ph2_HwInterface {
 
         std::set<uint8_t> cEnabledFe;
 
-        //stringstream for the status bits
-        std::stringstream cStatusStream;
+        //payload for the status bits
+        GenericPayload<uint64_t> cStatusPayload;
 
-        //for the payload and the stubs, I need a string
-        std::string cPayloadString;
-        std::string cStubString;
+        //for the payload and the stubs
+        GenericPayload<uint64_t> cPayload;
+        GenericPayload<uint64_t> cStubPayload;
 
         for (auto cFe : pBoard->fModuleVector)
         {
@@ -644,14 +644,13 @@ namespace Ph2_HwInterface {
             if (cEnabledFe.find (cFeId) == std::end (cEnabledFe) )
                 cEnabledFe.insert (cFeId);
 
-            //for the payload, I need a bitset for each FE with the CBC status
-            //and a stringstream for the bits
-            std::bitset<16> cCbcPresenceBits;
-            std::stringstream cPayloadStream;
+            //now on to the payload
+            uint16_t cCbcPresenceWord = 0;
+            int cFirstBitFePayload = cPayload.get_current_write_position();
+            int cFirstBitFeStub = cStubPayload.get_current_write_position();
             //stub counter per FE
-            int cFeStubCounter = 0;
+            uint8_t cFeStubCounter = 0;
             //another stringstream for the stub string
-            std::stringstream cStubStream;
 
             for (auto cCbc : cFe->fCbcVector)
             {
@@ -665,7 +664,8 @@ namespace Ph2_HwInterface {
 
                     //now get the CBC status summary
                     if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::ERROR)
-                        cStatusStream << (cError != 0) ? 1 : 0;
+                        //cStatusStream << (cError != 0) ? 1 : 0;
+                        cStatusPayload.append ( (cError != 0) ? 1 : 0);
 
                     else if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::FULL)
                     {
@@ -673,37 +673,42 @@ namespace Ph2_HwInterface {
                         uint16_t cPipeAddress = ( reverse_bits (cData->second.at (2) & 0x0007FC00) >> 13 ) & 0x000001FF;
                         uint16_t cL1ACounter = ( reverse_bits (cData->second.at (2) & 0x0FF80000) >> 4 ) & 0x000001FF;
                         uint32_t cStatusWord = cError << 18 | cPipeAddress << 9 | cL1ACounter;
-                        cStatusStream << std::bitset<20> (cStatusWord).to_string();
+                        //cStatusStream << std::bitset<20> (cStatusWord).to_string();
+                        cStatusPayload.append (cStatusWord, 20);
                     }
                 }
 
                 //generate the payload
-                //to do this, serialize bits in a stream
-                //if the CBC is present, set the bit in the bitset
-                cCbcPresenceBits.set (cCbcId);
-                //don't forget the two padding 0s
-                cPayloadStream << this->DataBitString (cFeId, cCbcId) << "00";
+                //the first line sets the cbc presence bits
+                cCbcPresenceWord |= 1 << cCbcId;
+                cPayload.append (0xAAAAAAAAAAAAAAAA); //just for testing
+                cPayload.append (0xAAAAAAAAAAAAAAAA); //just for testing
+                cPayload.append (0xAAAAAAAAAAAAAAAA); //just for testing
+                cPayload.append (0xAAAAAAAAAAAAAAAA); //just for testing
 
+                //don't forget the two padding 0s
+                cPayload.padZero (2);
                 // generate the stub list
                 std::vector<Stub> cStubVec = this->StubVector (cFeId, cCbcId);
                 cFeStubCounter += cStubVec.size();
+                uint16_t cStubWord = 0;
 
                 for (auto cStub : cStubVec)
-                    cStubStream << std::bitset<4> (cCbcId).to_string() << std::bitset<8> (cStub.getPosition() ).to_string() << std::bitset<4> (cStub.getBend() ).to_string() ;
+                    cStubWord |= (cCbcId & 0xF) << 12 | (cStub.getPosition() ) << 4 | (cStub.getBend() & 0xF);
+
+                if (cStubWord != 0) cStubPayload.append (cStubWord);
+
+                //cStubStream << std::bitset<4> (cCbcId).to_string() << std::bitset<8> (cStub.getPosition() ).to_string() << std::bitset<4> (cStub.getBend() ).to_string() ;
 
                 cCbcCounter++;
             } // end of CBC loop
 
-            // for the payload, I now need to concatenate the bitset and the string
-            std::string cFePayload = cCbcPresenceBits.to_string() + cPayloadStream.str();
-            cPayloadString += cFePayload;
+            //for the payload, I need to insert the status word at the index I remembered before
+            cPayload.insert (cCbcPresenceWord, cFirstBitFePayload );
 
-            //for the list of stubs, I now need to prepend the counter for this FE to the string
-            std::string cFeStubString = std::bitset<5> (cFeStubCounter).to_string() + "0" + cStubStream.str();
+            //for the stubs for this FE, I need to prepend a 5 bit counter shifted by 1 to the right (to account for the 0 bit)
+            cStubPayload.insert ( (cFeStubCounter & 0x1F) << 1, 6);
 
-            //if there are stubs, add part of the string for this fe
-            //if there are no stubs at all, this will only contain an empty header
-            cStubString += cFeStubString;
         } // end of Fe loop
 
         uint32_t cEvtCount = this->GetEventCount();
@@ -714,16 +719,13 @@ namespace Ph2_HwInterface {
 
         //generate a vector of uint64_t with the chip status
         if (pBoard->getConditionDataSet()->getDebugMode() != SLinkDebugMode::SUMMARY) // do nothing
-        {
-            std::string cStatusString = cStatusStream.str();
-            cEvent.generateStatus (cStatusString);
-        }
+            cEvent.generateStatus (cStatusPayload.Data() );
 
         //PAYLOAD
-        cEvent.generatePayload (cPayloadString);
+        cEvent.generatePayload (cPayload.Data() );
 
         //STUBS
-        cEvent.generateStubs (cStubString);
+        cEvent.generateStubs (cStubPayload.Data() );
 
         // condition data, first update the values in the vector for I2C values
         uint32_t cTDC = this->GetTDC();

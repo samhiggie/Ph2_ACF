@@ -13,6 +13,7 @@
 #define __CBC3EVENT_H__
 
 #include "Event.h"
+#include "GenericPayload.h"
 
 
 using namespace Ph2_HwDescription;

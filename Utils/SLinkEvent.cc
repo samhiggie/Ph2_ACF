@@ -44,25 +44,22 @@ void SLinkEvent::generateTkHeader (uint32_t& pBeStatus, uint16_t& pNChips, std::
     fSize += 2;
 }
 
-void SLinkEvent::generateStatus (std::string& pStatusString)
+void SLinkEvent::generateStatus (std::vector<uint64_t> pStatusVec)
 {
-    std::vector<uint64_t> cVec = this->convertStringto64 (pStatusString);
-    fData.insert (fData.begin() + 3, cVec.begin(), cVec.end() );
-    fSize += cVec.size();
+    fData.insert (fData.begin() + 3, pStatusVec.begin(), pStatusVec.end() );
+    fSize += pStatusVec.size();
 }
 
-void SLinkEvent::generatePayload (std::string& pPayloadString)
+void SLinkEvent::generatePayload (std::vector<uint64_t> pPayloadVec)
 {
-    std::vector<uint64_t> cVec = this->convertStringto64 (pPayloadString);
-    fData.insert (fData.end(), cVec.begin(), cVec.end() );
-    fSize += cVec.size();
+    fData.insert (fData.end(), pPayloadVec.begin(), pPayloadVec.end() );
+    fSize += pPayloadVec.size();
 }
 
-void SLinkEvent::generateStubs (std::string& pStubString)
+void SLinkEvent::generateStubs (std::vector<uint64_t> pStubVec)
 {
-    std::vector<uint64_t> cVec = this->convertStringto64 (pStubString);
-    fData.insert (fData.end(), cVec.begin(), cVec.end() );
-    fSize += cVec.size();
+    fData.insert (fData.end(), pStubVec.begin(), pStubVec.end() );
+    fSize += pStubVec.size();
 }
 
 void SLinkEvent::generateConitionData (ConditionDataSet* pSet)

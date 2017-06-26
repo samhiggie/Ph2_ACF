@@ -83,7 +83,7 @@ template<typename A> class GenericPayload
         return fWriteBitIndex;
     }
 
-    std::vector<A> Data() const
+    std::vector<A> Data()
     {
         return split_vec (fData);
     }
@@ -383,7 +383,6 @@ template<typename A> class GenericPayload
         this->insert (pWord, 0, pNLSBs);
     }
 
-  private:
     void reserve (uint32_t pNBits)
     {
         //also check if I need three cases everywhere or if it could be simpler when not initializing the first word
@@ -398,6 +397,7 @@ template<typename A> class GenericPayload
 
         fBitCount += pNBits;
     }
+  private:
     template<typename T>
     void insert_reserved (T pWord, uint32_t pPosition, int pNLSBs = -1)
     {

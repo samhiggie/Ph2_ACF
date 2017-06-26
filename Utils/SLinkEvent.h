@@ -34,14 +34,17 @@ class SLinkEvent
     void generateTkHeader (uint32_t& pBeStatus, uint16_t& pNChips, std::set<uint8_t>& pEnabledFe, bool pCondData = false, bool pFake = false);
     // the following 4 are dumb methods in that they just insert a vector of 64 bit words
     // the actual event implementation will have to encode everything in there
-    void generateStatus (std::string& pStatusString);
-    void generatePayload (std::string& pPayloadString);
-    void generateStubs (std::string& pStubString);
+    void generateStatus (std::vector<uint64_t> pStatusVec);
+    void generatePayload (std::vector<uint64_t> pPayloadVec);
+    void generateStubs (std::vector<uint64_t> pStubVec);
     // kind of important
     void generateConitionData (ConditionDataSet* pSet);
     // sort of
     // everything either a define or a member variable so no need to pass anything
     void generateDAQTrailer();
+
+    //template<typename T>
+    //std::vector<T> getData();
 
     void print()
     {
@@ -56,6 +59,7 @@ class SLinkEvent
             cCounter++;
         }
     }
+
 
   private:
     //Enums defined in HWDescription/Definition.h
