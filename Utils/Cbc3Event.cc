@@ -682,15 +682,8 @@ namespace Ph2_HwInterface {
                     cCbcPresenceWord |= 1 << cCbcId;
 
                     //first CBC3 channel data word
-                    //another tester
-                    //uint32_t cTestWord1 = 0xAFFFFF00;
-                    //uint32_t cTestWord2 = 0x03A0A0AF;
-                    //std::cout << std::bitset<32> (cTestWord1) << " " << std::bitset<32> (reverse_bits (cTestWord1 & 0xF0000000 ) ) << std::endl;
-                    //std::cout << std::bitset<32> (cTestWord2) << " " << std::bitset<32> (reverse_bits (cTestWord2 & 0x03FFFFFF ) >> 6 ) << std::endl;
                     uint32_t cFirstChanWord = reverse_bits (cData->second.at (2) & 0xF0000000);
                     uint32_t cLastChanWord = reverse_bits (cData->second.at (10) & 0x03FFFFFF) >> 6;
-                    //uint8_t cFirstChanWord = reverse_bits (cTestWord1 & 0xF0000000);
-                    //uint32_t cLastChanWord = reverse_bits (cTestWord2 & 0x03FFFFFF) >> 6;
 
                     cPayload.append (cFirstChanWord, 4);
 
@@ -698,7 +691,6 @@ namespace Ph2_HwInterface {
                     {
                         uint32_t cWord = reverse_bits (cData->second.at (i) );
                         cPayload.append (cWord);
-                        //cPayload.append (0xFFFFFFFF);
                     }
 
                     cPayload.append (cLastChanWord, 26);

@@ -96,7 +96,8 @@ int main ( int argc, char* argv[] )
     std::vector<uint32_t> dataVec;
     //int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32 * cbcTypeEvtSizeMap[cbcType].first;
     int eventSize = 14;
-    dqmh.readFile (dataVec, 28);
+    //dqmh.readFile (dataVec, 140000);
+    dqmh.readFile (dataVec, 140);
 
     // Now split the data buffer in events
     int nEvents = dataVec.size() / eventSize;
@@ -104,6 +105,8 @@ int main ( int argc, char* argv[] )
     Data d;
     d.Set ( pBoard, dataVec, nEvents, t);
 
+    Timer timer;
+    timer.start();
     const std::vector<Event*>& elist = d.GetEvents ( pBoard );
 
     for (auto ev : elist)
@@ -112,27 +115,8 @@ int main ( int argc, char* argv[] )
         ev->GetSLinkEvent (pBoard);
     }
 
-    // now read the whole file in chunks of maxevt
-    //dqmh.getFileHandler()->rewind();
-    //long ntotevt = 0;
+    timer.stop();
+    timer.show ("Time to encode 1000 SLinkEvents: ");
 
-    //while ( ntotevt < 2 )
-    //{
-    //dataVec.clear();
-    //dqmh.readFile (dataVec, maxevt * eventSize);
-    //nEvents = dataVec.size() / eventSize;
-
-    //if (!nEvents) break;
-
-    //d.Set ( pBoard, dataVec, nEvents, t);
-    //const std::vector<Event*>& evlist = d.GetEvents ( pBoard );
-    //ntotevt += nEvents;
-    //LOG (INFO) << "eventSize = "  << eventSize
-    //<< ", eventsRead = " << nEvents
-    //<< ", totalEventsRead = " << ntotevt;
-
-    //}
-
-    //delete dqmh;
     return 0;
 }

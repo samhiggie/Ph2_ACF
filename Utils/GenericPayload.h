@@ -35,7 +35,7 @@ template<typename A> class GenericPayload
 
     uint32_t Words() const
     {
-        if (fWordIndex + 1 != fData.size() ) std::cout << "Error, there is a problem with the size" << std::endl;
+        if (fWordIndex + 1 != fData.size() ) LOG (ERROR) << "Error, there is a problem with the size";
 
         return fWordIndex + 1;
     }
@@ -57,7 +57,7 @@ template<typename A> class GenericPayload
 
     void print() const
     {
-        std::cout << "Word Size: " << WORDSIZE << " Container Size: " << Words() << std::endl;
+        LOG (INFO) << "Word Size: " << WORDSIZE << " Container Size: " << Words();
         std::vector<A> cVec = split_vec (fData);
 
         for (auto cWord : cVec)
@@ -79,7 +79,7 @@ template<typename A> class GenericPayload
 
     uint32_t get_current_write_position() const
     {
-        std::cout << "Write pointer (for next bit) currently pointing to: Word " << fWordIndex << " Bit (in word) " << fWriteBitIndex << " Bit (global) " << fBitCount << std::endl;
+        LOG (DEBUG) << "Write pointer (for next bit) currently pointing to: Word " << fWordIndex << " Bit (in word) " << fWriteBitIndex << " Bit (global) ";
         return fWriteBitIndex;
     }
 
@@ -99,7 +99,6 @@ template<typename A> class GenericPayload
         if (cWord > fData.size() )
         {
             throw std::out_of_range ("Bit index out of range");
-            //std::cout << "Error, this bit does not exist!" << std::endl;
             return;
         }
         else
@@ -115,7 +114,6 @@ template<typename A> class GenericPayload
         if (cWord > fData.size() )
         {
             throw std::out_of_range ("Bit index out of range");
-            //std::cout << "Error, this bit does not exist!" << std::endl;
             return;
         }
         else
@@ -131,7 +129,6 @@ template<typename A> class GenericPayload
         if (cWord > fData.size() )
         {
             throw std::out_of_range ("Bit index out of range");
-            //std::cout << "Error, this bit does not exist!" << std::endl;
             return;
         }
         else
@@ -147,7 +144,6 @@ template<typename A> class GenericPayload
         if (cWord > fData.size() )
         {
             throw std::out_of_range ("Bit index out of range");
-            //std::cout << "Error, this bit does not exist!" << std::endl;
             return false;
         }
         else
