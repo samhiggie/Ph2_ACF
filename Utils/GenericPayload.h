@@ -245,26 +245,52 @@ template<typename A> class GenericPayload
 
     void append (bool pWord, int pNLSBs = -1)
     {
-        // only open a new word if the index points to  the MSB of a word
-        // and it is not the first word as that already exists from construction
-        if (fWriteBitIndex == 0 && fWordIndex != 0)
+        uint8_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
+
+        // if i am not in the first word bout would need to start a new word for the new data:
+        if ( cFreeBits == 64 && fBitCount != 0)
         {
             fWordIndex++;
             fData.push_back (0);
-            fWriteBitIndex = (fWriteBitIndex + 1) % WORDSIZE;
-
-            if (pWord) fData.at (fWordIndex) |= (uint64_t) 1 << (WORDSIZE - fWriteBitIndex);
-
         }
-        else
+
+        //on the other hand, if the bits i want to insert exceed the free bit count
+        //I also need to expand
+        else if (1 > cFreeBits)
         {
-            fWriteBitIndex = (fWriteBitIndex + 1) % WORDSIZE;
-
-            if (pWord) fData.at (fWordIndex) |= (uint64_t) 1 << (WORDSIZE - fWriteBitIndex);
+            fWordIndex++;
+            fData.push_back (0);
         }
+
+        fWriteBitIndex = (fWriteBitIndex + 1) % WORDSIZE;
+
+        if (pWord) fData.at (fWordIndex) |= (uint64_t) 1 << (WORDSIZE - fWriteBitIndex);
 
         fBitCount++;
     }
+
+    //void append (bool pWord, int pNLSBs = -1)
+    //{
+    //// only open a new word if the index points to  the MSB of a word
+    //// and it is not the first word as that already exists from construction
+    //if (fWriteBitIndex == 0 && fWordIndex != 0)
+    //{
+    //fWordIndex++;
+    //fData.push_back (0);
+    //fWriteBitIndex = (fWriteBitIndex + 1) % WORDSIZE;
+
+    //if (pWord) fData.at (fWordIndex) |= (uint64_t) 1 << (WORDSIZE - fWriteBitIndex);
+
+    //}
+    //else
+    //{
+    //fWriteBitIndex = (fWriteBitIndex + 1) % WORDSIZE;
+
+    //if (pWord) fData.at (fWordIndex) |= (uint64_t) 1 << (WORDSIZE - fWriteBitIndex);
+    //}
+
+    //fBitCount++;
+    //}
 
     template<typename T>
     void insert (T pWord, uint32_t pPosition, int pNLSBs = -1)
@@ -383,21 +409,30 @@ template<typename A> class GenericPayload
         this->insert (pWord, 0, pNLSBs);
     }
 
+  private:
     void reserve (uint32_t pNBits)
     {
-        //also check if I need three cases everywhere or if it could be simpler when not initializing the first word
-        if (fWriteBitIndex + pNBits > WORDSIZE )
+        uint8_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
+
+        // if i am not in the first word bout would need to start a new word for the new data:
+        if ( cFreeBits == 64 && fBitCount != 0)
         {
             fWordIndex++;
             fData.push_back (0);
-            fWriteBitIndex = (fWriteBitIndex + pNBits) % WORDSIZE;
         }
-        else
-            fWriteBitIndex = (fWriteBitIndex + pNBits) % WORDSIZE;
 
+        //on the other hand, if the bits i want to insert exceed the free bit count
+        //I also need to expand
+        else if (pNBits > cFreeBits)
+        {
+            fWordIndex++;
+            fData.push_back (0);
+        }
+
+        fWriteBitIndex = (fWriteBitIndex + pNBits) % WORDSIZE;
         fBitCount += pNBits;
     }
-  private:
+
     template<typename T>
     void insert_reserved (T pWord, uint32_t pPosition, int pNLSBs = -1)
     {

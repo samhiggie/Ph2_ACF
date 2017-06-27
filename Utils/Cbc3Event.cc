@@ -676,19 +676,40 @@ namespace Ph2_HwInterface {
                         //cStatusStream << std::bitset<20> (cStatusWord).to_string();
                         cStatusPayload.append (cStatusWord, 20);
                     }
+
+                    //generate the payload
+                    //the first line sets the cbc presence bits
+                    cCbcPresenceWord |= 1 << cCbcId;
+
+                    //first CBC3 channel data word
+                    //another tester
+                    //uint32_t cTestWord1 = 0xAFFFFF00;
+                    //uint32_t cTestWord2 = 0x03A0A0AF;
+                    //std::cout << std::bitset<32> (cTestWord1) << " " << std::bitset<32> (reverse_bits (cTestWord1 & 0xF0000000 ) ) << std::endl;
+                    //std::cout << std::bitset<32> (cTestWord2) << " " << std::bitset<32> (reverse_bits (cTestWord2 & 0x03FFFFFF ) >> 6 ) << std::endl;
+                    uint32_t cFirstChanWord = reverse_bits (cData->second.at (2) & 0xF0000000);
+                    uint32_t cLastChanWord = reverse_bits (cData->second.at (10) & 0x03FFFFFF) >> 6;
+                    //uint8_t cFirstChanWord = reverse_bits (cTestWord1 & 0xF0000000);
+                    //uint32_t cLastChanWord = reverse_bits (cTestWord2 & 0x03FFFFFF) >> 6;
+
+                    cPayload.append (cFirstChanWord, 4);
+
+                    for (size_t i = 3; i < 10; i++)
+                    {
+                        uint32_t cWord = reverse_bits (cData->second.at (i) );
+                        cPayload.append (cWord);
+                        //cPayload.append (0xFFFFFFFF);
+                    }
+
+                    cPayload.append (cLastChanWord, 26);
+
+                    //don't forget the two padding 0s
+                    cPayload.padZero (2);
                 }
 
-                //generate the payload
-                //the first line sets the cbc presence bits
-                cCbcPresenceWord |= 1 << cCbcId;
-                cPayload.append (0xAAAAAAAAAAAAAAAA); //just for testing
-                cPayload.append (0xAAAAAAAAAAAAAAAA); //just for testing
-                cPayload.append (0xAAAAAAAAAAAAAAAA); //just for testing
-                cPayload.append (0xAAAAAAAAAAAAAAAA); //just for testing
-
-                //don't forget the two padding 0s
-                cPayload.padZero (2);
                 // generate the stub list
+                // I am doing it outside of the event data map condition since I want to use the accessors of the event class
+                // to loop the vector - it could be more efficient but also more fiddly to do it directly
                 std::vector<Stub> cStubVec = this->StubVector (cFeId, cCbcId);
                 cFeStubCounter += cStubVec.size();
                 uint16_t cStubWord = 0;
@@ -697,8 +718,6 @@ namespace Ph2_HwInterface {
                     cStubWord |= (cCbcId & 0xF) << 12 | (cStub.getPosition() ) << 4 | (cStub.getBend() & 0xF);
 
                 if (cStubWord != 0) cStubPayload.append (cStubWord);
-
-                //cStubStream << std::bitset<4> (cCbcId).to_string() << std::bitset<8> (cStub.getPosition() ).to_string() << std::bitset<4> (cStub.getBend() ).to_string() ;
 
                 cCbcCounter++;
             } // end of CBC loop
