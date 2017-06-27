@@ -631,7 +631,6 @@ namespace Ph2_HwInterface {
 
         //payload for the status bits
         GenericPayload<uint64_t> cStatusPayload;
-
         //for the payload and the stubs
         GenericPayload<uint64_t> cPayload;
         GenericPayload<uint64_t> cStubPayload;
@@ -650,7 +649,6 @@ namespace Ph2_HwInterface {
             int cFirstBitFeStub = cStubPayload.get_current_write_position();
             //stub counter per FE
             uint8_t cFeStubCounter = 0;
-            //another stringstream for the stub string
 
             for (auto cCbc : cFe->fCbcVector)
             {
@@ -664,7 +662,6 @@ namespace Ph2_HwInterface {
 
                     //now get the CBC status summary
                     if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::ERROR)
-                        //cStatusStream << (cError != 0) ? 1 : 0;
                         cStatusPayload.append ( (cError != 0) ? 1 : 0);
 
                     else if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::FULL)
@@ -673,7 +670,6 @@ namespace Ph2_HwInterface {
                         uint16_t cPipeAddress = ( reverse_bits (cData->second.at (2) & 0x0007FC00) >> 13 ) & 0x000001FF;
                         uint16_t cL1ACounter = ( reverse_bits (cData->second.at (2) & 0x0FF80000) >> 4 ) & 0x000001FF;
                         uint32_t cStatusWord = cError << 18 | cPipeAddress << 9 | cL1ACounter;
-                        //cStatusStream << std::bitset<20> (cStatusWord).to_string();
                         cStatusPayload.append (cStatusWord, 20);
                     }
 
@@ -683,6 +679,7 @@ namespace Ph2_HwInterface {
 
                     //first CBC3 channel data word
                     uint32_t cFirstChanWord = reverse_bits (cData->second.at (2) & 0xF0000000);
+                    //last CBC3 channel data word
                     uint32_t cLastChanWord = reverse_bits (cData->second.at (10) & 0x03FFFFFF) >> 6;
 
                     cPayload.append (cFirstChanWord, 4);
@@ -697,19 +694,24 @@ namespace Ph2_HwInterface {
 
                     //don't forget the two padding 0s
                     cPayload.padZero (2);
+
+                    //stubs
+                    uint8_t pos1 =  (cData->second.at (1) &  0x000000FF) ;
+                    uint8_t pos2 =   (cData->second.at (1) & 0x0000FF00) >> 8;
+                    uint8_t pos3 =   (cData->second.at (1) & 0x00FF0000) >> 16;
+                    uint8_t bend1 = (cData->second.at (1) & 0x0F000000) >> 24;
+                    uint8_t bend2 = (cData->second.at (1) & 0xF0000000) >> 28;
+                    uint8_t bend3 = (cData->second.at (2) & 0x0000000F);
+
+                    if (pos1 != 0)
+                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos1 << 4 | bend1 & 0xF);
+
+                    if (pos2 != 0)
+                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos2 << 4 | bend2 & 0xF);
+
+                    if (pos3 != 0)
+                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos3 << 4 | bend3 & 0xF);
                 }
-
-                // generate the stub list
-                // I am doing it outside of the event data map condition since I want to use the accessors of the event class
-                // to loop the vector - it could be more efficient but also more fiddly to do it directly
-                std::vector<Stub> cStubVec = this->StubVector (cFeId, cCbcId);
-                cFeStubCounter += cStubVec.size();
-                uint16_t cStubWord = 0;
-
-                for (auto cStub : cStubVec)
-                    cStubWord |= (cCbcId & 0xF) << 12 | (cStub.getPosition() ) << 4 | (cStub.getBend() & 0xF);
-
-                if (cStubWord != 0) cStubPayload.append (cStubWord);
 
                 cCbcCounter++;
             } // end of CBC loop

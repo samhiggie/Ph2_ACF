@@ -97,7 +97,7 @@ int main ( int argc, char* argv[] )
     //int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32 * cbcTypeEvtSizeMap[cbcType].first;
     int eventSize = 14;
     //dqmh.readFile (dataVec, 140000);
-    dqmh.readFile (dataVec, 140);
+    dqmh.readFile (dataVec, 14000);
 
     // Now split the data buffer in events
     int nEvents = dataVec.size() / eventSize;
