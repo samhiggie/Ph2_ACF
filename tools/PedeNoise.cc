@@ -141,14 +141,38 @@ void PedeNoise::Initialise()
     for ( BeBoard* pBoard : fBoardVector )
         this->measureOccupancy (pBoard, -1);
 
-    for (auto& cCbc : fThresholdMap)
-    {
-        float cOccupancy = fHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
-        fHoleMode = (cOccupancy == 0) ? false :  true;
+    cSetting = fSettingsMap.find("HoleMode");
+    if( cSetting!= std::end(fSettingsMap)) {
+        bool cHoleModeFromSettings = cSetting->second;
+        bool cHoleModeFromOccupancy = true;
+
+        fHoleMode = cHoleModeFromSettings;
         std::string cMode = (fHoleMode) ? "Hole Mode" : "Electron Mode";
-        std::stringstream ss;
-        ss << BOLDBLUE << "Measuring Occupancy @ Threshold " << BOLDRED << cCbc.second << BOLDBLUE << ": " << BOLDRED << cOccupancy << BOLDBLUE << ", thus assuming " << BOLDYELLOW << cMode << RESET;
-        LOG (INFO) << ss.str();
+
+        for (auto& cCbc : fThresholdMap)
+        {
+            std::stringstream ss;
+            float cOccupancy = fHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
+            cHoleModeFromOccupancy = (cOccupancy == 0) ? false :  true;
+            if (cHoleModeFromOccupancy != cHoleModeFromSettings) {
+                ss << BOLDRED << "Be careful: " << RESET << "operation mode from settings does not correspond to the one found by measuring occupancy. Using the one from settings (" << BOLDYELLOW << cMode << RESET << ")";
+            }
+            else {
+                ss << BOLDBLUE << "Measuring Occupancy @ Threshold " << BOLDRED << cCbc.second << BOLDBLUE << ": " << BOLDRED << cOccupancy << BOLDBLUE << ", thus assuming " << BOLDYELLOW << cMode << RESET << " (consistent with the settings file)";
+            }
+            LOG (INFO) << ss.str();
+        }
+    }
+    else {
+        for (auto& cCbc : fThresholdMap)
+        {
+            float cOccupancy = fHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
+            fHoleMode = (cOccupancy == 0) ? false :  true;
+            std::string cMode = (fHoleMode) ? "Hole Mode" : "Electron Mode";
+            std::stringstream ss;
+            ss << BOLDBLUE << "Measuring Occupancy @ Threshold " << BOLDRED << cCbc.second << BOLDBLUE << ": " << BOLDRED << cOccupancy << BOLDBLUE << ", thus assuming " << BOLDYELLOW << cMode << RESET;
+            LOG (INFO) << ss.str();
+        }
     }
 }
 
@@ -434,7 +458,7 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
     int cIncrement = 0;
 
     uint16_t cNbits = (fType == ChipType::CBC2) ? 8 : 10;
-    uint16_t cMaxValue = pow(2,cNbits) - 1;
+    uint16_t cMaxValue = (1 << cNbits) - 1;
 
     //start with the threshold value found above
     ThresholdVisitor cVisitor (fCbcInterface, cValue);
@@ -506,14 +530,16 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
                 cIncrement = 0;
             }
 
+            cIncrement++;
+
             // following checks if we're not going out of bounds
-            if (cSign == 1 && cValue == cMaxValue) {
+            if (cSign == 1 && (pStartValue + (cIncrement * cSign) > cMaxValue)) {
                 if (fHoleMode) cAllZero = true;
                 else cAllOne = true;
                 cIncrement = 0;
                 cSign = -1*cSign;
             }
-            if (cSign == -1 && cValue == 0) {
+            if (cSign == -1 && (pStartValue + (cIncrement * cSign) < 0)) {
                 if (fHoleMode) cAllOne = true;
                 else cAllZero = true;
                 cIncrement = 0;
@@ -521,9 +547,8 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
             }
 
 
-            cIncrement++;
             LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement << " Hitcounter: " << cHitCounter << " Max hits: " << cMaxHits;
-            cValue = pStartValue + (cIncrement * cSign);
+            cValue = pStartValue + (cIncrement * cSign);            
         }
     }
 
