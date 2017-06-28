@@ -7,11 +7,42 @@ SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pCh
     fSize (0),
     fCRCVal (0),
     fCondData (0),
-    fFake (0),
-    fComplete (false)
+    fFake (0)
 {
     fData.clear();
     this->generateDAQHeader (pLV1Id, pBXId, pSourceId);
+}
+
+template<typename T>
+std::vector<T> SLinkEvent::getData()
+{
+    return split_vec64<T> (fData);
+}
+
+void SLinkEvent::print (std::ostream& out) const
+{
+    std::string cDebugMode, cReadoutMode;
+
+    if (fDebugMode == SLinkDebugMode::ERROR) cDebugMode = "SLinkDebugMode::ERROR";
+
+    if (fDebugMode == SLinkDebugMode::FULL) cDebugMode = "SLinkDebugMode::FULL";
+
+    if (fDebugMode == SLinkDebugMode::SUMMARY) cDebugMode = "SLinkDebugMode::SUMMARY";
+
+    if (fEventType == EventType::VR) cReadoutMode = "EventType::VR";
+
+    if (fEventType == EventType::ZS) cReadoutMode = "EventType::ZS";
+
+    out << BOLDYELLOW << "SLINK EVENT: Type " << RED << cReadoutMode << BOLDYELLOW << " - Debug Mode " << RED << cDebugMode << RESET << std::endl;
+    int cCounter = 0;
+
+    for (auto word : fData)
+    {
+        //char cCountString[3];
+        //sprintf (cCountString, "%03d", cCounter++);
+        out << BOLDYELLOW << "#" << std::setw (3) << cCounter << RESET << "  " << (static_cast<std::bitset<64>> (word) ) << "  " << BOLDYELLOW << std::setw (16) << std::hex << word << std::dec << RESET << std::endl;
+        cCounter++;
+    }
 }
 
 void SLinkEvent::generateDAQHeader (uint32_t& pLV1Id, uint16_t& pBXId, int pSourceId)
@@ -20,7 +51,7 @@ void SLinkEvent::generateDAQHeader (uint32_t& pLV1Id, uint16_t& pBXId, int pSour
     //BOE_1 | EVENT_TYPE | L1 ID | BX ID | SOURCE ID | FOV
     cWord |= ( (uint64_t) BOE_1 & 0xF) << 60 | ( (uint64_t) EVENT_TYPE & 0xF) << 56 | ( (uint64_t) pLV1Id & 0x00FFFFFF) << 32 | ( (uint64_t) pBXId & 0x0FFF) << 20 | (pSourceId & 0x0FFF) << 8 | (FOV & 0xF) << 4;
 
-    fData.push_front (cWord);
+    fData.insert (fData.begin(), cWord);
     fSize += 1;
 }
 
@@ -62,7 +93,7 @@ void SLinkEvent::generateStubs (std::vector<uint64_t> pStubVec)
     fSize += pStubVec.size();
 }
 
-void SLinkEvent::generateConitionData (ConditionDataSet* pSet)
+void SLinkEvent::generateConditionData (ConditionDataSet* pSet)
 {
     //if there are condition data defined
     if (pSet != nullptr && pSet->fCondDataVector.size() != 0)

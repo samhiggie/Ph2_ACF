@@ -630,10 +630,10 @@ namespace Ph2_HwInterface {
         std::set<uint8_t> cEnabledFe;
 
         //payload for the status bits
-        GenericPayload<uint64_t> cStatusPayload;
+        GenericPayload cStatusPayload;
         //for the payload and the stubs
-        GenericPayload<uint64_t> cPayload;
-        GenericPayload<uint64_t> cStubPayload;
+        GenericPayload cPayload;
+        GenericPayload cStubPayload;
 
         for (auto cFe : pBoard->fModuleVector)
         {
@@ -732,22 +732,22 @@ namespace Ph2_HwInterface {
 
         //generate a vector of uint64_t with the chip status
         if (pBoard->getConditionDataSet()->getDebugMode() != SLinkDebugMode::SUMMARY) // do nothing
-            cEvent.generateStatus (cStatusPayload.Data() );
+            cEvent.generateStatus (cStatusPayload.Data<uint64_t>() );
 
         //PAYLOAD
-        cEvent.generatePayload (cPayload.Data() );
+        cEvent.generatePayload (cPayload.Data<uint64_t>() );
 
         //STUBS
-        cEvent.generateStubs (cStubPayload.Data() );
+        cEvent.generateStubs (cStubPayload.Data<uint64_t>() );
 
         // condition data, first update the values in the vector for I2C values
         uint32_t cTDC = this->GetTDC();
         pBoard->updateCondData (cTDC);
-        cEvent.generateConitionData (pBoard->getConditionDataSet() );
+        cEvent.generateConditionData (pBoard->getConditionDataSet() );
 
         cEvent.generateDAQTrailer();
 
-        cEvent.print();
+        //cEvent.print();
         return cEvent;
     }
 }

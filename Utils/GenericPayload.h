@@ -5,9 +5,39 @@
 #include <bitset>
 #include <vector>
 
+#include "easylogging++.h"
+
 #define WORDSIZE 64
 
-template<typename A> class GenericPayload
+template<typename T>
+std::vector<T> split_vec64 (std::vector<uint64_t> pVec)
+{
+    size_t aSize = sizeof (T);
+    size_t aSizeBits = 8 * aSize;
+    size_t tSize = sizeof (uint64_t);
+
+    std::vector<T> cVec;
+
+    for (auto pWord : pVec)
+    {
+        if (tSize > aSize )
+        {
+            for (size_t i = (tSize / aSize) - 1; i >= 0; i--)
+            {
+                size_t cShift = i * aSizeBits;
+                T cWord = ( pWord >> cShift  ) & ( ( (T) 1 << aSizeBits) - 1);
+                cVec.push_back (cWord); // add a mask
+            }
+        }
+        else if (aSize == tSize)
+            cVec.push_back ( (T) pWord);
+    }
+
+    return cVec;
+}
+
+//template<typename A> class GenericPayload
+class GenericPayload
 {
     //class to hold bits in vector of 64 bits
     //if a new word is needed for an additional bit,
@@ -16,9 +46,9 @@ template<typename A> class GenericPayload
 
   private:
     std::vector<uint64_t> fData;
-    uint32_t fWordIndex;
-    uint32_t fWriteBitIndex;
-    uint32_t fBitCount;
+    size_t fWordIndex;
+    size_t fWriteBitIndex;
+    size_t fBitCount;
 
   public:
     GenericPayload() :
@@ -33,68 +63,70 @@ template<typename A> class GenericPayload
         fData.clear();
     }
 
-    uint32_t Words() const
+    size_t Words() const
     {
         if (fWordIndex + 1 != fData.size() ) LOG (ERROR) << "Error, there is a problem with the size";
 
         return fWordIndex + 1;
     }
 
-    uint32_t WordSize() const
+    size_t WordSize() const
     {
         return WORDSIZE;
     }
 
-    uint32_t Bits() const
+    size_t Bits() const
     {
         return fBitCount;
     }
 
-    uint32_t WritePosition() const
+    size_t WritePosition() const
     {
         return fWriteBitIndex;
     }
 
+    template<typename T>
     void print() const
     {
         LOG (INFO) << "Word Size: " << WORDSIZE << " Container Size: " << Words();
-        std::vector<A> cVec = split_vec (fData);
+        std::vector<T> cVec = split_vec64<T> (fData);
 
         for (auto cWord : cVec)
         {
-            if (sizeof (A) == 1)
+            if (sizeof (T) == 1)
                 std::cout << std::bitset<8> (cWord) << std::endl;
 
-            if (sizeof (A) == 2)
+            if (sizeof (T) == 2)
                 std::cout << std::bitset<16> (cWord) << std::endl;
 
-            if (sizeof (A) == 4)
+            if (sizeof (T) == 4)
                 std::cout << std::bitset<32> (cWord) << std::endl;
 
-            if (sizeof (A) == 8)
+            if (sizeof (T) == 8)
                 std::cout << std::bitset<64> (cWord) << std::endl;
 
         }
     }
 
-    uint32_t get_current_write_position() const
+    size_t get_current_write_position() const
     {
         LOG (DEBUG) << "Write pointer (for next bit) currently pointing to: Word " << fWordIndex << " Bit (in word) " << fWriteBitIndex << " Bit (global) ";
         return fWriteBitIndex;
     }
 
-    std::vector<A> Data()
+    template<typename T>
+    std::vector<T> Data()
     {
-        return split_vec (fData);
+        return split_vec64<T> (fData);
     }
 
     //the next three methods allow to set, unset and test bits at any position
     //no counters need to be incremented
-    void set (uint32_t pPosition)
+    void set (size_t pPosition)
     {
-        uint8_t cWord = pPosition / WORDSIZE;
+        size_t cWord = pPosition / WORDSIZE;
         pPosition = WORDSIZE - 1 - pPosition;
-        uint8_t cBit = pPosition % WORDSIZE;
+        size_t cBit = pPosition % WORDSIZE;
 
         if (cWord > fData.size() )
         {
@@ -105,11 +137,11 @@ template<typename A> class GenericPayload
             fData.at (cWord) |= (uint64_t) 1 << cBit;
     }
 
-    void unset (uint32_t pPosition)
+    void unset (size_t pPosition)
     {
-        uint8_t cWord = pPosition / WORDSIZE;
+        size_t cWord = pPosition / WORDSIZE;
         pPosition = WORDSIZE - 1 - pPosition;
-        uint8_t cBit = pPosition % WORDSIZE;
+        size_t cBit = pPosition % WORDSIZE;
 
         if (cWord > fData.size() )
         {
@@ -120,11 +152,11 @@ template<typename A> class GenericPayload
             fData.at (cWord) &= ~ ( (uint64_t) 1 << cBit);
     }
 
-    void toggle (uint32_t pPosition)
+    void toggle (size_t pPosition)
     {
-        uint8_t cWord = pPosition / WORDSIZE;
+        size_t cWord = pPosition / WORDSIZE;
         pPosition = WORDSIZE - 1 - pPosition;
-        uint8_t cBit = pPosition % WORDSIZE;
+        size_t cBit = pPosition % WORDSIZE;
 
         if (cWord > fData.size() )
         {
@@ -135,11 +167,11 @@ template<typename A> class GenericPayload
             fData.at (cWord) ^=  ( (uint64_t) 1 << cBit);
     }
 
-    bool test (uint32_t pPosition) const
+    bool test (size_t pPosition) const
     {
-        uint8_t cWord = pPosition / WORDSIZE;
+        size_t cWord = pPosition / WORDSIZE;
         pPosition = WORDSIZE - 1 - pPosition;
-        uint8_t cBit = pPosition % WORDSIZE;
+        size_t cBit = pPosition % WORDSIZE;
 
         if (cWord > fData.size() )
         {
@@ -159,7 +191,7 @@ template<typename A> class GenericPayload
 
     //}
 
-    const bool operator[] (uint32_t pIndex) const
+    const bool operator[] (size_t pIndex) const
     {
         return this->test (pIndex);
     }
@@ -171,40 +203,16 @@ template<typename A> class GenericPayload
     }
 
 
-    void padZero (uint32_t pNZeros)
+    void padZero (size_t pNZeros)
     {
         this->reserve (pNZeros);
     }
 
-    std::vector<A> split_vec (std::vector<uint64_t> pVec)
-    {
-        size_t aSize = sizeof (A);
-        size_t tSize = sizeof (uint64_t);
-
-        std::vector<A> cVec;
-
-        for (auto pWord : pVec)
-        {
-            if (tSize > aSize )
-            {
-                for (int i = (tSize / aSize) - 1; i >= 0; i--)
-                {
-                    uint8_t cShift = i * 8 * aSize ;
-                    A cWord = ( pWord >> cShift  ) & (A) (pow (2, aSize * 8) - 1);
-                    cVec.push_back (cWord); // add a mask
-                }
-            }
-            else
-                cVec.push_back ( (A) pWord);
-        }
-
-        return cVec;
-    }
 
     template<typename T>
     void append (T pWord, int pNLSBs = -1)
     {
-        uint8_t pWidth = sizeof (T) * 8;
+        size_t pWidth = sizeof (T) * 8;
 
         if (pNLSBs != -1)
         {
@@ -241,7 +249,7 @@ template<typename A> class GenericPayload
 
     void append (bool pWord, int pNLSBs = -1)
     {
-        uint8_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
+        size_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
 
         // if i am not in the first word bout would need to start a new word for the new data:
         if ( cFreeBits == 64 && fBitCount != 0)
@@ -289,10 +297,10 @@ template<typename A> class GenericPayload
     //}
 
     template<typename T>
-    void insert (T pWord, uint32_t pPosition, int pNLSBs = -1)
+    void insert (T pWord, size_t pPosition, int pNLSBs = -1)
     {
         //first determine the number of bits I have to insert
-        uint8_t cWidth = sizeof (T) * 8;
+        size_t cWidth = sizeof (T) * 8;
 
         if (pNLSBs != -1)
         {
@@ -301,13 +309,13 @@ template<typename A> class GenericPayload
         }
 
         //now determine the index from of the bit where I have to insert
-        uint8_t cWord = pPosition / WORDSIZE;
+        size_t cWord = pPosition / WORDSIZE;
         //pPosition = WORDSIZE - 1 - pPosition;
-        uint8_t cBit = (WORDSIZE - 1 - pPosition) % WORDSIZE;
+        size_t cBit = (WORDSIZE - 1 - pPosition) % WORDSIZE;
 
         //now figure out how many bits  I have left at the end of the last word
         //this determines if I need to add a word to the vector
-        uint8_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
+        size_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
 
         //if the bitcount is a multipele of 64, that means 64 free bits but in the next word
         //this i not the case if the bit count is 0 cause then the 0th word is already there and unused
@@ -341,7 +349,7 @@ template<typename A> class GenericPayload
         uint64_t cTmpWord = fData.at (cWord) & cComplimentMask;
         //compute the part that falls out to the right
         //this is the default shift
-        uint8_t cFalloutShift = WORDSIZE - cShift;
+        size_t cFalloutShift = WORDSIZE - cShift;
         uint64_t cFalloutMask = (uint64_t (1) << cShift) - 1;
         uint64_t cFallout = (fData.at (cWord) & cFalloutMask ) << cFalloutShift;
 
@@ -349,8 +357,8 @@ template<typename A> class GenericPayload
         //the bit position(0 at the left)+ the width have to be greater than the word size
         if (pPosition % 64 + cWidth > WORDSIZE)
         {
-            uint8_t cNBitsFirstWord = cBit + 1;
-            uint8_t cNBitsSecondWord = cWidth - cNBitsFirstWord;
+            size_t cNBitsFirstWord = cBit + 1;
+            size_t cNBitsSecondWord = cWidth - cNBitsFirstWord;
             uint64_t cSecondMask = (uint64_t (1) << cNBitsSecondWord) - 1 ;
             uint64_t cFirstMask = ~cSecondMask;
             uint64_t pFirstVal = (pWord & cFirstMask) >> cNBitsSecondWord;
@@ -406,9 +414,9 @@ template<typename A> class GenericPayload
     }
 
   private:
-    void reserve (uint32_t pNBits)
+    void reserve (size_t pNBits)
     {
-        uint8_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
+        size_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
 
         // if i am not in the first word bout would need to start a new word for the new data:
         if ( cFreeBits == 64 && fBitCount != 0)
@@ -430,11 +438,11 @@ template<typename A> class GenericPayload
     }
 
     template<typename T>
-    void insert_reserved (T pWord, uint32_t pPosition, int pNLSBs = -1)
+    void insert_reserved (T pWord, size_t pPosition, int pNLSBs = -1)
     {
         //inserts  MSB of pWord at position pPosition. pPosition is starting at word 0, MSB with 0
         //it's an absolute bit position
-        uint8_t cWidth = sizeof (T) * 8;
+        size_t cWidth = sizeof (T) * 8;
 
         if (pNLSBs != -1)
         {
@@ -442,8 +450,8 @@ template<typename A> class GenericPayload
             pWord &= pWord &  (T) ( (1 << pNLSBs) - 1);
         }
 
-        uint8_t cWord = pPosition / WORDSIZE;
-        uint8_t cBit = (WORDSIZE - pPosition) % WORDSIZE;
+        size_t cWord = pPosition / WORDSIZE;
+        size_t cBit = (WORDSIZE - pPosition) % WORDSIZE;
 
         if (cWord > fData.size() )
         {

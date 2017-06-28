@@ -3,29 +3,29 @@
   <BeBoard Id="0" boardType="GLIB">
  	<!-- <connection id="board" uri="ipbusudp-2.0://192.168.000.163:50001" address_table="file://settings/address_table_2CBC.xml" /> -->
     <!-- <connection id="board" uri="chtcp-2.0://cmsuptracker002:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" /> -->
-    <connection id="board" uri="chtcp-2.0://cmsuptracker003:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" />
+    <connection id="board" uri="chtcp-2.0://cmsuptracker008:10203?target=192.168.0.175:50001" address_table="file://settings/address_table_2CBC.xml" />
     
 	<FW_Version NCbcDataSize="4" />
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-       <Global>
-           <Settings threshold="120" latency="12"/>
-           <TestPulse enable="1" polarity="0" amplitude="0x08" channelgroup="0" delay="0" groundothers="1"/>
-           <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0"/>
-           <Misc analogmux="0b00000"/>
-           <ChannelMask disable="1"/>
-       </Global>
+       <!--<Global>-->
+           <!--<Settings threshold="120" latency="12"/>-->
+           <!--<TestPulse enable="1" polarity="0" amplitude="0x08" channelgroup="0" delay="0" groundothers="1"/>-->
+           <!--<ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0"/>-->
+           <!--<Misc analogmux="0b00000"/>-->
+           <!--<ChannelMask disable="1"/>-->
+       <!--</Global>-->
 
       <Global_CBC_Register name="VCth"> 0x76 </Global_CBC_Register>
       <Global_CBC_Register name="MiscTestPulseCtrl&amp;AnalogMux">0x21</Global_CBC_Register>
 
      <CBC_Files path="./settings/" />
        <CBC Id="0" configfile="Cbc_default_electron.txt" />
-            <Settings threshold="570" latency="199"/>
-            <TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>
-            <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0"/>
-            <Misc analogmux="0b00000"/>
-            <ChannelMask disable=""/>
-            <Register name="Pipe&StubInpSel&Ptwidth"> 0x63 </Register>
+            <!--<Settings threshold="570" latency="199"/>-->
+            <!--<TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>-->
+            <!--<ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0"/>-->
+            <!--<Misc analogmux="0b00000"/>-->
+            <!--<ChannelMask disable=""/>-->
+            <!--<Register name="Pipe&StubInpSel&Ptwidth"> 0x63 </Register>-->
        <CBC Id="1" configfile="Cbc_default_electron.txt" /> 
     </Module>
      

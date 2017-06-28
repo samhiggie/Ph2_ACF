@@ -112,7 +112,7 @@ int main ( int argc, char* argv[] )
     for (auto ev : elist)
     {
         LOG (INFO) << *ev ;
-        ev->GetSLinkEvent (pBoard);
+        LOG (INFO) << ev->GetSLinkEvent (pBoard);
     }
 
     timer.stop();
