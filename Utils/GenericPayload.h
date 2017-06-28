@@ -22,10 +22,11 @@ std::vector<T> split_vec64 (std::vector<uint64_t> pVec)
     {
         if (tSize > aSize )
         {
-            for (size_t i = (tSize / aSize) - 1; i >= 0; i--)
+            for (size_t i = (tSize / aSize) ; i > 0; i--)
             {
-                size_t cShift = i * aSizeBits;
-                T cWord = ( pWord >> cShift  ) & ( ( (T) 1 << aSizeBits) - 1);
+                size_t cShift = (i - 1) * aSizeBits;
+                uint64_t cMask = ( (uint64_t) (1) << aSizeBits) - 1;
+                T cWord = ( pWord >> cShift  ) & cMask;
                 cVec.push_back (cWord); // add a mask
             }
         }

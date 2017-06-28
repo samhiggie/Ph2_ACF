@@ -41,8 +41,13 @@ class SLinkEvent
     void generateConditionData (ConditionDataSet* pSet);
     void generateDAQTrailer();
 
+    //template<typename T>
+    //std::vector<T> getData();
     template<typename T>
-    std::vector<T> getData();
+    std::vector<T> getData()
+    {
+        return split_vec64<T> (fData);
+    }
 
     void print (std::ostream& out = std::cout) const;
 

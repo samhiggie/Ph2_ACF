@@ -13,11 +13,11 @@ SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pCh
     this->generateDAQHeader (pLV1Id, pBXId, pSourceId);
 }
 
-template<typename T>
-std::vector<T> SLinkEvent::getData()
-{
-    return split_vec64<T> (fData);
-}
+//template<typename T>
+//std::vector<T> SLinkEvent::getData()
+//{
+//return split_vec64<T> (fData);
+//}
 
 void SLinkEvent::print (std::ostream& out) const
 {

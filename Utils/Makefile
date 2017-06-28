@@ -42,7 +42,7 @@ LibraryPaths = $(LibraryDirs:%=-L%)
 	#$(CC) -std=c++11 -pthread -shared $(LibraryPaths) $(IncludePaths) $(ExternalObjects) -L/usr/lib64/ -o libPh2_Utils.so $(Objs) $(ObjsExt).o
 	#mv libPh2_Utils.so ../lib
 
-all: print $(Objs) ../HWDescription/Definition.h
+all: print $(Objs) ../HWDescription/Definition.h GenericPayload.h
 	$(CC) -std=c++11 -pthread -shared $(LibraryPaths) $(IncludePaths) $(ExternalObjects) -L/usr/lib64/ -o libPh2_Utils.so $(Objs)
 	mv libPh2_Utils.so ../lib
 

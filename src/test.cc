@@ -10,6 +10,7 @@
 #include "../Utils/Utilities.h"
 #include "../Utils/Data.h"
 #include "../Utils/Event.h"
+#include "../Utils/SLinkEvent.h"
 #include "../Utils/Timer.h"
 #include "../Utils/argvparser.h"
 #include "../Utils/ConsoleColor.h"
@@ -112,7 +113,16 @@ int main ( int argc, char* argv[] )
     for (auto ev : elist)
     {
         LOG (INFO) << *ev ;
-        LOG (INFO) << ev->GetSLinkEvent (pBoard);
+        SLinkEvent sle = ev->GetSLinkEvent (pBoard);
+        LOG (INFO) << sle;
+
+        //std::vector<uint32_t> cData = sle.getData<uint32_t>();
+
+        //for (auto cWord : cData )
+        //{
+        //LOG (INFO) << "DEBUG";
+        //LOG (INFO) << std::hex << cWord << std::dec ;
+        //}
     }
 
     timer.stop();
