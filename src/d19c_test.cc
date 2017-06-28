@@ -112,7 +112,7 @@ int main ( int argc, char** argv )
 
     for (int i=0; i<8; i++) {
         set_channel_group(cSystemController, pBoard, i);
-        cSystemController.fBeBoardInterface->CbcTestPulse(pBoard);
+        cSystemController.fBeBoardInterface->Start(pBoard);
     }
     cSystemController.ReadData(pBoard);
 
