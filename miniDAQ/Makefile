@@ -1,8 +1,13 @@
+YEL='\033[1m\033[33m'
+RED='\033[1m\033[31m'
+BLU='\033[1m\033[35m'
+RESET='\033[0m'
+
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
 CCFlagsRoot	= `root-config --cflags --glibs`
-ROOTVERSION := $(shell root-config --has-http)
+ROOTHTTP := $(shell root-config --has-http)
 
 RootLibraryDirs = $(ROOTLIB)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
@@ -14,7 +19,7 @@ ExternalObjects= -lpthread -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uh
 ##################################################
 ## check if the Root has THttp
 ##################################################
-ifneq (,$(findstring yes,$(ROOTVERSION)))
+ifneq (,$(findstring yes,$(ROOTHTTP)))
 	ExtObjectsRoot += $(RootLibraryPaths) -lRHTTP $(HttpFlag)
 else
 	ExtObjectsRoot += $(RootLibraryPaths)
@@ -68,12 +73,12 @@ miniDAQ: miniDAQ.cc
 	cp $@ ../bin
 
 print:
-	@echo '****************************'
-	@echo 'Building Mini DAQ'
-	@echo 'Root Has Http: ' $(ROOTVERSION)
-	@echo 'Amc13 SW installed:' $(AMC13INSTALLED)
-	@echo 'Antenna installed:' $(ANTENNAINSTALLED)
-	@echo '****************************'
+	@echo -e ${YEL}'****************************'
+	@echo -e ${YEL}'Building Mini DAQ'
+	@echo -e ${YEL}'Root Has Http: ' ${RED}$(ROOTHTTP)
+	@echo -e ${YEL}'Amc13 SW installed:' ${RED}$(AMC13INSTALLED)
+	@echo -e ${YEL}'Antenna installed:' ${RED}$(ANTENNAINSTALLED)
+	@echo -e ${YEL}'****************************'${RESET}
 
 .PHONY: print clean
 

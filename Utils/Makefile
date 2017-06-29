@@ -1,3 +1,8 @@
+YEL='\033[1m\033[33m'
+RED='\033[1m\033[31m'
+BLU='\033[1m\033[35m'
+RESET='\033[0m'
+
 Objs            = Exception.o Utilities.o Watchdog.o SLinkEvent.o Event.o Cbc2Event.o Cbc3Event.o D19cCbc3Event.o Data.o argvparser.o FileHandler.o
 ObjsExt      	= UsbUtilities.o
 
@@ -53,10 +58,10 @@ all: print $(Objs) ../HWDescription/Definition.h GenericPayload.h
 	#$(CXX) -std=c++11 $(CCFlags) $(IncludePaths) $(LibraryPaths) $(ExternalObjects) -c -o $@ $<
 
 print:
-	@echo '****************************'
-	@echo 'Building Utils'
-	@echo 'Using zmq library:'$(ZMQINSTALLED)
-	@echo 'Using zmq Ph2_USBInstDriver:'$(USBINSTLIBINSTALLED)
-	@echo '****************************'
+	@echo -e ${YEL}'****************************'${RESET}
+	@echo -e ${YEL}'Building Utils'${RESET}
+	@echo -e ${YEL}'Using zmq library: '${RED}$(ZMQINSTALLED)${RESET}
+	@echo -e ${YEL}'Using Ph2_USBInstDriver: '${RED}$(USBINSTLIBINSTALLED)${RESET}
+	@echo -e ${YEL}'****************************'${RESET}
 clean:
 	rm -f *.o

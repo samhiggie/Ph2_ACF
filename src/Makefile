@@ -1,3 +1,8 @@
+YEL='\033[1m\033[33m'
+RED='\033[1m\033[31m'
+BLU='\033[1m\033[35m'
+RESET='\033[0m'
+
 CC              = gcc
 CXX             = g++
 CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
@@ -79,14 +84,14 @@ rootflags:
 	$(eval ExternalObjects += $(ExtObjectsRoot))
 
 print:
-	@echo '****************************'
-	@echo 'Building executables in src/'
-	@echo 'Root Has Http:' $(ROOTVERSION)
-	@echo 'Amc13 SW installed:' $(AMC13INSTALLED)
-	@echo 'Antenna installed:' $(ANTENNAINSTALLED)
-	@echo 'Ph2_USBInstDriver installed:' $(USBINSTLIBINSTALLED)
-	@echo 'ZeroMQ installed:' $(ZMQINSTALLED)
-	@echo '****************************'
+	@echo -e ${YEL}'****************************'
+	@echo -e ${YEL}'Building executables in src/'
+	@echo -e ${YEL}'Root Has Http:' ${RED}$(ROOTVERSION)
+	@echo -e ${YEL}'Amc13 SW installed:' ${RED}$(AMC13INSTALLED)
+	@echo -e ${YEL}'Antenna installed:' ${RED}$(ANTENNAINSTALLED)
+	@echo -e ${YEL}'Ph2_USBInstDriver installed:' ${RED}$(USBINSTLIBINSTALLED)
+	@echo -e ${YEL}'ZeroMQ installed:' ${RED}$(ZMQINSTALLED)
+	@echo -e ${YEL}'****************************'${RESET}
 
 integratedtester: integratedtester.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths)$(ExternalObjects)
