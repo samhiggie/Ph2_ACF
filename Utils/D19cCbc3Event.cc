@@ -43,34 +43,35 @@ namespace Ph2_HwInterface {
         uint8_t fMaxHybrids = 8;
         uint8_t fMaxCBCs = 8;
 
-        fEventSize = 0x0000FFFF & list.at(0);
-        if (fEventSize != list.size()) {
-            LOG (ERROR) << "Vector size doesnt match the BLOCK_SIZE in Header1";
-        }
+        fEventSize = 0x0000FFFF & list.at (0);
 
-        uint8_t header1_size = (0xFF000000 & list.at(0)) >> 24;
-        if (header1_size != D19C_EVENT_HEADER1_SIZE_32_CBC3) {
+        if (fEventSize != list.size() )
+            LOG (ERROR) << "Vector size doesnt match the BLOCK_SIZE in Header1";
+
+        uint8_t header1_size = (0xFF000000 & list.at (0) ) >> 24;
+
+        if (header1_size != D19C_EVENT_HEADER1_SIZE_32_CBC3)
             LOG (ERROR) << "Header1 size doesnt correspond to the one sent from firmware";
-        }
 
         // Starting from now, as it was proposed by Georg, one module (2hybrids) is considered as 1 Fe containing CBCs from both hybrids.
-        uint8_t cNFe_software = static_cast<uint8_t>(pBoard->getNFe());
-        uint8_t cFeMask = static_cast<uint8_t>((0x00FF0000 & list.at(0)) >> 16);
+        uint8_t cNFe_software = static_cast<uint8_t> (pBoard->getNFe() );
+        uint8_t cFeMask = static_cast<uint8_t> ( (0x00FF0000 & list.at (0) ) >> 16);
         uint8_t cNFe_event = 0;
-        for(uint8_t bit = 0; bit < fMaxHybrids; bit++) {
-            if ((cFeMask >> bit) & 1) {
+
+        for (uint8_t bit = 0; bit < fMaxHybrids; bit++)
+        {
+            if ( (cFeMask >> bit) & 1)
                 cNFe_event ++;
-            }
-        }
-        if (cNFe_software != cNFe_event) {
-            LOG (ERROR) << "Number of Modules in event header (" << cNFe_event << ") doesnt match the amount of modules defined in firmware.";
         }
 
-        fDummySize = 0x000000FF & list.at(1);
-        fEventCount = 0x00FFFFFF &  list.at(2);
-        fBunch = 0xFFFFFFFF & list.at(3);
-        fTDC = 0x000000FF & list.at(4);
-        fTLUTriggerID = (0x00FFFF00 & list.at(4)) >> 8;
+        if (cNFe_software != cNFe_event)
+            LOG (ERROR) << "Number of Modules in event header (" << cNFe_event << ") doesnt match the amount of modules defined in firmware.";
+
+        fDummySize = 0x000000FF & list.at (1);
+        fEventCount = 0x00FFFFFF &  list.at (2);
+        fBunch = 0xFFFFFFFF & list.at (3);
+        fTDC = 0x000000FF & list.at (4);
+        fTLUTriggerID = (0x00FFFF00 & list.at (4) ) >> 8;
 
         fBeId = pBoard->getBeId();
         fBeFWType = 0;
@@ -82,35 +83,44 @@ namespace Ph2_HwInterface {
 
         // not iterate through modules
         uint32_t address_offset = D19C_EVENT_HEADER1_SIZE_32_CBC3;
-        for(uint8_t cFeId = 0; cFeId < fMaxHybrids; cFeId++) {
-            if ((cFeMask >> cFeId) & 1) {
+
+        for (uint8_t cFeId = 0; cFeId < fMaxHybrids; cFeId++)
+        {
+            if ( (cFeMask >> cFeId) & 1)
+            {
 
                 // these part is temporary while we have chip number not chip mask, they will be swapped;
-                uint8_t chip_data_mask = static_cast<uint8_t>(((0xFF000000) & list.at(address_offset+0)) >> 24);
+                uint8_t chip_data_mask = static_cast<uint8_t> ( ( (0xFF000000) & list.at (address_offset + 0) ) >> 24);
                 uint8_t chips_with_data_nbr = 0;
-                for(uint8_t bit = 0; bit < 8; bit++) {
-                    if ((chip_data_mask >> bit) & 1) {
+
+                for (uint8_t bit = 0; bit < 8; bit++)
+                {
+                    if ( (chip_data_mask >> bit) & 1)
                         chips_with_data_nbr ++;
-                    }
                 }
 
-                uint8_t header2_size = (0x00FF0000 & list.at(address_offset+0)) >> 16;
-                if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3) {
+                uint8_t header2_size = (0x00FF0000 & list.at (address_offset + 0) ) >> 16;
+
+                if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3)
                     LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
-                }
-                uint8_t fe_data_size = (0x0000FFFF & list.at(address_offset+0));
-                if (fe_data_size != CBC_EVENT_SIZE_32_CBC3*chips_with_data_nbr+D19C_EVENT_HEADER2_SIZE_32_CBC3) {
+
+                uint8_t fe_data_size = (0x0000FFFF & list.at (address_offset + 0) );
+
+                if (fe_data_size != CBC_EVENT_SIZE_32_CBC3 * chips_with_data_nbr + D19C_EVENT_HEADER2_SIZE_32_CBC3)
                     LOG (ERROR) << "Event size doesnt correspond to the one sent from firmware";
-                }
 
                 uint32_t data_offset = address_offset + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+
                 // iterating through the first hybrid chips
-                for(uint8_t cCbcId = 0; cCbcId < fMaxCBCs; cCbcId++ ) {
+                for (uint8_t cCbcId = 0; cCbcId < fMaxCBCs; cCbcId++ )
+                {
                     // check if we have data from this chip
-                    if ((chip_data_mask >> cCbcId) & 1) {
+                    if ( (chip_data_mask >> cCbcId) & 1)
+                    {
 
                         //check the sync bit
                         uint8_t cSyncBit = 1;
+
                         if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
 
                         uint16_t cKey = encodeId (cFeId, cCbcId);
@@ -119,13 +129,14 @@ namespace Ph2_HwInterface {
                         uint32_t end = begin + CBC_EVENT_SIZE_32_CBC3;
 
                         std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
+
                         fEventDataMap[cKey] = cCbcData;
 
                         data_offset += CBC_EVENT_SIZE_32_CBC3;
                     }
                 }
 
-                address_offset = address_offset + CBC_EVENT_SIZE_32_CBC3*(chips_with_data_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
+                address_offset = address_offset + CBC_EVENT_SIZE_32_CBC3 * (chips_with_data_nbr) + D19C_EVENT_HEADER2_SIZE_32_CBC3;
             }
         }
 
@@ -170,9 +181,9 @@ namespace Ph2_HwInterface {
         os << std::setw (8) << cbcData.at (6) << std::endl;
         os << std::setw (8) << (cbcData.at (7) & 0x7FFFFFFF) << std::endl;
         // l1cnt
-        os << std::setw (3) << ((cbcData.at (8) & 0x01FF0000) >> 16) << std::endl;
+        os << std::setw (3) << ( (cbcData.at (8) & 0x01FF0000) >> 16) << std::endl;
         // pipeaddr
-        os << std::setw (3) << ((cbcData.at (8) & 0x00001FF0) >> 4) << std::endl;
+        os << std::setw (3) << ( (cbcData.at (8) & 0x00001FF0) >> 4) << std::endl;
         // stubdata
         os << std::setw (8) << cbcData.at (9) << std::endl;
         os << std::setw (8) << cbcData.at (10) << std::endl;
@@ -185,7 +196,7 @@ namespace Ph2_HwInterface {
     // NOT READY (what is i??????????)
     bool D19cCbc3Event::Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const
     {
-        return Bit( pFeId, pCbcId, D19C_OFFSET_ERROR_CBC3 );
+        return Bit ( pFeId, pCbcId, D19C_OFFSET_ERROR_CBC3 );
     }
 
     uint32_t D19cCbc3Event::Error ( uint8_t pFeId, uint8_t pCbcId ) const
@@ -196,7 +207,7 @@ namespace Ph2_HwInterface {
         if (cData != std::end (fEventDataMap) )
         {
             // buf overflow and lat error
-            uint32_t cError = ((cData->second.at(8) & 0x00000003) >> 0 );;
+            uint32_t cError = ( (cData->second.at (8) & 0x00000003) >> 0 );;
             return cError;
         }
         else
@@ -213,7 +224,7 @@ namespace Ph2_HwInterface {
 
         if (cData != std::end (fEventDataMap) )
         {
-            uint32_t cPipeAddress = ((cData->second.at(8) & 0x00001FF0) >> 4 );
+            uint32_t cPipeAddress = ( (cData->second.at (8) & 0x00001FF0) >> 4 );
             return cPipeAddress;
         }
         else
@@ -230,7 +241,7 @@ namespace Ph2_HwInterface {
 
         uint32_t cWordP = 0;
         uint32_t cBitP = 0;
-        calculate_address(cWordP, cBitP, i);
+        calculate_address (cWordP, cBitP, i);
 
         uint16_t cKey = encodeId (pFeId, pCbcId);
         EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
@@ -264,7 +275,7 @@ namespace Ph2_HwInterface {
 
                 uint32_t cWordP = 0;
                 uint32_t cBitP = 0;
-                calculate_address(cWordP, cBitP, i);
+                calculate_address (cWordP, cBitP, i);
 
                 if ( cWordP >= cData->second.size() ) break;
 
@@ -298,7 +309,7 @@ namespace Ph2_HwInterface {
 
                 uint32_t cWordP = 0;
                 uint32_t cBitP = 0;
-                calculate_address(cWordP, cBitP, i);
+                calculate_address (cWordP, cBitP, i);
 
                 if ( cWordP >= cData->second.size() ) break;
 
@@ -325,7 +336,7 @@ namespace Ph2_HwInterface {
 
                 uint32_t cWordP = 0;
                 uint32_t cBitP = 0;
-                calculate_address(cWordP, cBitP, i);
+                calculate_address (cWordP, cBitP, i);
 
                 if ( cWordP >= cData->second.size() ) break;
 
@@ -394,13 +405,15 @@ namespace Ph2_HwInterface {
             //LOG (DEBUG) << std::bitset<8> (pos1);
             //LOG (DEBUG) << std::bitset<8> (pos2);
             //LOG (DEBUG) << std::bitset<8> (pos3);
-            uint8_t bend1 = (cData->second.at (10) & 0x00000F00) >> 24;
-            uint8_t bend2 = (cData->second.at (10) & 0x000F0000) >> 28;
-            uint8_t bend3 = (cData->second.at (10) & 0x0F000000);
+            uint8_t bend1 = (cData->second.at (10) & 0x00000F00) >> 8;
+            uint8_t bend2 = (cData->second.at (10) & 0x000F0000) >> 16;
+            uint8_t bend3 = (cData->second.at (10) & 0x0F000000) >> 24;
 
-            cStubVec.emplace_back (pos1, bend1) ;
-            cStubVec.emplace_back (pos2, bend2) ;
-            cStubVec.emplace_back (pos3, bend3) ;
+            if (pos1 != 0 ) cStubVec.emplace_back (pos1, bend1) ;
+
+            if (pos2 != 0 ) cStubVec.emplace_back (pos2, bend2) ;
+
+            if (pos3 != 0 ) cStubVec.emplace_back (pos3, bend3) ;
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
@@ -445,7 +458,7 @@ namespace Ph2_HwInterface {
             {
                 uint32_t cWordP = 0;
                 uint32_t cBitP = 0;
-                calculate_address(cWordP, cBitP, i);
+                calculate_address (cWordP, cBitP, i);
 
                 if ( cWordP >= cData->second.size() ) break;
 
@@ -693,10 +706,10 @@ namespace Ph2_HwInterface {
                     //I can now interleave/morton encode and append them but only the 62 LSBs
                     cPayload.appendD19CData (cFirstChanWordEven, cFirstChanWordOdd, 62);
 
-                    for (size_t i = 2; i >= 0; i--)
+                    for (size_t i = 3; i > 0; i--)
                     {
-                        uint32_t cEvenWord = reverse_bits (cData->second.at (i) );
-                        uint32_t cOddWord = reverse_bits (cData->second.at (i + 4) );
+                        uint32_t cEvenWord = reverse_bits (cData->second.at (i - 1) );
+                        uint32_t cOddWord = reverse_bits (cData->second.at (i + 3) );
                         cPayload.appendD19CData (cEvenWord, cOddWord);
                     }
 
@@ -712,13 +725,22 @@ namespace Ph2_HwInterface {
                     uint8_t bend3 = (cData->second.at (10) & 0x0F00000F) >> 24;
 
                     if (pos1 != 0)
-                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos1 << 4 | bend1 & 0xF);
+                    {
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos1 << 4 | bend1 & 0xF) );
+                        cFeStubCounter++;
+                    }
 
                     if (pos2 != 0)
-                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos2 << 4 | bend2 & 0xF);
+                    {
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos2 << 4 | bend2 & 0xF) );
+                        cFeStubCounter++;
+                    }
 
                     if (pos3 != 0)
-                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos3 << 4 | bend3 & 0xF);
+                    {
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos3 << 4 | bend3 & 0xF) );
+                        cFeStubCounter++;
+                    }
                 }
 
                 cCbcCounter++;
@@ -728,7 +750,7 @@ namespace Ph2_HwInterface {
             cPayload.insert (cCbcPresenceWord, cFirstBitFePayload );
 
             //for the stubs for this FE, I need to prepend a 5 bit counter shifted by 1 to the right (to account for the 0 bit)
-            cStubPayload.insert ( (cFeStubCounter & 0x1F) << 1, 6);
+            cStubPayload.insert ( (cFeStubCounter & 0x1F) << 1, cFirstBitFeStub, 6);
 
         } // end of Fe loop
 

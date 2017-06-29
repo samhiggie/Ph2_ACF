@@ -383,11 +383,11 @@ namespace Ph2_HwInterface {
             uint8_t bend3 = (cData->second.at (2) & 0x0000000F);
             //LOG (DEBUG)  << "\t" << MAGENTA << std::bitset<32> (cData->second.at (2)) << "|" << std::bitset<32> (cData->second.at (1)) << " " << RED << std::bitset<8> (bend1)  << GREEN << " " <<  std::bitset<8> (bend2) << BLUE << " " <<  std::bitset<8> (bend3) << RESET;
 
-            if (pos1 != 0 && bend1 != 0) cStubVec.emplace_back (pos1, bend1) ;
+            if (pos1 != 0 ) cStubVec.emplace_back (pos1, bend1) ;
 
-            if (pos2 != 0 && bend2 != 0) cStubVec.emplace_back (pos2, bend2) ;
+            if (pos2 != 0 ) cStubVec.emplace_back (pos2, bend2) ;
 
-            if (pos3 != 0 && bend3 != 0) cStubVec.emplace_back (pos3, bend3) ;
+            if (pos3 != 0 ) cStubVec.emplace_back (pos3, bend3) ;
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
@@ -702,13 +702,22 @@ namespace Ph2_HwInterface {
                     uint8_t bend3 = (cData->second.at (2) & 0x0000000F);
 
                     if (pos1 != 0)
-                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos1 << 4 | bend1 & 0xF);
+                    {
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos1 << 4 | bend1 & 0xF) );
+                        cFeStubCounter++;
+                    }
 
                     if (pos2 != 0)
-                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos2 << 4 | bend2 & 0xF);
+                    {
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos2 << 4 | bend2 & 0xF) );
+                        cFeStubCounter++;
+                    }
 
                     if (pos3 != 0)
-                        cStubPayload.append ( (cCbcId & 0x0F) << 12 | pos3 << 4 | bend3 & 0xF);
+                    {
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos3 << 4 | bend3 & 0xF) );
+                        cFeStubCounter++;
+                    }
                 }
 
                 cCbcCounter++;
@@ -718,7 +727,7 @@ namespace Ph2_HwInterface {
             cPayload.insert (cCbcPresenceWord, cFirstBitFePayload );
 
             //for the stubs for this FE, I need to prepend a 5 bit counter shifted by 1 to the right (to account for the 0 bit)
-            cStubPayload.insert ( (cFeStubCounter & 0x1F) << 1, 6);
+            cStubPayload.insert ( (cFeStubCounter & 0x1F) << 1, cFirstBitFeStub, 6);
 
         } // end of Fe loop
 
