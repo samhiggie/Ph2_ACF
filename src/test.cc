@@ -72,7 +72,8 @@ int main ( int argc, char* argv[] )
     }
 
     int maxevt     = ( cmd.foundOption ( "nevt" ) ) ? stoi (cmd.optionValue ( "nevt" ) ) : 10;
-    BoardType t = BoardType::CBC3FC7;
+    //BoardType t = BoardType::CBC3FC7;
+    BoardType t = BoardType::GLIB;
 
 
     // Create the Histogrammer object
@@ -82,7 +83,8 @@ int main ( int argc, char* argv[] )
     dqmh.addFileHandler ( rawFilename, 'r' );
 
     // Build the hardware setup
-    std::string cHWFile = "settings/Cbc3HWDescription.xml";
+    //std::string cHWFile = "settings/Cbc3HWDescription.xml";
+    std::string cHWFile = "settings/HWDescription_2CBC.xml";
 
     LOG (INFO) << "HWfile=" << cHWFile;
     //dqmh->parseHWxml ( cHWFile );
@@ -95,10 +97,13 @@ int main ( int argc, char* argv[] )
 
     // Read the first event from the raw data file, needed to retrieve the event map
     std::vector<uint32_t> dataVec;
-    //int eventSize = EVENT_HEADER_TDC_SIZE_32 + CBC_EVENT_SIZE_32 * cbcTypeEvtSizeMap[cbcType].first;
-    int eventSize = 14;
+    //CBC2
+    //int eventSize = 14;
     //dqmh.readFile (dataVec, 140000);
-    dqmh.readFile (dataVec, 14000);
+    //dqmh.readFile (dataVec, 14000);
+    //4CBC2
+    int eventSize = 42;
+    dqmh.readFile (dataVec, 42000);
 
     // Now split the data buffer in events
     int nEvents = dataVec.size() / eventSize;

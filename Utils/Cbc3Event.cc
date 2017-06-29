@@ -624,9 +624,7 @@ namespace Ph2_HwInterface {
 
     SLinkEvent Cbc3Event::GetSLinkEvent ( const BeBoard* pBoard) const
     {
-        int cCbcCounter = 0;
-        uint16_t cNCbc = this->fEventDataMap.size();
-
+        uint16_t cCbcCounter = 0;
         std::set<uint8_t> cEnabledFe;
 
         //payload for the status bits
@@ -728,7 +726,7 @@ namespace Ph2_HwInterface {
         uint16_t cBunch = static_cast<uint16_t> (this->GetBunch() );
         uint32_t cBeStatus = this->fBeStatus;
         SLinkEvent cEvent (EventType::VR, pBoard->getConditionDataSet()->getDebugMode(), ChipType::CBC3, cEvtCount, cBunch, SOURCE_ID );
-        cEvent.generateTkHeader (cBeStatus, cNCbc, cEnabledFe, pBoard->getConditionDataSet()->getCondDataEnabled(), false);  // Be Status, total number CBC, condition data?, fake data?
+        cEvent.generateTkHeader (cBeStatus, cCbcCounter, cEnabledFe, pBoard->getConditionDataSet()->getCondDataEnabled(), false);  // Be Status, total number CBC, condition data?, fake data?
 
         //generate a vector of uint64_t with the chip status
         if (pBoard->getConditionDataSet()->getDebugMode() != SLinkDebugMode::SUMMARY) // do nothing
@@ -747,7 +745,6 @@ namespace Ph2_HwInterface {
 
         cEvent.generateDAQTrailer();
 
-        //cEvent.print();
         return cEvent;
     }
 }

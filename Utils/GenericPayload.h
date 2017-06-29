@@ -111,7 +111,7 @@ class GenericPayload
 
     size_t get_current_write_position() const
     {
-        LOG (DEBUG) << "Write pointer (for next bit) currently pointing to: Word " << fWordIndex << " Bit (in word) " << fWriteBitIndex << " Bit (global) ";
+        LOG (DEBUG) << "Write pointer (for next bit) currently pointing to: Word " << fWordIndex << " Bit (in word) " << fWriteBitIndex << " Bit (global) " << +fBitCount;
         return fWriteBitIndex;
     }
 
@@ -221,30 +221,33 @@ class GenericPayload
             pWord &= (T) pWord &  (T) ( (1 << pNLSBs) - 1);
         }
 
-        if (fWriteBitIndex == 0 && fBitCount > 0) //i am supposed to write to the next word but only if I am not at the very beginning of the thing because in that case the word already exists
+        size_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
+        //incremtn the write bit index
+        fWriteBitIndex = (fWriteBitIndex + pWidth) % WORDSIZE;
+
+        // if i am not in the first word bout would need to start a new word for the new data:
+        if ( cFreeBits == 64 && fBitCount != 0)
         {
             fWordIndex++;
             fData.push_back (0);
-            fWriteBitIndex = (fWriteBitIndex + pWidth) % WORDSIZE;
-            //fData.at (fWordIndex) |= pWord << (WORDSIZE - fWriteBitIndex);
-            fData.at (fWordIndex) |= (uint64_t) pWord << (fWriteBitIndex);
-        }
-        //spanning into the next word
-        else if (fWriteBitIndex + pWidth > WORDSIZE )
-        {
-            fWordIndex++;
-            fData.push_back (0);
-            fWriteBitIndex = (fWriteBitIndex + pWidth) % WORDSIZE;
-            fData.at (fWordIndex - 1) |=  (uint64_t) pWord >> fWriteBitIndex;
-            fData.at (fWordIndex) |= (uint64_t) pWord << (WORDSIZE - fWriteBitIndex);
-        }
-        //fitting inside the present word
-        else
-        {
-            fWriteBitIndex =  (fWriteBitIndex + pWidth) % WORDSIZE;
-            fData.at (fWordIndex) |= (uint64_t) pWord << (WORDSIZE - fWriteBitIndex);
         }
 
+        //on the other hand, if the bits i want to insert exceed the free bit count
+        //I also need to expand
+        else if (pWidth > cFreeBits)
+        {
+            fWordIndex++;
+            fData.push_back (0);
+            fData.at (fWordIndex - 1) |=  (uint64_t) pWord >> fWriteBitIndex;
+        }
+
+
+        //ok, now have inserted enough words and pointed myself to the correct word
+        //case1 i either fit in the new word or the present one
+        fData.at (fWordIndex) |= (uint64_t) pWord << (WORDSIZE - fWriteBitIndex);
+
+        //case 2: i need to span both words and it has happend above
+        //incremtnt the total bitcount
         fBitCount += pWidth;
     }
 
@@ -367,7 +370,7 @@ class GenericPayload
             //std::cout << "Mask 1/2: " << std::hex << cFirstMask << " " << cSecondMask << std::dec << std::endl;
             //std::cout << "Value 1/2: " << std::bitset<16> (pFirstVal) << " " << std::bitset<16> (pSecondVal) << std::dec << std::endl;
             //std::cout << "1/2: " << + cNBitsFirstWord << " " << +cNBitsSecondWord << std::endl;
-            uint64_t cTmpFallout = ( (fData.at (cWord) ) & cMask) << WORDSIZE - cBit - 1 ;
+            uint64_t cTmpFallout = ( (fData.at (cWord) ) & cMask) << (WORDSIZE - cBit - 1 );
             //dont forget to modify the original word
             fData.at (cWord) = cTmpWord | (fData.at (cWord) & cMask) >> cShift;
             //or the new data word with the MSBs of the new data
@@ -400,7 +403,7 @@ class GenericPayload
             //assign the fallout of the previous word to cTmpWord
             cTmpWord = cFallout;
             //now compute the fallout of this word before any modification
-            cFallout = (fData.at (word) & ( (uint64_t (1) << cShift) - 1) ) << WORDSIZE - cShift;
+            cFallout = (fData.at (word) & ( (uint64_t (1) << cShift) - 1) ) << (WORDSIZE - cShift);
             //now right shift this word by cShift to generate space for the fallout from the previous line and or it with cTmpWord which is the fallout from
             //the previous line
             fData.at (word) = cTmpWord | fData.at (word)  >> cShift;

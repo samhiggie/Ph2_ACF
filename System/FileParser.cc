@@ -225,6 +225,7 @@ namespace Ph2_System {
             pugi::xml_node cDebugModeNode = pSLinkNode.child ("DebugMode");
             std::string cDebugString;
 
+            //the debug mode node exists
             if (cDebugModeNode != nullptr)
             {
                 cDebugString = cDebugModeNode.attribute ("type").value();
@@ -318,11 +319,18 @@ namespace Ph2_System {
             }
 
             //only add if there is condition data defined
-            pBoard->addConditionDataSet (cSet);
+            //pBoard->addConditionDataSet (cSet);
         }
 
         //else
+        //{
+
+        //}
+
         //LOG (ERROR) << "No Slink node found for Board " << +pBoard->getBeId() << " - continuing with default debug mode!";
+        //add ConditionDataSet to pBoard in any case, even if there is no SLink node in the xml, that way at least
+        //an SLinkDebugMode property is set for this board (SUMMARY)
+        pBoard->addConditionDataSet (cSet);
     }
 
     void FileParser::parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os )
