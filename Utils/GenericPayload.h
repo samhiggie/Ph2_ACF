@@ -218,7 +218,7 @@ class GenericPayload
         if (pNLSBs != -1)
         {
             pWidth = pNLSBs;
-            pWord &= (T) pWord &  (T) ( (1 << pNLSBs) - 1);
+            pWord &= (T) pWord &   ( ( (T) 1 << pNLSBs) - 1);
         }
 
         size_t cFreeBits = WORDSIZE - (fBitCount % WORDSIZE);
@@ -309,7 +309,7 @@ class GenericPayload
         if (pNLSBs != -1)
         {
             cWidth = pNLSBs;
-            pWord &= (T) pWord &  (T) ( (1 << pNLSBs) - 1);
+            pWord &= (T) pWord &   ( ( (T) 1 << pNLSBs) - 1);
         }
 
         //now determine the index from of the bit where I have to insert
@@ -417,6 +417,29 @@ class GenericPayload
         this->insert (pWord, 0, pNLSBs);
     }
 
+    void appendD19CData (uint32_t pEvenWord, uint32_t pOddWord, int pNLSBs = -1)
+    {
+        //this method is specific to the d19c Firmware as it spits out the data
+        //sensor by sensor, so even channels first and then odd channels
+        //the process is called morton encoding and the code comes from here:
+        //https://stackoverflow.com/questions/22101273/how-to-combine-two-16bit-words-into-one-32bit-word-bit-by-bit-efficiently
+        uint64_t A, B;
+        A = ( (pOddWord & 0x00000000FFFF0000ull) << 16) | (pOddWord & 0x000000000000FFFFull);
+        A = ( (A & 0x0000FF000000FF00ull) <<  8) | (A & 0x000000FF000000FFull);
+        A = ( (A & 0xF0F0F0F0F0F0F0F0ull) <<  4) | (A & 0x0F0F0F0F0F0F0F0Full);
+        A = ( (A & 0xCCCCCCCCCCCCCCCCull) <<  2) | (A & 0x0333333333333333ull);
+        A = ( (A & 0xAAAAAAAAAAAAAAAAull) <<  1) | (A & 0x5555555555555555ull);
+
+        B = ( (pEvenWord & 0x00000000FFFF0000ull) << 16) | (pEvenWord & 0x000000000000FFFFull);
+        B = ( (B & 0x0000FF000000FF00ull) <<  8) | (B & 0x000000FF000000FFull);
+        B = ( (B & 0xF0F0F0F0F0F0F0F0ull) <<  4) | (B & 0x0F0F0F0F0F0F0F0Full);
+        B = ( (B & 0xCCCCCCCCCCCCCCCCull) <<  2) | (B & 0x0333333333333333ull);
+        B = ( (B & 0xAAAAAAAAAAAAAAAAull) <<  1) | (B & 0x5555555555555555ull);
+
+        uint64_t cResultWord = A | (B << 1);
+        this->append (cResultWord, pNLSBs);
+    }
+
   private:
     void reserve (size_t pNBits)
     {
@@ -451,7 +474,7 @@ class GenericPayload
         if (pNLSBs != -1)
         {
             cWidth = pNLSBs;
-            pWord &= pWord &  (T) ( (1 << pNLSBs) - 1);
+            pWord &= pWord &   ( ( (T) 1 << pNLSBs) - 1);
         }
 
         size_t cWord = pPosition / WORDSIZE;

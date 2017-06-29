@@ -73,7 +73,8 @@ int main ( int argc, char* argv[] )
 
     int maxevt     = ( cmd.foundOption ( "nevt" ) ) ? stoi (cmd.optionValue ( "nevt" ) ) : 10;
     //BoardType t = BoardType::CBC3FC7;
-    BoardType t = BoardType::GLIB;
+    //BoardType t = BoardType::GLIB;
+    BoardType t = BoardType::D19C;
 
 
     // Create the Histogrammer object
@@ -84,7 +85,8 @@ int main ( int argc, char* argv[] )
 
     // Build the hardware setup
     //std::string cHWFile = "settings/Cbc3HWDescription.xml";
-    std::string cHWFile = "settings/HWDescription_2CBC.xml";
+    //std::string cHWFile = "settings/HWDescription_2CBC.xml";
+    std::string cHWFile = "settings/D19CHWDescription.xml";
 
     LOG (INFO) << "HWfile=" << cHWFile;
     //dqmh->parseHWxml ( cHWFile );
@@ -102,8 +104,8 @@ int main ( int argc, char* argv[] )
     //dqmh.readFile (dataVec, 140000);
     //dqmh.readFile (dataVec, 14000);
     //4CBC2
-    int eventSize = 42;
-    dqmh.readFile (dataVec, 42000);
+    int eventSize = 94;
+    dqmh.readFile (dataVec, 94);
 
     // Now split the data buffer in events
     int nEvents = dataVec.size() / eventSize;
