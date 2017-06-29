@@ -1,4 +1,4 @@
-DEPENDENCIES := Utils HWDescription HWInterface RootWeb Tracker
+DEPENDENCIES := Utils HWDescription HWInterface RootWeb
 ANTENNAINSTALLED = no
 AMC13INSTALLED = no
 USBINSTINSTALLED = no
@@ -70,6 +70,5 @@ clean:
 	(cd tools; make clean)
 	(cd RootWeb; make clean)
 	(cd miniDAQ; make clean)
-	(cd Tracker; make clean)
 	(cd AMC13; make clean)
 	(rm -f lib/* bin/*)

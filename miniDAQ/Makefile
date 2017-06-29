@@ -9,7 +9,7 @@ RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 LibraryDirs = $(CACTUSLIB) ../lib ../RootWeb/lib
 IncludeDirs     =  $(CACTUSINCLUDE) ../ 
-ExternalObjects= -lpthread -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tracker -lboost_filesystem -lboost_program_options -lRootWeb
+ExternalObjects= -lpthread -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lboost_filesystem -lboost_program_options -lRootWeb
 
 ##################################################
 ## check if the Root has THttp

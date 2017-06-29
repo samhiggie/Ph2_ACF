@@ -9,7 +9,6 @@
 #include "../Utils/Timer.h"
 #include "TROOT.h"
 #include "TApplication.h"
-#include "../Tracker/TrackerEvent.h"
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
@@ -17,19 +16,20 @@ using namespace Ph2_System;
 using namespace CommandLineProcessing;
 INITIALIZE_EASYLOGGINGPP
 
-void set_channel_group(SystemController &cSystemController, BeBoard* pBoard, int i) {
-    //* RegName                                    	Page	Addr	Defval	Value
-    //SelTestPulseDel&ChanGroup                    	0x00	0x0E	0x00	0xC0
+void set_channel_group (SystemController& cSystemController, BeBoard* pBoard, int i)
+{
+    //* RegName                                     Page    Addr    Defval  Value
+    //SelTestPulseDel&ChanGroup                     0x00    0x0E    0x00    0xC0
     uint8_t pPage = 0x00;
     uint8_t pAddress = 0x0E;
     uint8_t pDefValue = 0x00;
     uint8_t pValue = 0xC0;
-    CbcRegItem select_channel(pPage, pAddress, pDefValue, pValue+i);
+    CbcRegItem select_channel (pPage, pAddress, pDefValue, pValue + i);
 
     std::vector<uint32_t> encoded_value;
-    cSystemController.fBeBoardFWMap.at(0)->BCEncodeReg(select_channel,0,encoded_value,false,true);
-    cSystemController.fBeBoardInterface->WriteBoardReg(pBoard, "fc7_daq_ctrl.command_processor_block.i2c.command_fifo", encoded_value.at(0));
-    usleep(10000);
+    cSystemController.fBeBoardFWMap.at (0)->BCEncodeReg (select_channel, 0, encoded_value, false, true);
+    cSystemController.fBeBoardInterface->WriteBoardReg (pBoard, "fc7_daq_ctrl.command_processor_block.i2c.command_fifo", encoded_value.at (0) );
+    usleep (10000);
 }
 
 int main ( int argc, char** argv )
@@ -54,10 +54,9 @@ int main ( int argc, char** argv )
     cmd.defineOptionAlternative ( "configure", "c" );
     cmd.defineOption ( "save", "Save the data to a raw file.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "save", "s" );
-    cmd.defineOption ( "daq", "Save the data into a .daq file using the phase-2 Tracker data format.  ", ArgvParser::OptionRequiresValue );
-    cmd.defineOptionAlternative ( "daq", "d" );
 
     int result = cmd.parse ( argc, argv );
+
     if ( result != ArgvParser::NoParserError )
     {
         LOG (INFO) << cmd.parseErrorDescription ( result );
@@ -66,7 +65,6 @@ int main ( int argc, char** argv )
 
     bool cSaveToFile = false;
     std::string cOutputFile;
-    ofstream filNewDaq;
 
     if ( cmd.foundOption ( "save" ) )
         cSaveToFile = true ;
@@ -76,9 +74,6 @@ int main ( int argc, char** argv )
         cOutputFile =  cmd.optionValue ( "save" );
         cSystemController.addFileHandler ( cOutputFile, 'w' );
     }
-
-    if (cmd.foundOption ( "daq") )
-        filNewDaq.open (cmd.optionValue ( "daq" ), std::ios_base::binary);
 
     std::cout << "Save:   " << cOutputFile << std::endl;
 
@@ -97,7 +92,7 @@ int main ( int argc, char** argv )
     //if (cToBeConfigured) cSystemController.ConfigureHw();
     cSystemController.ConfigureHw();
 
-    BeBoard* pBoard = cSystemController.fBoardVector.at(0);
+    BeBoard* pBoard = cSystemController.fBoardVector.at (0);
 
     //Trigger Test
     /*cSystemController.fBeBoardInterface->Start(pBoard);
@@ -105,24 +100,23 @@ int main ( int argc, char** argv )
     cSystemController.fBeBoardInterface->getBoardInfo(pBoard);
     cSystemController.fBeBoardInterface->Stop(pBoard);
     LOG (INFO) << BOLDCYAN << "Trigger Stopped" << RESET;*/
-    cSystemController.fBeBoardInterface->getBoardInfo(pBoard);
+    cSystemController.fBeBoardInterface->getBoardInfo (pBoard);
 
     const std::vector<Event*>* pEvents ;
     uint32_t cN = 0;
 
-    for (int i=0; i<8; i++) {
-        set_channel_group(cSystemController, pBoard, i);
-        cSystemController.fBeBoardInterface->Start(pBoard);
+    for (int i = 0; i < 8; i++)
+    {
+        set_channel_group (cSystemController, pBoard, i);
+        cSystemController.fBeBoardInterface->Start (pBoard);
     }
-    cSystemController.ReadData(pBoard);
+
+    cSystemController.ReadData (pBoard);
 
     pEvents = &cSystemController.GetEvents ( pBoard );
 
     Counter cCbcCounter;
     pBoard->accept ( cCbcCounter );
-    uint32_t uFeMask = (1 << cCbcCounter.getNFe() ) - 1;
-    char arrSize[4];
-
 
     for ( auto& ev : *pEvents )
     {
@@ -131,20 +125,10 @@ int main ( int argc, char** argv )
         outp << *ev;
         LOG (INFO) << outp.str();
 
-        if (filNewDaq.is_open() )
-        {
-            TrackerEvent evtTracker (ev, pBoard->getNCbcDataSize(), uFeMask, cCbcCounter.getCbcMask(), 0,  0);
-            evtTracker.fillArrayWithSize (arrSize);
-            filNewDaq.write (arrSize, 4);
-            filNewDaq.write (evtTracker.getData(), evtTracker.getDaqSize() );
-            filNewDaq.flush();
-        }
     }
 
     //cSystemController.ReadNEvents(pBoard,300);
 
-    if (filNewDaq.is_open() )
-        filNewDaq.close();
 
     LOG (INFO) << "*** End of the DAQ test ***" ;
     cSystemController.Destroy();

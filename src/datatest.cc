@@ -15,7 +15,6 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 #include "../Utils/CommonVisitors.h"
-#include "../Tracker/TrackerEvent.h"
 
 
 using namespace Ph2_HwDescription;
@@ -96,9 +95,6 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "read", "Read the data from a raw file instead of the board.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "read", "r" );
 
-    cmd.defineOption ( "condition", "Read condition data and other parameters required to generate the phase-2 tracker data file (.daq) from a text file with key=value format", ArgvParser::OptionRequiresValue );
-    cmd.defineOptionAlternative ( "condition", "c" );
-
     // cmd.defineOption( "option", "Define file access mode: w : write , a : append, w+ : write/update", ArgvParser::OptionRequiresValue );
     // cmd.defineOptionAlternative( "option", "o" );
 
@@ -126,8 +122,8 @@ int main ( int argc, char* argv[] )
         cSystemController.addFileHandler ( cOutputFile, 'w' );
     }
 
-    if (cmd.foundOption ( "daq") )
-        filNewDaq.open (cmd.optionValue ( "daq" ), ios_base::binary);
+    //if (cmd.foundOption ( "daq") )
+    //filNewDaq.open (cmd.optionValue ( "daq" ), ios_base::binary);
 
     std::cout << "save:   " << cOutputFile << std::endl;
     // std::string cOptionWrite = ( cmd.foundOption( "option" ) ) ? cmd.optionValue( "option" ) : "w+";
@@ -160,20 +156,6 @@ int main ( int argc, char* argv[] )
     }
 
     BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
-    //if ( cmd.foundOption ( "parallel" ) )
-    //{
-    //uint32_t nbPacket = pBoard->getReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ), nbAcq = pEventsperVcth / ( nbPacket + 1 ) + ( pEventsperVcth % ( nbPacket + 1 ) != 0 ? 1 : 0 );
-    //std::cout << "Packet number=" << nbPacket << ", Nb events=" << pEventsperVcth << " -> Nb acquisition iterations=" << nbAcq << std::endl;
-
-    //AcqVisitor visitor;
-    //std::cout << "Press Enter to start the acquisition, press Enter again to stop it." << std::endl;
-    //std::cin.ignore();
-    //cSystemController.fBeBoardInterface->StartThread ( pBoard, nbAcq, &visitor );
-    //std::cin.ignore();
-    //cSystemController.fBeBoardInterface->StopThread ( pBoard );
-    //}
-    //else
-    //{
     t.start();
     // make event counter start at 1 as does the L1A counter
     uint32_t cN = 1;
@@ -181,16 +163,7 @@ int main ( int argc, char* argv[] )
 
     Counter cCbcCounter;
     pBoard->accept ( cCbcCounter );
-    uint32_t uFeMask = (1 << cCbcCounter.getNFe() ) - 1;
-    char arrSize[4];
     Data data;
-    ParamSet* pPSet = nullptr;
-
-    if (cmd.foundOption ( "condition") )
-    {
-        pPSet = new ParamSet (cmd.optionValue ("condition") );
-        TrackerEvent::setI2CValuesForConditionData (pBoard, pPSet);
-    }
 
     if (!cmd.foundOption ( "read") )
         cSystemController.fBeBoardInterface->Start ( pBoard );
@@ -222,15 +195,6 @@ int main ( int argc, char* argv[] )
             outp.str ("");
             outp << *ev;
             LOG (INFO) << outp.str();
-
-            if (filNewDaq.is_open() )
-            {
-                TrackerEvent evtTracker (ev, pBoard->getNCbcDataSize(), uFeMask, cCbcCounter.getCbcMask(), cmd.foundOption ("read"), pPSet );
-                evtTracker.fillArrayWithSize (arrSize);
-                filNewDaq.write (arrSize, 4);
-                filNewDaq.write (evtTracker.getData(), evtTracker.getDaqSize() );
-                filNewDaq.flush();
-            }
         }
 
         cNthAcq++;
@@ -238,11 +202,6 @@ int main ( int argc, char* argv[] )
 
     t.stop();
     t.show ( "Time to take data:" );
-    delete pPSet;
-    //}
-
-    if (filNewDaq.is_open() )
-        filNewDaq.close();
 
     cSystemController.Destroy();
 }
