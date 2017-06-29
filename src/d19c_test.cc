@@ -1,9 +1,16 @@
+#include <fstream>
+#include <ios>
+#include <cstring>
+
+#include "../Utils/Utilities.h"
 #include "../System/SystemController.h"
 #include "../Utils/CommonVisitors.h"
 #include "../Utils/argvparser.h"
 #include "../Utils/Timer.h"
 #include "TROOT.h"
 #include "TApplication.h"
+#include "../Tracker/TrackerEvent.h"
+
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
 using namespace Ph2_System;
@@ -30,6 +37,7 @@ int main ( int argc, char** argv )
     //configure the logger
     el::Configurations conf ("settings/logger.conf");
     el::Loggers::reconfigureAllLoggers (conf);
+    SystemController cSystemController;
     ArgvParser cmd;
     // init
     cmd.setIntroductoryDescription ( "CMS Ph2_ACF d19c Testboard Firmware Test Application" );
@@ -44,6 +52,10 @@ int main ( int argc, char** argv )
     cmd.defineOptionAlternative ( "output", "o" );
     cmd.defineOption ( "configure", "Configure HW", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "configure", "c" );
+    cmd.defineOption ( "save", "Save the data to a raw file.  ", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "save", "s" );
+    cmd.defineOption ( "daq", "Save the data into a .daq file using the phase-2 Tracker data format.  ", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "daq", "d" );
 
     int result = cmd.parse ( argc, argv );
     if ( result != ArgvParser::NoParserError )
@@ -51,13 +63,31 @@ int main ( int argc, char** argv )
         LOG (INFO) << cmd.parseErrorDescription ( result );
         exit ( 1 );
     }
+
+    bool cSaveToFile = false;
+    std::string cOutputFile;
+    ofstream filNewDaq;
+
+    if ( cmd.foundOption ( "save" ) )
+        cSaveToFile = true ;
+
+    if ( cSaveToFile )
+    {
+        cOutputFile =  cmd.optionValue ( "save" );
+        cSystemController.addFileHandler ( cOutputFile, 'w' );
+    }
+
+    if (cmd.foundOption ( "daq") )
+        filNewDaq.open (cmd.optionValue ( "daq" ), std::ios_base::binary);
+
+    std::cout << "Save:   " << cOutputFile << std::endl;
+
     // now query the parsing results
     std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/D19CHWDescription.xml";
 
     std::stringstream outp;
 
     // from here
-    SystemController cSystemController;
     cSystemController.InitializeHw ( cHWFile, outp );
     cSystemController.InitializeSettings ( cHWFile, outp );
     LOG (INFO) << outp.str();
@@ -80,13 +110,19 @@ int main ( int argc, char** argv )
     const std::vector<Event*>* pEvents ;
     uint32_t cN = 0;
 
-    for (int i=0; i<4; i++) {
+    for (int i=0; i<8; i++) {
         set_channel_group(cSystemController, pBoard, i);
-        cSystemController.fBeBoardInterface->CbcTestPulse(pBoard);
+        cSystemController.fBeBoardInterface->Start(pBoard);
     }
     cSystemController.ReadData(pBoard);
 
     pEvents = &cSystemController.GetEvents ( pBoard );
+
+    Counter cCbcCounter;
+    pBoard->accept ( cCbcCounter );
+    uint32_t uFeMask = (1 << cCbcCounter.getNFe() ) - 1;
+    char arrSize[4];
+
 
     for ( auto& ev : *pEvents )
     {
@@ -94,7 +130,21 @@ int main ( int argc, char** argv )
         outp.str ("");
         outp << *ev;
         LOG (INFO) << outp.str();
+
+        if (filNewDaq.is_open() )
+        {
+            TrackerEvent evtTracker (ev, pBoard->getNCbcDataSize(), uFeMask, cCbcCounter.getCbcMask(), 0,  0);
+            evtTracker.fillArrayWithSize (arrSize);
+            filNewDaq.write (arrSize, 4);
+            filNewDaq.write (evtTracker.getData(), evtTracker.getDaqSize() );
+            filNewDaq.flush();
+        }
     }
+
+    //cSystemController.ReadNEvents(pBoard,300);
+
+    if (filNewDaq.is_open() )
+        filNewDaq.close();
 
     LOG (INFO) << "*** End of the DAQ test ***" ;
     cSystemController.Destroy();
