@@ -16,7 +16,7 @@ LibraryDirs = $(BOOST_LIB) ../lib
 IncludeDirs     = $(BOOST_INCLUDE) ../ ../HWInterface ../System ../Utils ../tools
 ExternalObjects= -lboost_system -lboost_thread -lcactus_uhal_uhal -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lPh2_Utils -lPh2_Description -lPh2_Interface -lPh2_System -lPh2_Tools 
 
-binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester d19c_test test
+binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester d19c_test
 
 ##################################################
 ## check if the Root has THttp
@@ -94,10 +94,6 @@ print:
 	@echo -e ${YEL}'****************************'${RESET}
 
 integratedtester: integratedtester.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths)$(ExternalObjects)
-	cp $@ ../bin
-
-test: test.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths)$(ExternalObjects)
 	cp $@ ../bin
 

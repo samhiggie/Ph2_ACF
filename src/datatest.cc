@@ -156,7 +156,7 @@ int main ( int argc, char* argv[] )
             ////uint32_t cEventSize = ;
             ////std::vector<uint32_t> cReadVec = fFile.readFileChunks (cEventSize * pEventsperVcth);
             //std::vector<uint32_t> cReadVec = fFile.readFileChunks (940000);
-            //data.Set ( pBoard, cReadVec, pEventsperVcth, cSystemController.fBeBoardInterface->getBoardType (pBoard) );
+            //data.Set ( pBoard, cReadVec, 10000, cSystemController.fBeBoardInterface->getBoardType (pBoard) );
             //pEvents = &data.GetEvents ( pBoard);
             LOG (ERROR) << "Read option currently not supported!";
         }
