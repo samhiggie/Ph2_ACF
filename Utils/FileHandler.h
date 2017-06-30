@@ -26,6 +26,7 @@ class FileHandler
 {
   public:
     FileHeader fHeader;
+    bool fHeaderPresent;
     char fOption;/*!< option for read or write */
 
   private:
@@ -65,10 +66,27 @@ class FileHandler
      * \brief set the header
      * \param pHeader: reference to a FileHeaderObject
      */
-    void setHeader ( FileHeader pHeader )
+    void setHeader ( const FileHeader pHeader )
     {
         fHeader = pHeader;
+        fHeaderPresent = true;
     }
+
+    /*!
+     * \brief get the header
+     * \return: a FileHeaderObject - if the header is not valid, a default header that is non-valid will be returned
+     */
+    FileHeader getHeader() const
+    {
+        if (fHeaderPresent) return fHeader;
+
+        else
+        {
+            FileHeader cBogusHeader;
+            return cBogusHeader;
+        }
+    }
+
     /*!
     * \brief set fData to pVector
     */

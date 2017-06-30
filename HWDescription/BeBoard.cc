@@ -21,17 +21,20 @@ namespace Ph2_HwDescription {
 
     BeBoard::BeBoard() :
         fBeId ( 0 ),
+        fEventType (EventType::VR),
         fCondDataSet (nullptr)
     {}
 
     BeBoard::BeBoard ( uint8_t pBeId ) :
         fBeId ( pBeId ),
+        fEventType (EventType::VR),
         fCondDataSet (nullptr)
     {
     }
 
     BeBoard::BeBoard ( uint8_t pBeId, const std::string& filename ) :
         fBeId ( pBeId ),
+        fEventType (EventType::VR),
         fCondDataSet (nullptr)
     {
         loadConfigFile ( filename );

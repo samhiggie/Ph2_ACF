@@ -58,19 +58,6 @@ namespace Ph2_System {
         for ( pugi::xml_node cBeBoardNode = doc.child ( "HwDescription" ).child ( "BeBoard" ); cBeBoardNode; cBeBoardNode = cBeBoardNode.next_sibling() )
         {
             BeBoard* cBeBoard = this->parseBeBoard (cBeBoardNode, pBoardVector, os);
-            std::string cBoardType = cBeBoardNode.attribute ( "boardType" ).value();
-
-            if (cBoardType == "GLIB") cBeBoard->setBoardType (BoardType::GLIB);
-            else if (cBoardType == "CTA") cBeBoard->setBoardType (BoardType::CTA);
-            else if (cBoardType == "ICGLIB") cBeBoard->setBoardType (BoardType::ICGLIB);
-            else if (cBoardType == "ICFC7") cBeBoard->setBoardType (BoardType::ICFC7);
-            else if (cBoardType == "CBC3FC7") cBeBoard->setBoardType (BoardType::CBC3FC7);
-            else if (cBoardType == "D19C") cBeBoard->setBoardType (BoardType::D19C);
-            else
-            {
-                LOG (ERROR) << "Error: Unknown Board Type: " << cBoardType << " - aborting!";
-                exit (1);
-            }
 
             pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
 
@@ -81,10 +68,8 @@ namespace Ph2_System {
             if (!strUhalConfig.empty() )
                 RegManager::setDummyXml (strUhalConfig);
 
-            os << BOLDBLUE << "|" << "       " <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " URI: " << BOLDYELLOW << cUri << BOLDBLUE << " Address Table: " << BOLDYELLOW << cAddressTable << std::endl;
-            os << BOLDBLUE << "|\t|----Type: " << BOLDYELLOW << cBoardType << RESET << std::endl << BLUE << "|\t|" << RESET << std::endl;
+            os << BOLDBLUE << "|" << "       " <<  "|"  << "----" << "Board Id:      " << BOLDYELLOW << cId << std::endl << BOLDBLUE <<  "|" << "       " <<  "|"  << "----" << "URI:           " << BOLDYELLOW << cUri << std::endl << BOLDBLUE <<  "|" << "       " <<  "|"  << "----" << "Address Table: " << BOLDYELLOW << cAddressTable << std::endl << BOLDBLUE << "|" << "       " <<  "|" << RESET << std::endl;
 
-            //else LOG(INFO) << BOLDBLUE << "   " <<  "|"  << "----" << "Board Id: " << BOLDYELLOW << cId << BOLDBLUE << " Type: " << BOLDYELLOW << cBoardType << RESET ;
 
             // Iterate over the BeBoardRegister Nodes
             for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
@@ -170,7 +155,6 @@ namespace Ph2_System {
         uint32_t cBeId = pNode.attribute ( "Id" ).as_int();
         BeBoard* cBeBoard = new BeBoard ( cBeId );
 
-        os << BOLDCYAN << "|" << "----" << pNode.name() << "  " << pNode.first_attribute().name() << " :" << pNode.attribute ( "Id" ).value() << RESET << std:: endl;
 
         pugi::xml_node cBeBoardFWVersionNode = pNode.child ( "FW_Version" );
         uint16_t cNCbcDataSize = 0;
@@ -179,7 +163,51 @@ namespace Ph2_System {
         if ( cNCbcDataSize != 0 ) os << BOLDCYAN << "|" << "	" << "|" << "----" << cBeBoardFWVersionNode.name() << " NCbcDataSize: " << cNCbcDataSize  <<  RESET << std:: endl;
 
         cBeBoard->setNCbcDataSize ( cNCbcDataSize );
+
+        pugi::xml_attribute cBoardTypeAttribute = pNode.attribute ("boardType");
+
+        if (cBoardTypeAttribute == nullptr)
+        {
+            LOG (ERROR) << BOLDRED << "Error: Board Type not specified - aborting!";
+            exit (1);
+        }
+
+        //std::string cBoardType = pNode.attribute ( "boardType" ).value();
+        std::string cBoardType = cBoardTypeAttribute.value();
+
+        if (cBoardType == "GLIB") cBeBoard->setBoardType (BoardType::GLIB);
+        else if (cBoardType == "CTA") cBeBoard->setBoardType (BoardType::CTA);
+        else if (cBoardType == "ICGLIB") cBeBoard->setBoardType (BoardType::ICGLIB);
+        else if (cBoardType == "ICFC7") cBeBoard->setBoardType (BoardType::ICFC7);
+        else if (cBoardType == "CBC3FC7") cBeBoard->setBoardType (BoardType::CBC3FC7);
+        else if (cBoardType == "D19C") cBeBoard->setBoardType (BoardType::D19C);
+        else
+        {
+            LOG (ERROR) << "Error: Unknown Board Type: " << cBoardType << " - aborting!";
+            exit (1);
+        }
+
+        pugi::xml_attribute cEventTypeAttribute = pNode.attribute ("eventType");
+        std::string cEventTypeString;
+
+        if (cEventTypeAttribute == nullptr)
+        {
+            //the HWDescription object does not have and EventType node, so assume EventType::VR
+            cBeBoard->setEventType (EventType::VR);
+            cEventTypeString = "VR";
+        }
+        else
+        {
+            cEventTypeString = cEventTypeAttribute.value();
+
+            if (cEventTypeString == "ZS") cBeBoard->setEventType (EventType::ZS);
+            else cBeBoard->setEventType (EventType::VR);
+        }
+
         pBoardVector.push_back ( cBeBoard );
+
+        os << BOLDCYAN << "|" << "----" << pNode.name() << "  " << pNode.first_attribute().name() << " :" << BOLDBLUE << pNode.attribute ( "Id" ).value() << BOLDCYAN << " BoardType: " << BOLDBLUE << cBoardType << BOLDCYAN << " EventType: " << BOLDRED << cEventTypeString << RESET << std:: endl;
+
         return cBeBoard;
     }
 

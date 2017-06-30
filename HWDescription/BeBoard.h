@@ -193,6 +193,15 @@ namespace Ph2_HwDescription {
             return fBoardType;
         }
 
+        void setEventType (const EventType pEventType)
+        {
+            fEventType = pEventType;
+        }
+        EventType getEventType() const
+        {
+            return fEventType;
+        }
+
         void addConditionDataSet (ConditionDataSet* pSet)
         {
             if (pSet != nullptr)
@@ -212,6 +221,7 @@ namespace Ph2_HwDescription {
         uint8_t fBeId;
         uint16_t fNCbcDataSize;
         BoardType fBoardType;
+        EventType fEventType;
 
 
         BeBoardRegMap fRegMap;             /*!< Map of BeBoard Register Names vs. Register Values */

@@ -5,7 +5,8 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption ) :
     fBinaryFileName ( pBinaryFileName ),
     fOption ( pOption ),
     fFileIsOpened ( false ),
-    fHeader ()
+    fHeader (),
+    fHeaderPresent (false)
 {
     openFile();
 
@@ -20,7 +21,8 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, Fil
     fBinaryFileName ( pBinaryFileName ),
     fOption ( pOption ),
     fFileIsOpened ( false ),
-    fHeader ( pHeader )
+    fHeader ( pHeader ),
+    fHeaderPresent (true)
 {
     openFile();
 
@@ -77,14 +79,17 @@ bool FileHandler::openFile( )
 
             // if the header is null or not valid, continue without and delete the header
             if ( fHeader.fValid == false )
+            {
                 LOG (INFO) << "FileHandler: Warning - No valid file Header provided, writing file without ... " ;
-            //if the header object is valid i serialize it in the file
+                fHeaderPresent = false;
+            }//if the header object is valid i serialize it in the file
             else if ( fHeader.fValid)
             {
                 std::vector<uint32_t> cHeaderVec = fHeader.encodeHeader();
                 uint32_t cBuffer[cHeaderVec.size()];
                 std::copy ( cHeaderVec.begin(), cHeaderVec.end(), cBuffer );
                 fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
+                fHeaderPresent = true;
             }
         }
 
@@ -103,12 +108,17 @@ bool FileHandler::openFile( )
             // and treat it as normal data
             if (!fHeader.fValid)
             {
+                fHeaderPresent = false;
                 LOG (INFO) << "FileHandler: No valid header found in file " << fBinaryFileName << " - resetting to 0 and treating as normal data!" ;
                 fBinaryFile.clear( );
                 fBinaryFile.seekg ( 0, std::ios::beg );
                 // if the file Header is nullptr I do not get info from it!
             }
-            else if (fHeader.fValid) LOG (INFO) << "FileHandler: Found a valid header in file " << fBinaryFileName ;
+            else if (fHeader.fValid)
+            {
+                LOG (INFO) << "FileHandler: Found a valid header in file " << fBinaryFileName ;
+                fHeaderPresent = true;
+            }
         }
 
         fFileIsOpened = true;

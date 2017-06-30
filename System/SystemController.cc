@@ -170,7 +170,7 @@ namespace Ph2_System {
             uint32_t cFWMinor = (cFWWord & 0x0000FFFF);
 
             //with the above info fill the header
-            FileHeader cHeader (cBoardTypeString, cFWMajor, cFWMinor, cBeId, cNCbc, cNEventSize32);
+            FileHeader cHeader (cBoardTypeString, cFWMajor, cFWMinor, cBeId, cNCbc, cNEventSize32, cBoard->getEventType() );
 
             //construct a Handler
             std::stringstream cBeBoardString;
