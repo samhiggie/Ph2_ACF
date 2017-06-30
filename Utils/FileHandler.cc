@@ -34,9 +34,17 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, Fil
 //destructor
 FileHandler::~FileHandler()
 {
+    //signal that we want to end this
+    {
+        std::lock_guard<std::mutex> cLock (fMutex);
+        fFileIsOpened = false;
+    }
+
+    //join the thread since the thread function must have returned by now
     if (fOption == 'w' && fThread.joinable() )
         fThread.join();
 
+    //close the file
     closeFile();
 }
 
@@ -111,13 +119,13 @@ bool FileHandler::openFile( )
 
 void FileHandler::closeFile()
 {
-    std::lock_guard<std::mutex> cLock (fMutex);
-
-    if (fFileIsOpened)
     {
-        fBinaryFile.close();
-        fFileIsOpened = false;
+        std::lock_guard<std::mutex> cLock (fMutex);
+
+        if (fFileIsOpened.load() )
+            fFileIsOpened = false;
     }
+    fBinaryFile.close();
 }
 
 //read from raw file to vector
@@ -191,29 +199,6 @@ std::vector<uint32_t> FileHandler::readFileTail ( long pNbytes )
 
 void FileHandler::writeFile()
 {
-    //while ( true ) {
-    //if ( is_set )
-    //{
-    //fMutex.lock();
-    //uint32_t cBuffer[fData.size()];
-    //std::copy ( fData.begin(), fData.end(), cBuffer );
-    //fMutex.unlock();
-    //fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
-    //fBinaryFile.flush();
-    //fData.clear();
-    //is_set = false;
-    ////continue;
-    //}
-
-    //else
-    //{
-    //fMutex.lock();
-    //fMutex.unlock();
-    ////continue;
-    //}
-
-    //}
-
     //new implementation using queue
     //this needs to run in an infinite loop, otherwise it will end after the first data was processed and the second on is not ready I think
     //anyway, dequeue will block this thread as long as fQueue is empty, if it is not, the first element will immediately be extracted
@@ -230,6 +215,9 @@ void FileHandler::writeFile()
         //write the buffer
         fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
         fBinaryFile.flush();
+
+        //since dequeu is a blocking call this will only ever be checked after the last data has been written
+        if (!fFileIsOpened.load() ) break;
     }
 
 }
