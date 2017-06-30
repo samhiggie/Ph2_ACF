@@ -67,13 +67,14 @@ namespace Ph2_HwInterface {
             // if the NCbcDataSize in the FW Version node of the BeBoard is set, the DataSize is assumed fixed:
             // if 1 module is defined, the number of CBCs is the datasize given in the xml
             // if more than one module is defined, the number of CBCs for each FE is the datasize divided by the nFe
-            if ( pBoard->getNCbcDataSize() )
-            {
-                if ( cNFe == 1 ) cNCbc = static_cast<uint32_t> ( pBoard->getNCbcDataSize() );
-                else cNCbc = static_cast<uint32_t> ( pBoard->getNCbcDataSize() / cNFe );
-            }
+            //if ( pBoard->getNCbcDataSize() )
+            //{
+            //if ( cNFe == 1 ) cNCbc = static_cast<uint32_t> ( pBoard->getNCbcDataSize() );
+            //else cNCbc = static_cast<uint32_t> ( pBoard->getNCbcDataSize() / cNFe );
+            //}
             // if there is no FWVersion node in the xml, the CBCs will be counted for each module according to the xml file
-            else cNCbc = static_cast<uint32_t> ( pBoard->getModule ( cFeId )->getNCbc() );
+            // else
+            cNCbc = static_cast<uint32_t> ( pBoard->getModule ( cFeId )->getNCbc() );
 
             //now loop the CBCs and encode the IDs in key
             for ( uint8_t cCbcId = 0; cCbcId < cNCbc; cCbcId++ )

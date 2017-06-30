@@ -171,17 +171,17 @@ namespace Ph2_HwDescription {
         * \brief Set the Number of CBCs that are used to compute the data blob size of the BeBoard (according to FW version)
         * \param pNCbcDataSize
         */
-        void setNCbcDataSize ( uint16_t pNCbcDataSize )
-        {
-            fNCbcDataSize = pNCbcDataSize;
-        };
+        //void setNCbcDataSize ( uint16_t pNCbcDataSize )
+        //{
+        //fNCbcDataSize = pNCbcDataSize;
+        //};
         /*!
         * \brief Get the Number of CBCs that are used to compute the data blob size of the BeBoard (according to FW version)
         */
-        uint16_t getNCbcDataSize() const
-        {
-            return fNCbcDataSize;
-        };
+        //uint16_t getNCbcDataSize() const
+        //{
+        //return fNCbcDataSize;
+        //};
 
         void setBoardType (const BoardType pBoardType)
         {
@@ -219,7 +219,7 @@ namespace Ph2_HwDescription {
       protected:
         //Connection Members
         uint8_t fBeId;
-        uint16_t fNCbcDataSize;
+        //uint16_t fNCbcDataSize;
         BoardType fBoardType;
         EventType fEventType;
 

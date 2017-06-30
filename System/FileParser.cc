@@ -156,13 +156,13 @@ namespace Ph2_System {
         BeBoard* cBeBoard = new BeBoard ( cBeId );
 
 
-        pugi::xml_node cBeBoardFWVersionNode = pNode.child ( "FW_Version" );
-        uint16_t cNCbcDataSize = 0;
-        cNCbcDataSize = static_cast<uint16_t> ( cBeBoardFWVersionNode.attribute ( "NCbcDataSize" ).as_int() );
+        //pugi::xml_node cBeBoardFWVersionNode = pNode.child ( "FW_Version" );
+        //uint16_t cNCbcDataSize = 0;
+        //cNCbcDataSize = static_cast<uint16_t> ( cBeBoardFWVersionNode.attribute ( "NCbcDataSize" ).as_int() );
 
-        if ( cNCbcDataSize != 0 ) os << BOLDCYAN << "|" << "	" << "|" << "----" << cBeBoardFWVersionNode.name() << " NCbcDataSize: " << cNCbcDataSize  <<  RESET << std:: endl;
+        //if ( cNCbcDataSize != 0 ) os << BOLDCYAN << "|" << "  " << "|" << "----" << cBeBoardFWVersionNode.name() << " NCbcDataSize: " << cNCbcDataSize  <<  RESET << std:: endl;
 
-        cBeBoard->setNCbcDataSize ( cNCbcDataSize );
+        //cBeBoard->setNCbcDataSize ( cNCbcDataSize );
 
         pugi::xml_attribute cBoardTypeAttribute = pNode.attribute ("boardType");
 
