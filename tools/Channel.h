@@ -62,7 +62,8 @@ struct Channel
     /*!
     * \brief get the SCurve width affter fitting
     * \return the width of the SCurve; the so-called noise
-    */double getNoise() const;
+    */
+    double getNoise() const;
     /*!
     * \brief get the current channel offset
     * \return the current channel offset

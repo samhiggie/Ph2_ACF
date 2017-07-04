@@ -199,7 +199,12 @@ void Calibration::FindVplus()
     }
 
     if (fType == ChipType::CBC2)
-        LOG (INFO) << BOLDBLUE << "Mean VPlus value of all chips is " << static_cast<uint16_t> (cMeanValue / fNCbc) << RESET;
+    {
+        LOG (INFO) << BOLDBLUE << "Mean VPlus value of all chips is " << static_cast<uint16_t> (cMeanValue / fNCbc) <<  RESET;
+
+        //for (auto& cCbc : fVplusMap)
+        //fCbcInterface->WriteCbcReg (cCbc.first, "Vplus", static_cast<uint8_t> (cMeanValue / fNCbc) );
+    }
     else if (fType == ChipType::CBC3)
     {
         //threshold visitor to set target VCth on all CBCs, set fTargetVcth to the mean/fNCbc
