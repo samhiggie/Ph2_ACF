@@ -486,6 +486,8 @@ namespace Ph2_HwInterface {
 
     uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
     {
+        uint32_t cBoardEventSize = computeEventSize(pBoard);
+        uint32_t cBoardHeader1Size = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
         while (cNWords == 0)
@@ -500,23 +502,23 @@ namespace Ph2_HwInterface {
         {
             // reading header 1
             uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
-            uint32_t cEventSize = ( header1 & 0x0000FFFF);
+            uint32_t cEventSize = (0x0000FFFF & header1);
+            uint32_t cHeader1Size = (0xFF000000 & header1) >> 24;
+            if (cEventSize == cBoardEventSize && cHeader1Size == cBoardHeader1Size) {
+                while (cNWords < cEventSize-1)
+                {
+                    LOG(INFO) << "Need: " << cEventSize-1 << " words for this event, Get: " << cNWords;
+                    std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                    cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
-            while (cNWords < cEventSize - 1)
-            {
-                LOG (INFO) << "Need: " << cEventSize - 1 << " words for this event, Get: " << cNWords;
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
-                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-
+                }
+                pData.push_back(header1);
+                std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize-1);
+                pData.insert(pData.end(), rest_of_data.begin(), rest_of_data.end());
+                cNEvents++;
             }
-
-            pData.push_back (header1);
-            std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
-            pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
-            cNEvents++;
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
         }
-
 
         if (fSaveToFile)
             fFileHandler->set (pData);
@@ -606,7 +608,16 @@ namespace Ph2_HwInterface {
      * this will have to change with a more generic FW */
     uint32_t D19cFWInterface::computeEventSize ( BeBoard* pBoard )
     {
-        return 0;
+        uint32_t cNFe = pBoard->getNFe();
+        uint32_t cNCbc = 0;
+        uint32_t cNEventSize32 = 0;
+
+        for (const auto& cFe : pBoard->fModuleVector)
+            cNCbc += cFe->getNCbc();
+
+        cNEventSize32 = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cNFe * D19C_EVENT_HEADER2_SIZE_32_CBC3 + cNCbc * CBC_EVENT_SIZE_32_CBC3;
+
+        return cNEventSize32;
     }
 
     std::vector<uint32_t> D19cFWInterface::ReadBlockRegValue (const std::string& pRegNode, const uint32_t& pBlocksize )
