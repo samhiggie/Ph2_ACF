@@ -20,7 +20,7 @@
     <Register name="fc7_daq_cnfg">
         <!-- Fast Command Block -->
         <Register name="fast_command_block">
-                <Register name="triggers_to_accept"> 10 </Register>
+                <Register name="triggers_to_accept"> 0 </Register>
                 <Register name="trigger_source"> 6 </Register>
 		<Register name="user_trigger_frequency"> 1 </Register>
 		<Register name="stubs_mask"> 1 </Register>
@@ -43,9 +43,9 @@
 	</Register>
 	<!-- Readout Block -->
     	<Register name="readout_block">
-            <Register name="packet_nbr"> 0 </Register>
+            <Register name="packet_nbr"> 99 </Register>
             <Register name="global">
-		    <Register name="data_handshake_enable"> 0 </Register>
+		    <Register name="data_handshake_enable"> 1 </Register>
                     <Register name="int_trig_enable"> 0 </Register>
                     <Register name="int_trig_rate"> 0 </Register>
                     <Register name="trigger_type"> 0 </Register>
