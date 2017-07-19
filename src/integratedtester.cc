@@ -86,7 +86,7 @@ void create_HMP4040server_tmuxSession (std::string pHostname  = "localhost", int
 
     // create bash script to launch HMP4040 sessions
     sprintf (buffer, "%s/start_HMP4040.sh", baseDirectory.c_str() );
-    ofstream starterScript ( buffer );
+    std::ofstream starterScript ( buffer );
     starterScript << "#!/bin/bash" << std::endl;
 
     // check if the tmux session with the name HMP4040_Server already exists... if it doesn't create one with that name.

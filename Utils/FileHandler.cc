@@ -86,9 +86,7 @@ bool FileHandler::openFile( )
             else if ( fHeader.fValid)
             {
                 std::vector<uint32_t> cHeaderVec = fHeader.encodeHeader();
-                uint32_t cBuffer[cHeaderVec.size()];
-                std::copy ( cHeaderVec.begin(), cHeaderVec.end(), cBuffer );
-                fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
+                fBinaryFile.write ( ( char* ) &cHeaderVec.at (0), cHeaderVec.size() * sizeof ( uint32_t ) );
                 fHeaderPresent = true;
             }
         }
@@ -219,11 +217,8 @@ void FileHandler::writeFile()
         //populate the local handle with values from the queue -
         //this method blocks this thread until it receives data
         this->dequeue (cData);
-        //copy data in buffer array for faster I/O
-        uint32_t cBuffer[cData.size()];
-        std::copy ( cData.begin(), cData.end(), cBuffer );
-        //write the buffer
-        fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
+        //write the vector - this is guaranteed by the standard
+        fBinaryFile.write ( ( char* ) &cData.at (0), cData.size() * sizeof ( uint32_t ) );
         fBinaryFile.flush();
 
         //since dequeu is a blocking call this will only ever be checked after the last data has been written

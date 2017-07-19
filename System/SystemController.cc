@@ -94,7 +94,8 @@ namespace Ph2_System {
     {
         LOG (INFO) << BOLDBLUE << "Configuring HW parsed from .xml file: " << RESET;
 
-        bool cHoleMode, cCheck;
+        bool cHoleMode = false;
+        bool cCheck = false;
 
         if ( !fSettingsMap.empty() )
         {
@@ -140,8 +141,6 @@ namespace Ph2_System {
 
     void SystemController::initializeFileHandler()
     {
-        LOG (INFO) << BOLDBLUE << "Saving binary raw data to: " << fRawFileName << ".fedId" << RESET ;
-
         // here would be the ideal position to fill the file Header and call openFile when in read mode
         for (const auto& cBoard : fBoardVector)
         {
@@ -223,6 +222,7 @@ namespace Ph2_System {
 
             //finally set the handler
             fBeBoardInterface->SetFileHandler (cBoard, cHandler);
+            LOG (INFO) << BOLDBLUE << "Saving binary raw data to: " << fRawFileName << ".fedId" << RESET ;
         }
     }
 
@@ -235,18 +235,37 @@ namespace Ph2_System {
         fBeBoardInterface->Stop (pBoard);
     }
 
+    //method to read data standalone
     uint32_t SystemController::ReadData (BeBoard* pBoard)
+    {
+        //reset the data object
+        //if (fData) delete fData;
+
+        //fData = new Data();
+
+        //std::vector<uint32_t> cData;
+        //read the data and get it by reference
+        //uint32_t cNPackets = fBeBoardInterface->ReadData (pBoard, false, cData);
+        //pass data by reference to set and let it know what board we are dealing with
+        //fData->Set (pBoard, cData, cNPackets, fBeBoardInterface->getBoardType (pBoard) );
+        //return the packet size
+        //return cNPackets;
+        std::vector<uint32_t> cData;
+        return this->ReadData (pBoard, cData, true);
+    }
+
+    // for OTSDAQ
+    uint32_t SystemController::ReadData (BeBoard* pBoard, std::vector<uint32_t>& pData, bool pWait)
     {
         //reset the data object
         if (fData) delete fData;
 
         fData = new Data();
 
-        std::vector<uint32_t> cData;
         //read the data and get it by reference
-        uint32_t cNPackets = fBeBoardInterface->ReadData (pBoard, false, cData);
+        uint32_t cNPackets = fBeBoardInterface->ReadData (pBoard, false, pData, pWait);
         //pass data by reference to set and let it know what board we are dealing with
-        fData->Set (pBoard, cData, cNPackets, fBeBoardInterface->getBoardType (pBoard) );
+        fData->Set (pBoard, pData, cNPackets, fBeBoardInterface->getBoardType (pBoard) );
         //return the packet size
         return cNPackets;
     }
@@ -258,17 +277,24 @@ namespace Ph2_System {
 
     }
 
+    //standalone
     void SystemController::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents)
+    {
+        std::vector<uint32_t> cData;
+        return this->ReadNEvents (pBoard, pNEvents, cData, true);
+    }
+
+    //for OTSDAQ
+    void SystemController::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait)
     {
         //reset the data object
         if (fData) delete fData;
 
         fData = new Data();
-        std::vector<uint32_t> cData;
         //read the data and get it by reference
-        fBeBoardInterface->ReadNEvents (pBoard, pNEvents, cData);
+        fBeBoardInterface->ReadNEvents (pBoard, pNEvents, pData, pWait);
         //pass data by reference to set and let it know what board we are dealing with
-        fData->Set (pBoard, cData, pNEvents, fBeBoardInterface->getBoardType (pBoard) );
+        fData->Set (pBoard, pData, pNEvents, fBeBoardInterface->getBoardType (pBoard) );
         //return the packet size
     }
 

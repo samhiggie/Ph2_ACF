@@ -34,7 +34,7 @@
 #include <vector>
 #include <map>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 
 
 using namespace Ph2_HwDescription;

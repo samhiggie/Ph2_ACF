@@ -143,13 +143,13 @@ namespace Ph2_HwInterface {
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read
          */
-        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData ) override;
+        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait = true ) override;
         /*!
          * \brief Read data for pNEvents
          * \param pBoard : the pointer to the BeBoard
          * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
          */
-        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData);
+        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait = true);
 
       private:
         uint32_t computeEventSize ( BeBoard* pBoard );
@@ -164,7 +164,7 @@ namespace Ph2_HwInterface {
         // dedicated method to power on dio5
         void PowerOnDIO5();
         // get fmc card name
-        std::string getFMCCardName(uint32_t id);
+        std::string getFMCCardName (uint32_t id);
 
         //template to copy every nth element out of a vector to another vector
         template<class in_it, class out_it>

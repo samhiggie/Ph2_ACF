@@ -214,7 +214,7 @@ namespace Ph2_HwInterface {
         WriteReg ( "break_trigger", 0 );
     }
 
-    uint32_t GlibFWInterface::ReadData ( BeBoard* pBoard,  bool pBreakTrigger, std::vector<uint32_t>& pData)
+    uint32_t GlibFWInterface::ReadData ( BeBoard* pBoard,  bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait)
     {
         //Readout settings
         std::chrono::milliseconds cWait ( 1 );
@@ -236,7 +236,11 @@ namespace Ph2_HwInterface {
             cVal = ReadReg ( fStrFull );
 
             if ( cVal == 0 )
-                std::this_thread::sleep_for ( cWait );
+            {
+                if (!pWait) return 0;
+                else
+                    std::this_thread::sleep_for ( cWait );
+            }
         }
         while ( cVal == 0 );
 
@@ -272,15 +276,12 @@ namespace Ph2_HwInterface {
         if ( pBreakTrigger ) WriteReg ( "break_trigger", 0 );
 
         if ( fSaveToFile )
-        {
             fFileHandler->set ( pData );
-            //fFileHandler->writeFile();
-        }
 
         return fNpackets;
     }
 
-    void GlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
+    void GlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait )
     {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
@@ -304,7 +305,11 @@ namespace Ph2_HwInterface {
             cVal = ReadReg ( "status_flags.CMD_START_VALID" );
 
             if ( cVal == 0 )
-                std::this_thread::sleep_for ( cWait );
+            {
+                if (!pWait) return;
+                else
+                    std::this_thread::sleep_for ( cWait );
+            }
         }
         while ( cVal == 0 );
 

@@ -162,6 +162,14 @@ namespace Ph2_System {
          * \return: number of packets
          */
         uint32_t ReadData (BeBoard* pBoard);
+        /*!
+         * \brief Read Data from pBoard for use with OTSDAQ
+         * \param pBeBoard
+         * \param pData: data vector reference
+         * \param pWait: wait  until sufficient data is there, default true
+         * \return: number of packets
+         */
+        uint32_t ReadData (BeBoard* pBoard, std::vector<uint32_t>& pData, bool pWait = true);
 
         void Start (BeBoard* pBoard);
         void Stop (BeBoard* pBoard);
@@ -175,9 +183,16 @@ namespace Ph2_System {
          * \brief Read N Events from pBoard
          * \param pBeBoard
          * \param pNEvents
-         * \return: number of packets
          */
         void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents);
+        /*!
+         * \brief Read N Events from pBoard
+         * \param pBeBoard
+         * \param pNEvents
+         * \param pData: data vector
+         * \param pWait: contunue polling until enough data is present
+         */
+        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait = true);
 
         /*!
          * \brief Read N Events from all boards

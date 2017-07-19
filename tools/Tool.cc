@@ -281,8 +281,10 @@ void Tool::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool p
                     cRegVec.push_back ( std::make_pair ( "SelTestPulseDel&ChanGroup",  cRegValue ) );
 
                     uint8_t cTPRegValue;
+
                     if (pTPState) cTPRegValue  = (cOriginalAmuxValue |  0x1 << 6);
                     else if (!pTPState) cTPRegValue = (cOriginalAmuxValue & ~ (0x1 << 6) );
+
                     cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", cTPRegValue ) );
                     cRegVec.push_back ( std::make_pair ( "TestPulsePot", pTPAmplitude ) );
                 }

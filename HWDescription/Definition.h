@@ -61,20 +61,20 @@
 #define OFFSET_GLIBFLAG           10+254  //OFFSET_CBCDATA + WIDTH_CBCDATA
 #define WIDTH_GLIBFLAG            12
 #define OFFSET_CBCSTUBDATA        264+23  //LAST BIT
-#define IC_OFFSET_CBCSTUBDATA        276  //BIT 12
+#define IC_OFFSET_CBCSTUBDATA     276  //BIT 12
 #define WIDTH_CBCSTUBDATA         12
 
 //CBC3
 //in uint32_t words
-#define CBC_EVENT_SIZE_32_CBC3   11 // 11 32bit words per CBC
+#define CBC_EVENT_SIZE_32_CBC3          11 // 11 32bit words per CBC
 #define EVENT_HEADER_TDC_SIZE_32_CBC3    3 // total of 6 32 bit words for HEADER + TDC
-#define EVENT_HEADER_SIZE_32_CBC3    3  // 5 words for the header
+#define EVENT_HEADER_SIZE_32_CBC3        3  // 5 words for the header
 
 //D19C event header size
 #define D19C_EVENT_HEADER1_SIZE_32_CBC3 5
 #define D19C_EVENT_HEADER2_SIZE_32_CBC3 1
 // points to bufferoverlow
-#define D19C_OFFSET_ERROR_CBC3              8*32+1
+#define D19C_OFFSET_ERROR_CBC3          8*32+1
 
 
 //Event
@@ -88,18 +88,18 @@
 #define WIDTH_EVENT_COUNT_CBC3          29
 
 //Cbc Event
-#define OFFSET_EVENT_COUNT_CBC_CBC3     2*32+4
-#define WIDTH_EVENT_COUNT_CBC_CBC3      9
+#define OFFSET_EVENT_COUNT_CBC_CBC3    2*32+4
+#define WIDTH_EVENT_COUNT_CBC_CBC3     9
 #define OFFSET_ERROR_CBC3              2*32+22
 #define WIDTH_ERROR_CBC3               2
-#define OFFSET_PIPELINE_ADDRESS_CBC3   2*32+13       //OFFSET_ERROR + WIDTH_ERROR
+#define OFFSET_PIPELINE_ADDRESS_CBC3   2*32+13 //OFFSET_ERROR + WIDTH_ERROR
 #define WIDTH_PIPELINE_ADDRESS_CBC3    9
-#define OFFSET_CBCDATA_CBC3            2*32+4     //OFFSET_PIPELINE_ADDRESS + WIDTH_PIPELINE_ADDRESS
+#define OFFSET_CBCDATA_CBC3            2*32+4  //OFFSET_PIPELINE_ADDRESS + WIDTH_PIPELINE_ADDRESS
 #define WIDTH_CBCDATA_CBC3             254     //NCHANNELS
 #define OFFSET_GLIBFLAG_CBC3           10+254  //OFFSET_CBCDATA + WIDTH_CBCDATA
 #define WIDTH_GLIBFLAG_CBC3            12
 #define OFFSET_CBCSTUBDATA_CBC3        264+23  //LAST BIT
-#define WIDTH_CBCSTUBDATA         12
+#define WIDTH_CBCSTUBDATA              12
 //------------------------------------------------------------------------------
 
 enum class BoardType {GLIB, ICGLIB, CTA, ICFC7, CBC3FC7, D19C, SUPERVISOR};
