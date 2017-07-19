@@ -45,6 +45,7 @@
 	<!-- Readout Block -->
     	<Register name="readout_block">
             <Register name="packet_nbr"> 99 </Register>
+	    <Register name="zs_max_nclusters"> 31 </Register>
             <Register name="global">
 		    <Register name="data_handshake_enable"> 1 </Register>
                     <Register name="int_trig_enable"> 0 </Register>
@@ -52,6 +53,7 @@
                     <Register name="trigger_type"> 0 </Register>
                     <Register name="data_type"> 0 </Register>
                     <Register name="common_stubdata_delay"> 194 </Register>
+		    <Register name="zero_suppression_enable"> 0 </Register>
             </Register>
     	</Register>
 	<!-- DIO5 Block -->
