@@ -9,22 +9,23 @@ export CACTUSINCLUDE=/opt/cactus/include
 # BOOST
 export BOOST_LIB=/opt/cactus/lib
 export BOOST_INCLUDE=/opt/cactus/include
+export BOOST_ROOT=/opt/cactus
 
 #ROOT
 source /usr/local/bin/thisroot.sh
-export ROOTLIB=/usr/local/lib/root
-#export ROOTSYS=/usr/local/lib/root
+#export ROOTLIB=/usr/local/lib/root
+export ROOTSYS=/usr/local/lib/root
 
 
 #ZMQ
-export ZMQ_HEADER_PATH=/usr/include/zmq.hpp
+#export ZMQ_HEADER_PATH=/usr/include/zmq.hpp
 
 #Ph2_ACF
 export BASE_DIR=$(pwd)
 
 #External Plugins
 export ANTENNADIR=$BASE_DIR/CMSPh2_AntennaDriver
-export AMC13DIR=/opt/cactus/include/amc13
+#export AMC13DIR=/opt/cactus/include/amc13
 #won't link properly if I don't use this [SS]
 #export USBINSTDIR=~/Ph2_USBInstDriver
 export USBINSTDIR=$BASE_DIR/../Ph2_USBInstDriver
