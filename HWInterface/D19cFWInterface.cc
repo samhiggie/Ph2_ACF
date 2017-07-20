@@ -267,6 +267,7 @@ namespace Ph2_HwInterface {
             }
         }
 
+        // hybrid / chips enabling part
         cVecReg.push_back ({"fc7_daq_cnfg.global.hybrid_enable", hybrid_enable});
 
         for (uint32_t i = 0; i < 16; i++)
@@ -306,6 +307,10 @@ namespace Ph2_HwInterface {
             WriteReg ("fc7_daq_ctrl.dio5_block.control.load_config", 0x1);
         }
 
+        // now set event type (ZS or VR)
+        if (pBoard->getEventType() == EventType::ZS) WriteReg ("fc7_daq_cnfg.readout_block.global.zero_suppression_enable", 0x1);
+        else WriteReg ("fc7_daq_cnfg.readout_block.global.zero_suppression_enable", 0x0);
+
         // ping all cbcs (reads data from registers #0)
         uint32_t cInit = ( ( (2) << 28 ) | (  (0) << 18 )  | ( (0) << 17 ) | ( (1) << 16 ) | (0 << 8 ) | 0);
 
@@ -335,10 +340,7 @@ namespace Ph2_HwInterface {
 
         if (!cWordCorrect) LOG (ERROR) << "CBC's ids are not correct!";
 
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-        usleep (10);
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-        usleep (10);
+        this->ResetReadout();
     }
 
     void D19cFWInterface::PowerOnDIO5()
@@ -489,6 +491,14 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
 
+    void D19cFWInterface::ResetReadout()
+    {
+        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
+        usleep (10);
+        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
+        usleep (10);
+    }
+
     uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait)
     {
         uint32_t cBoardEventSize = computeEventSize (pBoard);
@@ -589,10 +599,7 @@ namespace Ph2_HwInterface {
         usleep (1);
 
         // reset readout
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-        usleep (10);
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-        usleep (10);
+        this->ResetReadout();
 
         // start triggering machine which will collect N events
         this->Start();
@@ -650,10 +657,7 @@ namespace Ph2_HwInterface {
             pData.clear();
             this->Stop();
 
-            WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-            usleep (10);
-            WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-            usleep (10);
+            this->ResetReadout();
 
             this->ReadNEvents (pBoard, pNEvents, pData);
         }

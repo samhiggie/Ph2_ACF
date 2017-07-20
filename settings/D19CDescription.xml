@@ -72,7 +72,6 @@
                     <Register name="trigger_type"> 0 </Register>
                     <Register name="data_type"> 0 </Register>
                     <Register name="common_stubdata_delay"> 194 </Register>
-		    <Register name="zero_suppression_enable"> 0 </Register>
             </Register>
     	</Register>
 	<!-- DIO5 Block -->
