@@ -52,12 +52,16 @@ namespace Ph2_HwInterface {
         uhal::disableLogging();
         //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
 
-        uhal::ConnectionManager cm ( strDummyXml ); // Get connection
+        std::string cFilename = strDummyXml;
+
+        if (getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") != nullptr)
+            cFilename = std::string ("file://") + getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") + "/otsdaq-cmsoutertracker/Ph2_ACF/HWInterface/dummy.xml";
+
+        uhal::ConnectionManager cm ( cFilename ); // Get connection
 
         fBoard = new uhal::HwInterface ( cm.getDevice ( pId, pUri, pAddressTable ) );
 
         //fThread.detach();
-
     }
 
 
@@ -122,7 +126,7 @@ namespace Ph2_HwInterface {
 
             for ( auto const& v : pVecReg ) std::cerr << v.first << ", ";
 
-            std::cerr ;
+            std::cerr << std::endl;
             throw ;
         }
 

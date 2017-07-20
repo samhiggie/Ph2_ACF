@@ -5,9 +5,10 @@ RESET='\033[0m'
 
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
+CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++11 -fPIC 
 CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTHTTP := $(shell root-config --has-http)
+ROOTVERSION := $(shell root-config --version)
 
 RootLibraryDirs = $(ROOTLIB)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
@@ -25,6 +26,14 @@ else
 	ExtObjectsRoot += $(RootLibraryPaths)
 endif
 
+##################################################
+## and the root version
+##################################################
+ifneq (,$(findstring 5,$(ROOTVERSION)))
+	ExtObjectsRoot +=  $(Root5Flag)
+else
+	ExtObjectsRoot += $(Root6Flag)
+endif
 ##################################################
 ## check if the Antenna driver is installed
 ##################################################
@@ -62,7 +71,7 @@ publisher.o: publisher.cc publisher.h
 	$(CXX) $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(LibraryPaths) -c -o $@ $<
 
 DQMHistogrammer.o: DQMHistogrammer.cc DQMHistogrammer.h
-	$(CXX) $(DevFlags) $(CCFlags) $(CCFlagsRoot) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(LibraryPaths) -c -o $@ $<
+	$(CXX) $(DevFlags) $(CCFlags) $(CCFlagsRoot) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(LibraryPaths) $(ExternalObjects) -c -o $@ $<
 
 miniDQM: miniDQM.cc publisher.h publisher.o DQMHistogrammer.h DQMHistogrammer.o
 	$(CXX) $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) publisher.o DQMHistogrammer.o $(ExternalObjects) 

@@ -229,7 +229,7 @@ namespace Ph2_HwInterface {
         WriteReg ( "cbc_daq_ctrl.daq_ctrl", 0x2000 );
     }
 
-    uint32_t ICGlibFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData )
+    uint32_t ICGlibFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait )
     {
         std::chrono::milliseconds cWait ( 1 );
         //first, read how many Events per Acquisition
@@ -242,7 +242,10 @@ namespace Ph2_HwInterface {
         while (cVal == 0)
         {
             cVal = ReadReg ("cbc_daq_ctrl.event_data_buf_status.data_ready" ) & 0x1;
-            std::this_thread::sleep_for ( cWait );
+
+            if (!pWait) return 0;
+            else
+                std::this_thread::sleep_for ( cWait );
         }
 
         //ok, packet complete, now let's read
@@ -257,7 +260,7 @@ namespace Ph2_HwInterface {
         return fNEventsperAcquistion;
     }
 
-    void ICGlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
+    void ICGlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait )
     {
         // I need a check if pNEvents is grater than 2000 - in this case I have to split in packets of 2000
         uint32_t cNCycles = 1;
@@ -501,7 +504,7 @@ namespace Ph2_HwInterface {
 
 
 
-    bool ICGlibFWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback)
+    bool ICGlibFWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts, bool pReadback)
     {
         uint8_t cMaxWriteAttempts = 5;
         // the actual write & readback command is in the vector

@@ -22,8 +22,9 @@ namespace Ph2_System {
     void FileParser::parseHWxml ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os )
     {
         pugi::xml_document doc;
-        uint32_t cBeId, cModuleId, cCbcId;
+        uint32_t cBeId, cModuleId;
         uint32_t cNBeBoard = 0;
+        cBeId = cModuleId = 0;
         int i, j;
 
         pugi::xml_parse_result result = doc.load_file ( pFilename.c_str() );
@@ -378,7 +379,12 @@ namespace Ph2_System {
             std::string cFileName;
 
             if ( !cFilePrefix.empty() )
+            {
+                if (cFilePrefix.at (cFilePrefix.length() - 1) != '/')
+                    cFilePrefix.append ("/");
+
                 cFileName = cFilePrefix + expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() );
+            }
             else cFileName = expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() );
 
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
@@ -391,22 +397,6 @@ namespace Ph2_System {
                 cCbc->setReg ( std::string ( cCbcRegisterNode.attribute ( "name" ).value() ), convertAnyInt ( cCbcRegisterNode.first_child().value() ) );
                 os << BLUE << "|\t|\t|\t|----Register: " << std::string ( cCbcRegisterNode.attribute ( "name" ).value() ) << " : " << RED << std::hex << "0x" <<  convertAnyInt ( cCbcRegisterNode.first_child().value() ) << RESET << std::dec << std::endl;
             }
-
-            // here parese the GlobalCbcSettings so that Global CBC regisers take precedence over Global CBC settings which take precedence over CBC specific settings
-            //for ( pugi::xml_node cCbcGlobalNode = pModuleNode.child ( "Global_CBC_Register" ); cCbcGlobalNode != pModuleNode.child ( "CBC" ) && cCbcGlobalNode != pModuleNode.child ( "CBC_Files" ) && cCbcGlobalNode != nullptr; cCbcGlobalNode = cCbcGlobalNode.next_sibling() )
-            //{
-
-            //if ( cCbcGlobalNode != nullptr )
-            //{
-            //std::string regname = std::string ( cCbcGlobalNode.attribute ( "name" ).value() );
-            //uint32_t regvalue = convertAnyInt ( cCbcGlobalNode.first_child().value() ) ;
-            //cCbc->setReg ( regname, uint8_t ( regvalue ) ) ;
-
-            //os << GREEN << "|" << "   " << "|" << "   " << "|" << "----" << cCbcGlobalNode.name()
-            //<< "  " << cCbcGlobalNode.first_attribute().name() << " :"
-            //<< regname << " =  0x" << std::hex << std::setw ( 2 ) << std::setfill ( '0' ) << regvalue << std::dec << RESET << std:: endl;
-            //}
-            //}
 
             pModule->addCbc (cCbc);
         }
@@ -544,7 +534,7 @@ namespace Ph2_System {
             {
                 pCbc->setReg ("CwdWindow&Coincid", ( ( (cCluWidth & 0x03) << 6) | (cOffset1 & 0x3F) ) );
                 uint8_t cMiscStubLogic = pCbc->getReg ("MiscStubLogic");
-                pCbc->setReg ("MiscStubLogic", ( (cPtWidth & 0x0F) << 4 | cMiscStubLogic & 0x0F) );
+                pCbc->setReg ("MiscStubLogic", ( (cPtWidth & 0x0F) << 4 | (cMiscStubLogic & 0x0F) ) );
 
                 os << GREEN << "Cluster & Stub Logic: " << " ClusterWidthDiscrimination: " << RED << +cCluWidth << GREEN << ", PtWidth: " << RED << +cPtWidth << GREEN << ", Offset: " << RED << +cOffset1 << RESET << std::endl;
             }
@@ -552,9 +542,9 @@ namespace Ph2_System {
             {
                 uint8_t cLogicSel = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
                 pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( (cLogicSel & 0xF0) | (cPtWidth & 0x0F) ) );
-                pCbc->setReg ("LayerSwap&CluWidth", ( ( (cLayerswap & 0x01) << 3) | cCluWidth & 0x07) );
-                pCbc->setReg ("CoincWind&Offset34", ( ( (cOffset4 & 0x0F) << 4) | cOffset3 & 0x0F) );
-                pCbc->setReg ("CoincWind&Offset12", ( ( (cOffset2 & 0x0F) << 4) | cOffset1 & 0x0F) );
+                pCbc->setReg ("LayerSwap&CluWidth", ( ( (cLayerswap & 0x01) << 3) | (cCluWidth & 0x07) ) );
+                pCbc->setReg ("CoincWind&Offset34", ( ( (cOffset4 & 0x0F) << 4) | (cOffset3 & 0x0F) ) );
+                pCbc->setReg ("CoincWind&Offset12", ( ( (cOffset2 & 0x0F) << 4) | (cOffset1 & 0x0F) ) );
 
                 os << GREEN << "|\t|\t|\t|----Cluster & Stub Logic: " << "ClusterWidthDiscrimination: " << RED << +cCluWidth << GREEN << ", PtWidth: " << RED << +cPtWidth << GREEN << ", Layerswap: " << RED << +cLayerswap << RESET << std::endl;
                 os << GREEN << "|\t|\t|\t|                          Offset1: " << RED << +cOffset1 << GREEN << ", Offset2: " << RED << +cOffset2 << GREEN << ", Offset3: " << RED << +cOffset3 << GREEN << ", Offset4: " << RED << +cOffset4 << RESET << std::endl;
@@ -581,19 +571,19 @@ namespace Ph2_System {
             if (cType == ChipType::CBC2)
             {
                 uint8_t cAmuxRead = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
-                pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", (cAmuxRead & 0xE0 | (cAmuxValue & 0x1F) ) );
+                pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", ( (cAmuxRead & 0xE0) | (cAmuxValue & 0x1F) ) );
                 os << RED << "|\t|\t|\t|----Other settengs than Amux curerntly not supported for CBC2, please set manually!" << RESET << std::endl;
 
             }
             else if (cType == ChipType::CBC3)
             {
-                pCbc->setReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | (cTestClock & 0x01) << 5 | cDll & 0x1F) );
+                pCbc->setReg ("40MhzClk&Or254", ( ( (cTpgClock & 0x01) << 7) | ( (cOr254 & 0x01) << 6) | (cTestClock & 0x01) << 5 | (cDll & 0x1F) ) );
                 //LOG (DEBUG) << BOLDRED << std::bitset<8> (pCbc->getReg ("40MhzClk&Or254") ) << RESET;
                 uint8_t cPtWidthRead = pCbc->getReg ("Pipe&StubInpSel&Ptwidth");
                 pCbc->setReg ("Pipe&StubInpSel&Ptwidth", ( ( (cPipeLogic & 0x03) << 6) | ( (cStubLogic & 0x03) << 4) | (cPtWidthRead & 0x0F) ) );
 
                 uint8_t cAmuxRead = pCbc->getReg ("MiscTestPulseCtrl&AnalogMux");
-                pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", (cAmuxRead & 0xE0 | (cAmuxValue & 0x1F) ) );
+                pCbc->setReg ("MiscTestPulseCtrl&AnalogMux", ( (cAmuxRead & 0xE0) | (cAmuxValue & 0x1F) ) );
 
                 os << GREEN << "|\t|\t|\t|----Misc Settings: " << " PipelineLogicSource: " << RED << +cPipeLogic << GREEN << ", StubLogicSource: " << RED << +cStubLogic << GREEN << ", OR254: " << RED << +cOr254 << GREEN << ", TPG Clock: " << RED << +cTpgClock << GREEN  << ", Test Clock 40: " << RED << +cTestClock << GREEN << ", DLL: " << RED << convertAnyInt (cMiscNode.attribute ("dll").value() ) << RESET << std::endl;
             }

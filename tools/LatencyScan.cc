@@ -1,6 +1,6 @@
 #include "LatencyScan.h"
 
-void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
+void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool pNoTdc)
 {
     for ( auto& cBoard : fBoardVector )
     {
@@ -55,7 +55,7 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange)
     LOG (INFO) << "Histograms and Settings initialised." ;
 }
 
-std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uint8_t pLatencyRange )
+std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uint8_t pLatencyRange, bool pNoTdc )
 {
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
@@ -94,7 +94,7 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
             const std::vector<Event*>& events = GetEvents ( pBoard );
 
             // Loop over Events from this Acquisition
-            countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency );
+            countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency, pNoTdc );
         }
 
         // done counting hits for all FE's, now update the Histograms
@@ -206,7 +206,7 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
-int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency)
+int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency, bool pNoTdc)
 {
     BoardType cBoardType = pBoard->getBoardType();
     uint32_t cTotalHits = 0;
@@ -238,7 +238,7 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
             if (cTDCVal != 0 && cBoardType == BoardType::GLIB) cTDCVal -= 5;
             else if (cTDCVal != 0 && cBoardType == BoardType::CTA) cTDCVal -= 3;
 
-            if (cTDCVal > 8 ) LOG (INFO) << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
+            if (!pNoTdc && cTDCVal > 8 ) LOG (INFO) << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
 
             else
             {
@@ -256,7 +256,7 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
 
                 //now I have the number of hits in this particular event for all CBCs and the TDC value
                 uint32_t cBin = convertLatencyPhase (pStartLatency, cFillVal, cTDCVal);
-                cTmpHist->Fill ( cBin, cHitCounter);
+                cTmpHist->Fill (pNoTdc ? pParameter : cBin, cHitCounter);
                 cHitSum += cHitCounter;
             }
         }

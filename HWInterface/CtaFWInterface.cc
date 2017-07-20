@@ -223,7 +223,7 @@ namespace Ph2_HwInterface {
         WriteStackReg ( cVecReg );
     }
 
-    uint32_t CtaFWInterface::ReadData ( BeBoard* pBoard,  bool pBreakTrigger, std::vector<uint32_t>& pData )
+    uint32_t CtaFWInterface::ReadData ( BeBoard* pBoard,  bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait )
     {
         //Readout settings
         std::chrono::milliseconds cWait ( 1 );
@@ -240,10 +240,15 @@ namespace Ph2_HwInterface {
 
         do  //Wait for the SRAM full condition.
         {
+
             cVal = ReadReg ( fStrFull );
 
             if ( cVal == 0 )
-                std::this_thread::sleep_for ( cWait );
+            {
+                if (!pWait) return 0;
+                else
+                    std::this_thread::sleep_for ( cWait );
+            }
         }
         while ( cVal == 0 );
 
@@ -303,7 +308,7 @@ namespace Ph2_HwInterface {
         return nbEvtPacket;
     }
 
-    void CtaFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData )
+    void CtaFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait)
     {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
@@ -342,10 +347,15 @@ namespace Ph2_HwInterface {
 
         do
         {
+
             cVal = ReadReg ( fStrFull );
 
             if ( cVal == 0 )
-                std::this_thread::sleep_for ( cWait );
+            {
+                if (!pWait) return;
+                else
+                    std::this_thread::sleep_for ( cWait );
+            }
         }
         while ( cVal == 0 );
 
