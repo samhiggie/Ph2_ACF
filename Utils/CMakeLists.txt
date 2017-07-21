@@ -9,8 +9,6 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     #message("Sources " ${SOURCES})
     #but withhold UsbUtilities for the moment until we know we have 
     #Ph2_UsbInstLib installed
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UsbUtilities.cc)
-    list(REMOVE_ITEM HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/UsbUtilities.h)
     #message("Sources " ${SOURCES})
     
     #add the library
@@ -20,10 +18,6 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     if(ZMQ_FOUND)
         #here, now check for UsbInstLib
         if(PH2_USBINSTLIB_FOUND)
-            #append the UsbUtilities files
-            list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UsbUtilities.cc)
-            list(APPEND HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/UsbUtilities.h)
-    
             #add include directoreis for ZMQ and USBINSTLIB
             include_directories(${PH2_USBINSTLIB_INCLUDE_DIRS})
             include_directories(${ZMQ_INCLUDE_DIRS})
@@ -34,8 +28,11 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
             set(LIBS ${LIBS} ${ZMQ_LIBRARIES} ${PH2_USBINSTLIB_LIBRARIES})
             TARGET_LINK_LIBRARIES(Ph2_Utils ${LIBS})
             set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__ZMQ__ -D__USBINST__")
-        endif()
-    endif()
+        endif(PH2_USBINSTLIB_FOUND)
+    else(ZMQ_FOUND)
+            list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UsbUtilities.cc)
+            list(REMOVE_ITEM HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/UsbUtilities.h)
+    endif(ZMQ_FOUND)
     
 else()
 

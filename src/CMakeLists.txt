@@ -4,6 +4,7 @@ include_directories(${PROJECT_SOURCE_DIR}/HWDescription)
 include_directories(${PROJECT_SOURCE_DIR}/HWInterface)
 include_directories(${PROJECT_SOURCE_DIR}/Utils)
 include_directories(${PROJECT_SOURCE_DIR}/System)
+include_directories(${PROJECT_SOURCE_DIR}/tools)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -12,7 +13,7 @@ link_directories(${UHAL_UHAL_LIB_PREFIX})
 link_directories(${PROJECT_SOURCE_DIR/lib})
 
 #initial set of libraries
-set(LIBS ${LIBS} Ph2_Description Ph2_Interface Ph2_Utils Ph2_System)
+set(LIBS ${LIBS} Ph2_Description Ph2_Interface Ph2_Utils Ph2_System Ph2_Tools)
 
 #check for ZMQ installed
 if(ZMQ_FOUND)
@@ -48,7 +49,7 @@ if(${PH2_ANTENNA_FOUND})
 endif()
 
 #last but not least, find root and link against it
-if(ROOT_FOUND)
+if(${ROOT_FOUND})
     include_directories(${ROOT_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${ROOT_LIBRARIES})
 
@@ -57,23 +58,21 @@ if(ROOT_FOUND)
         set(LIBS ${LIBS} ${ROOT_RHTTP_LIBRARY})
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__HTTP__")
     endif()
-
-    #check ROOT version
-    if(${ROOT_VERSION} VERSION_GREATER 5)
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__ROOT5__")
-    else()
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__ROOT6__")
-    endif()
 endif()
 
 ####################################
 ## EXECUTABLES
 ####################################
 
-#miniDAQ
-add_executable(miniDAQ miniDAQ.cc)
-target_link_libraries(miniDAQ ${LIBS})
+file(GLOB BINARIES RELATIVE ${PROJECT_SOURCE_DIR}/src *.cc)
+#to remove binaries
+list(REMOVE_ITEM BINARIES test.cc)
 
-#miniDQM
-add_executable(miniDQM miniDQM.cc publisher.cc publisher.h DQMHistogrammer.cc DQMHistogrammer.h)
-target_link_libraries(miniDQM ${LIBS} RootWeb)
+message("#### Building the following executables: ####")
+foreach( sourcefile ${BINARIES} )
+    string(REPLACE ".cc" "" name ${sourcefile})
+    message(STATUS "    ${name}")
+    add_executable(${name} ${sourcefile})
+    target_link_libraries(${name} ${LIBS})
+endforeach(sourcefile ${BINARIES})
+message("#### End ####")

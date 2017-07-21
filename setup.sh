@@ -24,16 +24,16 @@ export CBCDAQ=$HOME/CBCDAQ
 export BASE_DIR=$(pwd)
 
 #External Plugins
-export ANTENNADIR=$BASE_DIR/CMSPh2_AntennaDriver
+#export ANTENNADIR=$BASE_DIR/CMSPh2_AntennaDriver
 #export AMC13DIR=/opt/cactus/include/amc13
 #won't link properly if I don't use this [SS]
 #export USBINSTDIR=~/Ph2_USBInstDriver
-export USBINSTDIR=$BASE_DIR/../Ph2_USBInstDriver
+#export USBINSTDIR=$BASE_DIR/../Ph2_USBInstDriver
 
 #ANTENNA
-export ANTENNALIB=$ANTENNADIR/lib
+#export ANTENNALIB=$ANTENNADIR/lib
 #HMP4040
-export USBINSTLIB=$USBINSTDIR/lib
+#export USBINSTLIB=$USBINSTDIR/lib
 
 
 export PATH=$BASE_DIR/bin:$PATH
@@ -45,6 +45,6 @@ export LD_LIBRARY_PATH=$USBINSTLIB:$ANTENNALIB:$BASE_DIR/RootWeb/lib:$CACTUSLIB:
 #export USBINSTFlag='-D__USBINST__'
 #export Amc13Flag='-D__AMC13__'
 #export AntennaFlag='-D__ANTENNA__'
-export DevFlags='-D__DEV__'
-export Root5Flag='-D__ROOT5__'
-export Root6Flag='-D__ROOT6__'
+#export DevFlags='-D__DEV__'
+#export Root5Flag='-D__ROOT5__'
+#export Root6Flag='-D__ROOT6__'

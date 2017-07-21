@@ -2,22 +2,35 @@ cmake_minimum_required(VERSION 2.8)
 project(Ph2_ACF)
 
 #set the output directory
-#set(CMAKE_BINARY_DIR $(PROJECT_SOURCE_DIR}/bin))
-#set(CMAKE_BINARY_DIR $(PROJECT_SOURCE_DIR}/build))
-#set(EXECUTABLE_OUTPUT_PATH $(CMAKE_BINARY_DIR))
-#set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+if ( ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR} )
+    message( FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt." )
+endif()
 
+# ---------- Setup output Directories -------------------------
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY 
+    ${PROJECT_SOURCE_DIR}/lib 
+    CACHE PATH
+   "Single Directory for all Libraries")
 
-#if ( ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR} )
-    #message( FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt." )
-#endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
+   ${PROJECT_SOURCE_DIR}/bin
+   CACHE PATH
+   "Single Directory for all Executables."
+   )
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
+   ${PROJECT_SOURCE_DIR}/bin
+   CACHE PATH
+   "Single Directory for all static libraries."
+   )
+# ---------- Setup output Directories -------------------------
+
 
 #set the cmakeL module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # compiler flags
-set (CMAKE_CXX_FLAGS "-std=c++11 -Wcpp -pthread -pedantic -Wall -w -g -fPIC ${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS "-std=c++11 -O3 -Wcpp -pthread -pedantic -Wall -w -g -fPIC ${CMAKE_CXX_FLAGS}")
 
 #check for external dependences
 message("#### Checking for external Dependencies ####")
@@ -31,6 +44,7 @@ if(ROOT_FOUND)
     elseif()
         message(STATUS "ROOT built without THttp Server - disabling compiler flags")
     endif()
+    message(STATUS "Using ROOT version ${ROOT_VERSION}")
 endif(ROOT_FOUND)
 
 find_package(CACTUS)
@@ -87,6 +101,10 @@ add_subdirectory(System)
 if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     add_subdirectory(tools)
     add_subdirectory(RootWeb)
-    #add_subdirectory(src)
+    add_subdirectory(src)
     add_subdirectory(miniDAQ)
 endif()
+
+message("#### Don't forget to set the path and ld_library_path")
+#set(ENV{PATH} "ENV{PATH}:${PROJECT_SOURCE_DIR}/bin")
+#set(ENV{LD_LIBRARY_PATH} "${PROJECT_SOURCE_DIR}/lib:ENV(LD_LIBRARY_PATH)")
