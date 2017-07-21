@@ -704,19 +704,19 @@ namespace Ph2_HwInterface {
 
                     if (pos1 != 0)
                     {
-                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos1 << 4 | bend1 & 0xF) );
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos1 << 4 | (bend1 & 0xF)) );
                         cFeStubCounter++;
                     }
 
                     if (pos2 != 0)
                     {
-                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos2 << 4 | bend2 & 0xF) );
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos2 << 4 | (bend2 & 0xF)) );
                         cFeStubCounter++;
                     }
 
                     if (pos3 != 0)
                     {
-                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos3 << 4 | bend3 & 0xF) );
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos3 << 4 | (bend3 & 0xF)) );
                         cFeStubCounter++;
                     }
                 }

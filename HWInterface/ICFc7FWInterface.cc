@@ -444,8 +444,8 @@ namespace Ph2_HwInterface {
 
         //here i create a dummy reg item for decoding so I can find if 1 cFailed
         CbcRegItem cItem;
-        uint8_t cCbcId;
-        bool cRead;
+        //uint8_t cCbcId;
+        //bool cRead;
 
         //explicitly reset the nwdata word
         WriteReg ("cbc_daq_ctrl.cbc_i2c_ctrl", 0x2);

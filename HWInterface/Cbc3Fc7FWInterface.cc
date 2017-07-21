@@ -207,7 +207,7 @@ namespace Ph2_HwInterface {
         //std::vector<uint32_t> cReplies;
         //std::vector<uint32_t> cVecReq = {0b00100000001100000001001000000000 | (fStubLogicInput & 0xCF | 0x20 0x30)};
         //this->WriteI2C (cVecReq, cReplies, false, bool pBroadcast );
-        CbcRegItem cRegItem (0, 0x12, 0, (fStubLogicInput & 0xCF | (0x20 & 0x30) ) );
+        CbcRegItem cRegItem (0, 0x12, 0, ((fStubLogicInput & 0xCF) | (0x20 & 0x30) ) );
         std::vector<uint32_t> cVecReq;
         this->EncodeReg (cRegItem, 0, cVecReq, true, true);
         //LOG (DEBUG) << std::bitset<32> (cVecReq.at (0) );
@@ -634,7 +634,7 @@ namespace Ph2_HwInterface {
                         // infor bit is 0 which means that the transaction was acknowledged by the CBC
                         if ( ( (cWord >> 20) & 0x1) == 0)
                             cSuccess = true;
-                        else cSuccess == false;
+                        else cSuccess = false;
                     }
                     else
                         cSuccess = false;

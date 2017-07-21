@@ -67,7 +67,7 @@ void SLinkEvent::generateTkHeader (uint32_t& pBeStatus, uint16_t& pNChips, std::
         if (cFe < 64)
             cWord2 |= (uint64_t) 1 << cFe;
         else
-            cWord1 |= (uint64_t) 1 << cFe - 64;
+            cWord1 |= (uint64_t) 1 << (cFe - 64);
     }
 
     fData.insert (fData.begin() + 1, cWord1);
