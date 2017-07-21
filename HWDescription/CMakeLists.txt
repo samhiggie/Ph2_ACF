@@ -1,3 +1,12 @@
+if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+#find source files
+file(GLOB SOURCES *.cc)
+add_library(Ph2_Description SHARED ${SOURCES})
+
+else()
+
 #include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/uhal/include)
 #include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/log/include)
 #include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/grammars/include)
@@ -10,8 +19,8 @@ cet_set_compiler_flags(
  
 cet_make(LIBRARY_NAME Ph2_Description
         LIBRARIES
-	Ph2_Utils
-#	pthread
+    Ph2_Utils
+    pthread
 #	${Boost_FILESYSTEM_LIBRARY}
 #	${Boost_SYSTEM_LIBRARY}
 #	${Boost_THREAD_LIBRARY}
@@ -28,4 +37,6 @@ install_source()
 #g++ -std=c++11  -g -O1 -Wall -fPIC   -I/opt/cactus/include -I../ -c -o Cbc.o Cbc.cc
 #g++ -std=c++11  -g -O1 -Wall -fPIC   -I/opt/cactus/include -I../ -c -o Module.o Module.cc
 #gcc -shared -o libPh2_Description.so FrontEndDescription.o BeBoard.o Cbc.o Module.o 
+endif()
+
 
