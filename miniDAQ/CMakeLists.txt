@@ -1,22 +1,19 @@
-
 #includes
 include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/HWDescription)
 include_directories(${PROJECT_SOURCE_DIR}/HWInterface)
 include_directories(${PROJECT_SOURCE_DIR}/Utils)
 include_directories(${PROJECT_SOURCE_DIR}/System)
 include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 #library dirs
 link_directories(${UHAL_UHAL_LIB_PREFIX})
+link_directories(${PROJECT_SOURCE_DIR/lib})
+link_directories(${PROJECT_SOURCE_DIR/lib})
 
-#find source files
-file(GLOB HEADERS *.h)
-file(GLOB SOURCES *.cc)
-
-#add the library
-add_library(Ph2_Tools SHARED ${SOURCES} ${HEADERS})
+#initial set of libraries
+set(LIBS ${LIBS} Ph2_Description Ph2_Interface Ph2_Utils Ph2_System RootWeb)
 
 #check for ZMQ installed
 if(ZMQ_FOUND)
@@ -63,5 +60,10 @@ if(${ROOT_FOUND})
     endif()
 endif()
 
-set(LIBS ${LIBS} Ph2_Description Ph2_Interface Ph2_Utils Ph2_System)
-TARGET_LINK_LIBRARIES(Ph2_Tools ${LIBS})
+#miniDAQ
+add_executable(miniDAQ miniDAQ.cc)
+target_link_libraries(miniDAQ ${LIBS})
+
+#miniDQM
+add_executable(miniDQM miniDQM.cc publisher.cc publisher.h DQMHistogrammer.cc DQMHistogrammer.h)
+target_link_libraries(miniDQM ${LIBS})

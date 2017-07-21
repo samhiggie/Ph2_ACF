@@ -78,4 +78,4 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(CACTUS  DEFAULT_MSG CACTUS_ROOT)
 find_package_handle_standard_args(AMC13  DEFAULT_MSG CACTUS_AMC13_FOUND)
 
-#mark_as_advanced(CACTUS_LIB CACTUS_ROOT )
+mark_as_advanced(CACTUS_ROOT UHAL_AMC13_PREFIX)

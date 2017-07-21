@@ -170,9 +170,9 @@ namespace Ph2_HwInterface {
         //before I'm done I need to reset all the state machines which loads the configuration
         //all the daq_ctrl registers have to be used with hex values and not with the sub-masks but they are auto clearing after 1 has been written
         //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset,
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
-        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET_ALL });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->CTR_RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->RESET_ALL });
+        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", this->RESET_ALL });
         cVecReg.push_back ({"cbc_daq_ctrl.fmcdio5ch_thr_dac_ctrl", 0x1 });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
@@ -199,7 +199,7 @@ namespace Ph2_HwInterface {
 
         //first reset all the counters and state machines
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->CTR_RESET });
 
         //according to Kirika, this is not necessary to set explicitly any more
         //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x1 });
@@ -208,7 +208,7 @@ namespace Ph2_HwInterface {
 
         //now issue start
         //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x2 });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->START });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
     }
@@ -290,8 +290,8 @@ namespace Ph2_HwInterface {
 
         // probably no need to reset everything since I am calling this a lot during commissioning
         cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", cNEvents});
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
-        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->RESET_ALL });
+        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->CTR_RESET });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
@@ -302,7 +302,7 @@ namespace Ph2_HwInterface {
         for (uint32_t cIndex = 0; cIndex < cNCycles; cIndex++)
         {
             //now issue start
-            cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START} );
+            cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->START} );
 
             WriteStackReg ( cVecReg );
             cVecReg.clear();
