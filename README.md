@@ -76,6 +76,10 @@ Follow these instructions to install and compile the libraries:
         $> source setup.sh
 
 1. Do a `make` in the root of the repo (make sure you have all µHal, root libraries on your computer).
+1.a.  Alternatively you can use CMAKE (you will still need to source setup.sh to put the binaries in the path):
+        $> cd build/
+        $> cmake ..
+        $> make -jN
 
 1. Launch 
 
