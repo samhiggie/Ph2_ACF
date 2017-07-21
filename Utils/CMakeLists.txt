@@ -27,8 +27,8 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
             #add include directoreis for ZMQ and USBINSTLIB
             include_directories(${PH2_USBINSTLIB_INCLUDE_DIRS})
             include_directories(${ZMQ_INCLUDE_DIRS})
-            link_directories(${PH2_USBINSTLIB_LIBRARIES})
-            link_directories(${ZMQ_LIBRARIES})
+            link_directories(${PH2_USBINSTLIB_LIBRARY_DIRS})
+            #link_directories(${ZMQ_LIBRARIES})
     
             #and link against the libs
             set(LIBS ${LIBS} ${ZMQ_LIBRARIES} ${PH2_USBINSTLIB_LIBRARIES})

@@ -15,12 +15,11 @@ if(${ROOT_FOUND})
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ROOT_DEFINITIONS}")
 endif()
 
-if(${UHAL_BOOST_FOUND})
+if(${Boost_FOUND})
     #need to find local boost
-    include_directories(${UHAL_BOOST_INCLUDE_DIRS})
-    link_directories(${UHAL_BOOST_LIBRARY_DIRS})
-    message(${UHAL_BOOST_LIBRARY_DIRS})
-    set(LIBS ${LIBS} boost_system boost_filesystem boost_program_options)
+    include_directories(${Boost_INCLUDE_DIRS})
+    link_directories(${Boost_LIBRARY_DIRS})
+    set(LIBS ${LIBS} ${Boost_LIBRARIES})
 endif()
 
 TARGET_LINK_LIBRARIES(RootWeb ${LIBS})

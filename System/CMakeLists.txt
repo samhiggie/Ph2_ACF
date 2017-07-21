@@ -1,7 +1,7 @@
 if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
 
     #includes
-    include_directories($ENV{CACTUSINCLUDE})
+    include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${PROJECT_SOURCE_DIR}/HWDescription)
     include_directories(${PROJECT_SOURCE_DIR}/HWInterface)
@@ -9,14 +9,14 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     include_directories(${PROJECT_SOURCE_DIR})
     
     #library directories
-    link_directories(/opt/cactus/lib)
+    link_directories(${UHAL_UHAL_LIB_PREFIX})
 
     #find source files
-    #file(GLOB HEADERS *.h)
+    file(GLOB HEADERS *.h)
     file(GLOB SOURCES *.cc)
     
     #add the library
-    add_library(Ph2_System SHARED ${SOURCES})
+    add_library(Ph2_System SHARED ${SOURCES} ${HEADERS})
     set(LIBS ${LIBS} Ph2_Description Ph2_Interface Ph2_Utils)
     TARGET_LINK_LIBRARIES(Ph2_System ${LIBS})
 

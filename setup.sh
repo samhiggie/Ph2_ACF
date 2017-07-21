@@ -2,19 +2,19 @@
 export CBCDAQ=$HOME/CBCDAQ
 
 #CACTUS
-export CACTUSBIN=/opt/cactus/bin
-export CACTUSLIB=/opt/cactus/lib
-export CACTUSINCLUDE=/opt/cactus/include
+#export CACTUSBIN=/opt/cactus/bin
+#export CACTUSLIB=/opt/cactus/lib
+#export CACTUSINCLUDE=/opt/cactus/include
 
 # BOOST
-export BOOST_LIB=/opt/cactus/lib
-export BOOST_INCLUDE=/opt/cactus/include
-export BOOST_ROOT=/opt/cactus
+#export BOOST_LIB=/opt/cactus/lib
+#export BOOST_INCLUDE=/opt/cactus/include
+#export BOOST_ROOT=/opt/cactus
 
 #ROOT
-source /usr/local/bin/thisroot.sh
+#source /usr/local/bin/thisroot.sh
 #export ROOTLIB=/usr/local/lib/root
-export ROOTSYS=/usr/local/lib/root
+#export ROOTSYS=/usr/local/lib/root
 
 
 #ZMQ
@@ -40,11 +40,11 @@ export PATH=$BASE_DIR/bin:$PATH
 export LD_LIBRARY_PATH=$USBINSTLIB:$ANTENNALIB:$BASE_DIR/RootWeb/lib:$CACTUSLIB:$BASE_DIR/lib:${LD_LIBRARY_PATH}
 
 
-export HttpFlag='-D__HTTP__'
-export ZmqFlag='-D__ZMQ__'
-export USBINSTFlag='-D__USBINST__'
-export Amc13Flag='-D__AMC13__'
-export AntennaFlag='-D__ANTENNA__'
+#export HttpFlag='-D__HTTP__'
+#export ZmqFlag='-D__ZMQ__'
+#export USBINSTFlag='-D__USBINST__'
+#export Amc13Flag='-D__AMC13__'
+#export AntennaFlag='-D__ANTENNA__'
 export DevFlags='-D__DEV__'
 export Root5Flag='-D__ROOT5__'
 export Root6Flag='-D__ROOT6__'

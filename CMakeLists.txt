@@ -12,61 +12,70 @@ project(Ph2_ACF)
 #endif()
 
 #set the cmakeL module path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/" "/usr/share/root/cmake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
+# compiler flags
 set (CMAKE_CXX_FLAGS "-std=c++11 -Wcpp -pthread -pedantic -Wall -w -g -fPIC ${CMAKE_CXX_FLAGS}")
 
 #check for external dependences
-message("#### Checking for external Dependences ####")
+message("#### Checking for external Dependencies ####")
 #ROOT
 find_package(ROOT COMPONENTS RHTTP)
-if(${ROOT_FOUND})
+if(ROOT_FOUND)
     #check for THttpServer
     if(EXISTS ${ROOT_RHTTP_LIBRARY})
-        message("-- Found THttp Server support - enabling compiler flags")
+        message(STATUS "Found THttp Server support - enabling compiler flags")
         set(ROOT_HAS_HTTP TRUE)
     elseif()
-        message(" -- ROOT built without THttp Server - disabling compiler flags")
+        message(STATUS "ROOT built without THttp Server - disabling compiler flags")
     endif()
-endif()
+endif(ROOT_FOUND)
 
-if(EXISTS /opt/cactus/include/amc13)
-    message("-- Found AMC13 Software installed on this machine - building the necessary components")
-    set(AMC13INSTALLED TRUE)
-else()
-    message("-- AMC13 Software not installed on this machine -- continuing without")
-endif()
+find_package(CACTUS)
+if(${CACTUS_AMC13_FOUND})
+    message(STATUS "    enabling AMC13 component")
+else(${CACTUS_AMC13_FOUND})
+    message(STATUS "    continuing without AMC13 components")
+endif(${CACTUS_AMC13_FOUND})
 
+#replace this with find_package(ANTENNA)
 if(EXISTS $ENV{ANTENNADIR})
-    message("-- Found Antenna Driver installed on this machine - building the necessary components")
+    message(STATUS "Found Antenna Driver installed on this machine - building the necessary components")
     set(ANTENNAINSTALLED TRUE)
 else()
-    message("-- Antenna Driver not installed on this machine -- continuing without")
+    message(STATUS "Antenna Driver not installed on this machine -- continuing without")
 endif()
 
 #ZeroMQ optional
 find_package(ZMQ)
 if(ZMQ_FOUND)
-    message("-- Found ZMQ Library - checking for Ph2_UsbInstLib")
+    #message(STATUS "Found ZMQ Library - checking for Ph2_UsbInstLib")
+
     #libPh2_UsbInstLib
     find_package(PH2_USBINSTLIB)
     if(PH2_USBINSTLIB_FOUND)
-        message("-- Found Ph2_UsbInstLib - enabling support")
-    endif()
-endif()
+        #message(STATUS "Found Ph2_UsbInstLib - enabling support")
+    endif(PH2_USBINSTLIB_FOUND)
+endif(ZMQ_FOUND)
 
 #Boost
-if(EXISTS /opt/cactus/include/boost)
-    set(UHAL_BOOST_FOUND TRUE)
-    set(UHAL_BOOST_INCLUDE_DIRS /opt/cactus/include/boost)
-    set(UHAL_BOOST_LIBRARY_DIRS /opt/cactus/lib)
-    message("-- Found uHAL BOOST installation - using this version")
-endif()
+set(Boost_NO_SYSTEM_PATHS TRUE)
+if(Boost_NO_SYSTEM_PATHS)
+    if(${CACTUS_FOUND})
+        set(BOOST_ROOT ${CACTUS_ROOT})
+    else(${CACTUS_FOUND})
+        set(BOOST_ROOT /opt/cactus)
+    endif(${CACTUS_FOUND})
+    set(BOOST_INCLUDE_DIRS ${BOOST_ROOT}/include)
+    set(BOOST_LIBRARY_DIRS ${BOOST_ROOT}/lib)
+endif(Boost_NO_SYSTEM_PATHS)
+
+find_package(Boost 1.53 REQUIRED system filesystem thread program_options)
 
 message("#### Done ####")
 
 #all the subdirs
-if(${AMC13INSTALLED})
+if(${CACTUS_AMC13_FOUND})
     add_subdirectory(AMC13)
 endif()
 add_subdirectory(Utils)
