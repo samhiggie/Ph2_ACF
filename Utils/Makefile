@@ -3,7 +3,7 @@ RED='\033[1m\033[31m'
 BLU='\033[1m\033[35m'
 RESET='\033[0m'
 
-Objs            = Exception.o Utilities.o Watchdog.o SLinkEvent.o Event.o Cbc2Event.o Cbc3Event.o D19cCbc3Event.o Data.o argvparser.o FileHandler.o
+Objs            = Exception.o Utilities.o Watchdog.o SLinkEvent.o Event.o Cbc2Event.o Cbc3Event.o D19cCbc3Event.o D19cCbc3EventZS.o Data.o argvparser.o FileHandler.o
 ObjsExt      	= UsbUtilities.o
 
 CC              = g++
