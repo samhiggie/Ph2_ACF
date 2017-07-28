@@ -23,15 +23,15 @@ namespace Ph2_HwInterface {
     using ClusterDataMap = std::map<uint16_t, std::vector<Cluster>>;
     using StubDataMap = std::map<uint16_t, std::vector<Stub>>;
     struct GeneralData {
-        bool stub_sync;
-        bool stub_err_flags;
-        bool stub_or254;
-        bool stub_s_ovf;
-        bool l1_buf_ovf;
-        bool l1_lat_err;
-        uint32_t pipeAddr;
-        uint32_t L1Cnt;
-        bool l1_clust_ovf;
+        bool stub_sync = 0;
+        bool stub_err_flags = 0;
+        bool stub_or254 = 0;
+        bool stub_s_ovf = 0;
+        bool l1_buf_ovf = 0;
+        bool l1_lat_err = 0;
+        uint32_t pipeAddr = 0;
+        uint32_t L1Cnt = 0;
+        bool l1_clust_ovf = 0;
     };
     using GeneralDataMap = std::map<uint16_t, GeneralData>;
 

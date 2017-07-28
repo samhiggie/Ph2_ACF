@@ -501,16 +501,16 @@ namespace Ph2_HwInterface {
 
     uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait)
     {
-        uint32_t cBoardEventSize = computeEventSize (pBoard);
         uint32_t cBoardHeader1Size = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+
         while (cNWords == 0)
         {
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
             if (!pWait) return 0;
             else
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                usleep(1);
         }
 
         uint32_t cNEvents = 0;
@@ -523,28 +523,39 @@ namespace Ph2_HwInterface {
 
             while (cReadoutReq == 0)
             {
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                usleep(10);
                 cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
             }
 
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            uint32_t cNEventsAvailable = cNWords / cBoardEventSize;
-
-            for (uint32_t event = 0; event < cNEventsAvailable; event++)
+            uint32_t cTotalWordsLeft = cNWords;
+            //LOG(INFO) << "Number of words for this set: " << cTotalWordsLeft;
+            //bool print_this = false;
+            //if (cTotalWordsLeft < 500) print_this = true;
+            //LOG(INFO) << "Before reading, number of words in ZS fifo: " << +ReadReg("fc7_daq_stat.readout_block.general.zs_fifo_words_cnt");
+            //LOG(INFO) << "Data payload buf empty: " << +ReadReg("fc7_daq_stat.be_proc.general.data_payload_buf_empty") << ", readout fsm state: " << +ReadReg("fc7_daq_stat.readout_block.general.fsm_status");
+            while ( cTotalWordsLeft > 0 )
             {
+
                 // reading header 1
                 uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
                 uint32_t cEventSize = (0x0000FFFF & header1);
+                //if(print_this) LOG(INFO) << "Number of words for this event: " << +cEventSize << " , words left: " << +cTotalWordsLeft;
+                if (cTotalWordsLeft < cEventSize) break;
+
 
                 pData.push_back (header1);
                 std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
                 pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
                 cNEvents++;
 
-                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+                // to be safe
+                if (cTotalWordsLeft >= cEventSize) cTotalWordsLeft -= cEventSize;
+                else cTotalWordsLeft = 0;
 
                 if (pBreakTrigger) break;
             }
+            //LOG(INFO) << "After reading, number of words in ZS fifo: " << +ReadReg("fc7_daq_stat.readout_block.general.zs_fifo_words_cnt");
         }
         else
         {
@@ -555,7 +566,7 @@ namespace Ph2_HwInterface {
                 uint32_t cEventSize = (0x0000FFFF & header1);
                 uint32_t cHeader1Size = (0xFF000000 & header1) >> 24;
 
-                if (cEventSize == cBoardEventSize && cHeader1Size == cBoardHeader1Size)
+                if (cHeader1Size == cBoardHeader1Size)
                 {
                     while (cNWords < cEventSize - 1)
                     {

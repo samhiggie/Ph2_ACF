@@ -94,17 +94,18 @@ namespace Ph2_HwInterface {
                         LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
 
                     // iterating through the hybrid words
-                    uint32_t begin = address_offset + D19C_EVENT_HEADER2_SIZE_32_CBC3;
-                    uint32_t end = begin;
+                    address_offset += D19C_EVENT_HEADER2_SIZE_32_CBC3;
+                    uint32_t begin = address_offset;
+                    uint32_t end = begin+1;
                     bool cLastWord = false;
-                    for (uint32_t word_id = address_offset + D19C_EVENT_HEADER2_SIZE_32_CBC3; word_id < address_offset + fe_data_size; word_id++) {
+                    for (uint32_t word_id = address_offset; word_id < address_offset + (fe_data_size - 1); word_id++) {
 
                         uint8_t cChipID = (0xE0000000 & list.at(word_id)) >> 29;
                         //LOG(INFO) << "ChipId: " << +cChipID << ", Word ID: " << +word_id;
                         uint8_t cDataType = (0x18000000 & list.at(word_id)) >> 27;
 
                         // checks the last word
-                        if (word_id == address_offset + fe_data_size - 1) cLastWord = true;
+                        if (word_id == (address_offset + fe_data_size - 2)) cLastWord = true;
                         else {
                             uint8_t cNextChipID = (0xE0000000 & list.at(word_id+1)) >> 29;
                             if (cNextChipID != cChipID) cLastWord = true;
@@ -123,6 +124,7 @@ namespace Ph2_HwInterface {
                         }
 
                         end++;
+
                     }
 
                     // now set empty events for active cbc's which doesn't have data
@@ -173,6 +175,7 @@ namespace Ph2_HwInterface {
 
         for(auto word : cCbcDataZS) {
             uint8_t cDataType = (0x18000000 & word) >> 27;
+            //LOG(INFO) << "CBC " << +pCbcId << "data " << +cDataType;
             if (cDataType == 0) {
                 uint8_t cDataMask = (0x03000000 & word) >> 24;
                 if ( (cDataMask >> 0) & 1 ) {
