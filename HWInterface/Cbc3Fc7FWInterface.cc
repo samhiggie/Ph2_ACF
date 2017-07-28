@@ -127,7 +127,6 @@ namespace Ph2_HwInterface {
             {
                 uint8_t cCbcId = cCbc->getCbcId();
                 uint8_t cFeId = cCbc->getFeId();
-                LOG (DEBUG) << +cFeId << " " << +cCbcId;
                 fIDMap[ (uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() ) )] = cNCbc + 1;
                 fIDMapReverse[cNCbc + 1] = uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() );
                 uint32_t cAddress = 0x5F + cCbcId;
@@ -171,7 +170,6 @@ namespace Ph2_HwInterface {
         {
             //get the number of active CBCs
             uint32_t cActiveCbcs = ReadReg (string_format ("cbc_system_stat.cbc_i2c_bus_managers.fe%1d.n_active_cbcs", cFe->getFeId() + 1) );
-            LOG (DEBUG) << cActiveCbcs << " active CBCs";
 
             if (cActiveCbcs == 0) continue;
 
@@ -195,15 +193,13 @@ namespace Ph2_HwInterface {
             bool cBusState = false;
             int cCounter = 0;
 
-            WriteReg (string_format ("cbc_system_ctrl.cbc_i2c_bus_managers.fe%1d.reset_fifos", cFe->getFeId() + 1), 0x1);
+            //WriteReg (string_format ("cbc_system_ctrl.cbc_i2c_bus_managers.fe%1d.reset_fifos", cFe->getFeId() + 1), 0x1);
 
             while (!cBusState)
             {
                 uint32_t cCommandFifoEmpty = ReadReg (string_format ("cbc_system_stat.cbc_i2c_bus_managers.fe%1d.command_fifo_stat.empty", cFe->getFeId() + 1) );
                 uint32_t cReplyFifoEmpty = ReadReg (string_format ("cbc_system_stat.cbc_i2c_bus_managers.fe%1d.reply_fifo_stat.empty", cFe->getFeId() + 1) );
                 uint32_t cBusWaiting = ReadReg (string_format ("cbc_system_stat.cbc_i2c_bus_managers.fe%1d.bus_waiting", cFe->getFeId() + 1) );
-
-                LOG (DEBUG) << cCommandFifoEmpty << " " << cReplyFifoEmpty << " " << cBusState;
 
                 //check the combined state of fifos and bus and build the state
                 if (cCommandFifoEmpty && cReplyFifoEmpty && cBusWaiting) cBusState = true;
@@ -229,9 +225,6 @@ namespace Ph2_HwInterface {
     {
         //this needs to happen on all CBCs
         //before running the Dctt I need to disable the stub logic so the alignment can be done!
-        //TODO: get the Stublogic value for each cbc and then encode the global CbcId
-
-        LOG (DEBUG) << "Cool!";
         //could I do this with broadcast?
         std::map<Cbc*, uint8_t> cStubLogictInputMap;
         std::vector<uint32_t> cVecReq;
@@ -243,6 +236,7 @@ namespace Ph2_HwInterface {
                 cStubLogictInputMap[cCbc] = cStubLogicInput;
                 CbcRegItem cRegItem (0, 0x12, 0, ( (cStubLogicInput & 0xCF) | (0x20 & 0x30) ) );
                 uint8_t cGlobalCbcId = fIDMap[uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() )];
+                LOG (DEBUG) << "Cbc " << +cCbc->getCbcId() << " global " << +cGlobalCbcId << " in DCTT";
                 //cGlobalCbcId-1 because EncodeReg increments by 1 again - don't ask
                 this->EncodeReg (cRegItem, cGlobalCbcId - 1, cVecReq, true, true);
             }
@@ -251,7 +245,6 @@ namespace Ph2_HwInterface {
         uint8_t cWriteAttempts = 0 ;
         this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
         std::this_thread::sleep_for (std::chrono::milliseconds (10) );
-        LOG (DEBUG) << "Cool!";
 
         //just to be safe, stop everything
         WriteReg ("cbc_system_ctrl.fast_signal_manager.fast_signal_generator_stop", 0x1);
@@ -494,6 +487,7 @@ namespace Ph2_HwInterface {
                                          bool pRead,
                                          bool pWrite )
     {
+        LOG (DEBUG) << " In Encode Reg " << +pCbcId;
         //use fBroadcastCBCId for broadcast commands
         //TODO: not sure if thisF fFMCId is really needed here!
         pVecReq.push_back ( ( (fFMCId ) << 29 ) | ( (pCbcId + 1) << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( (pRegItem.fPage) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
@@ -545,6 +539,7 @@ namespace Ph2_HwInterface {
         {
             pFeId = (fIDMapReverse[cGlobalCbcId] & 0xFF00) >> 8;
             pCbcId = fIDMapReverse[cGlobalCbcId] & 0x00FF;
+            LOG (DEBUG) << +pFeId << " " << +pCbcId << " " << +cGlobalCbcId << " in decode";
         }
         else
             LOG (ERROR) << "Could not recover IDs from global Cbc Id " << +cGlobalCbcId;
@@ -561,7 +556,9 @@ namespace Ph2_HwInterface {
         bool cFailed (false);
 
         //read the number of received replies from ndata and use this number to compare with the number of expected replies and to read this number 32-bit words from the reply FIFO
+        LOG (DEBUG) << string_format ("cbc_system_stat.cbc_i2c_bus_managers.fe%1d.reply_fifo_ndata", pFeId);
         uint32_t cNReplies = (pFeId != 0) ? ReadReg (string_format ("cbc_system_stat.cbc_i2c_bus_managers.fe%1d.reply_fifo_ndata", pFeId) ) : uhal::ValWord<uint32_t> (0);
+        LOG (DEBUG) << +pFeId << " " << cNReplies << " after read fifondata in Read";
 
         if (cNReplies != pNReplies)
         {
@@ -580,6 +577,8 @@ namespace Ph2_HwInterface {
             throw except;
         }
 
+        LOG (DEBUG) << "after read fifo in Read";
+
         if (pFeId != 0)
             WriteReg (string_format ("cbc_system_ctrl.cbc_i2c_bus_managers.fe%1d.reset_fifos", pFeId), 0x1);
 
@@ -592,8 +591,8 @@ namespace Ph2_HwInterface {
         bool cFailed ( false );
 
         //reset the I2C controller
-        if (pFeId != 0)
-            WriteReg (string_format ("cbc_system_ctrl.cbc_i2c_bus_managers.fe%1d.reset_fifos", pFeId), 0x1);
+        //if (pFeId != 0)
+        //WriteReg (string_format ("cbc_system_ctrl.cbc_i2c_bus_managers.fe%1d.reset_fifos", pFeId), 0x1);
 
         try
         {
@@ -604,9 +603,12 @@ namespace Ph2_HwInterface {
             throw except;
         }
 
+        LOG (DEBUG) << "After write in Write";
+
         uint32_t cNReplies = pVecSend.size() * ( pReadback ? 2 : 1 ) * ( pBroadcast ? fNCbc : 1 );
 
         cFailed = ReadI2C (  cNReplies, pReplies, pFeId) ;
+        LOG (DEBUG) << "after read in write";
 
         return cFailed;
     }
@@ -623,7 +625,8 @@ namespace Ph2_HwInterface {
             uint8_t cCbcId = 0;
             this->DecodeIdsFromReg (pVecReg.at (0), cFeId, cCbcId);
             std::vector<uint32_t> cReplies;
-            bool cSuccess = !WriteI2C ( pVecReg, cReplies, cFeId, pReadback, false );
+            bool cSuccess = !WriteI2C ( pVecReg, cReplies, cFeId + 1, pReadback, false );
+            LOG (DEBUG) << "After write";
 
             if (cReplies.size() == 0)
             {
@@ -697,7 +700,7 @@ namespace Ph2_HwInterface {
         if (!pVecReg.empty() )
         {
             std::vector<uint32_t> cReplies;
-            bool cSuccess = !WriteI2C ( pVecReg, cReplies, 0, false, true );
+            bool cSuccess = !WriteI2C ( pVecReg, cReplies, 1, false, true );
 
             //just as above, I can check the replies - there will be NCbc * pVecReg.size() write replies and also read replies if I chose to enable readback
             //this needs to be adapted
@@ -735,7 +738,7 @@ namespace Ph2_HwInterface {
         uint8_t cFeId = 0;
         uint8_t cCbcId = 0;
         this->DecodeIdsFromReg (pVecReg.at (0), cFeId, cCbcId);
-        WriteI2C ( pVecReg, cReplies, cFeId, false, false);
+        WriteI2C ( pVecReg, cReplies, cFeId + 1, false, false);
         pVecReg.clear();
         pVecReg = cReplies;
     }
