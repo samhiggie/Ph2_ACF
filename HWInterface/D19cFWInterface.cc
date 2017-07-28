@@ -503,6 +503,7 @@ namespace Ph2_HwInterface {
     {
         uint32_t cBoardHeader1Size = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+        uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
 
         while (cNWords == 0)
         {
@@ -510,15 +511,13 @@ namespace Ph2_HwInterface {
 
             if (!pWait) return 0;
             else
-                usleep(1);
+                usleep(10);
         }
 
         uint32_t cNEvents = 0;
-
-        uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
-
         if (data_handshake == 1)
         {
+            uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
             uint32_t cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
 
             while (cReadoutReq == 0)
@@ -528,34 +527,19 @@ namespace Ph2_HwInterface {
             }
 
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            uint32_t cTotalWordsLeft = cNWords;
-            //LOG(INFO) << "Number of words for this set: " << cTotalWordsLeft;
-            //bool print_this = false;
-            //if (cTotalWordsLeft < 500) print_this = true;
-            //LOG(INFO) << "Before reading, number of words in ZS fifo: " << +ReadReg("fc7_daq_stat.readout_block.general.zs_fifo_words_cnt");
-            //LOG(INFO) << "Data payload buf empty: " << +ReadReg("fc7_daq_stat.be_proc.general.data_payload_buf_empty") << ", readout fsm state: " << +ReadReg("fc7_daq_stat.readout_block.general.fsm_status");
-            while ( cTotalWordsLeft > 0 )
-            {
-
-                // reading header 1
-                uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
-                uint32_t cEventSize = (0x0000FFFF & header1);
-                //if(print_this) LOG(INFO) << "Number of words for this event: " << +cEventSize << " , words left: " << +cTotalWordsLeft;
-                if (cTotalWordsLeft < cEventSize) break;
-
-
-                pData.push_back (header1);
-                std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
-                pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
-                cNEvents++;
-
-                // to be safe
-                if (cTotalWordsLeft >= cEventSize) cTotalWordsLeft -= cEventSize;
-                else cTotalWordsLeft = 0;
-
-                if (pBreakTrigger) break;
+            if (pBoard->getEventType() == EventType::VR) {
+                if ((cNWords/computeEventSize(pBoard)) == cPackageSize ) cNEvents = cPackageSize;
+                else
+                    LOG (ERROR) << "Data amount (in words) is not equal to EventSize*PackageSize!";
             }
-            //LOG(INFO) << "After reading, number of words in ZS fifo: " << +ReadReg("fc7_daq_stat.readout_block.general.zs_fifo_words_cnt");
+            else {
+                // for zs it's impossible to check, so it'll fail later during event assignment
+                cNEvents = cPackageSize;
+            }
+            //LOG(INFO) << "NWords available this time: " << +cNWords;
+
+            // read all the words
+            pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
         }
         else
         {

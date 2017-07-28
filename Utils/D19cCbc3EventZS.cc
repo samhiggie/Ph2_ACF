@@ -42,7 +42,7 @@ namespace Ph2_HwInterface {
         uint8_t header1_size = (0xFF000000 & list.at (0) ) >> 24;
 
         if (header1_size != D19C_EVENT_HEADER1_SIZE_32_CBC3)
-            LOG (ERROR) << "Header1 size doesnt correspond to the one sent from firmware";
+            LOG (ERROR) << "Misaligned data: Header1 size doesnt correspond to the one sent from firmware";
 
         fNFe_software = static_cast<uint8_t> (pBoard->getNFe() );
         fNFe_event = 0;

@@ -168,7 +168,7 @@ int main ( int argc, char** argv )
         while ( cN < cNEventsToCollect )
         {
             cTool.fBeBoardInterface->ReadBlockBoardReg(pBoard, "fc7_daq_ctrl.readout_block.readout_fifo", cPackageSize*cEvtSize);
-            cN += cPackageSize*cEvtSize;
+            cN += cPackageSize;
         }
         cTool.Stop ( pBoard );
 

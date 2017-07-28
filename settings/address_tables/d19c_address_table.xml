@@ -54,8 +54,7 @@
         </node>
 
         <node id="readout_block"                address="0x5000">
-            <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>
-	    <node id="zs_max_nclusters"                 address="0x000" mask="0x001f0000" description="max number of clusters that you want to be able to collect in zs event. 31(which means 32) is the maximum number - as the max cluster width is 8, even if all channels fire, you collect everything"/>
+            <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>	    
             <node id="global"                          address="0x001">
 		<node id="data_handshake_enable"            mask="0x00000001"/>                
                 <node id="int_trig_enable"                  mask="0x00000004"/>

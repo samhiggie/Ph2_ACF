@@ -102,6 +102,12 @@ namespace Ph2_HwInterface {
                     cZSWordIndex = 0;                    
                     if (pType == BoardType::D19C) fZSEventSize = (0x0000FFFF & word);
                     else fZSEventSize = fEventSize;
+                    if (fZSEventSize > pData.size())
+                    {
+                        LOG(ERROR) << "Missaligned data, not accepted";
+                        break;
+                    }
+
                 }
 
             }
