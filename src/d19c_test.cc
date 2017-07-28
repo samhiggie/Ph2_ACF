@@ -114,6 +114,7 @@ int main ( int argc, char** argv )
     {
         uint32_t cN = 0;
         uint32_t count = 0;
+        double cAvgOccupancy = 0;
 
         uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
 
@@ -131,6 +132,7 @@ int main ( int argc, char** argv )
             {
                 count++;
                 cN++;
+                cAvgOccupancy += ev->GetNHits(0,0);
 
                 if ( cmd.foundOption ( "dqm" ) )
                 {
@@ -150,6 +152,7 @@ int main ( int argc, char** argv )
         cTool.Stop ( pBoard );
 
         t.stop();
+        LOG (INFO) << "Average Occupancy of CBC#0: " << (double)cAvgOccupancy/cN << " hits/event";
         LOG (INFO) << "Measured maximal readout rate: " << (double)(cN/t.getElapsedTime())/1000 << "kHz (based on " << +cN << " events)";
     }
 

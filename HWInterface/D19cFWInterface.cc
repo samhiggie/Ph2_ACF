@@ -528,9 +528,9 @@ namespace Ph2_HwInterface {
 
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
             if (pBoard->getEventType() == EventType::VR) {
-                if ((cNWords/computeEventSize(pBoard)) == cPackageSize ) cNEvents = cPackageSize;
+                if ((cNWords % computeEventSize(pBoard)) == 0) cNEvents = cNWords/computeEventSize(pBoard);
                 else
-                    LOG (ERROR) << "Data amount (in words) is not equal to EventSize*PackageSize!";
+                    LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
             }
             else {
                 // for zs it's impossible to check, so it'll fail later during event assignment
