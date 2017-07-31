@@ -87,7 +87,7 @@ namespace Ph2_HwInterface {
         }
 
         ///////////////////////////////////////////////////////
-        //      Glib Methods                                //
+        //      d19c Methods                                //
         /////////////////////////////////////////////////////
 
         /*! \brief Read a block of a given size
@@ -137,6 +137,11 @@ namespace Ph2_HwInterface {
          * \brief Unpause a DAQ
          */
         void Resume() override;
+
+        /*!
+         * \brief Reset Readout
+         */
+        void ResetReadout();
 
         /*!
          * \brief Read data from DAQ

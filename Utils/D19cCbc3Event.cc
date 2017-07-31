@@ -36,7 +36,6 @@ namespace Ph2_HwInterface {
 
     //}
 
-    // NOT READY (still need to add some additional checks and additional variables)
     void D19cCbc3Event::SetEvent ( const BeBoard* pBoard, uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
         // these two values come from width of the hybrid/cbc enabled mask
@@ -53,7 +52,6 @@ namespace Ph2_HwInterface {
         if (header1_size != D19C_EVENT_HEADER1_SIZE_32_CBC3)
             LOG (ERROR) << "Header1 size doesnt correspond to the one sent from firmware";
 
-        // Starting from now, as it was proposed by Georg, one module (2hybrids) is considered as 1 Fe containing CBCs from both hybrids.
         uint8_t cNFe_software = static_cast<uint8_t> (pBoard->getNFe() );
         uint8_t cFeMask = static_cast<uint8_t> ( (0x00FF0000 & list.at (0) ) >> 16);
         uint8_t cNFe_event = 0;
@@ -75,7 +73,7 @@ namespace Ph2_HwInterface {
 
         fBeId = pBoard->getBeId();
         fBeFWType = 0;
-        fCBCDataType = 3;
+        fCBCDataType = (0x0000FF00 & list.at(1)) >> 8;
         fBeStatus = 0;
         fNCbc = pNbCbc;
         fEventDataSize = fEventSize;
@@ -89,7 +87,6 @@ namespace Ph2_HwInterface {
             if ( (cFeMask >> cFeId) & 1)
             {
 
-                // these part is temporary while we have chip number not chip mask, they will be swapped;
                 uint8_t chip_data_mask = static_cast<uint8_t> ( ( (0xFF000000) & list.at (address_offset + 0) ) >> 24);
                 uint8_t chips_with_data_nbr = 0;
 
@@ -104,7 +101,7 @@ namespace Ph2_HwInterface {
                 if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3)
                     LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
 
-                uint8_t fe_data_size = (0x0000FFFF & list.at (address_offset + 0) );
+                uint16_t fe_data_size = (0x0000FFFF & list.at (address_offset + 0) );
 
                 if (fe_data_size != CBC_EVENT_SIZE_32_CBC3 * chips_with_data_nbr + D19C_EVENT_HEADER2_SIZE_32_CBC3)
                     LOG (ERROR) << "Event size doesnt correspond to the one sent from firmware";
@@ -472,7 +469,6 @@ namespace Ph2_HwInterface {
         return cHits;
     }
 
-    // NOT READY ( we don't have this header info)
     void D19cCbc3Event::printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
@@ -483,7 +479,7 @@ namespace Ph2_HwInterface {
             uint8_t cBeId =  0;
             uint8_t cFeId =  pFeId;
             uint8_t cCbcId = pCbcId;
-            uint16_t cCbcDataSize = 0;
+            uint16_t cCbcDataSize = CBC_EVENT_SIZE_32_CBC3;
             os << GREEN << "CBC Header:" << std::endl;
             os << "BeId: " << +cBeId << " FeId: " << +cFeId << " CbcId: " << +cCbcId << " DataSize: " << cCbcDataSize << RESET << std::endl;
         }
