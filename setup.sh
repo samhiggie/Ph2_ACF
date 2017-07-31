@@ -12,9 +12,8 @@ export BOOST_INCLUDE=/opt/cactus/include
 
 #ROOT
 source /usr/local/bin/thisroot.sh
-export ROOTLIB=/usr/local/lib/root
-#export ROOTSYS=/usr/local/lib/root
-
+#export ROOTLIB=/usr/local/lib/root
+export ROOTSYS=/usr/local/lib/root
 
 #ZMQ
 export ZMQ_HEADER_PATH=/usr/include/zmq.hpp
@@ -26,7 +25,7 @@ export BASE_DIR=$(pwd)
 export ANTENNADIR=$BASE_DIR/CMSPh2_AntennaDriver
 export AMC13DIR=/opt/cactus/include/amc13
 #won't link properly if I don't use this [SS]
-#export USBINSTDIR=~/Ph2_USBInstDriver
+export USBINSTDIR=~/Ph2_USBInstDriver
 export USBINSTDIR=$BASE_DIR/../Ph2_USBInstDriver
 
 #ANTENNA

@@ -378,7 +378,7 @@ class GenericPayload
             //before I change the new word, I still need to get the fallout, this time with the original formula
             cFallout = (fData.at (cWord + 1) & cFalloutMask ) << cFalloutShift;
             //now shift the next word right by the above fallout and mask all but the fallout width beginning from the MSB
-            uint64_t cTmpMask = (uint64_t (1) << (WORDSIZE - (cNBitsSecondWord ) ) ) - 1;
+            //uint64_t cTmpMask = (uint64_t (1) << (WORDSIZE - (cNBitsSecondWord ) ) ) - 1;
             //std::cout << "shift for next word: " << (cWidth - (cBit + 1) ) << " mask for shifiting " << std::hex << cTmpMask << std::dec << std::endl;
             fData.at (cWord + 1) = (cTmpFallout | ( (fData.at (cWord + 1) )   >> ( cNBitsFirstWord ) ) ) >>  (cNBitsSecondWord) ;
             //finally also slide the LSBs of pWord into this word

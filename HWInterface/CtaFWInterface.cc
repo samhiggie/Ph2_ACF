@@ -534,7 +534,7 @@ namespace Ph2_HwInterface {
     {
         // temporary for 16CBC readout FW  (Beamtest NOV 15)
         // will have to be corrected if we want to read two modules from the same GLIB
-        uint8_t cbcAddr = ( pWord & cMask7 ) >> 21;
+        //uint8_t cbcAddr = ( pWord & cMask7 ) >> 21;
         pCbcId = ( ( pWord & cMask5 )  ) >> 17;
         pRegItem.fPage = ( pWord & cMask6 ) >> 16;
         pRegItem.fAddress = ( pWord & cMask2 ) >> 8;

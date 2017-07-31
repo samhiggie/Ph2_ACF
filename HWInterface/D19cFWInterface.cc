@@ -317,7 +317,7 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.command_processor_block.i2c.command_fifo", cInit);
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
-        uint32_t cWord;
+        //uint32_t cWord;
         bool cReadSuccess = !ReadI2C (fNCbc, pReplies);
         bool cWordCorrect = true;
 
@@ -325,9 +325,9 @@ namespace Ph2_HwInterface {
         {
             for (size_t i = 0; i < pReplies.size(); i++)
             {
-                cWord = pReplies.at (i);
+                //cWord = pReplies.at (i);
                 //cWordCorrect = ( (((cWord) & 0x00f00000) >> 20) == i%num_chips ) ? true : false;
-                // has to be reimplemented, because now some chips can be disabled and i doesn't correspond to the actual chip id
+                // has to be reimplemented, because now some chips can be disabled and it doesn't correspond to the actual chip id
                 cWordCorrect = true;
 
                 if (!cWordCorrect) break;
@@ -353,14 +353,14 @@ namespace Ph2_HwInterface {
         //define constants
         uint8_t i2c_slv   = 0x2f;
         uint8_t wr = 1;
-        uint8_t rd = 0;
+        //uint8_t rd = 0;
 
         uint8_t sel_fmc_l8  = 0;
         uint8_t sel_fmc_l12 = 1;
 
-        uint8_t p3v3 = 0xff - 0x09;
+        //uint8_t p3v3 = 0xff - 0x09;
         uint8_t p2v5 = 0xff - 0x2b;
-        uint8_t p1v8 = 0xff - 0x67;
+        //uint8_t p1v8 = 0xff - 0x67;
 
         if (fmc1_card_type == 0x1)
         {
@@ -533,7 +533,7 @@ namespace Ph2_HwInterface {
                     LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
             }
             else {
-                // for zs it's impossible to check, so it'll fail later during event assignment
+                // for zs it's impossible to check, so it'll count later during event assignment
                 cNEvents = cPackageSize;
             }
             //LOG(INFO) << "NWords available this time: " << +cNWords;

@@ -187,4 +187,7 @@
     - ability to parse a SLink node with all the condition data and debug level from the config file (Cbc3HWDescription.xml) - this ConditionDataSet object belongs to BeBoard pointers as this makes it easier to update I2C values for every event
     - added "eventType" attribute to BeBoard node to indicate either ZeroSupressed or VirginRaw mode - even if the attribute is missing this will always be assumed VR unless ZS is explicitly specified - this is now also a member of BeBoard including setters and getters
     - removed NCbcDataSize and corresponding nodes in HWDescription.xml files. only for GLIB and CTA, if the number of CBCs is smaller than 4, 4 is assumed, if the number is between 4 and 8, 8 is assumed and if the number is greater than 8, 16 is assumed
+- 21.07.2017
+    - merged changes required for OTSDAQ
+    - migrated project to CMAKE: instructions: cd build/ cmake .. make
 

@@ -41,10 +41,11 @@ namespace Ph2_HwInterface {
         fNevents = static_cast<uint32_t> ( pNevents );
         // be aware that eventsize is not constant for the zs event, so we are not using it
         fEventSize = static_cast<uint32_t> ( (pData.size() ) / fNevents );
-        uint32_t fNFe = pBoard->getNFe();
+
         EventType fEventType = pBoard->getEventType();
 
         if (pType == BoardType::D19C) {
+            uint32_t fNFe = pBoard->getNFe();
             if (fEventType == EventType::ZS) fNCbc = 0;
             else fNCbc = (fEventSize-D19C_EVENT_HEADER1_SIZE_32_CBC3 - fNFe*D19C_EVENT_HEADER2_SIZE_32_CBC3)/CBC_EVENT_SIZE_32_CBC3;
         }
