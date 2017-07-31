@@ -77,7 +77,10 @@ class BiasSweepData : public TObject
 class BiasSweep : public Tool
 {
   public:
+#ifdef __USBINST__
     BiasSweep (HMP4040Client* pClient = nullptr, Ke2110Controller* pController = nullptr);
+#endif
+    BiasSweep ();
     ~BiasSweep();
     void Initialize();
     // *******

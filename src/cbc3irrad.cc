@@ -167,6 +167,7 @@ int main ( int argc, char* argv[] )
 
     if (!cStandalone)
     {
+#ifdef __USBINST__
         cPSStatus = false;
         cDMMStatus = false;
 
@@ -176,6 +177,7 @@ int main ( int argc, char* argv[] )
 
         //Start server to communicate with Keithley DMM instrument via usbtmc and SCPI
         cDMMStatus = InitializeMonitoring ( cHostname, "Ke2110", cDMMPortsInfo, cMonitoringInterval);
+#endif
     }
     else
     {
@@ -226,7 +228,12 @@ int main ( int argc, char* argv[] )
         {
             Timer t;
             //then sweep a bunch of biases
+#ifdef __USBINST__
             BiasSweep cBiasSweep (cLVClient, cKeController);
+#else
+            BiasSweep cBiasSweep;
+#endif
+
             cBiasSweep.Inherit (&cTool);
             cBiasSweep.Initialize();
             cDog.Reset (5);
@@ -410,9 +417,13 @@ int main ( int argc, char* argv[] )
     if ( !batchMode )
         cApp.Run();
 
+#ifdef __USBINST__
+
     if (cLVClient) delete cLVClient;
 
     if (cKeController) delete cKeController;
+
+#endif
 
     LOG (INFO) << GREEN << "Irradiation Test exited normally!" << RESET;
 
