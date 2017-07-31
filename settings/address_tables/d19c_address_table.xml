@@ -39,6 +39,7 @@
             <node id="trigger_source"                   address="0x002" mask="0x0000000F" description="1 - L1, 2 - Stubs, 3 - User-Defined Frequency"/>
             <node id="stubs_mask"                       address="0x003" mask="0x0000FFFF" description="if mode is stubs, then coincidence mask can be set here: 0x0000000f requires presence of stubs from hybrids 0,1,2,3"/>
 	    <node id="stub_trigger_latency"		address="0x003" mask="0x00FF0000"/>
+	    <node id="ext_trigger_delay_value"		address="0x003" mask="0xFF000000" description="sets the delay of the external trigger (dio5 ch 5)"/>
             <node id="test_pulse" description="configuration of the test pulse delays.">
                 <node id="delay_after_fast_reset"       address="0x004" description="delay between fast reset and following test pulse command"/>
                 <node id="delay_after_test_pulse"       address="0x005" description="delay after test pulse command before l1a signal sent to readout the data"/>
@@ -53,7 +54,7 @@
         </node>
 
         <node id="readout_block"                address="0x5000">
-            <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>
+            <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>	    
             <node id="global"                          address="0x001">
 		<node id="data_handshake_enable"            mask="0x00000001"/>                
                 <node id="int_trig_enable"                  mask="0x00000004"/>
@@ -61,6 +62,7 @@
                 <node id="trigger_type"                     mask="0x0000f000"/>
                 <node id="data_type"                        mask="0x000f0000"/>
                 <node id="common_stubdata_delay"            mask="0x0ff00000"/>
+		<node id="zero_suppression_enable"          mask="0x00000200"/>
             </node>
         </node>
 

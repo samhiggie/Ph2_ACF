@@ -267,6 +267,7 @@ namespace Ph2_HwInterface {
             }
         }
 
+        // hybrid / chips enabling part
         cVecReg.push_back ({"fc7_daq_cnfg.global.hybrid_enable", hybrid_enable});
 
         for (uint32_t i = 0; i < 16; i++)
@@ -306,6 +307,10 @@ namespace Ph2_HwInterface {
             WriteReg ("fc7_daq_ctrl.dio5_block.control.load_config", 0x1);
         }
 
+        // now set event type (ZS or VR)
+        if (pBoard->getEventType() == EventType::ZS) WriteReg ("fc7_daq_cnfg.readout_block.global.zero_suppression_enable", 0x1);
+        else WriteReg ("fc7_daq_cnfg.readout_block.global.zero_suppression_enable", 0x0);
+
         // ping all cbcs (reads data from registers #0)
         uint32_t cInit = ( ( (2) << 28 ) | (  (0) << 18 )  | ( (0) << 17 ) | ( (1) << 16 ) | (0 << 8 ) | 0);
 
@@ -335,10 +340,7 @@ namespace Ph2_HwInterface {
 
         if (!cWordCorrect) LOG (ERROR) << "CBC's ids are not correct!";
 
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-        usleep (10);
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-        usleep (10);
+        this->ResetReadout();
     }
 
     void D19cFWInterface::PowerOnDIO5()
@@ -489,11 +491,19 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
 
+    void D19cFWInterface::ResetReadout()
+    {
+        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
+        usleep (10);
+        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
+        usleep (10);
+    }
+
     uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait)
     {
-        uint32_t cBoardEventSize = computeEventSize (pBoard);
         uint32_t cBoardHeader1Size = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+        uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
 
         while (cNWords == 0)
         {
@@ -501,40 +511,35 @@ namespace Ph2_HwInterface {
 
             if (!pWait) return 0;
             else
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                usleep(10);
         }
 
         uint32_t cNEvents = 0;
-        uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
-
         if (data_handshake == 1)
         {
+            uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
             uint32_t cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
 
             while (cReadoutReq == 0)
             {
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                usleep(10);
                 cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
             }
 
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            uint32_t cNEventsAvailable = cNWords / cBoardEventSize;
-
-            for (uint32_t event = 0; event < cNEventsAvailable; event++)
-            {
-                // reading header 1
-                uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
-                uint32_t cEventSize = (0x0000FFFF & header1);
-
-                pData.push_back (header1);
-                std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
-                pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
-                cNEvents++;
-
-                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-
-                if (pBreakTrigger) break;
+            if (pBoard->getEventType() == EventType::VR) {
+                if ((cNWords % computeEventSize(pBoard)) == 0) cNEvents = cNWords/computeEventSize(pBoard);
+                else
+                    LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
             }
+            else {
+                // for zs it's impossible to check, so it'll count later during event assignment
+                cNEvents = cPackageSize;
+            }
+            //LOG(INFO) << "NWords available this time: " << +cNWords;
+
+            // read all the words
+            pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
         }
         else
         {
@@ -545,7 +550,7 @@ namespace Ph2_HwInterface {
                 uint32_t cEventSize = (0x0000FFFF & header1);
                 uint32_t cHeader1Size = (0xFF000000 & header1) >> 24;
 
-                if (cEventSize == cBoardEventSize && cHeader1Size == cBoardHeader1Size)
+                if (cHeader1Size == cBoardHeader1Size)
                 {
                     while (cNWords < cEventSize - 1)
                     {
@@ -589,10 +594,7 @@ namespace Ph2_HwInterface {
         usleep (1);
 
         // reset readout
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-        usleep (10);
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-        usleep (10);
+        this->ResetReadout();
 
         // start triggering machine which will collect N events
         this->Start();
@@ -650,10 +652,7 @@ namespace Ph2_HwInterface {
             pData.clear();
             this->Stop();
 
-            WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-            usleep (10);
-            WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-            usleep (10);
+            this->ResetReadout();
 
             this->ReadNEvents (pBoard, pNEvents, pData);
         }

@@ -39,11 +39,16 @@ namespace Ph2_HwInterface {
         Reset();
 
         fNevents = static_cast<uint32_t> ( pNevents );
+        // be aware that eventsize is not constant for the zs event, so we are not using it
         fEventSize = static_cast<uint32_t> ( (pData.size() ) / fNevents );
-        //uint32_t fNFe = pBoard->getNFe();
 
-        // it's not so easy for d19c to compute the number of cbc's because of zero suppression. evrything is checked in the event class
-        if (pType == BoardType::D19C) fNCbc = 0;
+        EventType fEventType = pBoard->getEventType();
+
+        if (pType == BoardType::D19C) {
+            uint32_t fNFe = pBoard->getNFe();
+            if (fEventType == EventType::ZS) fNCbc = 0;
+            else fNCbc = (fEventSize-D19C_EVENT_HEADER1_SIZE_32_CBC3 - fNFe*D19C_EVENT_HEADER2_SIZE_32_CBC3)/CBC_EVENT_SIZE_32_CBC3;
+        }
         else if (pType == BoardType::CBC3FC7) fNCbc = (fEventSize - (EVENT_HEADER_SIZE_32_CBC3) ) / (CBC_EVENT_SIZE_32_CBC3);
         else fNCbc = ( fEventSize - ( EVENT_HEADER_TDC_SIZE_32 ) ) / ( CBC_EVENT_SIZE_32 );
 
@@ -54,6 +59,9 @@ namespace Ph2_HwInterface {
         //use a WordIndex to pick events apart
         uint32_t cWordIndex = 0;
         uint32_t cSwapIndex = 0;
+        // index of the word inside the event (ZS)
+        uint32_t fZSEventSize = 0;
+        uint32_t cZSWordIndex = 0;
 
         for ( auto word : pData )
         {
@@ -78,23 +86,51 @@ namespace Ph2_HwInterface {
 #endif
 
             lvec.push_back ( word );
+            if (fEventType == EventType::ZS) {
+                if ( cZSWordIndex == fZSEventSize-1 )
+                {
+                    //LOG(INFO) << "Packing event # " << fEventList.size() << ", Event size is " << fZSEventSize << " words";
+                    if (pType == BoardType::D19C)
+                        fEventList.push_back ( new D19cCbc3EventZS ( pBoard, fZSEventSize, lvec ) );
+                    else
+                        fEventList.push_back ( new D19cCbc3EventZS ( pBoard, fZSEventSize, lvec ) );
 
-            if ( cWordIndex > 0 &&  (cWordIndex + 1) % fEventSize == 0 )
-            {
-                if (pType == BoardType::D19C)
-                    fEventList.push_back ( new D19cCbc3Event ( pBoard, fNCbc, lvec ) );
-                else if (pType == BoardType::CBC3FC7)
-                    fEventList.push_back ( new Cbc3Event ( pBoard, fNCbc, lvec ) );
-                else
-                    fEventList.push_back ( new Cbc2Event ( pBoard, fNCbc, lvec ) );
+                    lvec.clear();
+                    if (fEventList.size() >= fNevents) break;
+                }
+                else if ( cZSWordIndex == fZSEventSize ) {
+                    // get next event size
+                    cZSWordIndex = 0;                    
+                    if (pType == BoardType::D19C) fZSEventSize = (0x0000FFFF & word);
+                    else fZSEventSize = fEventSize;
+                    if (fZSEventSize > pData.size())
+                    {
+                        LOG(ERROR) << "Missaligned data, not accepted";
+                        break;
+                    }
 
-                lvec.clear();
+                }
 
-                if (fEventList.size() >= fNevents) break;
+            }
+            else {
+                if ( cWordIndex > 0 &&  (cWordIndex + 1) % fEventSize == 0 )
+                {
+                    if (pType == BoardType::D19C)
+                        fEventList.push_back ( new D19cCbc3Event ( pBoard, fNCbc, lvec ) );
+                    else if (pType == BoardType::CBC3FC7)
+                        fEventList.push_back ( new Cbc3Event ( pBoard, fNCbc, lvec ) );
+                    else
+                        fEventList.push_back ( new Cbc2Event ( pBoard, fNCbc, lvec ) );
+
+                    lvec.clear();
+
+                    if (fEventList.size() >= fNevents) break;
+                }
             }
 
             cWordIndex++;
             cSwapIndex++;
+            cZSWordIndex++;
 
         }
     }
