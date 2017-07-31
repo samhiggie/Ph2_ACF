@@ -393,7 +393,7 @@ namespace Ph2_HwInterface {
         else if (cCounter.getNCbc() > 4 && cCounter.getNCbc() <= 8) cEvtSize = std::max (cCounter.getNCbc(), (uint32_t) 8) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32;
         else if (cCounter.getNCbc() > 8 ) cEvtSize = std::max (cCounter.getNCbc(), (uint32_t) 16) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32;
 
-        return cEvtSize;
+        return cEvtSize * fNpackets;
     }
 
     std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize )

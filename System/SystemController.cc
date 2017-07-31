@@ -265,8 +265,7 @@ namespace Ph2_System {
         //read the data and get it by reference
         // Basil: This is returning void now and needs to be fixed
         //uint32_t cNPackets = fBeBoardInterface->ReadData (pBoard, false, pData, pWait);
-        uint32_t cNPackets = 0;
-        fBeBoardInterface->ReadData (pBoard, false, pData, pWait);
+        uint32_t cNPackets = fBeBoardInterface->ReadData (pBoard, false, pData, pWait);
         //pass data by reference to set and let it know what board we are dealing with
         fData->Set (pBoard, pData, cNPackets, fBeBoardInterface->getBoardType (pBoard) );
         //return the packet size
@@ -277,7 +276,6 @@ namespace Ph2_System {
     {
         for (auto cBoard : fBoardVector)
             this->ReadData (cBoard);
-
     }
 
     //standalone
