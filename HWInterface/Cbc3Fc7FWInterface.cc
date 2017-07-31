@@ -315,10 +315,6 @@ namespace Ph2_HwInterface {
         std::this_thread::sleep_for (std::chrono::milliseconds (10) );
     }
 
-    void Cbc3Fc7FWInterface::FindPhase ()
-    {
-    }
-
     void Cbc3Fc7FWInterface::Start()
     {
         this->CbcFastReset();

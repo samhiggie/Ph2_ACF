@@ -462,12 +462,6 @@ namespace Ph2_HwInterface {
             LOG (ERROR) << "No DIO5 found, you should disable it in the config file..";
     }
 
-    void D19cFWInterface::FindPhase()
-    {
-        ;
-    }
-
-
     void D19cFWInterface::Start()
     {
 
@@ -511,10 +505,11 @@ namespace Ph2_HwInterface {
 
             if (!pWait) return 0;
             else
-                usleep(10);
+                usleep (10);
         }
 
         uint32_t cNEvents = 0;
+
         if (data_handshake == 1)
         {
             uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
@@ -522,20 +517,24 @@ namespace Ph2_HwInterface {
 
             while (cReadoutReq == 0)
             {
-                usleep(10);
+                usleep (10);
                 cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
             }
 
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            if (pBoard->getEventType() == EventType::VR) {
-                if ((cNWords % computeEventSize(pBoard)) == 0) cNEvents = cNWords/computeEventSize(pBoard);
+
+            if (pBoard->getEventType() == EventType::VR)
+            {
+                if ( (cNWords % computeEventSize (pBoard) ) == 0) cNEvents = cNWords / computeEventSize (pBoard);
                 else
                     LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
             }
-            else {
+            else
+            {
                 // for zs it's impossible to check, so it'll count later during event assignment
                 cNEvents = cPackageSize;
             }
+
             //LOG(INFO) << "NWords available this time: " << +cNWords;
 
             // read all the words

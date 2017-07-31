@@ -163,12 +163,6 @@ namespace Ph2_HwInterface {
         void ConfigureBoard ( const BeBoard* pBoard );
 
         /*!
-         * \brief Run the Phase finding for CBC3
-         * \param pBoard
-         */
-        void FindPhase ( const BeBoard* pBoard );
-
-        /*!
          * \brief Hard reset of all Cbc
          * \param pCbc
          */

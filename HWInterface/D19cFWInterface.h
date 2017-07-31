@@ -113,11 +113,6 @@ namespace Ph2_HwInterface {
          */
         void ConfigureBoard ( const BeBoard* pBoard ) override;
         /*!
-         * \brief Run the Phase Alignment
-         * \param pBoard
-         */
-        void FindPhase();
-        /*!
          * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
          */
         void SelectFEId();

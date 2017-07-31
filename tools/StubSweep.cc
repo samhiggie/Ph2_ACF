@@ -136,7 +136,7 @@ void StubSweep::SweepStubs (uint32_t pNEvents )
                     //re-run the phase finding at least at the end of each group
                     // without this it looks like I loose sync with the FC7
                     // [ get un-correlated stubs showing up in the CBC event]
-                    fBeBoardInterface->FindPhase (cBoard);
+                    //fBeBoardInterface->FindPhase (cBoard);
 
 
                     // get channels in test group

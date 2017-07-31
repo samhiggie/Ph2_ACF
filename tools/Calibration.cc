@@ -220,8 +220,8 @@ void Calibration::bitwiseVplus ( int pTGroup )
     if (fType == ChipType::CBC2)
     {
         //re-run the phase finding at least before every sweep
-        for (BeBoard* cBoard : fBoardVector)
-            fBeBoardInterface->FindPhase (cBoard);
+        //for (BeBoard* cBoard : fBoardVector)
+        //fBeBoardInterface->FindPhase (cBoard);
 
         // now go over the VPlus bits for each CBC, start with the MSB, flip it to one and measure the occupancy
         for ( int iBit = 7; iBit >= 0; iBit-- )
@@ -267,8 +267,8 @@ void Calibration::bitwiseVplus ( int pTGroup )
         if ( fCheckLoop )
         {
             //re-run the phase finding at least before every sweep
-            for (BeBoard* cBoard : fBoardVector)
-                fBeBoardInterface->FindPhase (cBoard);
+            //for (BeBoard* cBoard : fBoardVector)
+            //fBeBoardInterface->FindPhase (cBoard);
 
             measureOccupancy ( fEventsPerPoint, pTGroup );
 
@@ -288,8 +288,8 @@ void Calibration::bitwiseVCth ( int pTGroup )
     if (fType == ChipType::CBC3)
     {
         //re-run the phase finding at least before every sweep
-        for (BeBoard* cBoard : fBoardVector)
-            fBeBoardInterface->FindPhase (cBoard);
+        //for (BeBoard* cBoard : fBoardVector)
+        //fBeBoardInterface->FindPhase (cBoard);
 
         ThresholdVisitor cThresholdVisitor (fCbcInterface, 0);
 
@@ -343,10 +343,10 @@ void Calibration::bitwiseVCth ( int pTGroup )
         if ( fCheckLoop )
         {
             //re-run the phase finding at least before every sweep
-            for (BeBoard* cBoard : fBoardVector)
-                //fBeBoardInterface->FindPhase (cBoard);
+            //for (BeBoard* cBoard : fBoardVector)
+            //fBeBoardInterface->FindPhase (cBoard);
 
-                measureOccupancy ( fEventsPerPoint, pTGroup );
+            measureOccupancy ( fEventsPerPoint, pTGroup );
 
             for ( auto& cCbc : fVplusMap )
             {

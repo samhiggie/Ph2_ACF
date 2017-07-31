@@ -184,11 +184,6 @@ namespace Ph2_HwInterface {
         */
         virtual void ConfigureBoard ( const BeBoard* pBoard ) = 0;
         /*!
-        * \brief Run the Phase Alignment for CBC3 FW
-        * \param pBoard
-        */
-        virtual void FindPhase() = 0;
-        /*!
          * \brief Send a CBC fast reset
          */
         virtual void CbcHardReset() = 0;

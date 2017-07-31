@@ -110,12 +110,6 @@ namespace Ph2_HwInterface {
          * \param pBoard
          */
         void ConfigureBoard ( const BeBoard* pBoard ) override;
-        //to find the correct idelay tap
-        /*!
-         * \brief Run the Phase Alignment
-         * \param pBoard
-         */
-        void FindPhase();
         /*!
          * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
          */
@@ -150,7 +144,6 @@ namespace Ph2_HwInterface {
         void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait = true);
 
       private:
-        // new private method to use instead of FindPhase()
         void DataClockTimingTune (const BeBoard* pBoard);
         // private decode method to get the Cbc & Fe ID from an encoded I2C word
         void DecodeIdsFromReg (uint32_t pWord, uint8_t& pCbcId, uint8_t& pFeId);

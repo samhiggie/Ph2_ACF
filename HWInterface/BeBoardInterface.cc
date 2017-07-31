@@ -139,12 +139,6 @@ namespace Ph2_HwInterface {
         fBoardFW->ConfigureBoard ( pBoard );
     }
 
-    void BeBoardInterface::FindPhase ( const BeBoard* pBoard )
-    {
-        setBoard ( pBoard->getBeBoardIdentifier() );
-        fBoardFW->FindPhase();
-    }
-
     void BeBoardInterface::Start ( BeBoard* pBoard )
     {
         setBoard ( pBoard->getBeBoardIdentifier() );
