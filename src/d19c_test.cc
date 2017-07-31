@@ -118,6 +118,10 @@ int main ( int argc, char** argv )
 
         uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
 
+        // be careful works only for one hybrid
+        std::vector < Cbc* > cCbcVector = pBoard->getModule(0)->fCbcVector;
+        uint32_t cNCbc = cCbcVector.size();
+
         Timer t;
         t.start();
 
@@ -132,7 +136,10 @@ int main ( int argc, char** argv )
             {
                 count++;
                 cN++;
-                cAvgOccupancy += ev->GetNHits(0,0);
+
+                double cAvgOccupancyHyb0 = 0;
+                for(auto cCbc: cCbcVector) cAvgOccupancyHyb0 += ev->GetNHits(0,cCbc->getCbcId());
+                cAvgOccupancy += (cAvgOccupancyHyb0/cNCbc);
 
                 if ( cmd.foundOption ( "dqm" ) )
                 {
@@ -152,7 +159,7 @@ int main ( int argc, char** argv )
         cTool.Stop ( pBoard );
 
         t.stop();
-        LOG (INFO) << "Average Occupancy of CBC#0: " << (double)cAvgOccupancy/cN << " hits/event";
+        LOG (INFO) << "Average Occupancy for Hybrid#0: " << (double)cAvgOccupancy/cN << " hits/(event*CBC)";
         LOG (INFO) << "Measured maximal readout rate: " << (double)(cN/t.getElapsedTime())/1000 << "kHz (based on " << +cN << " events)";
     }
 
