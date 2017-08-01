@@ -315,7 +315,7 @@ void Tool::setFWTestPulse()
         }
         else if (cBoardType == BoardType::CBC3FC7)
         {
-            cRegVec.push_back ({"cbc_system_cnfg.fast_command_manager.fast_signal_generator.enable.test_pulse", 0x1});
+            cRegVec.push_back ({"cbc_system_cnfg.fast_signal_manager.fast_signal_generator.enable.test_pulse", 0x1});
         }
 
         fBeBoardInterface->WriteBoardMultReg (cBoard, cRegVec);

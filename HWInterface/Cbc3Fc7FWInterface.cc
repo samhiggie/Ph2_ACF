@@ -238,12 +238,14 @@ namespace Ph2_HwInterface {
                 uint8_t cGlobalCbcId = fIDMap[uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() )];
                 //cGlobalCbcId-1 because EncodeReg increments by 1 again - don't ask
                 this->EncodeReg (cRegItem, cGlobalCbcId - 1, cVecReq, true, true);
+                uint8_t cWriteAttempts = 0 ;
+                this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
             }
 
-        //this->EncodeReg (cRegItem, 0, cVecReq, true, true);
-        uint8_t cWriteAttempts = 0 ;
-        this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
-        std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+        //uint8_t cWriteAttempts = 0 ;
+        //this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+        //std::this_thread::sleep_for (std::chrono::milliseconds (10) );
 
         //just to be safe, stop everything
         WriteReg ("cbc_system_ctrl.fast_signal_manager.fast_signal_generator_stop", 0x1);
@@ -308,11 +310,10 @@ namespace Ph2_HwInterface {
                 uint8_t cGlobalCbcId = fIDMap[uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() )];
                 //cGlobalCbcId-1 because EncodeReg increments by 1 again - don't ask
                 this->EncodeReg (cRegItem, cGlobalCbcId - 1, cVecReq, true, true);
+                uint8_t cWriteAttempts = 0;
+                this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
             }
-
-        cWriteAttempts = 0;
-        this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
-        std::this_thread::sleep_for (std::chrono::milliseconds (10) );
     }
 
     void Cbc3Fc7FWInterface::Start()

@@ -103,7 +103,7 @@
     <!--Calibration-->
     <Setting name="Nevents" > 200 </Setting>
     <Setting name="VerificationLoop">1</Setting>
-    <Setting name="FitSCurves" > 1 </Setting>
+    <Setting name="FitSCurves" > 0 </Setting>
 
     <!--BiasSweep-->
     <Setting name="SweepTimeout">1</Setting>
