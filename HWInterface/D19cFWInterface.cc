@@ -317,28 +317,30 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.command_processor_block.i2c.command_fifo", cInit);
         //read the replies for the pings!
         std::vector<uint32_t> pReplies;
-        //uint32_t cWord;
         bool cReadSuccess = !ReadI2C (fNCbc, pReplies);
         bool cWordCorrect = true;
 
         if (cReadSuccess)
-        {
-            for (size_t i = 0; i < pReplies.size(); i++)
+        {            
+            // all the replies will be sorted by hybrid id/chip id: hybrid0: chips(0,2,3,4..), hybrid2: chips(...) - so we can use index k.
+            uint8_t k = 0;
+            for (Module* cFe : pBoard->fModuleVector)
             {
-                //cWord = pReplies.at (i);
-                //cWordCorrect = ( (((cWord) & 0x00f00000) >> 20) == i%num_chips ) ? true : false;
-                // has to be reimplemented, because now some chips can be disabled and it doesn't correspond to the actual chip id
-                cWordCorrect = true;
-
-                if (!cWordCorrect) break;
+                for ( Cbc* cCbc : cFe->fCbcVector)
+                {
+                    uint32_t cWord = pReplies.at (k);
+                    cWordCorrect = ( (((cWord & 0x00f00000) >> 20) == cCbc->getCbcId()) & (((cWord & 0x0f000000) >> 24) == cFe->getFeId()) ) ? true : false;
+                    k++;
+                    if (!cWordCorrect) break;
+                }
             }
         }
 
         if (cReadSuccess && cWordCorrect) LOG (INFO) << "Successfully received *Pings* from " << fNCbc << " Cbcs";
 
-        if (!cReadSuccess) LOG (ERROR) << "Did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() ;
+        if (!cReadSuccess) LOG (ERROR) << RED << "Did not receive the correct number of *Pings*; expected: " << fNCbc << ", received: " << pReplies.size() << RESET;
 
-        if (!cWordCorrect) LOG (ERROR) << "CBC's ids are not correct!";
+        if (!cWordCorrect) LOG (ERROR) << RED << "FE/CBC ids are not correct!" << RESET;
 
         this->ResetReadout();
     }
