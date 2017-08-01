@@ -47,6 +47,11 @@ if(${PH2_ANTENNA_FOUND})
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__ANTENNA__")
 endif()
 
+#boost also needs to be linked
+if(Boost_FOUND)
+    set(LIBS ${LIBS} ${Boost_LIBRARIES})
+endif()
+
 #last but not least, find root and link against it
 if(ROOT_FOUND)
     include_directories(${ROOT_INCLUDE_DIRS})
