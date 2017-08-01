@@ -22,7 +22,7 @@ namespace Ph2_HwInterface {
         SetEvent ( pBoard, pZSEventSize, list );
     }
 
-    void D19cCbc3EventZS::SetEvent( const BeBoard* pBoard, uint32_t pZSEventSize, const std::vector<uint32_t>& list)
+    void D19cCbc3EventZS::SetEvent ( const BeBoard* pBoard, uint32_t pZSEventSize, const std::vector<uint32_t>& list)
     {
         //LOG(INFO) << "event size: " << +pZSEventSize;
         fHitsVectorsMap.clear();
@@ -54,9 +54,10 @@ namespace Ph2_HwInterface {
             if ( (fFeMask_event >> bit) & 1)
                 fNFe_event ++;
         }
+
         for (uint8_t cFe = 0; cFe < fNFe_software; cFe++)
         {
-            uint8_t cFeId = pBoard->fModuleVector.at(cFe)->getFeId();
+            uint8_t cFeId = pBoard->fModuleVector.at (cFe)->getFeId();
             fFeMask_software |= 1 << cFeId;
         }
 
@@ -68,7 +69,7 @@ namespace Ph2_HwInterface {
 
         fBeId = pBoard->getBeId();
         fBeFWType = 0;
-        fCBCDataType = (0x0000FF00 & list.at(1)) >> 8;
+        fCBCDataType = (0x0000FF00 & list.at (1) ) >> 8;
         fBeStatus = 0;
         fNCbc = 0;
         fEventDataSize = fEventSize;
@@ -78,7 +79,8 @@ namespace Ph2_HwInterface {
 
         for (uint8_t cFe = 0; cFe < fNFe_software; cFe++)
         {
-            uint8_t cFeId = pBoard->fModuleVector.at(cFe)->getFeId();
+            uint8_t cFeId = pBoard->fModuleVector.at (cFe)->getFeId();
+
             if ( (fFeMask_software >> cFeId) & 1)
             {
                 if ( (fFeMask_event >> cFeId) & 1)
@@ -96,30 +98,35 @@ namespace Ph2_HwInterface {
                     // iterating through the hybrid words
                     address_offset += D19C_EVENT_HEADER2_SIZE_32_CBC3;
                     uint32_t begin = address_offset;
-                    uint32_t end = begin+1;
+                    uint32_t end = begin + 1;
                     bool cLastWord = false;
-                    for (uint32_t word_id = address_offset; word_id < address_offset + (fe_data_size - 1); word_id++) {
 
-                        uint8_t cChipID = (0xE0000000 & list.at(word_id)) >> 29;
+                    for (uint32_t word_id = address_offset; word_id < address_offset + (fe_data_size - 1); word_id++)
+                    {
+
+                        uint8_t cChipID = (0xE0000000 & list.at (word_id) ) >> 29;
                         //LOG(INFO) << "ChipId: " << +cChipID << ", Word ID: " << +word_id;
-                        uint8_t cDataType = (0x18000000 & list.at(word_id)) >> 27;
+                        uint8_t cDataType = (0x18000000 & list.at (word_id) ) >> 27;
 
                         // checks the last word
-                        if (word_id == (address_offset + fe_data_size - 2)) cLastWord = true;
-                        else {
-                            uint8_t cNextChipID = (0xE0000000 & list.at(word_id+1)) >> 29;
+                        if (word_id == (address_offset + fe_data_size - 2) ) cLastWord = true;
+                        else
+                        {
+                            uint8_t cNextChipID = (0xE0000000 & list.at (word_id + 1) ) >> 29;
+
                             if (cNextChipID != cChipID) cLastWord = true;
                             else cLastWord = false;
                         }
 
-                        if( cLastWord ) {
+                        if ( cLastWord )
+                        {
                             // now store the ZS event
                             uint16_t cKey = encodeId (cFeId, cChipID);
                             std::vector<uint32_t> cCbcDataZS (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
                             fEventDataMap[cKey] = cCbcDataZS;
 
                             //to faster access the real data, it'll set the variables here
-                            setData(cFeId,cChipID);
+                            setData (cFeId, cChipID);
                             begin = end;
                         }
 
@@ -128,32 +135,37 @@ namespace Ph2_HwInterface {
                     }
 
                     // now set empty events for active cbc's which doesn't have data
-                    for (auto cCbc : pBoard->fModuleVector.at(cFe)->fCbcVector) {
+                    for (auto cCbc : pBoard->fModuleVector.at (cFe)->fCbcVector)
+                    {
                         uint8_t cChipID = cCbc->getCbcId();
+
                         //LOG(INFO) << "chip " << +cChipID << " data present: " << ((chip_data_mask >> cChipID) & 1);
-                        if ( !((chip_data_mask >> cChipID) & 1)) {
+                        if ( ! ( (chip_data_mask >> cChipID) & 1) )
+                        {
                             //LOG(INFO) << "writitng 0 data to chip " << +cChipID;
                             uint16_t cKey = encodeId (cFeId, cChipID);
                             std::vector<uint32_t> cCbcDataZS;
                             fEventDataMap[cKey] = cCbcDataZS;
                             //to faster access the real data, it'll set the variables here
-                            setData(cFeId,cChipID);
+                            setData (cFeId, cChipID);
                         }
                     }
 
                     address_offset = address_offset + fe_data_size;
                 }
-                else {
+                else
+                {
 
                     // now set empty events for active fe which doesn't have data
-                    for (auto cCbc : pBoard->fModuleVector.at(cFe)->fCbcVector) {
-                       uint8_t cChipID = cCbc->getCbcId();
-                       uint16_t cKey = encodeId (cFeId, cChipID);
-                       std::vector<uint32_t> cCbcDataZS;
-                       fEventDataMap[cKey] = cCbcDataZS;
+                    for (auto cCbc : pBoard->fModuleVector.at (cFe)->fCbcVector)
+                    {
+                        uint8_t cChipID = cCbc->getCbcId();
+                        uint16_t cKey = encodeId (cFeId, cChipID);
+                        std::vector<uint32_t> cCbcDataZS;
+                        fEventDataMap[cKey] = cCbcDataZS;
 
-                       //to faster access the real data, it'll set the variables here
-                       setData(cFeId,cChipID);
+                        //to faster access the real data, it'll set the variables here
+                        setData (cFeId, cChipID);
                     }
                 }
             }
@@ -161,10 +173,10 @@ namespace Ph2_HwInterface {
 
     }
 
-    void D19cCbc3EventZS::setData( uint8_t pFeId, uint8_t pCbcId )
+    void D19cCbc3EventZS::setData ( uint8_t pFeId, uint8_t pCbcId )
     {
         std::vector<uint32_t> cCbcDataZS;
-        GetCbcEvent(pFeId,pCbcId,cCbcDataZS);
+        GetCbcEvent (pFeId, pCbcId, cCbcDataZS);
 
         //LOG(INFO) << "write data for CBC " << +pCbcId << ", isEmpty: " << cCbcDataZS.empty();
 
@@ -173,12 +185,17 @@ namespace Ph2_HwInterface {
         std::vector<Stub> cCbcStubVector;
         GeneralData cGeneralData;
 
-        for(auto word : cCbcDataZS) {
+        for (auto word : cCbcDataZS)
+        {
             uint8_t cDataType = (0x18000000 & word) >> 27;
+
             //LOG(INFO) << "CBC " << +pCbcId << "data " << +cDataType;
-            if (cDataType == 0) {
+            if (cDataType == 0)
+            {
                 uint8_t cDataMask = (0x03000000 & word) >> 24;
-                if ( (cDataMask >> 0) & 1 ) {
+
+                if ( (cDataMask >> 0) & 1 )
+                {
                     uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
                     uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
 
@@ -187,13 +204,15 @@ namespace Ph2_HwInterface {
                     aCluster.fSensor = cClusterAddress % 2;
                     aCluster.fFirstStrip = cClusterAddress;
                     aCluster.fClusterWidth = cClusterWidth;
-                    cCbcClusterVector.push_back(aCluster);
+                    cCbcClusterVector.push_back (aCluster);
 
                     // pushing hits
-                    for(uint8_t i = 0; i < cClusterWidth; i++)
-                        cCbcHitVector.push_back( cClusterAddress + 2*i );
+                    for (uint8_t i = 0; i < cClusterWidth; i++)
+                        cCbcHitVector.push_back ( cClusterAddress + 2 * i );
                 }
-                if ( (cDataMask >> 1) & 1 ) {
+
+                if ( (cDataMask >> 1) & 1 )
+                {
                     uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
                     uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
 
@@ -202,15 +221,16 @@ namespace Ph2_HwInterface {
                     aCluster.fSensor = cClusterAddress % 2;
                     aCluster.fFirstStrip = cClusterAddress;
                     aCluster.fClusterWidth = cClusterWidth;
-                    cCbcClusterVector.push_back(aCluster);
+                    cCbcClusterVector.push_back (aCluster);
 
                     // pushing hits
-                    for(uint8_t i = 0; i < cClusterWidth; i++)
-                        cCbcHitVector.push_back( cClusterAddress + 2*i );
+                    for (uint8_t i = 0; i < cClusterWidth; i++)
+                        cCbcHitVector.push_back ( cClusterAddress + 2 * i );
 
                 }
             }
-            else if (cDataType == 1) {
+            else if (cDataType == 1)
+            {
                 uint8_t cStubAddress = (0x001fe000 & word) >> 13;
                 uint8_t cStubBend = (0x000003c0 & word) >> 6 ;
                 cCbcStubVector.emplace_back (cStubAddress, cStubBend);
@@ -220,7 +240,8 @@ namespace Ph2_HwInterface {
                 cGeneralData.stub_or254 = (0x00000002 & word) >> 1;
                 cGeneralData.stub_s_ovf = (0x00000001 & word) >> 0;
             }
-            else if (cDataType == 2) {
+            else if (cDataType == 2)
+            {
                 cGeneralData.l1_clust_ovf = (0x04000000 & word) >> 26;
                 cGeneralData.L1Cnt = (0x01ff0000 & word) >> 16;
                 cGeneralData.pipeAddr = (0x00001ff0 & word) >> 4;
@@ -228,6 +249,7 @@ namespace Ph2_HwInterface {
                 cGeneralData.l1_lat_err = (0x00000001 & word) >> 0;
             }
         }
+
         uint16_t cKey = encodeId (pFeId, pCbcId);
         fHitsVectorsMap[cKey] = cCbcHitVector;
         fClusterVectorsMap[cKey] = cCbcClusterVector;
@@ -255,6 +277,7 @@ namespace Ph2_HwInterface {
 
         // trigdata
         os << std::endl;
+
         for (auto word : cbcData)
             os << std::setw (8) << word << std::endl;
 
@@ -272,6 +295,7 @@ namespace Ph2_HwInterface {
         {
             // buf overflow and lat error
             if (i == 0) return cGeneralData->second.l1_lat_err;
+
             if (i == 1) return cGeneralData->second.l1_buf_ovf;
         }
         else
@@ -326,14 +350,18 @@ namespace Ph2_HwInterface {
 
         if (cHitsData != std::end (fHitsVectorsMap) )
         {
-            if(cHitsData->second.empty()) return 0;
-            else {
-                for(auto hit: cHitsData->second) {
-                    if (static_cast<uint32_t>(hit) == i) {
+            if (cHitsData->second.empty() ) return 0;
+            else
+            {
+                for (auto hit : cHitsData->second)
+                {
+                    if (static_cast<uint32_t> (hit) == i)
+                    {
                         return 1;
                         break;
                     }
                 }
+
                 return 0;
             }
         }
@@ -353,18 +381,22 @@ namespace Ph2_HwInterface {
         {
             std::ostringstream os;
 
-            if(cHitsData->second.empty())
+            if (cHitsData->second.empty() )
                 for ( uint32_t i = 0; i < NCHANNELS; ++i )
                     os << ( 0 & 0x1 );
-            else {
+            else
+            {
                 for ( uint32_t i = 0; i < NCHANNELS; ++i )
                 {
                     uint8_t value = 0;
-                    for(auto hit: cHitsData->second)
-                        if (hit == i) {
+
+                    for (auto hit : cHitsData->second)
+                        if (hit == i)
+                        {
                             value = 1;
                             break;
                         }
+
                     os << ( value & 0x1 );
                 }
             }
@@ -389,19 +421,23 @@ namespace Ph2_HwInterface {
         if (cHitsData != std::end (fHitsVectorsMap) )
         {
 
-            if(cHitsData->second.empty())
+            if (cHitsData->second.empty() )
                 for ( uint32_t i = 0; i < NCHANNELS; ++i )
-                    blist.push_back( 0 & 0x1 );
-            else {
+                    blist.push_back ( 0 & 0x1 );
+            else
+            {
                 for ( uint32_t i = 0; i < NCHANNELS; ++i )
                 {
                     uint8_t value = 0;
-                    for(auto hit: cHitsData->second)
-                        if (hit == i) {
+
+                    for (auto hit : cHitsData->second)
+                        if (hit == i)
+                        {
                             value = 1;
                             break;
                         }
-                    blist.push_back( value & 0x1 );
+
+                    blist.push_back ( value & 0x1 );
                 }
             }
 
@@ -422,19 +458,23 @@ namespace Ph2_HwInterface {
         if (cHitsData != std::end (fHitsVectorsMap) )
         {
 
-            if(cHitsData->second.empty())
+            if (cHitsData->second.empty() )
                 for ( auto i :  channelList )
-                    blist.push_back( 0 & 0x1 );
-            else {
+                    blist.push_back ( 0 & 0x1 );
+            else
+            {
                 for ( auto i :  channelList )
                 {
                     uint8_t value = 0;
-                    for(auto hit: cHitsData->second)
-                        if (hit == i) {
+
+                    for (auto hit : cHitsData->second)
+                        if (hit == i)
+                        {
                             value = 1;
                             break;
                         }
-                    blist.push_back( value & 0x1 );
+
+                    blist.push_back ( value & 0x1 );
                 }
             }
 
@@ -480,9 +520,7 @@ namespace Ph2_HwInterface {
         StubDataMap::const_iterator cStubData = fStubVectorsMap.find (cKey);
 
         if (cStubData != std::end (fStubVectorsMap) )
-        {
             cStubVec = cStubData->second;
-        }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
 
@@ -511,7 +549,7 @@ namespace Ph2_HwInterface {
 
         if (cHitsData != std::end (fHitsVectorsMap) )
             for (auto hit : cHitsData->second)
-                cHits.push_back(static_cast<uint32_t>(hit));
+                cHits.push_back (static_cast<uint32_t> (hit) );
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
 
@@ -648,9 +686,7 @@ namespace Ph2_HwInterface {
         ClusterDataMap::const_iterator cClusterData = fClusterVectorsMap.find (cKey);
 
         if (cClusterData != std::end (fClusterVectorsMap) )
-        {
             cClusterVec = cClusterData->second;
-        }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
 
@@ -659,6 +695,113 @@ namespace Ph2_HwInterface {
 
     SLinkEvent D19cCbc3EventZS::GetSLinkEvent ( const BeBoard* pBoard) const
     {
-        ;
+        uint16_t cCbcCounter = 0;
+        std::set<uint8_t> cEnabledFe;
+
+        //payload for the status bits
+        GenericPayload cStatusPayload;
+        //for the payload and the stubs
+        GenericPayload cPayload;
+        GenericPayload cStubPayload;
+
+        for (auto cFe : pBoard->fModuleVector)
+        {
+            uint8_t cFeId = cFe->getFeId();
+
+            // firt get the list of enabled front ends
+            if (cEnabledFe.find (cFeId) == std::end (cEnabledFe) )
+                cEnabledFe.insert (cFeId);
+
+            //now on to the payload
+            uint16_t cCbcPresenceWord = 0;
+            int cFirstBitFePayload = cPayload.get_current_write_position();
+            int cFirstBitFeStub = cStubPayload.get_current_write_position();
+            //cluster counter per FE
+            uint8_t cFeCluCounter = 0;
+            //stub counter per FE
+            uint8_t cFeStubCounter = 0;
+
+            //in ZS mode and FULL DEBUG mode, we have one error bit per CBC and 9 bits of L1A counter per CIC
+            //the way I am going to implement this here is for each FE I put 9 bits of L1A Ctr followed by 1 Error bit per CBC
+            //TODO
+            cStatusPayload.append (this->GetEventCount(), 9);
+
+            for (auto cCbc : cFe->fCbcVector)
+            {
+                uint8_t cCbcId = cCbc->getCbcId();
+                uint16_t cKey = encodeId (cFeId, cCbcId);
+
+                //here use the key to find data in clusters, stub and general data map
+                GeneralDataMap::const_iterator cGeneralData = fGeneralDataMap.find (cKey);
+
+                if (cGeneralData != std::end (fGeneralDataMap) )
+                {
+                    //fill the status bits
+                    //we are in sparsified mode so in full debug we get 1 error bit per chip + 1 L1A counter per CIC
+
+                    if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::ERROR)
+                        cStatusPayload.append ( (cGeneralData->second.l1_buf_ovf || cGeneralData->second.l1_lat_err ) ? 1 : 0);
+                    else if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::FULL)
+                        cStatusPayload.append ( (cGeneralData->second.l1_buf_ovf || cGeneralData->second.l1_lat_err ) ? 1 : 0);
+                }
+
+                ClusterDataMap::const_iterator cClusterData = fClusterVectorsMap.find (cKey);
+
+                if (cClusterData != std::end (fClusterVectorsMap) )
+                {
+                    for (auto cCluster : cClusterData->second )
+                    {
+                        cPayload.append (uint16_t ( (cCbcId & 0x0F) << 11 | cCluster.fFirstStrip << 3 | ( (cCluster.fClusterWidth - 1) & 0x07) ) );
+                        cFeCluCounter++;
+                    }
+                }
+
+                StubDataMap::const_iterator cStubData = fStubVectorsMap.find (cKey);
+
+                if (cStubData != std::end (fStubVectorsMap) )
+                {
+                    //encode the stubs
+                    for (auto cStub : cStubData->second )
+                    {
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | cStub.getPosition() << 4 | (cStub.getBend() & 0xF) ) );
+                        cFeStubCounter++;
+                    }
+                }
+
+                cCbcCounter++;
+            } // end of CBC loop
+
+            //for the payload for this FE, I need to prepend a status bit(6) and 6 bit Cluster counter
+            cPayload.insert ( (cFeCluCounter & 0x3F), cFirstBitFePayload, 7 );
+
+            //for the stubs for this FE, I need to prepend a 5 bit counter shifted by 1 to the right (to account for the 0 bit)
+            cStubPayload.insert ( (cFeStubCounter & 0x1F) << 1, cFirstBitFeStub, 6);
+
+        } // end of Fe loop
+
+        uint32_t cEvtCount = this->GetEventCount();
+        uint16_t cBunch = static_cast<uint16_t> (this->GetBunch() );
+        uint32_t cBeStatus = this->fBeStatus;
+        SLinkEvent cEvent (EventType::ZS, pBoard->getConditionDataSet()->getDebugMode(), ChipType::CBC3, cEvtCount, cBunch, SOURCE_ID );
+        cEvent.generateTkHeader (cBeStatus, cCbcCounter, cEnabledFe, pBoard->getConditionDataSet()->getCondDataEnabled(), false);  // Be Status, total number CBC, condition data?, fake data?
+
+        //generate a vector of uint64_t with the chip status
+        if (pBoard->getConditionDataSet()->getDebugMode() != SLinkDebugMode::SUMMARY) // do nothing
+            cEvent.generateStatus (cStatusPayload.Data<uint64_t>() );
+
+        //PAYLOAD
+        cEvent.generatePayload (cPayload.Data<uint64_t>() );
+
+        //STUBS
+        cEvent.generateStubs (cStubPayload.Data<uint64_t>() );
+
+        // condition data, first update the values in the vector for I2C values
+        uint32_t cTDC = this->GetTDC();
+        pBoard->updateCondData (cTDC);
+        cEvent.generateConditionData (pBoard->getConditionDataSet() );
+
+        cEvent.generateDAQTrailer();
+
+        return cEvent;
     }
 }

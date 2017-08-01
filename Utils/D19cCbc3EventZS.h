@@ -2,10 +2,10 @@
 
         \file                          Event.h
         \brief                         Event handling from DAQ
-        \author                        Nicolas PIERRE
+        \author                        Mykyta HARANKO
         \version                       1.0
-        \date                                  10/07/14
-        Support :                      mail to : nicolas.pierre@icloud.com
+        \date                                  28/07/17
+        Support :                      mail to :
 
  */
 
@@ -22,7 +22,8 @@ namespace Ph2_HwInterface {
     using HitDataMap = std::map<uint16_t, std::vector<uint8_t>>;
     using ClusterDataMap = std::map<uint16_t, std::vector<Cluster>>;
     using StubDataMap = std::map<uint16_t, std::vector<Stub>>;
-    struct GeneralData {
+    struct GeneralData
+    {
         bool stub_sync = 0;
         bool stub_err_flags = 0;
         bool stub_or254 = 0;
@@ -217,7 +218,7 @@ namespace Ph2_HwInterface {
         StubDataMap fStubVectorsMap;
         GeneralDataMap fGeneralDataMap;
 
-        void setData( uint8_t pFeId, uint8_t pCbcId );
+        void setData ( uint8_t pFeId, uint8_t pCbcId );
         void printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const;
 
         SLinkEvent GetSLinkEvent (const BeBoard* pBoard) const override;
