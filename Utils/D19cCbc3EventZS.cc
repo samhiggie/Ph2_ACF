@@ -79,84 +79,68 @@ namespace Ph2_HwInterface {
         for (uint8_t cFe = 0; cFe < fNFe_software; cFe++)
         {
             uint8_t cFeId = pBoard->fModuleVector.at(cFe)->getFeId();
-            if ( (fFeMask_software >> cFeId) & 1)
+            if (((fFeMask_software >> cFeId) & 1) && ((fFeMask_event >> cFeId) & 1))
             {
-                if ( (fFeMask_event >> cFeId) & 1)
-                {
-                    uint8_t chip_data_mask = static_cast<uint8_t> ( ( (0xFF000000) & list.at (address_offset + 0) ) >> 24);
-                    //LOG(INFO) << "Chip data mask: " << std::hex << +chip_data_mask << std::dec;
+                uint8_t chip_data_mask = static_cast<uint8_t> ( ( (0xFF000000) & list.at (address_offset + 0) ) >> 24);
+                //LOG(INFO) << "Chip data mask: " << std::hex << +chip_data_mask << std::dec;
 
-                    uint16_t fe_data_size = static_cast<uint16_t> ( ( (0x0000FFFF) & list.at (address_offset + 0) ) >> 0);
-                    uint8_t header2_size = (0x00FF0000 & list.at (address_offset + 0) ) >> 16;
-                    //LOG(INFO) << "FE Data Size: " << +fe_data_size;
+                uint16_t fe_data_size = static_cast<uint16_t> ( ( (0x0000FFFF) & list.at (address_offset + 0) ) >> 0);
+                uint8_t header2_size = (0x00FF0000 & list.at (address_offset + 0) ) >> 16;
+                //LOG(INFO) << "FE Data Size: " << +fe_data_size;
 
-                    if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3)
-                        LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
+                if (header2_size != D19C_EVENT_HEADER2_SIZE_32_CBC3)
+                    LOG (ERROR) << "Header2 size doesnt correspond to the one sent from firmware";
 
-                    // iterating through the hybrid words
-                    address_offset += D19C_EVENT_HEADER2_SIZE_32_CBC3;
-                    uint32_t begin = address_offset;
-                    uint32_t end = begin+1;
-                    bool cLastWord = false;
-                    for (uint32_t word_id = address_offset; word_id < address_offset + (fe_data_size - 1); word_id++) {
+                // iterating through the hybrid words
+                address_offset += D19C_EVENT_HEADER2_SIZE_32_CBC3;
+                uint32_t begin = address_offset;
+                uint32_t end = begin+1;
+                bool cLastWord = false;
+                for (uint32_t word_id = address_offset; word_id < address_offset + (fe_data_size - 1); word_id++) {
 
-                        uint8_t cChipID = (0xE0000000 & list.at(word_id)) >> 29;
-                        //LOG(INFO) << "ChipId: " << +cChipID << ", Word ID: " << +word_id;
-                        uint8_t cDataType = (0x18000000 & list.at(word_id)) >> 27;
+                    uint8_t cChipID = (0xE0000000 & list.at(word_id)) >> 29;
+                    //LOG(INFO) << "ChipId: " << +cChipID << ", Word ID: " << +word_id;
+                    uint8_t cDataType = (0x18000000 & list.at(word_id)) >> 27;
 
-                        // checks the last word
-                        if (word_id == (address_offset + fe_data_size - 2)) cLastWord = true;
-                        else {
-                            uint8_t cNextChipID = (0xE0000000 & list.at(word_id+1)) >> 29;
-                            if (cNextChipID != cChipID) cLastWord = true;
-                            else cLastWord = false;
-                        }
-
-                        if( cLastWord ) {
-                            // now store the ZS event
-                            uint16_t cKey = encodeId (cFeId, cChipID);
-                            std::vector<uint32_t> cCbcDataZS (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
-                            fEventDataMap[cKey] = cCbcDataZS;
-
-                            //to faster access the real data, it'll set the variables here
-                            setData(cFeId,cChipID);
-                            begin = end;
-                        }
-
-                        end++;
-
+                    // checks the last word
+                    if (word_id == (address_offset + fe_data_size - 2)) cLastWord = true;
+                    else {
+                        uint8_t cNextChipID = (0xE0000000 & list.at(word_id+1)) >> 29;
+                        if (cNextChipID != cChipID) cLastWord = true;
+                        else cLastWord = false;
                     }
 
-                    // now set empty events for active cbc's which doesn't have data
-                    for (auto cCbc : pBoard->fModuleVector.at(cFe)->fCbcVector) {
-                        uint8_t cChipID = cCbc->getCbcId();
-                        //LOG(INFO) << "chip " << +cChipID << " data present: " << ((chip_data_mask >> cChipID) & 1);
-                        if ( !((chip_data_mask >> cChipID) & 1)) {
-                            //LOG(INFO) << "writitng 0 data to chip " << +cChipID;
-                            uint16_t cKey = encodeId (cFeId, cChipID);
-                            std::vector<uint32_t> cCbcDataZS;
-                            fEventDataMap[cKey] = cCbcDataZS;
-                            //to faster access the real data, it'll set the variables here
-                            setData(cFeId,cChipID);
-                        }
+                    if( cLastWord ) {
+                        // now store the ZS event
+                        uint16_t cKey = encodeId (cFeId, cChipID);
+                        std::vector<uint32_t> cCbcDataZS (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
+                        fEventDataMap[cKey] = cCbcDataZS;
+
+                        //to faster access the real data, it'll set the variables here
+                        setData(cFeId,cChipID);
+                        begin = end;
                     }
 
-                    address_offset = address_offset + fe_data_size;
+                    end++;
+
                 }
-                else {
 
-                    // now set empty events for active fe which doesn't have data
-                    for (auto cCbc : pBoard->fModuleVector.at(cFe)->fCbcVector) {
-                       uint8_t cChipID = cCbc->getCbcId();
-                       uint16_t cKey = encodeId (cFeId, cChipID);
-                       std::vector<uint32_t> cCbcDataZS;
-                       fEventDataMap[cKey] = cCbcDataZS;
+                address_offset = address_offset + fe_data_size;
+            }
+            else {
 
-                       //to faster access the real data, it'll set the variables here
-                       setData(cFeId,cChipID);
-                    }
+                // now set empty events for active fe which doesn't have data
+                for (auto cCbc : pBoard->fModuleVector.at(cFe)->fCbcVector) {
+                   uint8_t cChipID = cCbc->getCbcId();
+                   uint16_t cKey = encodeId (cFeId, cChipID);
+                   std::vector<uint32_t> cCbcDataZS;
+                   fEventDataMap[cKey] = cCbcDataZS;
+
+                   //to faster access the real data, it'll set the variables here
+                   setData(cFeId,cChipID);
                 }
             }
+
         }
 
     }
