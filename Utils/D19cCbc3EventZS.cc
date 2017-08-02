@@ -734,19 +734,23 @@ namespace Ph2_HwInterface {
                 //here use the key to find data in clusters, stub and general data map
                 GeneralDataMap::const_iterator cGeneralData = fGeneralDataMap.find (cKey);
 
+                //append a bit anyway, if it is not present in the map for whatever reason, just insert 0
+                bool cStatusBit = false;
+
                 if (cGeneralData != std::end (fGeneralDataMap) )
                 {
                     //fill the status bits
                     //we are in sparsified mode so in full debug we get 1 error bit per chip + 1 L1A counter per CIC
-
-                    if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::ERROR)
-                        cStatusPayload.append ( (cGeneralData->second.l1_buf_ovf || cGeneralData->second.l1_lat_err ) ? 1 : 0);
-                    else if (pBoard->getConditionDataSet()->getDebugMode() == SLinkDebugMode::FULL)
-                        cStatusPayload.append ( (cGeneralData->second.l1_buf_ovf || cGeneralData->second.l1_lat_err ) ? 1 : 0);
+                    cStatusBit = (cGeneralData->second.l1_buf_ovf || cGeneralData->second.l1_lat_err );
                 }
+
+                //just append a status bit to the status payload, since the format is the same for full and Error mode for the moment
+                //so if we are in summary mode, we just don't insert the staus payload at all a bit further down
+                cStatusPayload.append (cStatusBit);
 
                 ClusterDataMap::const_iterator cClusterData = fClusterVectorsMap.find (cKey);
 
+                // if there are no clusters, we will just have the FE header which comes for free by later encoding of cFeCluCounter
                 if (cClusterData != std::end (fClusterVectorsMap) )
                 {
                     for (auto cCluster : cClusterData->second )
@@ -758,6 +762,7 @@ namespace Ph2_HwInterface {
 
                 StubDataMap::const_iterator cStubData = fStubVectorsMap.find (cKey);
 
+                // if there are no stubs, we will just have the FE header which comes for free by later encoding of cFeStubCounter
                 if (cStubData != std::end (fStubVectorsMap) )
                 {
                     //encode the stubs
