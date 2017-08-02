@@ -2,10 +2,10 @@
 
         \file                          Event.h
         \brief                         Event handling from DAQ
-        \author                        Nicolas PIERRE
+        \author                        Mykyta HARANKO
         \version                       1.0
-        \date                                  10/07/14
-        Support :                      mail to : nicolas.pierre@icloud.com
+        \date                                  28/07/17
+        Support :                      mail to :
 
  */
 

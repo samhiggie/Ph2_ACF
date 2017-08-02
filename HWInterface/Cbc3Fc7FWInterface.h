@@ -21,6 +21,7 @@
 #include "BeBoardFWInterface.h"
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
+//#include "../Utils/Utilities.h"
 
 
 using namespace Ph2_HwDescription;
@@ -46,7 +47,8 @@ namespace Ph2_HwInterface {
         uint32_t fBroadcastCbcId;
         uint32_t fNCbc;
         uint32_t fFMCId;
-        uint8_t fStubLogicInput;
+        std::map<uint16_t, uint8_t> fIDMap;
+        std::map<uint8_t, uint16_t> fIDMapReverse;
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
 
@@ -108,12 +110,6 @@ namespace Ph2_HwInterface {
          * \param pBoard
          */
         void ConfigureBoard ( const BeBoard* pBoard ) override;
-        //to find the correct idelay tap
-        /*!
-         * \brief Run the Phase Alignment
-         * \param pBoard
-         */
-        void FindPhase();
         /*!
          * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
          */
@@ -148,10 +144,14 @@ namespace Ph2_HwInterface {
         void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait = true);
 
       private:
+        void DataClockTimingTune (const BeBoard* pBoard);
+        // private decode method to get the Cbc & Fe ID from an encoded I2C word
+        void DecodeIdsFromReg (uint32_t pWord, uint8_t& pCbcId, uint8_t& pFeId);
+
         uint32_t computeEventSize ( BeBoard* pBoard );
         //I2C command sending implementation
-        bool WriteI2C (  std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pWriteRead, bool pBroadcast );
-        bool ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies);
+        bool WriteI2C (  std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, uint8_t pFeId, bool pWriteRead, bool pBroadcast );
+        bool ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies, uint8_t pFeId);
 
         //binary predicate for comparing sent I2C commands with replies using std::mismatch
         static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
@@ -192,7 +192,6 @@ namespace Ph2_HwInterface {
                 return ctoggle = !ctoggle;
             });
         }
-
 
       public:
         ///////////////////////////////////////////////////////

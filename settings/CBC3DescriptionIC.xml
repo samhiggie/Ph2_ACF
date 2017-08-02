@@ -4,7 +4,7 @@
       <connection 
           id="board" 
           uri="chtcp-2.0://cmsuptracker009.cern.ch:10203?target=icfc7:50001" 
-          address_table="file://settings/address_tables/cbc3_system_address_table.xml" />
+          address_table="file://settings/address_tables/IC_cbc3_address_table.xml" />
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
         <!--<Global>-->
@@ -42,8 +42,22 @@
         <!--to output trigger-->
         <Register name="global.test_out.1"> 0x0004 </Register>
         <Register name="global.test_out.2"> 0x0100 </Register>
+        <!--to decide where the trigger veto is sent 0 for internal, 1 for external-->
+        <Register name="global.misc.trigger_master_external"> 0 </Register>
+        <!--use this if multiple single CBC FEs connected - in case of hybrid this is automatic and thus not required-->
+        <!--<Register name="global.cbc1.i2c_address"> 0x5F </Register>-->
+        <!--<Register name="global.cbc1.fe_id"> 1 </Register>-->
+        <!--<Register name="global.cbc2.i2c_address"> 0x5F </Register>-->
+        <!--<Register name="global.cbc2.fe_id"> 2 </Register>-->
+        <Register name="global.cbc2.active"> 0 </Register>
+        <Register name="global.cbc3.active"> 0 </Register>
+        <Register name="global.cbc4.active"> 0 </Register>
+        <Register name="global.cbc5.active"> 0 </Register>
+        <Register name="global.cbc6.active"> 0 </Register>
+        <Register name="global.cbc7.active"> 0 </Register>
+        <Register name="global.cbc8.active"> 0 </Register>
         <!--FAST SIGNAL SOURCE-->
-        <Register name="fast_command_manager">
+        <Register name="fast_signal_manager">
             <Register name="fast_signal_enable">
                 <Register name="async_l1a"> 0x0 </Register>
                 <Register name="fmc"> 0x0 </Register>
@@ -67,13 +81,20 @@
             </Register>
         </Register>
         <!--LATENCIES-->
-        <Register name="cbc_data_processor">
-            <Register name="cbc0.latencies">
+        <!--Cbc IDs start with 1 in FW-->
+        <Register name="cbc_data_processors">
+            <Register name="cbc1.latencies">
                 <Register name="l1a"> 199 </Register>
                 <Register name="trig_data"> 196 </Register>
             </Register>
+            <!--<Register name="cbc2.latencies">-->
+                <!--<Register name="l1a"> 199 </Register>-->
+                <!--<Register name="trig_data"> 196 </Register>-->
+            <!--</Register>-->
         </Register>
-        <!--<Register name="data_buffer.safe_nwords_free"> 0x1c0 </Register>-->
+        <!--Cbc for data clock timing tuning per FE-->
+        <Register name="io.fe1.cbc_sel"> 1 </Register>
+        <!--<Register name="io.fe2.cbc_sel"> 1 </Register>-->
     </Register>
   </BeBoard>
 </HwDescription>
@@ -82,7 +103,7 @@
     <!--Calibration-->
     <Setting name="Nevents" > 200 </Setting>
     <Setting name="VerificationLoop">1</Setting>
-    <Setting name="FitSCurves" > 1 </Setting>
+    <Setting name="FitSCurves" > 0 </Setting>
 
     <!--BiasSweep-->
     <Setting name="SweepTimeout">1</Setting>
