@@ -25,10 +25,6 @@ namespace Ph2_HwInterface {
     void D19cCbc3EventZS::SetEvent( const BeBoard* pBoard, uint32_t pZSEventSize, const std::vector<uint32_t>& list)
     {
         //LOG(INFO) << "event size: " << +pZSEventSize;
-        fHitsVectorsMap.clear();
-        fClusterVectorsMap.clear();
-        fStubVectorsMap.clear();
-        fGeneralDataMap.clear();
 
         // these two values come from width of the hybrid/cbc enabled mask
         uint8_t fMaxHybrids = 8;
@@ -116,8 +112,6 @@ namespace Ph2_HwInterface {
                         std::vector<uint32_t> cCbcDataZS (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
                         fEventDataMap[cKey] = cCbcDataZS;
 
-                        //to faster access the real data, it'll set the variables here
-                        setData(cFeId,cChipID);
                         begin = end;
                     }
 
@@ -127,96 +121,8 @@ namespace Ph2_HwInterface {
 
                 address_offset = address_offset + fe_data_size;
             }
-            else {
-
-                // now set empty events for active fe which doesn't have data
-                for (auto cCbc : pBoard->fModuleVector.at(cFe)->fCbcVector) {
-                   uint8_t cChipID = cCbc->getCbcId();
-                   uint16_t cKey = encodeId (cFeId, cChipID);
-                   std::vector<uint32_t> cCbcDataZS;
-                   fEventDataMap[cKey] = cCbcDataZS;
-
-                   //to faster access the real data, it'll set the variables here
-                   setData(cFeId,cChipID);
-                }
-            }
 
         }
-
-    }
-
-    void D19cCbc3EventZS::setData( uint8_t pFeId, uint8_t pCbcId )
-    {
-        std::vector<uint32_t> cCbcDataZS;
-        GetCbcEvent(pFeId,pCbcId,cCbcDataZS);
-
-        //LOG(INFO) << "write data for CBC " << +pCbcId << ", isEmpty: " << cCbcDataZS.empty();
-
-        std::vector<uint8_t> cCbcHitVector;
-        std::vector<Cluster> cCbcClusterVector;
-        std::vector<Stub> cCbcStubVector;
-        GeneralData cGeneralData;
-
-        for(auto word : cCbcDataZS) {
-            uint8_t cDataType = (0x18000000 & word) >> 27;
-            //LOG(INFO) << "CBC " << +pCbcId << "data " << +cDataType;
-            if (cDataType == 0) {
-                uint8_t cDataMask = (0x03000000 & word) >> 24;
-                if ( (cDataMask >> 0) & 1 ) {
-                    uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
-                    uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
-
-                    // pushing clusters
-                    Cluster aCluster;
-                    aCluster.fSensor = cClusterAddress % 2;
-                    aCluster.fFirstStrip = cClusterAddress;
-                    aCluster.fClusterWidth = cClusterWidth;
-                    cCbcClusterVector.push_back(aCluster);
-
-                    // pushing hits
-                    for(uint8_t i = 0; i < cClusterWidth; i++)
-                        cCbcHitVector.push_back( cClusterAddress + 2*i );
-                }
-                if ( (cDataMask >> 1) & 1 ) {
-                    uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
-                    uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
-
-                    // pushing clusters
-                    Cluster aCluster;
-                    aCluster.fSensor = cClusterAddress % 2;
-                    aCluster.fFirstStrip = cClusterAddress;
-                    aCluster.fClusterWidth = cClusterWidth;
-                    cCbcClusterVector.push_back(aCluster);
-
-                    // pushing hits
-                    for(uint8_t i = 0; i < cClusterWidth; i++)
-                        cCbcHitVector.push_back( cClusterAddress + 2*i );
-
-                }
-            }
-            else if (cDataType == 1) {
-                uint8_t cStubAddress = (0x001fe000 & word) >> 13;
-                uint8_t cStubBend = (0x000003c0 & word) >> 6 ;
-                cCbcStubVector.emplace_back (cStubAddress, cStubBend);
-
-                cGeneralData.stub_sync = (0x00000008 & word) >> 3;
-                cGeneralData.stub_err_flags = (0x00000004 & word) >> 2;
-                cGeneralData.stub_or254 = (0x00000002 & word) >> 1;
-                cGeneralData.stub_s_ovf = (0x00000001 & word) >> 0;
-            }
-            else if (cDataType == 2) {
-                cGeneralData.l1_clust_ovf = (0x04000000 & word) >> 26;
-                cGeneralData.L1Cnt = (0x01ff0000 & word) >> 16;
-                cGeneralData.pipeAddr = (0x00001ff0 & word) >> 4;
-                cGeneralData.l1_buf_ovf = (0x00000002 & word) >> 1;
-                cGeneralData.l1_lat_err = (0x00000001 & word) >> 0;
-            }
-        }
-        uint16_t cKey = encodeId (pFeId, pCbcId);
-        fHitsVectorsMap[cKey] = cCbcHitVector;
-        fClusterVectorsMap[cKey] = cCbcClusterVector;
-        fStubVectorsMap[cKey] = cCbcStubVector;
-        fGeneralDataMap[cKey] = cGeneralData;
 
     }
 
@@ -250,13 +156,19 @@ namespace Ph2_HwInterface {
     bool D19cCbc3EventZS::Error ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        GeneralDataMap::const_iterator cGeneralData = fGeneralDataMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cGeneralData != std::end (fGeneralDataMap) )
+        if (cData != std::end (fEventDataMap) )
         {
-            // buf overflow and lat error
-            if (i == 0) return cGeneralData->second.l1_lat_err;
-            if (i == 1) return cGeneralData->second.l1_buf_ovf;
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 2) {
+                    // buf overflow and lat error
+                    if (i == 0) return ((0x00000001 & word) >> 0); // lat err
+                    if (i == 1) return ((0x00000002 & word) >> 1); // buf ovf
+                }
+            }
+            return true;
         }
         else
         {
@@ -268,14 +180,18 @@ namespace Ph2_HwInterface {
     uint32_t D19cCbc3EventZS::Error ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        GeneralDataMap::const_iterator cGeneralData = fGeneralDataMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cGeneralData != std::end (fGeneralDataMap) )
+        if (cData != std::end (fEventDataMap) )
         {
-            // buf overflow and lat error
             uint32_t cError = 0;
-            cError |= cGeneralData->second.l1_lat_err << 0;
-            cError |= cGeneralData->second.l1_buf_ovf << 1;
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 2) {
+                    // buf overflow and lat error
+                    cError = (0x00000003 & word) >> 0;
+                }
+            }
             return cError;
         }
         else
@@ -288,12 +204,18 @@ namespace Ph2_HwInterface {
     uint32_t D19cCbc3EventZS::PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        GeneralDataMap::const_iterator cGeneralData = fGeneralDataMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cGeneralData != std::end (fGeneralDataMap) )
+        if (cData != std::end (fEventDataMap) )
         {
-            // buf overflow and lat error
-            uint32_t cPipelineAddress = cGeneralData->second.pipeAddr;
+            uint32_t cPipelineAddress = 0;
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 2) {
+                    // pipe address
+                    cPipelineAddress = (0x00001ff0 & word) >> 4;
+                }
+            }
             return cPipelineAddress;
         }
         else
@@ -306,20 +228,38 @@ namespace Ph2_HwInterface {
     bool D19cCbc3EventZS::DataBit ( uint8_t pFeId, uint8_t pCbcId, uint32_t i ) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        HitDataMap::const_iterator cHitsData = fHitsVectorsMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cHitsData != std::end (fHitsVectorsMap) )
+        if (cData != std::end (fEventDataMap) )
         {
-            if(cHitsData->second.empty()) return 0;
-            else {
-                for(auto hit: cHitsData->second) {
-                    if (static_cast<uint32_t>(hit) == i) {
-                        return 1;
-                        break;
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 0) {
+                    uint8_t cDataMask = (0x03000000 & word) >> 24;
+                    if ( (cDataMask >> 0) & 1 ) {
+                        uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
+                        uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
+
+                        // check parity
+                        if( (cClusterAddress-i)%2 == 0 ) {
+                            // check if it's in cluster
+                            if ( (i >= cClusterAddress) && (i < (cClusterAddress+2*cClusterWidth)) ) return 1;
+                        }
+                    }
+                    if ( (cDataMask >> 1) & 1 ) {
+                        uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
+                        uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
+
+                        // check parity
+                        if( (cClusterAddress-i)%2 == 0 ) {
+                            // check if it's in cluster
+                            if ( (i >= cClusterAddress) && (i < (cClusterAddress+2*cClusterWidth)) ) return 1;
+                        }
                     }
                 }
-                return 0;
             }
+            // not found
+            return 0;
         }
         else
         {
@@ -331,30 +271,40 @@ namespace Ph2_HwInterface {
     std::string D19cCbc3EventZS::DataBitString ( uint8_t pFeId, uint8_t pCbcId ) const
     {
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        HitDataMap::const_iterator cHitsData = fHitsVectorsMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cHitsData != std::end (fHitsVectorsMap) )
+        if (cData != std::end (fEventDataMap) )
         {
-            std::ostringstream os;
+            // i didn't find way better than this one, because of the fact that clusters separated for sensors, and also randomly stored in the event
+            bool *hit_bits = new bool[NCHANNELS];
+            for(uint32_t i=0; i < NCHANNELS; i++) hit_bits[i] = false;
 
-            if(cHitsData->second.empty())
-                for ( uint32_t i = 0; i < NCHANNELS; ++i )
-                    os << ( 0 & 0x1 );
-            else {
-                for ( uint32_t i = 0; i < NCHANNELS; ++i )
-                {
-                    uint8_t value = 0;
-                    for(auto hit: cHitsData->second)
-                        if (hit == i) {
-                            value = 1;
-                            break;
-                        }
-                    os << ( value & 0x1 );
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 0) {
+                    uint8_t cDataMask = (0x03000000 & word) >> 24;
+                    if ( (cDataMask >> 0) & 1 ) {
+                        uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
+                        uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
+
+                        for(uint8_t i = 0; i < cClusterWidth; i++)
+                            hit_bits[cClusterAddress + 2*i] = true;
+                    }
+                    if ( (cDataMask >> 1) & 1 ) {
+                        uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
+                        uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
+
+                        for(uint8_t i = 0; i < cClusterWidth; i++)
+                            hit_bits[cClusterAddress + 2*i] = true;
+                    }
                 }
             }
 
-            return os.str();
+            std::ostringstream os;
+            for(uint32_t i=0; i < NCHANNELS; i++) os << hit_bits[i];
+            delete hit_bits;
 
+            return os.str();
         }
         else
         {
@@ -368,26 +318,37 @@ namespace Ph2_HwInterface {
     {
         std::vector<bool> blist;
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        HitDataMap::const_iterator cHitsData = fHitsVectorsMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cHitsData != std::end (fHitsVectorsMap) )
+        if (cData != std::end (fEventDataMap) )
         {
+            // i didn't find way better than this one, because of the fact that clusters separated for sensors, and also randomly stored in the event
+            bool *hit_bits = new bool[NCHANNELS];
+            for(uint32_t i=0; i < NCHANNELS; i++) hit_bits[i] = false;
 
-            if(cHitsData->second.empty())
-                for ( uint32_t i = 0; i < NCHANNELS; ++i )
-                    blist.push_back( 0 & 0x1 );
-            else {
-                for ( uint32_t i = 0; i < NCHANNELS; ++i )
-                {
-                    uint8_t value = 0;
-                    for(auto hit: cHitsData->second)
-                        if (hit == i) {
-                            value = 1;
-                            break;
-                        }
-                    blist.push_back( value & 0x1 );
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 0) {
+                    uint8_t cDataMask = (0x03000000 & word) >> 24;
+                    if ( (cDataMask >> 0) & 1 ) {
+                        uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
+                        uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
+
+                        for(uint8_t i = 0; i < cClusterWidth; i++)
+                            hit_bits[cClusterAddress + 2*i] = true;
+                    }
+                    if ( (cDataMask >> 1) & 1 ) {
+                        uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
+                        uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
+
+                        for(uint8_t i = 0; i < cClusterWidth; i++)
+                            hit_bits[cClusterAddress + 2*i] = true;
+                    }
                 }
             }
+
+            for(uint32_t i=0; i < NCHANNELS; i++) blist.push_back(hit_bits[i]);
+            delete hit_bits;
 
         }
         else
@@ -399,28 +360,36 @@ namespace Ph2_HwInterface {
     std::vector<bool> D19cCbc3EventZS::DataBitVector ( uint8_t pFeId, uint8_t pCbcId, const std::vector<uint8_t>& channelList ) const
     {
         std::vector<bool> blist;
-
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        HitDataMap::const_iterator cHitsData = fHitsVectorsMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cHitsData != std::end (fHitsVectorsMap) )
+        if (cData != std::end (fEventDataMap) )
         {
+            std::vector<uint32_t> cHitsVector;
 
-            if(cHitsData->second.empty())
-                for ( auto i :  channelList )
-                    blist.push_back( 0 & 0x1 );
-            else {
-                for ( auto i :  channelList )
-                {
-                    uint8_t value = 0;
-                    for(auto hit: cHitsData->second)
-                        if (hit == i) {
-                            value = 1;
-                            break;
-                        }
-                    blist.push_back( value & 0x1 );
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 0) {
+                    uint8_t cDataMask = (0x03000000 & word) >> 24;
+                    if ( (cDataMask >> 0) & 1 ) {
+                        uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
+                        uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
+
+                        for(uint8_t i = 0; i < cClusterWidth; i++)
+                            cHitsVector.push_back(cClusterAddress + 2*i);
+                    }
+                    if ( (cDataMask >> 1) & 1 ) {
+                        uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
+                        uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
+
+                        for(uint8_t i = 0; i < cClusterWidth; i++)
+                            cHitsVector.push_back(cClusterAddress + 2*i);
+                    }
                 }
             }
+
+            // checks if channel is in the hits vector.
+            for(auto cChannel: channelList) blist.push_back(std::find(cHitsVector.begin(),cHitsVector.end(),cChannel) != cHitsVector.end());
 
         }
         else
@@ -461,11 +430,18 @@ namespace Ph2_HwInterface {
         std::vector<Stub> cStubVec;
         //here create stubs and return the vector
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        StubDataMap::const_iterator cStubData = fStubVectorsMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cStubData != std::end (fStubVectorsMap) )
+        if (cData != std::end (fEventDataMap) )
         {
-            cStubVec = cStubData->second;
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 1) {
+                    uint8_t cStubAddress = (0x001fe000 & word) >> 13;
+                    uint8_t cStubBend = (0x000003c0 & word) >> 6 ;
+                    cStubVec.emplace_back (cStubAddress, cStubBend);
+                }
+            }
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
@@ -477,10 +453,27 @@ namespace Ph2_HwInterface {
     {
         uint32_t cNHits = 0;
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        HitDataMap::const_iterator cHitsData = fHitsVectorsMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cHitsData != std::end (fHitsVectorsMap) )
-            cNHits = cHitsData->second.size();
+        if (cData != std::end (fEventDataMap) )
+        {
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 0) {
+                    uint8_t cDataMask = (0x03000000 & word) >> 24;
+                    if ( (cDataMask >> 0) & 1 ) {
+                        //uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
+                        uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
+                        cNHits += cClusterWidth;
+                    }
+                    if ( (cDataMask >> 1) & 1 ) {
+                        //uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
+                        uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
+                        cNHits += cClusterWidth;
+                    }
+                }
+            }
+        }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
 
@@ -491,11 +484,31 @@ namespace Ph2_HwInterface {
     {
         std::vector<uint32_t> cHits;
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        HitDataMap::const_iterator cHitsData = fHitsVectorsMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cHitsData != std::end (fHitsVectorsMap) )
-            for (auto hit : cHitsData->second)
-                cHits.push_back(static_cast<uint32_t>(hit));
+        if (cData != std::end (fEventDataMap) )
+        {
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 0) {
+                    uint8_t cDataMask = (0x03000000 & word) >> 24;
+                    if ( (cDataMask >> 0) & 1 ) {
+                        uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
+                        uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
+
+                        for(uint8_t i = 0; i < cClusterWidth; i++)
+                            cHits.push_back(cClusterAddress + 2*i);
+                    }
+                    if ( (cDataMask >> 1) & 1 ) {
+                        uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
+                        uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
+
+                        for(uint8_t i = 0; i < cClusterWidth; i++)
+                            cHits.push_back(cClusterAddress + 2*i);
+                    }
+                }
+            }
+        }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
 
@@ -627,13 +640,37 @@ namespace Ph2_HwInterface {
     std::vector<Cluster> D19cCbc3EventZS::getClusters ( uint8_t pFeId, uint8_t pCbcId) const
     {
         std::vector<Cluster> cClusterVec;
-        //here create stubs and return the vector
         uint16_t cKey = encodeId (pFeId, pCbcId);
-        ClusterDataMap::const_iterator cClusterData = fClusterVectorsMap.find (cKey);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-        if (cClusterData != std::end (fClusterVectorsMap) )
+        if (cData != std::end (fEventDataMap) )
         {
-            cClusterVec = cClusterData->second;
+            for(auto word : cData->second) {
+                uint8_t cDataType = (0x18000000 & word) >> 27;
+                if (cDataType == 0) {
+                    uint8_t cDataMask = (0x03000000 & word) >> 24;
+                    if ( (cDataMask >> 0) & 1 ) {
+                        uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
+                        uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 ) + 1;
+
+                        Cluster aCluster;
+                        aCluster.fSensor = cClusterAddress % 2;
+                        aCluster.fFirstStrip = cClusterAddress;
+                        aCluster.fClusterWidth = cClusterWidth;
+                        cClusterVec.push_back(aCluster);
+                    }
+                    if ( (cDataMask >> 1) & 1 ) {
+                        uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
+                        uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 ) + 1;
+
+                        Cluster aCluster;
+                        aCluster.fSensor = cClusterAddress % 2;
+                        aCluster.fFirstStrip = cClusterAddress;
+                        aCluster.fClusterWidth = cClusterWidth;
+                        cClusterVec.push_back(aCluster);
+                    }
+                }
+            }
         }
         else
             LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;

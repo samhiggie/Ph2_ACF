@@ -19,22 +19,6 @@ using namespace Ph2_HwDescription;
 
 namespace Ph2_HwInterface {
 
-    using HitDataMap = std::map<uint16_t, std::vector<uint8_t>>;
-    using ClusterDataMap = std::map<uint16_t, std::vector<Cluster>>;
-    using StubDataMap = std::map<uint16_t, std::vector<Stub>>;
-    struct GeneralData {
-        bool stub_sync = 0;
-        bool stub_err_flags = 0;
-        bool stub_or254 = 0;
-        bool stub_s_ovf = 0;
-        bool l1_buf_ovf = 0;
-        bool l1_lat_err = 0;
-        uint32_t pipeAddr = 0;
-        uint32_t L1Cnt = 0;
-        bool l1_clust_ovf = 0;
-    };
-    using GeneralDataMap = std::map<uint16_t, GeneralData>;
-
     /*!
      * \class Cbc3Event
      * \brief Event container to manipulate event flux from the Cbc2
@@ -210,14 +194,8 @@ namespace Ph2_HwInterface {
         uint8_t fNFe_software;
         uint8_t fNFe_event;
         uint8_t fFeMask_software;
-        uint8_t fFeMask_event;
+        uint8_t fFeMask_event;       
 
-        HitDataMap fHitsVectorsMap;
-        ClusterDataMap fClusterVectorsMap;
-        StubDataMap fStubVectorsMap;
-        GeneralDataMap fGeneralDataMap;
-
-        void setData( uint8_t pFeId, uint8_t pCbcId );
         void printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const;
 
         SLinkEvent GetSLinkEvent (const BeBoard* pBoard) const override;
