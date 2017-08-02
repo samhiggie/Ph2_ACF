@@ -678,7 +678,7 @@ namespace Ph2_HwInterface {
 
     SLinkEvent D19cCbc3EventZS::GetSLinkEvent ( const BeBoard* pBoard) const
     {
-       /* uint16_t cCbcCounter = 0;
+        uint16_t cCbcCounter = 0;
         std::set<uint8_t> cEnabledFe;
 
         //payload for the status bits
@@ -713,47 +713,59 @@ namespace Ph2_HwInterface {
             {
                 uint8_t cCbcId = cCbc->getCbcId();
                 uint16_t cKey = encodeId (cFeId, cCbcId);
+                EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
 
-                //here use the key to find data in clusters, stub and general data map
-                GeneralDataMap::const_iterator cGeneralData = fGeneralDataMap.find (cKey);
-
-                //append a bit anyway, if it is not present in the map for whatever reason, just insert 0
-                bool cStatusBit = false;
-
-                if (cGeneralData != std::end (fGeneralDataMap) )
+                if (cData != std::end (fEventDataMap) )
                 {
-                    //fill the status bits
-                    //we are in sparsified mode so in full debug we get 1 error bit per chip + 1 L1A counter per CIC
-                    cStatusBit = (cGeneralData->second.l1_buf_ovf || cGeneralData->second.l1_lat_err );
-                }
+                    //init
+                    bool cStatusBit = false;
 
-                //just append a status bit to the status payload, since the format is the same for full and Error mode for the moment
-                //so if we are in summary mode, we just don't insert the staus payload at all a bit further down
-                cStatusPayload.append (cStatusBit);
-
-                ClusterDataMap::const_iterator cClusterData = fClusterVectorsMap.find (cKey);
-
-                // if there are no clusters, we will just have the FE header which comes for free by later encoding of cFeCluCounter
-                if (cClusterData != std::end (fClusterVectorsMap) )
-                {
-                    for (auto cCluster : cClusterData->second )
+                    for (auto word: cData->second)
                     {
-                        cPayload.append (uint16_t ( (cCbcId & 0x0F) << 11 | cCluster.fFirstStrip << 3 | ( (cCluster.fClusterWidth - 1) & 0x07) ) );
-                        cFeCluCounter++;
-                    }
-                }
+                        uint8_t cDataType = (0x18000000 & word) >> 27;
 
-                StubDataMap::const_iterator cStubData = fStubVectorsMap.find (cKey);
+                        // if there are no clusters, we will just have the FE header which comes for free by later encoding of cFeCluCounter
+                        if (cDataType == 0)
+                        {
+                            uint8_t cDataMask = (0x03000000 & word) >> 24;
+                            if ( (cDataMask >> 0) & 1 )
+                            {
+                                uint8_t cClusterAddress = (0x000007f8 & word) >> 3;
+                                uint8_t cClusterWidth = ( (0x00000007 & word) >> 0 );
 
-                // if there are no stubs, we will just have the FE header which comes for free by later encoding of cFeStubCounter
-                if (cStubData != std::end (fStubVectorsMap) )
-                {
-                    //encode the stubs
-                    for (auto cStub : cStubData->second )
-                    {
-                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | cStub.getPosition() << 4 | (cStub.getBend() & 0xF) ) );
-                        cFeStubCounter++;
+                                // i don't do cClusterWidth-1 here because from the fw it comes in a proper way
+                                cPayload.append (uint16_t ( (cCbcId & 0x0F) << 11 | cClusterAddress << 3 | ( (cClusterWidth) & 0x07) ) );
+                                cFeCluCounter++;
+                            }
+                            if ( (cDataMask >> 1) & 1 )
+                            {
+                                uint8_t cClusterAddress = (0x003fc000 & word) >> 14;
+                                uint8_t cClusterWidth = ( (0x00003800 & word) >> 11 );
+
+                                // i don't do cClusterWidth-1 here because from the fw it comes in a proper way
+                                cPayload.append (uint16_t ( (cCbcId & 0x0F) << 11 | cClusterAddress << 3 | ( (cClusterWidth) & 0x07) ) );
+                                cFeCluCounter++;
+                            }
+                        }
+                        // if there are no stubs, we will just have the FE header which comes for free by later encoding of cFeStubCounter
+                        else if (cDataType == 1)
+                        {
+                            uint8_t cStubAddress = (0x001fe000 & word) >> 13;
+                            uint8_t cStubBend = (0x000003c0 & word) >> 6 ;
+
+                            cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | cStubAddress << 4 | (cStubBend & 0xF) ) );
+                            cFeStubCounter++;
+                        }
+                        else if (cDataType == 2)
+                        {
+                            //we are in sparsified mode so in full debug we get 1 error bit per chip + 1 L1A counter per CIC
+                            cStatusBit = ((word & 0x00000003) != 0);
+                        }
                     }
+
+                    //just append a status bit to the status payload, since the format is the same for full and Error mode for the moment
+                    //so if we are in summary mode, we just don't insert the staus payload at all a bit further down
+                    cStatusPayload.append (cStatusBit);
                 }
 
                 cCbcCounter++;
@@ -790,6 +802,6 @@ namespace Ph2_HwInterface {
 
         cEvent.generateDAQTrailer();
 
-        return cEvent;*/;
+        return cEvent;
     }
 }
