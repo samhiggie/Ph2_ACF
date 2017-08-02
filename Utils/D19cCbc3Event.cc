@@ -718,8 +718,8 @@ namespace Ph2_HwInterface {
                     uint8_t pos2 =   (cData->second.at (9) & 0x0000FF00) >> 8;
                     uint8_t pos3 =   (cData->second.at (9) & 0x00FF0000) >> 16;
                     uint8_t bend1 = (cData->second.at (10) & 0x00000F00) >> 8;
-                    uint8_t bend2 = (cData->second.at (10) & 0xF00F0000) >> 16;
-                    uint8_t bend3 = (cData->second.at (10) & 0x0F00000F) >> 24;
+                    uint8_t bend2 = (cData->second.at (10) & 0x000F0000) >> 16;
+                    uint8_t bend3 = (cData->second.at (10) & 0x0F000000) >> 24;
 
                     if (pos1 != 0)
                     {
