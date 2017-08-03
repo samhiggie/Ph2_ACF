@@ -152,7 +152,7 @@ int main ( int argc, char** argv )
                     }
                 }
 
-                if ( count % 1000  == 0 )
+                if ( count % 10000  == 0 )
                     LOG (INFO) << ">>> Recorded Event #" << count ;
             }
         }
