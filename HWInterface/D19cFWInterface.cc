@@ -507,7 +507,7 @@ namespace Ph2_HwInterface {
 
             if (!pWait) return 0;
             else
-                usleep (10);
+                usleep (0.1);
         }
 
         uint32_t cNEvents = 0;
@@ -519,7 +519,7 @@ namespace Ph2_HwInterface {
 
             while (cReadoutReq == 0)
             {
-                usleep (10);
+                usleep (0.1);
                 cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
             }
 
