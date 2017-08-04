@@ -21,7 +21,8 @@ void RegisterTester::TestRegisters()
 
                 for ( const auto& cReg : cMap )
                 {
-                    if ( !fCbcInterface->WriteCbcReg ( cCbc, cReg.first, cFirstBitPattern, true ) )
+
+                    if ( !fCbcInterface->WriteCbcReg ( cCbc, cReg.first, (cReg.second.fAddress==0) ? 0x2A : cFirstBitPattern, true ) )
                     {
                         sprintf (line, "# Writing 0x%.2x to CBC Register %s FAILED.\n", cFirstBitPattern, (cReg.first).c_str()  );
                         LOG (INFO) << BOLDRED << line << RESET ;
@@ -91,7 +92,7 @@ void RegisterTester::ReconfigureRegisters (std::string pDirectoryName )
                 std::string pRegFile ;
 
                 if ( pDirectoryName.empty() )
-                    pRegFile = "settings/Cbc_default_" +  cMode + ".txt";
+                    pRegFile = "settings/CbcFiles/Cbc_default_" +  cMode + ".txt";
                 else
                 {
                     char buffer[120];

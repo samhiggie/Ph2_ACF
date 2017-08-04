@@ -332,7 +332,7 @@ bool check_Shorts (Tool* pTool,  uint32_t cMaxNumShorts)
     //reload the calibration values for the CBCs
     //cShortFinder.ReconfigureRegisters();
     // I don't think this is neccesary ... but here for now
-    cShortFinder.ConfigureVcth (0x78);
+    //cShortFinder.ConfigureVcth (0x78);
 
     cShortFinder.Initialize();
     cShortFinder.FindShorts();
@@ -530,8 +530,8 @@ int main ( int argc, char* argv[] )
         {
             // launch HMP4040 server
             launch_HMP4040server ( cHostname, zmqPortNumber, httpPortNumber, cInterval);
-            exit (0);
         }
+        exit (0);
     }
     else  // Main (parent) process after fork succeeds
     {

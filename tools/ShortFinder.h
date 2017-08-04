@@ -116,6 +116,8 @@ class ShortFinder : public Tool
     // booleans
     bool fHoleMode;
 
+    // configs
+    uint8_t fTestPulseAmplitude;
 
     // functions/methods
     void SetBeBoard (BeBoard* pBoard);

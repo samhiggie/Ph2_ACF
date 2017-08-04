@@ -91,11 +91,16 @@ int main ( int argc, char** argv )
 
     if ( cTestPulse )
     {
+        auto cSetting = cTool.fSettingsMap.find ( "TestPulsePotentiometer" );
+        uint8_t cTestPulseAmplitude = ( cSetting != std::end ( cTool.fSettingsMap ) ) ? cSetting->second : 0x7F;
+
         uint32_t cNGroups = 8;
         uint32_t cN = 0;
+        cTool.setFWTestPulse();
+
         for (int i = 0; i < cNGroups; i++)
         {
-            cTool.setSystemTestPulse(0x50,i,true,false);
+            cTool.setSystemTestPulse(cTestPulseAmplitude,i,true,false);
             cTool.ReadNEvents( pBoard, 1 );
 
             const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
