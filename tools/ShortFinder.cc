@@ -312,10 +312,12 @@ void ShortFinder::MergeShorts (ShortsList pShortsListA)
             fShortsList.push_back (cChannel);
     }
 
+    std::stringstream outp;
     for (auto cMemberChannel : fShortsList)
     {
-        for (auto i : cMemberChannel) LOG (INFO) << i << ' ';
+        for (auto i : cMemberChannel) outp << i << ' ';
     }
+    LOG(INFO) << outp.str();
 }
 
 void ShortFinder::FindShorts (std::ostream& os )
@@ -475,10 +477,12 @@ void ShortFinder::ReconstructShorts (ShortedGroupsList pShortedGroupsArray, std:
 
                 pShortedGroupsArray[cShortedChannelInfo[2]].erase (pShortedGroupsArray[cShortedChannelInfo[2]].begin() + best_candidate_index);
 
+                std::stringstream outp;
                 for (auto cMemberChannel : cShort)
                 {
-                    for (auto i : cMemberChannel) LOG (INFO) << i << ' ';
+                    for (auto i : cMemberChannel) outp << i << ' ';
                 }
+                LOG(INFO) << outp.str();
 
                 os << "smallest distance: " << smallest_distance << std::endl;
                 //DisplayGroupsContent(pShortedGroupsArray);
@@ -559,12 +563,13 @@ ShortsList ShortFinder::MergeShorts (ShortsList pShortA, ShortsList pShortB)
             pShortB.push_back (cChannel);
     }
 
+    std::stringstream outp;
     for (auto cMemberChannel : pShortB)
     {
-        for (auto i : cMemberChannel) LOG (INFO) << i << ' ';
+        for (auto i : cMemberChannel) outp << i << ' ';
     }
 
-    LOG (INFO) << std::endl;
+    LOG (INFO) << outp.str();
 
     return pShortB;
 }

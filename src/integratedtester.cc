@@ -361,7 +361,7 @@ void perform_OccupancyMeasurment (Tool* pTool )
     // re-configure CBC regsiters with values from the calibration
     //cHybridTester.ReconfigureCBCRegisters();
     // I don't think this is neccesary ... but here for now
-    cHybridTester.ConfigureVcth (0x78);
+    //cHybridTester.ConfigureVcth (0x78);
 
     // measure occupancy
     cHybridTester.Measure();
