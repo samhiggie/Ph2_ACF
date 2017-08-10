@@ -282,17 +282,30 @@ void ShortFinder::UpdateHistsMerged()
 void ShortFinder::SetBeBoard (BeBoard* pBoard)
 {
     if (pBoard->getBoardType() == BoardType::GLIB || pBoard->getBoardType() == BoardType::CTA) fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", 2 );
+    else if(pBoard->getBoardType() == BoardType::D19C) fBeBoardInterface->WriteBoardReg(pBoard, "fc7_daq_cnfg.fast_command_block.test_pulse.delay_after_test_pulse", 1);
     setFWTestPulse();
 
     // (potential, group, enable test pulse, hole mode)
     setSystemTestPulse(fTestPulseAmplitude,0x00,true,fHoleMode);
 
     //edit G.A: in order to be compatible with CBC3 (9 bit trigger latency) the recommended method is this:
-    //LatencyVisitor cLatencyVisitor (fCbcInterface, 0x01);
-    //this->accept (cLatencyVisitor);
-    //same for Threshold
-    //ThresholdVisitor cThresholdVisitor (fCbcInterface, 0x90);
-    //this->accept (cThresholdVisitor);
+    LatencyVisitor cLatencyVisitor (fCbcInterface, 0x01);
+    this->accept (cLatencyVisitor);
+
+    // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
+    // ThresholdVisitor in read mode
+    ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    this->accept (cThresholdVisitor);
+    uint16_t cVcth = cThresholdVisitor.getThreshold();
+
+    int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
+    LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
+    cVcth += cVcthStep;
+
+    //  Set that VCth Value on all FEs
+    cThresholdVisitor.setOption ('w');
+    cThresholdVisitor.setThreshold (cVcth);
+    this->accept (cThresholdVisitor);
 }
 bool ShortFinder::CheckChannel (Short pShort , ShortsList pShortsList)
 {

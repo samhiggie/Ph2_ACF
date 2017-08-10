@@ -259,6 +259,7 @@ void Tool::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool p
                 //first, get the Amux Value
                 uint8_t cOriginalAmuxValue;
                 cOriginalAmuxValue = cCbc->getReg ("MiscTestPulseCtrl&AnalogMux" );
+                //uint8_t cOriginalHitDetectSLVSValue = cCbc->getReg ("HitDetectSLVS" );
 
                 std::vector<std::pair<std::string, uint8_t>> cRegVec;
                 uint8_t cRegValue =  to_reg ( 0, pTestGroup );
@@ -270,6 +271,9 @@ void Tool::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool p
                     if (pTPState) cTPRegValue  = (cOriginalAmuxValue |  0x1 << 6);
                     else if (!pTPState) cTPRegValue = (cOriginalAmuxValue & ~ (0x1 << 6) );
 
+                    //uint8_t cHitDetectSLVSValue = (cOriginalHitDetectSLVSValue & ~(0x1 << 6));
+
+                    //cRegVec.push_back ( std::make_pair ( "HitDetectSLVS", cHitDetectSLVSValue ) );
                     cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux",  cTPRegValue ) );
                     cRegVec.push_back ( std::make_pair ( "TestPulseDel&ChanGroup",  cRegValue ) );
                     cRegVec.push_back ( std::make_pair ( "TestPulsePotNodeSel", pTPAmplitude ) );
@@ -285,6 +289,9 @@ void Tool::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool p
                     if (pTPState) cTPRegValue  = (cOriginalAmuxValue |  0x1 << 6);
                     else if (!pTPState) cTPRegValue = (cOriginalAmuxValue & ~ (0x1 << 6) );
 
+                    //uint8_t cHitDetectSLVSValue = (cOriginalHitDetectSLVSValue & ~(0x1 << 6));
+
+                    //cRegVec.push_back ( std::make_pair ( "HitDetectSLVS", cHitDetectSLVSValue ) );
                     cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", cTPRegValue ) );
                     cRegVec.push_back ( std::make_pair ( "TestPulsePot", pTPAmplitude ) );
                 }
