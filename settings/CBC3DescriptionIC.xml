@@ -3,7 +3,7 @@
   <BeBoard Id="0" boardType="CBC3FC7" eventType="VR">
       <connection 
           id="board" 
-          uri="chtcp-2.0://cmsuptracker009.cern.ch:10203?target=icfc7:50001" 
+          uri="chtcp-2.0://cmsuptracker009.cern.ch:10203?target=192.168.0.80:50001" 
           address_table="file://settings/address_tables/IC_cbc3_address_table.xml" />
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
