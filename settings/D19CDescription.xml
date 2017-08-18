@@ -37,6 +37,7 @@
     </SLink>
 
     <!--CONFIG-->
+    <Register name="clock_source">0</Register> <!-- 3 - default (internal oscillator), 2 - backplane, 0 - AMC13 -->
     <Register name="fc7_daq_cnfg">
         <!-- Fast Command Block -->
         <Register name="fast_command_block">
