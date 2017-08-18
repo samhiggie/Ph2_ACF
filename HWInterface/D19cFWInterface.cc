@@ -466,13 +466,14 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::Start()
     {
-
+        this->ResetReadout();
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
 
     void D19cFWInterface::Stop()
     {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
+        this->ResetReadout();
     }
 
 
