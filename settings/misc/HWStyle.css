@@ -26,10 +26,12 @@ html, body, p, th, td, dd, dt {
 
 input, select, textarea{
     color: #000;
+    text-align: right;
 }
 
 textarea:hover, input:hover {
     color: #000;
+    text-align: right;
 }
 
  div.BeBoard {
@@ -54,7 +56,7 @@ textarea:hover, input:hover {
      margin-top: 5px;
      margin-bottom: 5px;
      margin-left: 5px;
-     margin-right: 300px;
+     margin-right: 100px;
      padding-top: 5px;
      padding-bottom: 5px;
      padding-left: 15px;
@@ -69,7 +71,7 @@ textarea:hover, input:hover {
      margin-top: 5px;
      margin-bottom: 5px;
      margin-left: 5px;
-     margin-right: 300px;
+     margin-right: 100px;
      padding-top: 5px;
      padding-bottom: 5px;
      padding-left: 15px;
@@ -96,11 +98,27 @@ textarea:hover, input:hover {
      color: #616161
  }
 
+ div.Config {
+     margin-top: 5px;
+     margin-bottom: 5px;
+     margin-left: 5px;
+     margin-right: 5px;
+     padding-top: 5px;
+     padding-bottom: 5px;
+     padding-left: 20px;
+     padding-right: 20px;
+     overflow: hidden;
+     border: none
+     solid: #ddd;
+     background-color: #ccc;
+     color: #616161
+ }
+
  div.SLink {
      margin-top: 5px;
      margin-bottom: 5px;
      margin-left: 5px;
-     margin-right: 300px;
+     margin-right: 100px;
      padding-top: 5px;
      padding-bottom: 5px;
      padding-left: 10px;
@@ -115,7 +133,7 @@ textarea:hover, input:hover {
      margin-top: 5px;
      margin-bottom: 5px;
      margin-left: 5px;
-     margin-right: 300px;
+     margin-right: 100px;
      padding-top: 5px;
      padding-bottom: 5px;
      padding-left: 10px;
@@ -125,4 +143,24 @@ textarea:hover, input:hover {
      solid: #ddd;
      background-color: #d5d8dc
  }
+
+ #billdesc{
+    padding-top: 50px;
+}
+#test{
+    width: 100%;
+    height: 30px;
+}
+option {
+    height: 30px;
+    line-height: 30px;
+}
+
+.editOption{
+    width: 90%;
+    height: 24px;
+    position: relative;
+    top: -30px
+
+}
 
