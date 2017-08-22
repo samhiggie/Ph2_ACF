@@ -545,34 +545,29 @@ namespace Ph2_HwInterface {
         }
         else
         {
-            while (cNWords > 0)
+            uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
+            uint32_t cEventSize = computeEventSize(pBoard);
+            if (pBoard->getEventType() == EventType::ZS)
             {
-                // reading header 1
-                uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
-                uint32_t cEventSize = (0x0000FFFF & header1);
-                uint32_t cHeader1Size = (0xFF000000 & header1) >> 24;
-
-                if (cHeader1Size == cBoardHeader1Size)
-                {
-                    while (cNWords < cEventSize - 1)
-                    {
-                        LOG (INFO) << "Need: " << cEventSize - 1 << " words for this event, Get: " << cNWords;
-                        std::this_thread::sleep_for (std::chrono::milliseconds (10) );
-                        cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-
-                    }
-
-                    pData.push_back (header1);
-                    std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
-                    pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
-                    cNEvents++;
-
-                    if (pBreakTrigger) break;
-                }
-                else
-                    LOG (ERROR) << "Missaligned data: " << (int) cNWords << " words";
-
+                LOG(ERROR) << "ZS Event only with handshake!!! Exiting...";
+                exit(1);
+            }
+            while (cNEvents < cPackageSize)
+            {
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+                uint32_t cNEventsAvailable = (uint32_t)cNWords/cEventSize;
+                while (cNEventsAvailable < 1)
+                {
+                    std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                    cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+                    cNEventsAvailable = (uint32_t)cNWords/cEventSize;
+                }
+
+                std::vector<uint32_t> event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
+                pData.insert (pData.end(), event_data.begin(), event_data.end() );
+                cNEvents+=cNEventsAvailable;
+
+                if (pBreakTrigger) break;
             }
         }
 
