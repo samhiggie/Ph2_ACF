@@ -58,75 +58,78 @@ namespace Ph2_System {
         // Iterate over the BeBoard Nodes
         for ( pugi::xml_node cBeBoardNode = doc.child ( "HwDescription" ).child ( "BeBoard" ); cBeBoardNode; cBeBoardNode = cBeBoardNode.next_sibling() )
         {
-            BeBoard* cBeBoard = this->parseBeBoard (cBeBoardNode, pBoardVector, os);
-
-            pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
-
-            std::string cId = cBeBoardConnectionNode.attribute ( "id" ).value();
-            std::string cUri = cBeBoardConnectionNode.attribute ( "uri" ).value();
-            std::string cAddressTable = expandEnvironmentVariables (cBeBoardConnectionNode.attribute ( "address_table" ).value() );
-
-            if (!strUhalConfig.empty() )
-                RegManager::setDummyXml (strUhalConfig);
-
-            os << BOLDBLUE << "|" << "       " <<  "|"  << "----" << "Board Id:      " << BOLDYELLOW << cId << std::endl << BOLDBLUE <<  "|" << "       " <<  "|"  << "----" << "URI:           " << BOLDYELLOW << cUri << std::endl << BOLDBLUE <<  "|" << "       " <<  "|"  << "----" << "Address Table: " << BOLDYELLOW << cAddressTable << std::endl << BOLDBLUE << "|" << "       " <<  "|" << RESET << std::endl;
-
-
-            // Iterate over the BeBoardRegister Nodes
-            for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
+            if (static_cast<std::string> (cBeBoardNode.name() ) == "BeBoard")
             {
-                if (std::string (cBeBoardRegNode.name() ) == "Register")
+                BeBoard* cBeBoard = this->parseBeBoard (cBeBoardNode, pBoardVector, os);
+
+                pugi::xml_node cBeBoardConnectionNode = cBeBoardNode.child ("connection");
+
+                std::string cId = cBeBoardConnectionNode.attribute ( "id" ).value();
+                std::string cUri = cBeBoardConnectionNode.attribute ( "uri" ).value();
+                std::string cAddressTable = expandEnvironmentVariables (cBeBoardConnectionNode.attribute ( "address_table" ).value() );
+
+                if (!strUhalConfig.empty() )
+                    RegManager::setDummyXml (strUhalConfig);
+
+                os << BOLDBLUE << "|" << "       " <<  "|"  << "----" << "Board Id:      " << BOLDYELLOW << cId << std::endl << BOLDBLUE <<  "|" << "       " <<  "|"  << "----" << "URI:           " << BOLDYELLOW << cUri << std::endl << BOLDBLUE <<  "|" << "       " <<  "|"  << "----" << "Address Table: " << BOLDYELLOW << cAddressTable << std::endl << BOLDBLUE << "|" << "       " <<  "|" << RESET << std::endl;
+
+
+                // Iterate over the BeBoardRegister Nodes
+                for ( pugi::xml_node cBeBoardRegNode = cBeBoardNode.child ( "Register" ); cBeBoardRegNode; cBeBoardRegNode = cBeBoardRegNode.next_sibling() )
                 {
-                    std::string cNameString;
-                    uint32_t cValue;
-                    this->parseRegister (cBeBoardRegNode, cNameString, cValue, cBeBoard, os);
-                }
-            }
-
-            os << BLUE <<  "|\t|" << RESET << std::endl;
-
-            if (cBeBoard->getBoardType() == BoardType::GLIB)
-                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if (cBeBoard->getBoardType() == BoardType::ICGLIB)
-                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if (cBeBoard->getBoardType() == BoardType::CTA)
-                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if (cBeBoard->getBoardType() == BoardType::ICFC7)
-                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if (cBeBoard->getBoardType() == BoardType::CBC3FC7)
-                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new Cbc3Fc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-            else if (cBeBoard->getBoardType() == BoardType::D19C)
-                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new D19cFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
-
-            //else
-            //cBeBoardFWInterface = new OtherFWInterface();
-
-            // Iterate the module node
-            for ( pugi::xml_node cModuleNode = cBeBoardNode.child ( "Module" ); cModuleNode; cModuleNode = cModuleNode.next_sibling() )
-            {
-                if ( static_cast<std::string> ( cModuleNode.name() ) == "Module" )
-                {
-                    bool cStatus = cModuleNode.attribute ( "Status" ).as_bool();
-
-                    //LOG(INFO) << cStatus ;
-                    if ( cStatus )
+                    if (std::string (cBeBoardRegNode.name() ) == "Register")
                     {
-                        os << BOLDCYAN << "|" << "	" << "|" << "----" << cModuleNode.name() << "  "
-                           << cModuleNode.first_attribute().name() << " :" << cModuleNode.attribute ( "ModuleId" ).value() << RESET << std:: endl;
-
-                        cModuleId = cModuleNode.attribute ( "ModuleId" ).as_int();
-
-                        Module* cModule = new Module ( cBeId, cModuleNode.attribute ( "FMCId" ).as_int(), cModuleNode.attribute ( "FeId" ).as_int(), cModuleId );
-                        cBeBoard->addModule ( cModule );
-
-                        this->parseCbc (cModuleNode, cModule, os);
+                        std::string cNameString;
+                        uint32_t cValue;
+                        this->parseRegister (cBeBoardRegNode, cNameString, cValue, cBeBoard, os);
                     }
                 }
-            }
 
-            //here parse the Slink Node
-            pugi::xml_node cSLinkNode = cBeBoardNode.child ("SLink");
-            this->parseSLink (cSLinkNode, cBeBoard, os);
+                os << BLUE <<  "|\t|" << RESET << std::endl;
+
+                if (cBeBoard->getBoardType() == BoardType::GLIB)
+                    pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new GlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+                else if (cBeBoard->getBoardType() == BoardType::ICGLIB)
+                    pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+                else if (cBeBoard->getBoardType() == BoardType::CTA)
+                    pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new CtaFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+                else if (cBeBoard->getBoardType() == BoardType::ICFC7)
+                    pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+                else if (cBeBoard->getBoardType() == BoardType::CBC3FC7)
+                    pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new Cbc3Fc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+                else if (cBeBoard->getBoardType() == BoardType::D19C)
+                    pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new D19cFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+
+                //else
+                //cBeBoardFWInterface = new OtherFWInterface();
+
+                // Iterate the module node
+                for ( pugi::xml_node cModuleNode = cBeBoardNode.child ( "Module" ); cModuleNode; cModuleNode = cModuleNode.next_sibling() )
+                {
+                    if ( static_cast<std::string> ( cModuleNode.name() ) == "Module" )
+                    {
+                        bool cStatus = cModuleNode.attribute ( "Status" ).as_bool();
+
+                        //LOG(INFO) << cStatus ;
+                        if ( cStatus )
+                        {
+                            os << BOLDCYAN << "|" << "	" << "|" << "----" << cModuleNode.name() << "  "
+                               << cModuleNode.first_attribute().name() << " :" << cModuleNode.attribute ( "ModuleId" ).value() << RESET << std:: endl;
+
+                            cModuleId = cModuleNode.attribute ( "ModuleId" ).as_int();
+
+                            Module* cModule = new Module ( cBeId, cModuleNode.attribute ( "FMCId" ).as_int(), cModuleNode.attribute ( "FeId" ).as_int(), cModuleId );
+                            cBeBoard->addModule ( cModule );
+
+                            this->parseCbc (cModuleNode, cModule, os);
+                        }
+                    }
+                }
+
+                //here parse the Slink Node
+                pugi::xml_node cSLinkNode = cBeBoardNode.child ("SLink");
+                this->parseSLink (cSLinkNode, cBeBoard, os);
+            }
         }
 
         cNBeBoard++;
@@ -666,7 +669,7 @@ namespace Ph2_System {
             return;
         }
 
-        for ( pugi::xml_node nSettings = doc.child ( "Settings" ); nSettings; nSettings = nSettings.next_sibling() )
+        for ( pugi::xml_node nSettings = doc.child ( "HwDescription" ).child ("Settings"); nSettings; nSettings = nSettings.next_sibling() )
         {
             os << std::endl;
 

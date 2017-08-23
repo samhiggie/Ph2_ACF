@@ -77,7 +77,6 @@
     <Register name="dio5.fmcdio5_trig_in_50ohms">1</Register>
     <Register name="dio5.fmcdio5_trig_out_50ohms">0</Register>
   </BeBoard>
-</HwDescription>
 
 <Settings>
     <Setting name="TargetVcth">0x78</Setting>
@@ -89,3 +88,4 @@
     <Setting name="NoiseToSignalVCTH"> 2 </Setting>
     <Setting name="SignalScanStep"> 2 </Setting>
 </Settings>
+</HwDescription>

@@ -5,7 +5,7 @@
     <!--now parse the whole thing-->
     <xsl:template match="/*">
         <html>
-            <form method="post">
+            <!--<form method="post">-->
         <!--<form>-->
             <!--<input type="submit" id="btn_sub" name="btn_sub" value="Submit" />-->
             <!--<input type="reset" id="btn_res" name="btn_res" value="Reset" />-->
@@ -114,13 +114,13 @@
                 
                  window.onload = DisplayFieldsOnload();
                 </script> 
-                <link rel="stylesheet" type="text/css" href="misc/HWStyle.css"/>
+                <!--<link rel="stylesheet" type="text/css" href="misc/HWStyle.css"/>-->
             </head>
             <body onload='DisplayFieldsOnload();'>
                 <h3>HWDescription</h3>
                 <xsl:apply-templates select="BeBoard"/>
             </body>
-        </form>
+        <!--</form>-->
         </html>
     </xsl:template>
 
