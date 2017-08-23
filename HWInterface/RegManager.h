@@ -40,6 +40,9 @@ namespace Ph2_HwInterface {
         //bool fDeactiveThread;         [>!< Bool to terminate the thread in the destructor<]
         std::mutex fBoardMutex;         /*!< Mutex to avoid conflict btw threads on shared resources*/
         static std::string strDummyXml;
+        const char* fUri;
+        const char* fAddressTable;
+        const char* fId;
 
       public:
         /*!
@@ -115,6 +118,23 @@ namespace Ph2_HwInterface {
          */
         virtual ~RegManager();
         /*!
+         * \brief Reset the HW Interface with different Id, Uri and Address Table
+         */
+        virtual void ResetRegManager (const char* pId, const char* pUri, const char* pAddressTable)
+        {
+            if (fBoard)
+            {
+                delete fBoard;
+                std::string cFilename = strDummyXml;
+
+                if (getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") != nullptr)
+                    cFilename = std::string ("file://") + getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") + "/otsdaq-cmsoutertracker/Ph2_ACF/HWInterface/dummy.xml";
+
+                uhal::ConnectionManager cm ( cFilename ); // Get connection
+                fBoard = new uhal::HwInterface ( cm.getDevice ( pId, pUri, pAddressTable ) );
+            }
+        }
+        /*!
          * \brief Stack the commands, deliver when full or timeout
          * \param pRegNode : Register to write
          * \param pVal : Value to write
@@ -127,6 +147,27 @@ namespace Ph2_HwInterface {
         uhal::HwInterface* getHardwareInterface() const
         {
             return fBoard;
+        }
+        /*!
+         * \brief get the uHAL HW Id
+         */
+        const char* getId()
+        {
+            return fId;
+        }
+        /*!
+         * \brief get the uHAL HW Uri
+         */
+        const char* getUri()
+        {
+            return fUri;
+        }
+        /*!
+         * \brief get the uHAL HW AddressTable
+         */
+        const char* getAddressTable()
+        {
+            return fAddressTable;
         }
         /*!
          * \brief get the uHAL node

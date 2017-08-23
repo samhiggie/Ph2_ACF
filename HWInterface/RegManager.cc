@@ -41,12 +41,15 @@ namespace Ph2_HwInterface {
 
     }
 
-    RegManager::RegManager ( const char* pId, const char* pUri, const char* pAddressTable ) //:
-    //fThread ( [ = ]
-    //{
-    //StackWriteTimeOut();
-    //} ),
-    //fDeactiveThread ( false )
+    RegManager::RegManager ( const char* pId, const char* pUri, const char* pAddressTable ) :
+        fId (pId),
+        fUri (pUri),
+        fAddressTable (pAddressTable)
+        //fThread ( [ = ]
+        //{
+        //StackWriteTimeOut();
+        //} ),
+        //fDeactiveThread ( false )
     {
         // Loging settings
         uhal::disableLogging();
