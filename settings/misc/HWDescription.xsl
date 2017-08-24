@@ -136,13 +136,13 @@
 
                 function DisplayFieldsOnload(){
                     <!--handle other default values-->
-                    var value = '<xsl:value-of select="*/@boardType"/>';
-                    SelectDefaultOption('boardType',value);
-                    value = '<xsl:value-of select="*/@eventType"/>'
-                    SelectDefaultOption('eventType',value);
-                    var CbcNumber = <xsl:value-of select="count(*/*/Cbc)"/>;
-                    value = '<xsl:value-of select="*/SLink/DebugMode/@type"/>'
-                    SelectDefaultOption('debugMode',value);
+                    <!--var value = '<xsl:value-of select="*/@boardType"/>';-->
+                    <!--SelectDefaultOption('boardType',value);-->
+                    <!--value = '<xsl:value-of select="*/@eventType"/>'-->
+                    <!--SelectDefaultOption('eventType',value);-->
+                    <!--var CbcNumber = <xsl:value-of select="count(*/*/Cbc)"/>;-->
+                    <!--value = '<xsl:value-of select="*/SLink/DebugMode/@type"/>'-->
+                    <!--SelectDefaultOption('debugMode',value);-->
 
                     <!--handle the condition data fields-->
                     var ConditionDataNumber = <xsl:value-of select="count(*/SLink/ConditionData)"/>;
@@ -167,10 +167,6 @@
                 
                  window.onload = DisplayFieldsOnload();
                 </script> 
-            <!--<body onload='DisplayFieldsOnload();'>-->
-                <!--<h3>HWDescription</h3>-->
-                <!--<xsl:apply-templates select="BeBoard"/>-->
-            <!--</body>-->
     </xsl:template>
 
     <!--Template for BeBoard nodes-->
@@ -181,7 +177,8 @@
             <li>
             BoardType: 
                 <select name="boardType" id="boardType" onchange="SetEventType(this.value);">
-                    <option value="D19C" selected="selected">D19C</option>
+                    <option value="{@boardType}"><xsl:value-of select="@boardType"/></option>
+                    <option value="D19C">D19C</option>
                     <option value="CBC3FC7">CBC3FC7</option>
                     <option value="GLIB">GLIB</option>
                     <option value="CTA">CTA</option>
@@ -192,7 +189,8 @@
             <li>
             EventType:
                     <select name="eventType" id="eventType">
-                    <option value="VR" selected="selected">VR</option>
+                        <option value="{@eventType}"><xsl:value-of select="@eventType"/></option>
+                    <option value="VR">VR</option>
                     <option value="ZS">ZS</option>
                     </select>
             </li>
@@ -234,23 +232,23 @@
         <h4> Module Id: <xsl:value-of select="@FeId"/></h4>
              FMCId: <xsl:value-of select="@FMCId"/>
              ModuleId: <xsl:value-of select="@ModuleId"/>
-             Status: <input type="text" name="module_status" size="1" value="{@Status}">
-            </input>
+             Status:
+             <input type="text" name="module_status" size="1" value="{@Status}"/>
             <br></br>
-            <div class="CBC">
-            CBC FilePath: <input type="text" name="cbc_filepath" size="20" value="{CBC_Files/@path}">
-            </input>
-            <!--<div class="Config">-->
+            <div>
+                CBC FilePath: <input type="text" name="cbc_filepath" size="20" value="{CBC_Files/@path}"/>
+            <!--</input>-->
             <xsl:apply-templates select="Global"/>
             <ul>
             <xsl:apply-templates select="Global_CBC_Register"/>
             </ul>
             </div>
+            <div>
             <ul>
                 <xsl:apply-templates select="CBC"/>
             </ul>
             </div>
-        <!--</div>-->
+        </div>
     </xsl:template>
 
     <!--Template for CBC nodes-->
@@ -264,7 +262,10 @@
                     <option value="Cbc_default_irrad.txt">Cbc_default_irrad.txt</option>
                     <option value="FE0CBC{@Id}">FE0CBC<xsl:value-of select="@Id"/></option>
                     <option value="other">other</option>
-                </select> <br></br><input type="text" name="configfile{@Id}" id="configfile{@Id}" style="display:none;" placeholder="your filename"></input>
+                </select>
+                <br></br>
+                <input type="text" name="configfile{@Id}" id="configfile{@Id}" style="display:none;" placeholder="your filename"/>
+            <!--</input>-->
         </li>
         <!--<div class="Config">-->
         <ul>
@@ -275,9 +276,9 @@
             <xsl:apply-templates select="ChannelMask"/>
             <xsl:if test="Register">
             <li> CBCRegisters: </li>
-            <ul>
+            <!--<ul>-->
                 <xsl:apply-templates select="Register"/>
-            </ul>
+            <!--</ul>-->
             </xsl:if>
         </ul>
         <!--</div>-->
@@ -373,8 +374,8 @@
 
     <!--Template for GlobalNodes-->
     <xsl:template match="Global">
-        <h5> Global CBC Config </h5>
         <div class="Config">
+        <h5> Global CBC Config </h5>
             <ul>
                 <xsl:apply-templates select="Settings"/>
                 <xsl:apply-templates select="TestPulse"/>
@@ -388,8 +389,8 @@
     <!--Template for GlobalCBCRegister node-->
     <xsl:template match="Global_CBC_Register">
         <li> GlobalCBCRegister: <xsl:value-of select="@name"/>
-            <input type="text" name="glob_cbc_reg:{@name}" size ="5" value="{.}">
-            </input>
+            <input type="text" name="glob_cbc_reg:{@name}" size ="5" value="{.}"/>
+            <!--</input>-->
         </li>
     </xsl:template>
 
@@ -410,7 +411,8 @@
         <li>
              Debug Mode:
             <select name="debugMode" id="debugMode">
-                <option name="FULL" selected="selected">FULL</option>
+                <option name="{@type}"><xsl:value-of select="@type"/></option>
+                <option name="FULL">FULL</option>
                 <option name="SUMMARY">SUMMARY</option>
                 <option name="ERROR">ERROR</option>
             </select>
