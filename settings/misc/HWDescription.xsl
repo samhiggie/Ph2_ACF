@@ -4,13 +4,10 @@
 
     <!--now parse the whole thing-->
     <xsl:template match="/*">
-        <!--<html>-->
-            <!--<form method="post">-->
-        <!--<form>-->
-            <!--<input type="submit" id="btn_sub" name="btn_sub" value="Submit" />-->
-            <!--<input type="reset" id="btn_res" name="btn_res" value="Reset" />-->
-            <!--<head>-->
-                <!--<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>-->
+            <body onload='DisplayFieldsOnload();'>
+                <h3>HWDescription</h3>
+                <xsl:apply-templates select="BeBoard"/>
+            </body>
                 <script type="text/javascript">
                  function SelectFile(val, Id){
                     var element=document.getElementById('configfile'+Id.toString());
@@ -20,18 +17,21 @@
                       element.style.display='none';
                 }
 
-                <!--function SetEventType(val) {-->
-                    <!--var eventtype=document.getElementById('eventTypeZS');-->
-                    <!--var eventtypelabel=document.getElementById('eventTypeZSLabel');-->
-                    <!--if(val == "D19C") {-->
-                            <!--eventtype.style.display='inline';-->
-                            <!--eventtypelabel.style.display='inline';-->
-                    <!--}-->
-                    <!--else {-->
-                            <!--eventtype.style.display='none';-->
-                            <!--eventtypelabel.style.display='none';-->
-                    <!--}-->
-                <!--}-->
+
+                function SelectDefaultOption(id, val)
+                {    
+                    console.log(id, val)
+                    var element = document.getElementById(id);
+                    if(element != null)
+                    {
+                        for(var i, j = 0; i = element.options[j]; j++) {
+                            if(i.value == val) {
+                                element.selectedIndex = j;
+                                break;
+                             }
+                        }
+                    }
+                 }
 
                 function SetEventType(val) {
                     console.log(val)
@@ -40,9 +40,8 @@
                     <!--if the value of boardType is not D19C, disable ZS -->
                     if(val != 'D19C') {
                         for(var i = 0; i &lt; op.length; i++) {
-                            <!--(op[i] == 'ZS') ? op[i].disabled = true : op[i].disabled = false ;-->
                             if(op[i].value=='ZS'){ op[i].disabled = true;
-                            console.log(op[i])
+                            <!--console.log(op[i])-->
                             }
                         }
                     }
@@ -51,7 +50,7 @@
                         for (var i = 0; i &lt; op.length; i++) {
                             if(op[i].value == 'ZS') op[i].disabled = false;
                             else op[i].disabled = false;
-                            console.log(op[i])
+                            <!--console.log(op[i])-->
                          }
                     }
                 }
@@ -136,6 +135,16 @@
                 }
 
                 function DisplayFieldsOnload(){
+                    <!--handle other default values-->
+                    var value = '<xsl:value-of select="*/@boardType"/>';
+                    SelectDefaultOption('boardType',value);
+                    value = '<xsl:value-of select="*/@eventType"/>'
+                    SelectDefaultOption('eventType',value);
+                    var CbcNumber = <xsl:value-of select="count(*/*/Cbc)"/>;
+                    value = '<xsl:value-of select="*/SLink/DebugMode/@type"/>'
+                    SelectDefaultOption('debugMode',value);
+
+                    <!--handle the condition data fields-->
                     var ConditionDataNumber = <xsl:value-of select="count(*/SLink/ConditionData)"/>;
                     for(i=1; i&lt;ConditionDataNumber+1; i++) {
                         var elem = document.getElementById('conddata_'+i);
@@ -146,24 +155,22 @@
                             DisplayFields(selected_node, i);
                         }
                     }
-                        var boardtype = document.getElementById('boardType');
-                        if(boardtype != null) {
-                            var boardtypenode = boardtype.options[boardtype.selectedIndex].value;
-                            console.log(boardtypenode)
-                            SetEventType(boardtypenode);
-                        }
+                    <!--handle the event type input-->
+                    var boardtype = document.getElementById('boardType');
+                    if(boardtype != null) {
+                        var boardtypenode = boardtype.options[boardtype.selectedIndex].value;
+                        <!--console.log(boardtypenode)-->
+                        SetEventType(boardtypenode);
+                    }
+
                 }
                 
                  window.onload = DisplayFieldsOnload();
                 </script> 
-                <!--<link rel="stylesheet" type="text/css" href="misc/HWStyle.css"/>-->
-            <!--</head>-->
-            <body onload='DisplayFieldsOnload();'>
-                <h3>HWDescription</h3>
-                <xsl:apply-templates select="BeBoard"/>
-            </body>
-        <!--</form>-->
-        <!--</html>-->
+            <!--<body onload='DisplayFieldsOnload();'>-->
+                <!--<h3>HWDescription</h3>-->
+                <!--<xsl:apply-templates select="BeBoard"/>-->
+            <!--</body>-->
     </xsl:template>
 
     <!--Template for BeBoard nodes-->
@@ -172,10 +179,9 @@
         <h4> BeBoard Id: <xsl:value-of select="@Id"/> </h4>
             <div class="General">
             <li>
-                BoardType: 
+            BoardType: 
                 <select name="boardType" id="boardType" onchange="SetEventType(this.value);">
-                    <option value="{@boardType}"><xsl:value-of select="@boardType"/></option>
-                    <option value="D19C">D19C</option>
+                    <option value="D19C" selected="selected">D19C</option>
                     <option value="CBC3FC7">CBC3FC7</option>
                     <option value="GLIB">GLIB</option>
                     <option value="CTA">CTA</option>
@@ -183,37 +189,28 @@
                     <option value="ICFC7">ICFC7</option>
                 </select>
             </li>
-            <xsl:choose>
-                <xsl:when test="@boardType != 'D19C'">
-                    <li>
-                        EventType: <xsl:value-of select="@eventType"/>
-                    </li>
-                </xsl:when>
-                <xsl:otherwise>
-                    <li>
-                        EventType:
-                            <select name="eventType" id="eventType">
-                            <option value="{@eventType}"><xsl:value-of select="@eventType"/></option>
-                            <option value="VR">VR</option>
-                            <option value="ZS">ZS</option>
-                            </select>
-                    </li>
-                </xsl:otherwise>
-            </xsl:choose>
-                  <li>Connection Id:
-                  <input type="text" name="connection_id" size="10" value="{connection/@id}">
-                      </input>
-                  </li>
-                  <li>
-                  URI: 
-                  <input type="text" name="connection_uri" size="28" value="{connection/@uri}">
-                      </input>
-                  </li>
-                  <li>
-                  Address Table:
-                  <input type="text" name="address_table" size="48" value="{connection/@address_table}">
-                      </input>
-                  </li>
+            <li>
+            EventType:
+                    <select name="eventType" id="eventType">
+                    <option value="VR" selected="selected">VR</option>
+                    <option value="ZS">ZS</option>
+                    </select>
+            </li>
+            <li>
+            Connection Id:
+            <input type="text" name="connection_id" size="10" value="{connection/@id}">
+                </input>
+            </li>
+            <li>
+            URI: 
+            <input type="text" name="connection_uri" size="28" value="{connection/@uri}">
+                </input>
+            </li>
+            <li>
+            Address Table:
+            <input type="text" name="address_table" size="48" value="{connection/@address_table}">
+                </input>
+            </li>
         </div>
         
             <!--Module-->
@@ -235,7 +232,7 @@
     <xsl:template match="Module">
         <div class="Module">
         <h4> Module Id: <xsl:value-of select="@FeId"/></h4>
-            FMCId: <xsl:value-of select="@FMCId"/>
+             FMCId: <xsl:value-of select="@FMCId"/>
              ModuleId: <xsl:value-of select="@ModuleId"/>
              Status: <input type="text" name="module_status" size="1" value="{@Status}">
             </input>
@@ -249,9 +246,9 @@
             <xsl:apply-templates select="Global_CBC_Register"/>
             </ul>
             </div>
-            <ol>
+            <ul>
                 <xsl:apply-templates select="CBC"/>
-            </ol>
+            </ul>
             </div>
         <!--</div>-->
     </xsl:template>
@@ -259,8 +256,7 @@
     <!--Template for CBC nodes-->
     <xsl:template match="CBC">
         <li> CBC Id: <xsl:value-of select="@Id"/>  ConfigFile: 
-            <!--TODO-->
-            <select name="configfile{@Id}" onchange='SelectFile(this.value,{@Id});'>
+            <select name="configfile{@Id}" id="configfile{@Id}" onchange='SelectFile(this.value,{@Id});'>
                     <option value="{@configfile}"><xsl:value-of select="@configfile"/></option>
                     <option value="Cbc_default_electron.txt">Cbc_default_electron.txt</option>
                     <option value="Cbc_default_hole.txt">Cbc_default_hole.txt</option>
@@ -269,10 +265,6 @@
                     <option value="FE0CBC{@Id}">FE0CBC<xsl:value-of select="@Id"/></option>
                     <option value="other">other</option>
                 </select> <br></br><input type="text" name="configfile{@Id}" id="configfile{@Id}" style="display:none;" placeholder="your filename"></input>
-                <!--<xsl:attribute name="configfile_text">-->
-                    <!--<xsl:value-of select="@configfile"/>-->
-                <!--</xsl:attribute>-->
-            <!--</input>-->
         </li>
         <!--<div class="Config">-->
         <ul>
@@ -294,9 +286,9 @@
     <!--Template for Global|CBC Settings node-->
     <xsl:template match="Settings">
         <li> Settings:  
-            threshold = <input type="text" name="{name(..)}threshold" size="4" value="{@threshold}">
+            threshold = <input type="text" name="{name(..)}_{../@Id}_threshold" size="4" value="{@threshold}">
             </input>
-        latency=<input type="text" name="{name(..)}latency" size="4" value="{@latency}">
+        latency=<input type="text" name="{name(..)}_{../@Id}_latency" size="4" value="{@latency}">
             </input>
         </li>
     </xsl:template>
@@ -304,103 +296,46 @@
     <!--Template for Global|CBC TestPulse node-->
     <xsl:template match="TestPulse">
         <li> TestPulse: enable
-            <!--<input type="text" name="{name(..)}tp_enable" size ="1" value="{@enable}">-->
-                <input type="hidden" name="{name(..)}tp_enable" value="0" />
-                <input type="checkbox" name="{name(..)}tp_enable" value="1" >
-                    <xsl:if test="@enable = 1">
-                        <xsl:attribute name="checked">
-                        <xsl:value-of select="@checked"/>
-                        </xsl:attribute>
-                    </xsl:if>
-                </input>
-            <!--</input>-->
+            <input type="number" name="{name(..)}_{../@Id}_tp_enable" size ="1" min="0" max="1" value="{@enable}"/>
             polarity=
-            <input type="radio" name="{name(..)}tp_polarity" value="0">
-                    <xsl:if test="@polarity = 0">
-                        <xsl:attribute name="checked">
-                        <xsl:value-of select="@checked"/>
-                        </xsl:attribute>
-                    </xsl:if>
-                </input>electron
-                <input type="radio" name="{name(..)}tp_polarity" value="1">
-                    <xsl:if test="@polarity = 1">
-                        <xsl:attribute name="checked">
-                        <xsl:value-of select="@checked"/>
-                        </xsl:attribute>
-                    </xsl:if>
-                </input>hole
-            <!--<input type="text" name="{name(..)}tp_polarity" size ="1" value="{@polarity}">-->
-               <!--<xsl:attribute name="polarity">-->
-                   <!--<xsl:value-of select="@polarity"/>-->
-               <!--</xsl:attribute>-->
-           <!--</input>-->
+            <select name="{name(..)}_{../@Id}_tp_polarity" id="{name(..)}_{../@Id}_tp_polarity">
+                <option value="{@polarity}"><xsl:value-of select="@polarity"/></option>
+                <option value="0">electron</option>
+                <option value="1">hole</option>
+            </select>
             amplitude=
-            <input type="text" name="{name(..)}tp_amplitude" size ="5" value="{@amplitude}">
+            <input type="text" name="{name(..)}_{../@Id}_tp_amplitude" size ="5" value="{@amplitude}">
            </input>
             channelgroup=
-            <!--<input type="text" name="{name(..)}tp_channelgroup" size ="5" value="{@channelgroup}">-->
-               <!--<xsl:attribute name="channelgroup">-->
-                   <!--<xsl:value-of select="@channelgroup"/>-->
-               <!--</xsl:attribute>-->
-           <!--</input>-->
-            <input type="number" name="{name(..)}tp_channelgroup" size="5" min="0" max="7" value="{@channelgroup}"/>
+            <input type="number" name="{name(..)}_{../@Id}_tp_channelgroup" size="5" min="0" max="7" value="{@channelgroup}"/>
             delay=
-            <input type="number" name="{name(..)}tp_delay" size="5" min="0" max="24" value="{@delay}"/>
-            <!--<input type="text" name="{name(..)}tp_delay" size ="5" value="{@delay}">-->
-               <!--<xsl:attribute name="delay">-->
-                   <!--<xsl:value-of select="@delay"/>-->
-               <!--</xsl:attribute>-->
-           <!--</input>-->
+            <input type="number" name="{name(..)}_{../@Id}_tp_delay" size="5" min="0" max="24" value="{@delay}"/>
             groundOthers=
-            <input type="hidden" name="{name(..)}tp_groundothers" value="0" />
-                <input type="checkbox" name="{name(..)}tp_groundothers" value="1" >
-                    <xsl:if test="@groundothers = 1">
-                        <xsl:attribute name="checked">
-                        <xsl:value-of select="@checked"/>
-                        </xsl:attribute>
-                    </xsl:if>
-                </input>
-            <!--<input type="text" name="{name(..)}tp_groundothers" size ="1" value="{@groundothers}">-->
-               <!--<xsl:attribute name="groundothers">-->
-                   <!--<xsl:value-of select="@groundothers"/>-->
-               <!--</xsl:attribute>-->
-           <!--</input>-->
+            <input type="number" name="{name(..)}_{../@Id}_tp_groundothers" size ="1" min="0" max="1" value="{@groundothers}"/>
         </li> 
     </xsl:template>
 
     <!--Template for Global|CBC ClusterStub node-->
     <xsl:template match="ClusterStub">
         <li> ClusterStub: clusterwidth=
-            <input type="text" name="{name(..)}cs_clusterwidth" size ="1" value="{@clusterwidth}">
+            <input type="text" name="{name(..)}_{../@Id}_cs_clusterwidth" size ="1" value="{@clusterwidth}">
             </input>
             ptwidth=
-            <input type="text" name="{name(..)}cs_ptwidth" size ="1" value="{@ptwidth}">
+            <input type="text" name="{name(..)}_{../@Id}_cs_ptwidth" size ="1" value="{@ptwidth}">
            </input>
             layerswap=
-                <input type="hidden" name="{name(..)}cs_layerswap" value="0" />
-                <input type="checkbox" name="{name(..)}cs_layerswap" value="1" >
-                    <xsl:if test="@layerswap = 1">
-                        <xsl:attribute name="checked">
-                        <xsl:value-of select="@checked"/>
-                        </xsl:attribute>
-                    </xsl:if>
-                </input>
-            <!--<input type="text" name="{name(..)}cs_layerswap" size ="1" value="{@layerswap}">-->
-               <!--<xsl:attribute name="layerswap">-->
-                   <!--<xsl:value-of select="@layerswap"/>-->
-               <!--</xsl:attribute>-->
-           <!--</input>-->
+                <input type="number" name="{name(..)}_{../@Id}_cs_layerswap" size ="1" min="0" max="1" value="{@layerswap}"/>
             off1=
-            <input type="text" name="{name(..)}cs_off1" size ="2" value="{@off1}">
+            <input type="text" name="{name(..)}_{../@Id}_cs_off1" size ="2" value="{@off1}">
            </input>
             off2=
-            <input type="text" name="{name(..)}cs_off2" size ="2" value="{@off2}">
+            <input type="text" name="{name(..)}_{../@Id}_cs_off2" size ="2" value="{@off2}">
            </input>
             off3=
-            <input type="text" name="{name(..)}cs_off3" size ="2" value="{@off3}">
+            <input type="text" name="{name(..)}_{../@Id}_cs_off3" size ="2" value="{@off3}">
            </input>
             off4=
-            <input type="text" name="{name(..)}cs_off4" size ="2" value="{@off4}">
+            <input type="text" name="{name(..)}_{../@Id}_cs_off4" size ="2" value="{@off4}">
            </input>
         </li> 
     </xsl:template>
@@ -408,58 +343,22 @@
     <!--Template for Global|CBC Misc node-->
     <xsl:template match="Misc">
         <li> Misc: analogmux=
-            <input type="text" name="{name(..)}misc_amux" size ="8" value="{@analogmux}">
+            <input type="text" name="{name(..)}_{../@Id}_misc_amux" size ="8" value="{@analogmux}">
             </input>
             pipelogic=
-            <input type="text" name="{name(..)}misc_piplogic" size ="1" value="{@pipelogic}">
+            <input type="text" name="{name(..)}_{../@Id}_misc_piplogic" size ="1" value="{@pipelogic}">
            </input>
             stublogic=
-            <input type="text" name="{name(..)}misc_stublogic" size ="1" value="{@stublogic}">
+            <input type="text" name="{name(..)}_{../@Id}_misc_stublogic" size ="1" value="{@stublogic}">
            </input>
             or254=
-                <input type="hidden" name="{name(..)}misc_or254" value="0" />
-                <input type="checkbox" name="{name(..)}misc_or254" value="1" >
-                    <xsl:if test="@or254 = 1">
-                        <xsl:attribute name="checked">
-                        <xsl:value-of select="@checked"/>
-                        </xsl:attribute>
-                    </xsl:if>
-                </input>
-            <!--<input type="text" name="{name(..)}misc_or254" size ="2" value="{@or254}">-->
-               <!--<xsl:attribute name="or254">-->
-                   <!--<xsl:value-of select="@or254"/>-->
-               <!--</xsl:attribute>-->
-           <!--</input>-->
+            <input type="number" name="{name(..)}_{../@Id}_misc_or254" size ="1" min="0" max="1" value="{@or254}"/>
             tpgclock=
-                <input type="hidden" name="{name(..)}misc_tpgclock" value="0" />
-                <input type="checkbox" name="{name(..)}misc_tpgclock" value="1" >
-                    <xsl:if test="@tpgclock = 1">
-                        <xsl:attribute name="checked">
-                        <xsl:value-of select="@checked"/>
-                        </xsl:attribute>
-                    </xsl:if>
-                </input>
-            <!--<input type="text" name="{name(..)}misc_tpgclock" size ="2" value="{@tpgclock}">-->
-               <!--<xsl:attribute name="tpgclock">-->
-                   <!--<xsl:value-of select="@tpgclock"/>-->
-               <!--</xsl:attribute>-->
-           <!--</input>-->
+            <input type="number" name="{name(..)}_{../@Id}_misc_tpgclock" size ="1" min="0" max="1" value="{@tpgclock}"/>
             testclock=
-                <input type="hidden" name="{name(..)}misc_testclock" value="0" />
-                <input type="checkbox" name="{name(..)}misc_testclock" value="1" >
-                    <xsl:if test="@testclock = 1">
-                        <xsl:attribute name="checked">
-                        <xsl:value-of select="@checked"/>
-                        </xsl:attribute>
-                    </xsl:if>
-                </input>
-            <!--<input type="text" name="{name(..)}misc_testclock" size ="2" value="{@testclock}">-->
-               <!--<xsl:attribute name="testclock">-->
-                   <!--<xsl:value-of select="@testclock"/>-->
-               <!--</xsl:attribute>-->
-           <!--</input>-->
+            <input type="number" name="{name(..)}_{../@Id}_misc_testclock" size ="1" min="0" max="1" value="{@testclock}"/>
             dll=
-            <input type="text" name="{name(..)}misc_dll" size ="2" value="{@dll}">
+            <input type="text" name="{name(..)}_{../@Id}_misc_dll" size ="2" value="{@dll}">
            </input>
         </li> 
     </xsl:template>
@@ -467,7 +366,7 @@
     <!--Template for Global|CBC ChannelMask node-->
     <xsl:template match="ChannelMask">
         <li> ChannelMask (comma separated list):
-            <input type="text" name="{name(..)}chanmas_disable" size ="18" value="{@disable}">
+            <input type="text" name="{name(..)}_{../@Id}_chanmas_disable" size ="18" value="{@disable}">
             </input>
         </li>
     </xsl:template>
@@ -489,7 +388,7 @@
     <!--Template for GlobalCBCRegister node-->
     <xsl:template match="Global_CBC_Register">
         <li> GlobalCBCRegister: <xsl:value-of select="@name"/>
-            <input type="text" name="glob_cbc_reg" size ="5" value="{.}">
+            <input type="text" name="glob_cbc_reg:{@name}" size ="5" value="{.}">
             </input>
         </li>
     </xsl:template>
@@ -510,14 +409,8 @@
     <xsl:template match="DebugMode">
         <li>
              Debug Mode:
-             <!--<input type="text" name="slink_debugmode" size ="7" value="{@type}">-->
-                 <!--<xsl:attribute name="type">-->
-                     <!--<xsl:value-of select="@type"/>-->
-                 <!--</xsl:attribute>-->
-             <!--</input>-->
-            <select name="debugMode">
-                <option name="{@type}"><xsl:value-of select="@type"/></option>
-                <option name="FULL">FULL</option>
+            <select name="debugMode" id="debugMode">
+                <option name="FULL" selected="selected">FULL</option>
                 <option name="SUMMARY">SUMMARY</option>
                 <option name="ERROR">ERROR</option>
             </select>
@@ -570,7 +463,7 @@
     <xsl:template match="Register[not(Register)]">
         <li> <xsl:value-of select="@name"/>:
             <!--<xsl:value-of select="@name"/>-->
-            <input type="text" name="{../../../@name}.{../../@name}.{../@name}.{@name}" size ="5" value="{.}">
+            <input type="text" name="{../../../@name}.{../../@name}.{../@name}.{../@Id}{@name}" size ="5" value="{.}">
                 <!--<xsl:attribute name="Register">-->
                     <!--<xsl:value-of select="Register"/>-->
                 <!--</xsl:attribute>-->
