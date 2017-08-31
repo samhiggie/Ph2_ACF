@@ -264,7 +264,7 @@ void Tool::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool p
                 std::vector<std::pair<std::string, uint8_t>> cRegVec;
                 uint8_t cRegValue =  to_reg ( 0, pTestGroup );
 
-                if (fType == ChipType::CBC3)
+                if (cCbc->getChipType() == ChipType::CBC3)
                 {
                     uint8_t cTPRegValue;
 
