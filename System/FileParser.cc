@@ -5,7 +5,9 @@ namespace Ph2_System {
 
     void FileParser::parseHW ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os, bool pIsFile )
     {
-        if ( pFilename.find ( ".xml" ) != std::string::npos )
+        if (pIsFile && pFilename.find ( ".xml" ) != std::string::npos )
+            parseHWxml ( pFilename, pBeBoardFWMap, pBoardVector, os, pIsFile );
+        else if (!pIsFile)
             parseHWxml ( pFilename, pBeBoardFWMap, pBoardVector, os, pIsFile );
         else
             LOG (ERROR) << "Could not parse settings file " << pFilename << " - it is not .xml!" ;
@@ -13,7 +15,9 @@ namespace Ph2_System {
 
     void FileParser::parseSettings ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os, bool pIsFile)
     {
-        if ( pFilename.find ( ".xml" ) != std::string::npos )
+        if ( pIsFile && pFilename.find ( ".xml" ) != std::string::npos )
+            parseSettingsxml ( pFilename, pSettingsMap, os, pIsFile );
+        else if (!pIsFile)
             parseSettingsxml ( pFilename, pSettingsMap, os, pIsFile );
         else
             LOG (ERROR) << "Could not parse settings file " << pFilename << " - it is not .xm!" ;

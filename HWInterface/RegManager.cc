@@ -53,10 +53,8 @@ namespace Ph2_HwInterface {
         // Loging settings
         uhal::disableLogging();
         uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
-        std::cout << pAddressTable << std::endl;
-        std::string cAddressTable = pAddressTable;
 
-        fBoard = new uhal::HwInterface (uhal::ConnectionManager::getDevice (pId, pUri, cAddressTable) );
+        fBoard = new uhal::HwInterface (uhal::ConnectionManager::getDevice (pId, pUri, pAddressTable) );
 
         //fThread.detach();
     }
