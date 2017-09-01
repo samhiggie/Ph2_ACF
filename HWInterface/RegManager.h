@@ -39,7 +39,6 @@ namespace Ph2_HwInterface {
         //std::thread fThread;         [>!< Thread for timeout stack writing<]
         //bool fDeactiveThread;         [>!< Bool to terminate the thread in the destructor<]
         std::mutex fBoardMutex;         /*!< Mutex to avoid conflict btw threads on shared resources*/
-        static std::string strDummyXml;
         const char* fUri;
         const char* fAddressTable;
         const char* fId;
@@ -125,13 +124,7 @@ namespace Ph2_HwInterface {
             if (fBoard)
             {
                 delete fBoard;
-                std::string cFilename = strDummyXml;
-
-                if (getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") != nullptr)
-                    cFilename = std::string ("file://") + getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") + "/otsdaq-cmsoutertracker/Ph2_ACF/HWInterface/dummy.xml";
-
-                uhal::ConnectionManager cm ( cFilename ); // Get connection
-                fBoard = new uhal::HwInterface ( cm.getDevice ( pId, pUri, pAddressTable ) );
+                fBoard = new uhal::HwInterface ( uhal::ConnectionManager::getDevice ( pId, pUri, pAddressTable ) );
             }
         }
         /*!
@@ -173,9 +166,6 @@ namespace Ph2_HwInterface {
          * \brief get the uHAL node
          */
         const uhal::Node& getUhalNode ( const std::string& pStrPath );
-
-        static void setDummyXml ( const std::string strDummy);
-
     };
 }
 

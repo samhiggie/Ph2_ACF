@@ -16,7 +16,6 @@
 #define DEV_FLAG    0
 
 namespace Ph2_HwInterface {
-    std::string RegManager::strDummyXml = "file://HWInterface/dummy.xml";
 
     RegManager::RegManager ( const char* puHalConfigFileName, uint32_t pBoardId ) //:
     //fThread ( [ = ]
@@ -53,16 +52,11 @@ namespace Ph2_HwInterface {
     {
         // Loging settings
         uhal::disableLogging();
-        //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
+        uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
+        std::cout << pAddressTable << std::endl;
+        std::string cAddressTable = pAddressTable;
 
-        std::string cFilename = strDummyXml;
-
-        if (getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") != nullptr)
-            cFilename = std::string ("file://") + getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") + "/otsdaq-cmsoutertracker/Ph2_ACF/HWInterface/dummy.xml";
-
-        uhal::ConnectionManager cm ( cFilename ); // Get connection
-
-        fBoard = new uhal::HwInterface ( cm.getDevice ( pId, pUri, pAddressTable ) );
+        fBoard = new uhal::HwInterface (uhal::ConnectionManager::getDevice (pId, pUri, cAddressTable) );
 
         //fThread.detach();
     }
@@ -73,11 +67,6 @@ namespace Ph2_HwInterface {
         //fDeactiveThread = true;
 
         if ( fBoard ) delete fBoard;
-    }
-
-    void RegManager::setDummyXml ( const std::string strDummy)
-    {
-        strDummyXml = strDummy;
     }
 
     bool RegManager::WriteReg ( const std::string& pRegNode, const uint32_t& pVal )
