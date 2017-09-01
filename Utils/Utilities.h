@@ -13,10 +13,12 @@
 #define __UTILITIES_H__
 
 #include <math.h>
+#include "easylogging++.h"
 #include <sys/time.h>
 #include <stdint.h>
 #include <ios>
 #include <istream>
+#include <fstream>
 #include <limits>
 #include "../HWDescription/Definition.h"
 #include <iostream>
@@ -25,6 +27,7 @@
 #include <string>
 #include <cstdio>
 #include <memory>
+#include <sys/stat.h>
 
 template<typename ... Args>
 std::string string_format ( const std::string& format, Args ... args )
@@ -74,4 +77,11 @@ uint8_t reverseBits (const uint8_t cValue);
 // tokenize string
 void tokenize ( const std::string& str, std::vector<std::string>& tokens, const std::string& delimiters );
 
+/*! \brief Expand environment variables in string
+ * \param s input string
+ * \return Result with variables expanded */
+std::string expandEnvironmentVariables ( std::string s ) ;
+
+// get run number from file
+std::string getDataFileName (const std::string& pPath, int& pRunNumber);
 #endif

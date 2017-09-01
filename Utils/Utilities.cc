@@ -155,3 +155,62 @@ void tokenize ( const std::string& str, std::vector<std::string>& tokens, const 
 
     tokens = cTokens;
 }
+
+std::string getDataFileName (const std::string& pPath, int& pRunNumber)
+{
+
+    std::string line;
+    std::fstream cFile;
+    std::string filename = expandEnvironmentVariables (pPath) + "/.run_number.txt";
+
+    struct stat buffer;
+
+    if (stat (filename.c_str(), &buffer) == 0)
+    {
+
+        cFile.open ( filename.c_str(), std::fstream::out | std::fstream::in );
+
+        if ( cFile.is_open() )
+        {
+            cFile >> pRunNumber ;
+
+            pRunNumber ++;
+            cFile.clear();
+            cFile.seekp ( 0 );
+            cFile << pRunNumber;
+            cFile.close();
+        }
+        else
+            LOG (WARNING) << "Run Number File " << filename << " not opened!" ;
+    }
+    else if (pRunNumber != -1)
+    {
+        pRunNumber = 1;
+        cFile.open (filename, std::fstream::out );
+        cFile << pRunNumber;
+        cFile.close();
+    }
+
+    //TString cRunString = Form ( "run_%04d.raw", pRunNumber );
+    //return cRunString.Data();
+    return string_format ("run_%04d.raw", pRunNumber);
+}
+
+std::string expandEnvironmentVariables ( std::string s )
+{
+    if ( s.find ( "${" ) == std::string::npos ) return s;
+
+    std::string pre  = s.substr ( 0, s.find ( "${" ) );
+    std::string post = s.substr ( s.find ( "${" ) + 2 );
+
+    if ( post.find ( '}' ) == std::string::npos ) return s;
+
+    std::string variable = post.substr ( 0, post.find ( '}' ) );
+    std::string value    = "";
+
+    post = post.substr ( post.find ( '}' ) + 1 );
+
+    if ( getenv ( variable.c_str() ) != NULL ) value = std::string ( getenv ( variable.c_str() ) );
+
+    return expandEnvironmentVariables ( pre + value + post );
+}
