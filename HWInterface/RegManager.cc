@@ -27,17 +27,12 @@ namespace Ph2_HwInterface {
         // Loging settings
         uhal::disableLogging();
         //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
-
         fUHalConfigFileName = puHalConfigFileName;
-
         uhal::ConnectionManager cm ( fUHalConfigFileName ); // Get connection
         char cBuff[7];
         sprintf ( cBuff, "board%d", pBoardId );
-
         fBoard = new uhal::HwInterface ( cm.getDevice ( ( cBuff ) ) );
-
         //fThread.detach();
-
     }
 
     RegManager::RegManager ( const char* pId, const char* pUri, const char* pAddressTable ) :
@@ -52,10 +47,8 @@ namespace Ph2_HwInterface {
     {
         // Loging settings
         uhal::disableLogging();
-        uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
-
+        //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
         fBoard = new uhal::HwInterface (uhal::ConnectionManager::getDevice (pId, pUri, pAddressTable) );
-
         //fThread.detach();
     }
 
