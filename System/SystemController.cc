@@ -74,9 +74,9 @@ namespace Ph2_System {
     }
 
 
-    void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os )
+    void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os, bool pIsFile )
     {
-        this->fParser.parseHW (pFilename, fBeBoardFWMap, fBoardVector, os );
+        this->fParser.parseHW (pFilename, fBeBoardFWMap, fBoardVector, os, pIsFile );
 
         fBeBoardInterface = new BeBoardInterface ( fBeBoardFWMap );
         fCbcInterface = new CbcInterface ( fBeBoardFWMap );
@@ -85,9 +85,9 @@ namespace Ph2_System {
             this->initializeFileHandler();
     }
 
-    void SystemController::InitializeSettings ( const std::string& pFilename, std::ostream& os )
+    void SystemController::InitializeSettings ( const std::string& pFilename, std::ostream& os, bool pIsFile )
     {
-        this->fParser.parseSettings (pFilename, fSettingsMap, os );
+        this->fParser.parseSettings (pFilename, fSettingsMap, os, pIsFile );
     }
 
     void SystemController::ConfigureHw ( bool bIgnoreI2c )

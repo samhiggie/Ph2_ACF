@@ -25,6 +25,7 @@
 #include "../HWInterface/D19cFWInterface.h"
 #include "../HWDescription/Definition.h"
 #include "../Utils/Utilities.h"
+#include "../Utils/Exception.h"
 #include "../Utils/ConditionDataSet.h"
 #include "../Utils/picojson.h"
 #include "../Utils/pugixml.hpp"
@@ -60,8 +61,8 @@ namespace Ph2_System {
         FileParser() {}
         ~FileParser() {}
 
-        void parseHW ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os  );
-        void parseSettings ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os  );
+        void parseHW ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os, bool pIsFile );
+        void parseSettings ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os, bool pIsFile );
         //void parseConditionDataSet (const std::string& pFilename, ConditionDataSet& pSet, std::ostream& os);
 
 
@@ -93,13 +94,13 @@ namespace Ph2_System {
          * \param pFilename : HW Description file
          *\param os : ostream to dump output
          */
-        void parseHWxml ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os  );
+        void parseHWxml ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os, bool pIsFile );
         /*!
          * \brief Initialize the hardware via xml config file
          * \param pFilename : HW Description file
          *\param os : ostream to dump output
          */
-        void parseSettingsxml ( const std::string& pFilename, SettingsMap& pSettingsMap, std::ostream& os );
+        void parseSettingsxml ( const std::string& pFilename, SettingsMap& pSettingsMap, std::ostream& os, bool pIsFile );
         /*!
          * \brief Initialize the ConditionData from xml file
          * \param pFilename : HW Description file
@@ -113,10 +114,6 @@ namespace Ph2_System {
         void parseCbc (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os );
         void parseCbcSettings (pugi::xml_node pCbcNode, Cbc* pCbc, std::ostream& os);
         void parseGlobalCbcSettings (pugi::xml_node pModuleNode, Module* pModule, std::ostream& os);
-        /*! \brief Expand environment variables in string
-         * \param s input string
-         * \return Result with variables expanded */
-        std::string expandEnvironmentVariables ( std::string s ) ;
 
         std::map<uint8_t, std::string> ChannelMaskMapCBC2 =
         {

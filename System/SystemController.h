@@ -138,14 +138,14 @@ namespace Ph2_System {
          * \param pFilename : HW Description file
          *\param os : ostream to dump output
          */
-        void InitializeHw ( const std::string& pFilename, std::ostream& os = std::cout  );
+        void InitializeHw ( const std::string& pFilename, std::ostream& os = std::cout, bool pIsFile = true );
 
         /*!
          * \brief Initialize the settings
          * \param pFilename :   settings file
          *\param os : ostream to dump output
         */
-        void InitializeSettings ( const std::string& pFilename, std::ostream& os = std::cout  );
+        void InitializeSettings ( const std::string& pFilename, std::ostream& os = std::cout, bool pIsFile = true );
         /*!
          * \brief Configure the Hardware with XML file indicated values
          */

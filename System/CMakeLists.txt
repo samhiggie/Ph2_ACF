@@ -1,12 +1,12 @@
 if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
 
     #includes
-    include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${PROJECT_SOURCE_DIR}/HWDescription)
     include_directories(${PROJECT_SOURCE_DIR}/HWInterface)
     include_directories(${PROJECT_SOURCE_DIR}/Utils)
     include_directories(${PROJECT_SOURCE_DIR})
+    include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     
     #library directories
     link_directories(${UHAL_UHAL_LIB_PREFIX})

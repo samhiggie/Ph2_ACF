@@ -3,36 +3,46 @@
 
 namespace Ph2_System {
 
-    void FileParser::parseHW ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os )
+    void FileParser::parseHW ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os, bool pIsFile )
     {
         if ( pFilename.find ( ".xml" ) != std::string::npos )
-            parseHWxml ( pFilename, pBeBoardFWMap, pBoardVector, os );
+            parseHWxml ( pFilename, pBeBoardFWMap, pBoardVector, os, pIsFile );
         else
             LOG (ERROR) << "Could not parse settings file " << pFilename << " - it is not .xml!" ;
     }
 
-    void FileParser::parseSettings ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os)
+    void FileParser::parseSettings ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os, bool pIsFile)
     {
         if ( pFilename.find ( ".xml" ) != std::string::npos )
-            parseSettingsxml ( pFilename, pSettingsMap, os );
+            parseSettingsxml ( pFilename, pSettingsMap, os, pIsFile );
         else
             LOG (ERROR) << "Could not parse settings file " << pFilename << " - it is not .xm!" ;
     }
 
-    void FileParser::parseHWxml ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os )
+    void FileParser::parseHWxml ( const std::string& pFilename, BeBoardFWMap& pBeBoardFWMap, BeBoardVec& pBoardVector, std::ostream& os, bool pIsFile )
     {
-        pugi::xml_document doc;
         uint32_t cBeId, cModuleId;
         uint32_t cNBeBoard = 0;
         cBeId = cModuleId = 0;
         int i, j;
 
-        pugi::xml_parse_result result = doc.load_file ( pFilename.c_str() );
+        pugi::xml_document doc;
+        pugi::xml_parse_result result;
+
+        if (pIsFile)
+            result = doc.load_file ( pFilename.c_str() );
+        else
+            result = doc.load (pFilename.c_str() );
+
 
         if ( !result )
         {
-            os << "ERROR :\n Unable to open the file : " << pFilename << std::endl;
-            os << "Error description : " << result.description() << std::endl;
+            os << BOLDRED << "ERROR :\n Unable to open the file : " << RESET << pFilename << std::endl;
+            os << BOLDRED << "Error description : " << RED << result.description() << RESET << std::endl;
+
+            if (!pIsFile) os << "Error offset: " << result.offset << " (error at [..." << (pFilename.c_str() + result.offset) << "]\n" << std::endl;
+
+            throw Exception ("Unable to parese XML source!");
             return;
         }
 
@@ -67,9 +77,6 @@ namespace Ph2_System {
                 std::string cId = cBeBoardConnectionNode.attribute ( "id" ).value();
                 std::string cUri = cBeBoardConnectionNode.attribute ( "uri" ).value();
                 std::string cAddressTable = expandEnvironmentVariables (cBeBoardConnectionNode.attribute ( "address_table" ).value() );
-
-                if (!strUhalConfig.empty() )
-                    RegManager::setDummyXml (strUhalConfig);
 
                 os << BOLDBLUE << "|" << "       " <<  "|"  << "----" << "Board Id:      " << BOLDYELLOW << cId << std::endl << BOLDBLUE <<  "|" << "       " <<  "|"  << "----" << "URI:           " << BOLDYELLOW << cUri << std::endl << BOLDBLUE <<  "|" << "       " <<  "|"  << "----" << "Address Table: " << BOLDYELLOW << cAddressTable << std::endl << BOLDBLUE << "|" << "       " <<  "|" << RESET << std::endl;
 
@@ -188,6 +195,8 @@ namespace Ph2_System {
         else
         {
             LOG (ERROR) << "Error: Unknown Board Type: " << cBoardType << " - aborting!";
+            std::string errorstring = "Unknown Board Type " + cBoardType;
+            throw Exception (errorstring.c_str() );
             exit (1);
         }
 
@@ -657,15 +666,25 @@ namespace Ph2_System {
         }
     }
 
-    void FileParser::parseSettingsxml ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os)
+    void FileParser::parseSettingsxml ( const std::string& pFilename, SettingsMap& pSettingsMap,  std::ostream& os, bool pIsFile)
     {
         pugi::xml_document doc;
-        pugi::xml_parse_result result = doc.load_file ( pFilename.c_str() );
+        pugi::xml_parse_result result;
+
+        if (pIsFile)
+            result = doc.load_file ( pFilename.c_str() );
+        else
+            result = doc.load (pFilename.c_str() );
+
 
         if ( !result )
         {
-            os << "ERROR :\n Unable to open the file : " << pFilename << std::endl;
-            os << "Error description : " << result.description() << std::endl;
+            os << BOLDRED << "ERROR :\n Unable to open the file : " << RESET << pFilename << std::endl;
+            os << BOLDRED << "Error description : " << RED << result.description() << RESET << std::endl;
+
+            if (!pIsFile) os << "Error offset: " << result.offset << " (error at [..." << (pFilename.c_str() + result.offset) << "]\n" << std::endl;
+
+            throw Exception ("Unable to parse XML source!");
             return;
         }
 
@@ -679,24 +698,5 @@ namespace Ph2_System {
                 os <<  RED << "Setting" << RESET << " --" << BOLDCYAN << nSetting.attribute ( "name" ).value() << RESET << ":" << BOLDYELLOW << convertAnyInt ( nSetting.first_child().value() ) << RESET << std:: endl;
             }
         }
-    }
-
-    std::string FileParser::expandEnvironmentVariables ( std::string s )
-    {
-        if ( s.find ( "${" ) == std::string::npos ) return s;
-
-        std::string pre  = s.substr ( 0, s.find ( "${" ) );
-        std::string post = s.substr ( s.find ( "${" ) + 2 );
-
-        if ( post.find ( '}' ) == std::string::npos ) return s;
-
-        std::string variable = post.substr ( 0, post.find ( '}' ) );
-        std::string value    = "";
-
-        post = post.substr ( post.find ( '}' ) + 1 );
-
-        if ( getenv ( variable.c_str() ) != NULL ) value = std::string ( getenv ( variable.c_str() ) );
-
-        return expandEnvironmentVariables ( pre + value + post );
     }
 }
