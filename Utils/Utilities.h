@@ -13,7 +13,7 @@
 #define __UTILITIES_H__
 
 #include <math.h>
-#include "easylogging++.h"
+//#include "easylogging++.h"
 #include <sys/time.h>
 #include <stdint.h>
 #include <ios>

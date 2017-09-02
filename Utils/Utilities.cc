@@ -180,8 +180,6 @@ std::string getDataFileName (const std::string& pPath, int& pRunNumber)
             cFile << pRunNumber;
             cFile.close();
         }
-        else
-            LOG (WARNING) << "Run Number File " << filename << " not opened!" ;
     }
     else if (pRunNumber != -1)
     {
