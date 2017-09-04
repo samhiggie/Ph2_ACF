@@ -110,6 +110,25 @@ class Tool : public SystemController
         fModuleHistMap = pTool->fModuleHistMap;
     }
 
+    void Inherit (SystemController* pSystemController)
+    {
+        fBeBoardInterface = pSystemController->fBeBoardInterface;
+        fCbcInterface = pSystemController->fCbcInterface;
+        fBoardVector = pSystemController->fBoardVector;
+        fBeBoardFWMap = pSystemController->fBeBoardFWMap;
+        fSettingsMap = pSystemController->fSettingsMap;
+        fFileHandler = pSystemController->fFileHandler;
+        //fDirectoryName = "";
+        //fResultFile = pTool->fResultFile;
+        //fType = pTool->fType;
+        //#ifdef __HTTP__
+        //fHttpServer = pTool->fHttpServer;
+        //#endif
+        //fCanvasMap = pTool->fCanvasMap;
+        //fCbcHistMap = pTool->fCbcHistMap;
+        //fModuleHistMap = pTool->fModuleHistMap;
+    }
+
     void CreateReport()
     {
         std::ofstream report;
