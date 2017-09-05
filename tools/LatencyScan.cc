@@ -146,6 +146,10 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
     cThresholdVisitor.setThreshold (cVcth);
     this->accept (cThresholdVisitor);
 
+    // set test pulse
+    setFWTestPulse();
+    setSystemTestPulse ( fTestPulseAmplitude, 0, true, fHoleMode );
+
     // Now the actual scan
     LOG (INFO) << "Scanning Stub Latency ... " ;
 
