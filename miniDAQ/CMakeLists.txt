@@ -4,6 +4,7 @@ include_directories(${PROJECT_SOURCE_DIR}/HWDescription)
 include_directories(${PROJECT_SOURCE_DIR}/HWInterface)
 include_directories(${PROJECT_SOURCE_DIR}/Utils)
 include_directories(${PROJECT_SOURCE_DIR}/System)
+include_directories(${PROJECT_SOURCE_DIR}/tools)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -81,4 +82,4 @@ target_link_libraries(miniDAQ ${LIBS})
 
 #miniDQM
 add_executable(miniDQM miniDQM.cc publisher.cc publisher.h DQMHistogrammer.cc DQMHistogrammer.h)
-target_link_libraries(miniDQM ${LIBS} RootWeb)
+target_link_libraries(miniDQM ${LIBS} Ph2_Tools RootWeb)

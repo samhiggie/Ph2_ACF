@@ -16,16 +16,32 @@ using namespace Ph2_HwInterface;
 
 namespace Ph2_System {
 
-    SystemController::SystemController()
-        : fFileHandler (nullptr),
-          fWriteHandlerEnabled (false),
-          fData (nullptr)
+    SystemController::SystemController() :
+        fBeBoardInterface (nullptr),
+        fCbcInterface (nullptr),
+        fBoardVector(),
+        fSettingsMap(),
+        fFileHandler (nullptr),
+        fRawFileName (""),
+        fWriteHandlerEnabled (false),
+        fData (nullptr)
     {
     }
 
     SystemController::~SystemController()
     {
     }
+
+    void SystemController::Inherit (SystemController* pController)
+    {
+        fBeBoardInterface = pController->fBeBoardInterface;
+        fCbcInterface = pController->fCbcInterface;
+        fBoardVector = pController->fBoardVector;
+        fBeBoardFWMap = pController->fBeBoardFWMap;
+        fSettingsMap = pController->fSettingsMap;
+        fFileHandler = pController->fFileHandler;
+    }
+
     void SystemController::Destroy()
     {
         if (fFileHandler)

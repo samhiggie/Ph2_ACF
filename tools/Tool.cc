@@ -1,16 +1,118 @@
 #include "Tool.h"
 
-Tool::Tool (const Tool& pTool) :
-    SystemController ( pTool )
+Tool::Tool() :
+    SystemController(),
+    fCanvasMap(),
+    fCbcHistMap(),
+    fModuleHistMap(),
+    fType(),
+    fTestGroupChannelMap(),
+    fDirectoryName (""),
+    fResultFile (nullptr)
 {
+#ifdef __HTTP__
+    fHttpServer = nullptr;
+#endif
+}
+
+Tool::Tool (const Tool& pTool)
+{
+    fBeBoardInterface = pTool.fBeBoardInterface;
+    fCbcInterface = pTool.fCbcInterface;
+    fBoardVector = pTool.fBoardVector;
+    fBeBoardFWMap = pTool.fBeBoardFWMap;
+    fSettingsMap = pTool.fSettingsMap;
+    fFileHandler = pTool.fFileHandler;
+
     fDirectoryName = pTool.fDirectoryName;             /*< the Directoryname for the Root file with results */
     fResultFile = pTool.fResultFile;                /*< the Name for the Root file with results */
+    fType = pTool.fType;
 #ifdef __HTTP__
     fHttpServer = pTool.fHttpServer;
 #endif
     fCanvasMap = pTool.fCanvasMap;
     fCbcHistMap = pTool.fCbcHistMap;
     fModuleHistMap = pTool.fModuleHistMap;
+    fTestGroupChannelMap = pTool.fTestGroupChannelMap;
+}
+
+Tool::~Tool()
+{
+}
+
+void Tool::Inherit (Tool* pTool)
+{
+    fBeBoardInterface = pTool->fBeBoardInterface;
+    fCbcInterface = pTool->fCbcInterface;
+    fBoardVector = pTool->fBoardVector;
+    fBeBoardFWMap = pTool->fBeBoardFWMap;
+    fSettingsMap = pTool->fSettingsMap;
+    fFileHandler = pTool->fFileHandler;
+    fDirectoryName = pTool->fDirectoryName;
+    fResultFile = pTool->fResultFile;
+    fType = pTool->fType;
+#ifdef __HTTP__
+    fHttpServer = pTool->fHttpServer;
+#endif
+    fCanvasMap = pTool->fCanvasMap;
+    fCbcHistMap = pTool->fCbcHistMap;
+    fModuleHistMap = pTool->fModuleHistMap;
+    fTestGroupChannelMap = pTool->fTestGroupChannelMap;
+}
+
+void Tool::Inherit (SystemController* pSystemController)
+{
+    fBeBoardInterface = pSystemController->fBeBoardInterface;
+    fCbcInterface = pSystemController->fCbcInterface;
+    fBoardVector = pSystemController->fBoardVector;
+    fBeBoardFWMap = pSystemController->fBeBoardFWMap;
+    fSettingsMap = pSystemController->fSettingsMap;
+    fFileHandler = pSystemController->fFileHandler;
+}
+
+void Tool::Destroy()
+{
+    LOG (INFO) << BOLDRED << "Destroying memory objects" << RESET;
+    SystemController::Destroy();
+#ifdef __HTTP__
+
+    if (fHttpServer) delete fHttpServer;
+
+#endif
+
+    if (fResultFile != nullptr)
+    {
+        if (fResultFile->IsOpen() ) fResultFile->Close();
+
+        if (fResultFile) delete fResultFile;
+    }
+
+    fCanvasMap.clear();
+    fCbcHistMap.clear();
+    fModuleHistMap.clear();
+    fTestGroupChannelMap.clear();
+}
+
+void Tool::SoftDestroy()
+{
+    LOG (INFO) << BOLDRED << "Destroying only tool memory objects" << RESET;
+#ifdef __HTTP__
+
+    if (fHttpServer) delete fHttpServer;
+
+#endif
+
+    if (fResultFile != nullptr)
+    {
+        if (fResultFile->IsOpen() ) fResultFile->Close();
+
+        if (fResultFile) delete fResultFile;
+    }
+
+    fCanvasMap.clear();
+    fCbcHistMap.clear();
+    fModuleHistMap.clear();
+    fTestGroupChannelMap.clear();
 }
 
 void Tool::bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject )
@@ -176,7 +278,14 @@ void Tool::CreateResultDirectory ( const std::string& pDirname, bool pMode, bool
     LOG (INFO)  << "Creating directory: " << nDirname  ;
     std::string cCommand = "mkdir -p " + nDirname;
 
-    system ( cCommand.c_str() );
+    try
+    {
+        system ( cCommand.c_str() );
+    }
+    catch (std::exception& e)
+    {
+        LOG (ERROR) << "Exceptin when trying to create Result Directory: " << e.what();
+    }
 
     fDirectoryName = nDirname;
 }
@@ -190,11 +299,26 @@ void Tool::InitResultFile ( const std::string& pFilename )
     if ( !fDirectoryName.empty() )
     {
         std::string cFilename = fDirectoryName + "/" + pFilename + ".root";
-        fResultFile = TFile::Open ( cFilename.c_str(), "RECREATE" );
+
+        try
+        {
+            fResultFile = TFile::Open ( cFilename.c_str(), "RECREATE" );
+        }
+        catch (std::exception& e)
+        {
+            LOG (ERROR) << "Exceptin when trying to create Result File: " << e.what();
+        }
     }
     else LOG (INFO) << RED << "ERROR: " << RESET << "No Result Directory initialized - not saving results!" ;
 }
 
+void Tool::CloseResultFile()
+{
+    LOG (INFO) << BOLDRED << "closing result file!" << RESET;
+
+    if (fResultFile)
+        fResultFile->Close();
+}
 void Tool::StartHttpServer ( const int pPort, bool pReadonly )
 {
 #ifdef __HTTP__
@@ -202,19 +326,27 @@ void Tool::StartHttpServer ( const int pPort, bool pReadonly )
     if (fHttpServer)
         delete fHttpServer;
 
-    fHttpServer = new THttpServer ( Form ( "http:%d", pPort ) );
-    fHttpServer->SetReadOnly ( pReadonly );
-    //fHttpServer->SetTimer ( pRefreshTime, kTRUE );
-    fHttpServer->SetTimer (1000, kFALSE);
-    fHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
-
-    //configure the server
-    // see: https://root.cern.ch/gitweb/?p=root.git;a=blob_plain;f=tutorials/http/httpcontrol.C;hb=HEAD
-    fHttpServer->SetItemField ("/", "_monitoring", "5000");
-    fHttpServer->SetItemField ("/", "_layout", "grid2x2");
-
     char hostname[HOST_NAME_MAX];
-    gethostname (hostname, HOST_NAME_MAX);
+
+    try
+    {
+        fHttpServer = new THttpServer ( Form ( "http:%d", pPort ) );
+        fHttpServer->SetReadOnly ( pReadonly );
+        //fHttpServer->SetTimer ( pRefreshTime, kTRUE );
+        fHttpServer->SetTimer (1000, kFALSE);
+        fHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
+
+        //configure the server
+        // see: https://root.cern.ch/gitweb/?p=root.git;a=blob_plain;f=tutorials/http/httpcontrol.C;hb=HEAD
+        fHttpServer->SetItemField ("/", "_monitoring", "5000");
+        fHttpServer->SetItemField ("/", "_layout", "grid2x2");
+
+        gethostname (hostname, HOST_NAME_MAX);
+    }
+    catch (std::exception& e)
+    {
+        LOG (ERROR) << "Exceptin when trying to start THttpServer: " << e.what();
+    }
 
     LOG (INFO) << "Opening THttpServer on port " << pPort << ". Point your browser to: " << BOLDGREEN << hostname << ":" << pPort << RESET ;
 #else
@@ -364,4 +496,18 @@ void Tool::MakeTestGroups ( bool pAllChan )
         fTestGroupChannelMap[cGId] = tempchannelVec;
 
     }
+}
+
+void Tool::CreateReport()
+{
+    std::ofstream report;
+    report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);
+    report.close();
+}
+void Tool::AmmendReport (std::string pString )
+{
+    std::ofstream report;
+    report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);
+    report << pString << std::endl;
+    report.close();
 }

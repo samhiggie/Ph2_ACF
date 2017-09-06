@@ -92,10 +92,11 @@ int main ( int argc, char* argv[] )
     cTool.InitializeSettings ( cHWFile, outp );
     LOG (INFO) << outp.str();
     outp.str ("");
+    cTool.ConfigureHw ();
     cTool.CreateResultDirectory ( cDirectory );
     cTool.InitResultFile ( "CalibrationResults" );
     cTool.StartHttpServer();
-    cTool.ConfigureHw ();
+    //cTool.ConfigureHw ();
     //if ( !cOld )
     //{
     t.start();

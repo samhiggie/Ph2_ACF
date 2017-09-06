@@ -84,15 +84,7 @@ namespace Ph2_System {
          * \brief Method to construct a system controller object from another one while re-using the same members
          */
         //here all my members are set to the objects contained already in pController, I can then safely delete pController (because the destructor does not delete any of the objects)
-        void Inherit (SystemController* pController)
-        {
-            fBeBoardInterface = pController->fBeBoardInterface;
-            fCbcInterface = pController->fCbcInterface;
-            fBoardVector = pController->fBoardVector;
-            fBeBoardFWMap = pController->fBeBoardFWMap;
-            fSettingsMap = pController->fSettingsMap;
-            fFileHandler = pController->fFileHandler;
-        }
+        void Inherit (SystemController* pController);
         /*!
          * \brief Destroy the SystemController object: clear the HWDescription Objects, FWInterface etc.
          */

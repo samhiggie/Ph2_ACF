@@ -34,22 +34,16 @@ using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
 
-typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
-typedef std::map< int, std::vector<uint8_t> >  TestGroupChannelMap;
-
 
 class PedeNoise : public Tool
 {
 
-  public:
-    PedeNoise()
-    {
-        this->MakeTestGroups ( false );
-    }
+    using RegisterVector =  std::vector<std::pair< std::string, uint8_t> >;
+    //using TestGroupChannelMap std::map< int, std::vector<uint8_t> >;
 
-    ~PedeNoise()
-    {
-    }
+  public:
+    PedeNoise();
+    ~PedeNoise();
 
     void Initialise();
     void measureNoise (uint8_t pTPAmplitude = 0); //method based on the one below that actually analyzes the scurves and extracts the noise

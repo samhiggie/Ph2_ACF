@@ -1,9 +1,33 @@
 #include "PedeNoise.h"
 
 
+PedeNoise::PedeNoise() :
+    Tool(),
+    fNoiseCanvas (nullptr),
+    fPedestalCanvas (nullptr),
+    fFeSummaryCanvas (nullptr),
+    fNormHist (nullptr),
+    fThresholdMap(),
+    fHitCountMap(),
+    fNCbc (0),
+    fNFe (0),
+    fHoleMode (false),
+    fTestPulse (false),
+    fFitted (false),
+    fTestPulseAmplitude (0),
+    fEventsPerPoint (0)
+{
+}
+
+PedeNoise::~PedeNoise()
+{
+}
+
 void PedeNoise::Initialise()
 {
-    //is to be called after system controller::ReadHW, ReadSettings
+    this->MakeTestGroups ( false );
+
+    //is to be called after system controller::InitialiseHW, InitialiseSettings
     // populates all the maps
     // create the canvases
 
@@ -141,8 +165,10 @@ void PedeNoise::Initialise()
     for ( BeBoard* pBoard : fBoardVector )
         this->measureOccupancy (pBoard, -1);
 
-    cSetting = fSettingsMap.find("HoleMode");
-    if( cSetting!= std::end(fSettingsMap)) {
+    cSetting = fSettingsMap.find ("HoleMode");
+
+    if ( cSetting != std::end (fSettingsMap) )
+    {
         bool cHoleModeFromSettings = cSetting->second;
         bool cHoleModeFromOccupancy = true;
 
@@ -154,16 +180,17 @@ void PedeNoise::Initialise()
             std::stringstream ss;
             float cOccupancy = fHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
             cHoleModeFromOccupancy = (cOccupancy == 0) ? false :  true;
-            if (cHoleModeFromOccupancy != cHoleModeFromSettings) {
+
+            if (cHoleModeFromOccupancy != cHoleModeFromSettings)
                 ss << BOLDRED << "Be careful: " << RESET << "operation mode from settings does not correspond to the one found by measuring occupancy. Using the one from settings (" << BOLDYELLOW << cMode << RESET << ")";
-            }
-            else {
+            else
                 ss << BOLDBLUE << "Measuring Occupancy @ Threshold " << BOLDRED << cCbc.second << BOLDBLUE << ": " << BOLDRED << cOccupancy << BOLDBLUE << ", thus assuming " << BOLDYELLOW << cMode << RESET << " (consistent with the settings file)";
-            }
+
             LOG (INFO) << ss.str();
         }
     }
-    else {
+    else
+    {
         for (auto& cCbc : fThresholdMap)
         {
             float cOccupancy = fHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
@@ -533,22 +560,27 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
             cIncrement++;
 
             // following checks if we're not going out of bounds
-            if (cSign == 1 && (pStartValue + (cIncrement * cSign) > cMaxValue)) {
+            if (cSign == 1 && (pStartValue + (cIncrement * cSign) > cMaxValue) )
+            {
                 if (fHoleMode) cAllZero = true;
                 else cAllOne = true;
+
                 cIncrement = 0;
-                cSign = -1*cSign;
+                cSign = -1 * cSign;
             }
-            if (cSign == -1 && (pStartValue + (cIncrement * cSign) < 0)) {
+
+            if (cSign == -1 && (pStartValue + (cIncrement * cSign) < 0) )
+            {
                 if (fHoleMode) cAllOne = true;
                 else cAllZero = true;
+
                 cIncrement = 0;
-                cSign = -1*cSign;
+                cSign = -1 * cSign;
             }
 
 
             LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement << " Hitcounter: " << cHitCounter << " Max hits: " << cMaxHits;
-            cValue = pStartValue + (cIncrement * cSign);            
+            cValue = pStartValue + (cIncrement * cSign);
         }
     }
 

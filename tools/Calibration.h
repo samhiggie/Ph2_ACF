@@ -33,17 +33,18 @@ using namespace Ph2_System;
 
 
 // Typedefs for Containers
-typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
+//typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
 // typedef std::map<Cbc*, TF1*> FitMap;
 // typedef std::map<Cbc*, TH1F*> HistMap;
-typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
-typedef std::map< int, std::vector<uint8_t> >  TestGroupChannelMap;
 
 class Calibration : public Tool
 {
+    using RegisterVector =  std::vector<std::pair< std::string, uint8_t> >;
+    using TestGroupChannelMap =  std::map< int, std::vector<uint8_t> >;
+
   public:
-    Calibration() {};
-    ~Calibration() {};
+    Calibration();
+    ~Calibration();
 
     void Initialise ( bool pAllChan = false );
     void FindVplus();
@@ -80,13 +81,14 @@ class Calibration : public Tool
 
 
   private:
+    // Containers
+    //static std::map<Cbc*, uint16_t> fVplusMap;
+    std::map<Cbc*, uint16_t> fVplusMap;
+
     // Canvases
     TCanvas* fVplusCanvas;
     TCanvas* fOffsetCanvas;
     TCanvas* fOccupancyCanvas;
-
-    // Containers
-    std::map<Cbc*, uint16_t> fVplusMap;
 
     // Counters
     uint32_t fNCbc;

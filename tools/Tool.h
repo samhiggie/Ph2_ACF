@@ -25,11 +25,6 @@
 
 using namespace Ph2_System;
 
-using CbcHistogramMap = std::map<Cbc*, std::map<std::string, TObject*> >;
-using ModuleHistogramMap = std::map<Module*, std::map<std::string, TObject*> >;
-using CanvasMap = std::map<Ph2_HwDescription::FrontEndDescription*, TCanvas*>;
-using TestGroupChannelMap =  std::map< int, std::vector<uint8_t> >;
-
 
 /*!
  * \class Tool
@@ -37,43 +32,11 @@ using TestGroupChannelMap =  std::map< int, std::vector<uint8_t> >;
  */
 class Tool : public SystemController
 {
-  public:
-    std::string fDirectoryName;             /*< the Directoryname for the Root file with results */
-    TFile* fResultFile;                /*< the Name for the Root file with results */
-#ifdef __HTTP__
-    THttpServer* fHttpServer;
-#endif
 
-    Tool()
-    {
-        fResultFile = nullptr;
-#ifdef __HTTP__
-        fHttpServer = nullptr;
-#endif
-    }
-
-    ~Tool()
-    {
-    }
-
-    void Destroy()
-    {
-        LOG (INFO) << BOLDRED << "Destroying memory objects" << RESET;
-        SystemController::Destroy();
-#ifdef __HTTP__
-
-        if (fHttpServer) delete fHttpServer;
-
-#endif
-
-        if (fResultFile != nullptr)
-        {
-            if (fResultFile->IsOpen() ) fResultFile->Close();
-
-            if (fResultFile) delete fResultFile;
-        }
-    }
-
+    using CbcHistogramMap = std::map<Cbc*, std::map<std::string, TObject*> >;
+    using ModuleHistogramMap = std::map<Module*, std::map<std::string, TObject*> >;
+    using CanvasMap = std::map<Ph2_HwDescription::FrontEndDescription*, TCanvas*>;
+    using TestGroupChannelMap =  std::map< int, std::vector<uint8_t> >;
 
   public:
     CanvasMap fCanvasMap;
@@ -81,67 +44,22 @@ class Tool : public SystemController
     ModuleHistogramMap fModuleHistMap;
     ChipType fType;
     TestGroupChannelMap fTestGroupChannelMap;
-
-
-    /*!
-     * \brief Create a result directory at the specified path + ChargeMode + Timestamp
-     * \param pDirectoryname : the name of the directory to create
-     * \param pDate : apend the current date and time to the directoryname
-     */
-  public:
-    Tool (const Tool& pTool);
-
-    void Inherit (Tool* pTool)
-    {
-        fBeBoardInterface = pTool->fBeBoardInterface;
-        fCbcInterface = pTool->fCbcInterface;
-        fBoardVector = pTool->fBoardVector;
-        fBeBoardFWMap = pTool->fBeBoardFWMap;
-        fSettingsMap = pTool->fSettingsMap;
-        fFileHandler = pTool->fFileHandler;
-        fDirectoryName = pTool->fDirectoryName;
-        fResultFile = pTool->fResultFile;
-        fType = pTool->fType;
+    std::string fDirectoryName;             /*< the Directoryname for the Root file with results */
+    TFile* fResultFile;                /*< the Name for the Root file with results */
 #ifdef __HTTP__
-        fHttpServer = pTool->fHttpServer;
+    THttpServer* fHttpServer;
 #endif
-        fCanvasMap = pTool->fCanvasMap;
-        fCbcHistMap = pTool->fCbcHistMap;
-        fModuleHistMap = pTool->fModuleHistMap;
-    }
 
-    void Inherit (SystemController* pSystemController)
-    {
-        fBeBoardInterface = pSystemController->fBeBoardInterface;
-        fCbcInterface = pSystemController->fCbcInterface;
-        fBoardVector = pSystemController->fBoardVector;
-        fBeBoardFWMap = pSystemController->fBeBoardFWMap;
-        fSettingsMap = pSystemController->fSettingsMap;
-        fFileHandler = pSystemController->fFileHandler;
-        //fDirectoryName = "";
-        //fResultFile = pTool->fResultFile;
-        //fType = pTool->fType;
-        //#ifdef __HTTP__
-        //fHttpServer = pTool->fHttpServer;
-        //#endif
-        //fCanvasMap = pTool->fCanvasMap;
-        //fCbcHistMap = pTool->fCbcHistMap;
-        //fModuleHistMap = pTool->fModuleHistMap;
-    }
 
-    void CreateReport()
-    {
-        std::ofstream report;
-        report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);
-        report.close();
-    };
-    void AmmendReport (std::string pString )
-    {
-        std::ofstream report;
-        report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);
-        report << pString << std::endl;
-        report.close();
-    };
+    Tool();
+    Tool (const Tool& pTool);
+    ~Tool();
+
+    void Inherit (Tool* pTool);
+    void Inherit (SystemController* pSystemController);
+    void Destroy();
+    void SoftDestroy();
+
 
     void bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject );
 
@@ -153,6 +71,11 @@ class Tool : public SystemController
 
     void SaveResults();
 
+    /*!
+     * \brief Create a result directory at the specified path + ChargeMode + Timestamp
+     * \param pDirectoryname : the name of the directory to create
+     * \param pDate : apend the current date and time to the directoryname
+     */
     void CreateResultDirectory ( const std::string& pDirname, bool pMode = true, bool pDate = true );
 
     /*!
@@ -160,15 +83,20 @@ class Tool : public SystemController
      * \param pFilename : Root filename
      */
     void InitResultFile ( const std::string& pFilename );
-    void CloseResultFile()
-    {
-        LOG (INFO) << BOLDRED << "closing result file!" << RESET;
-
-        if (fResultFile)
-            fResultFile->Close();
-    }
-
+    void CloseResultFile();
     void StartHttpServer ( const int pPort = 8080, bool pReadonly = true );
+    void dumpConfigFiles();
+    // general stuff that can be useful
+    void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool pTPState = false, bool pHoleMode = false );
+    //enable commissioning loops and Test Pulse
+    void setFWTestPulse();
+    // make test groups for everything Test pulse or Calibration
+    void MakeTestGroups ( bool pAllChan = false );
+    //for hybrid testing
+    void CreateReport();
+    void AmmendReport (std::string pString );
+
+    // helper methods
     void ProcessRequests()
     {
 #ifdef __HTTP__
@@ -177,14 +105,7 @@ class Tool : public SystemController
 
 #endif
     }
-    void dumpConfigFiles();
-    // general stuff that can be useful
-    void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool pTPState = false, bool pHoleMode = false );
-    //enable commissioning loops and Test Pulse
-    void setFWTestPulse();
-    // make test groups for everything Test pulse or Calibration
-    void MakeTestGroups ( bool pAllChan = false );
-    // helper methods
+
     void setRegBit ( uint16_t& pRegValue, uint8_t pPos, bool pValue )
     {
         pRegValue ^= ( -pValue ^ pRegValue ) & ( 1 << pPos );

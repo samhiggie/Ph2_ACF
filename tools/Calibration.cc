@@ -1,5 +1,24 @@
 #include "Calibration.h"
 
+//initialize the static member
+//std::map<Cbc*, uint16_t> Calibration::fVplusMap;
+
+Calibration::Calibration() :
+    Tool(),
+    fVplusMap(),
+    fVplusCanvas (nullptr),
+    fOffsetCanvas (nullptr),
+    fOccupancyCanvas (nullptr),
+    fNCbc (0),
+    fNFe (0)
+{
+}
+
+Calibration::~Calibration()
+{
+
+}
+
 void Calibration::Initialise ( bool pAllChan )
 {
     // Initialize the TestGroups
@@ -22,7 +41,6 @@ void Calibration::Initialise ( bool pAllChan )
     if ( fTestPulseAmplitude == 0 ) fTestPulse = 0;
     else fTestPulse = 1;
 
-
     // Canvases
     //fVplusCanvas = new TCanvas ( "VPlus", "VPlus", 515, 0, 500, 500 );
     fOffsetCanvas = new TCanvas ( "Offset", "Offset", 10, 0, 500, 500 );
@@ -32,6 +50,7 @@ void Calibration::Initialise ( bool pAllChan )
     uint32_t cCbcCount = 0;
     uint32_t cCbcIdMax = 0;
     uint32_t cFeCount = 0;
+
 
     for ( auto cBoard : fBoardVector )
     {
@@ -50,7 +69,7 @@ void Calibration::Initialise ( bool pAllChan )
 
                 if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
 
-                fVplusMap[cCbc] = 0;
+                fVplusMap.insert ({cCbc, 0});
 
                 TString cName = Form ( "h_VplusValues_Fe%dCbc%d", cFeId, cCbcId );
                 TObject* cObj = gROOT->FindObject ( cName );
