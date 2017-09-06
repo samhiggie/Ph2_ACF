@@ -15,6 +15,21 @@ Tool::Tool() :
 #endif
 }
 
+#ifdef __HTTP__
+Tool::Tool (THttpServer* pHttpServer) :
+    SystemController(),
+    fCanvasMap(),
+    fCbcHistMap(),
+    fModuleHistMap(),
+    fType(),
+    fTestGroupChannelMap(),
+    fDirectoryName (""),
+    fResultFile (nullptr),
+    fHttpServer (pHttpServer)
+{
+}
+#endif
+
 Tool::Tool (const Tool& pTool)
 {
     fBeBoardInterface = pTool.fBeBoardInterface;
@@ -96,11 +111,6 @@ void Tool::Destroy()
 void Tool::SoftDestroy()
 {
     LOG (INFO) << BOLDRED << "Destroying only tool memory objects" << RESET;
-#ifdef __HTTP__
-
-    if (fHttpServer) delete fHttpServer;
-
-#endif
 
     if (fResultFile != nullptr)
     {
@@ -137,7 +147,7 @@ void Tool::bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject )
     cCbcHistMap->second[pName] = pObject;
 #ifdef __HTTP__
 
-    if (fHttpServer) fHttpServer->Register ("/", pObject);
+    if (fHttpServer) fHttpServer->Register ("/Histograms", pObject);
 
 #endif
 }
@@ -164,7 +174,7 @@ void Tool::bookHistogram ( Module* pModule, std::string pName, TObject* pObject 
     cModuleHistMap->second[pName] = pObject;
 #ifdef __HTTP__
 
-    if (fHttpServer) fHttpServer->Register ("/", pObject);
+    if (fHttpServer) fHttpServer->Register ("/Histograms", pObject);
 
 #endif
 }

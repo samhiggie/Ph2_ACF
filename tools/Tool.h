@@ -52,6 +52,9 @@ class Tool : public SystemController
 
 
     Tool();
+#ifdef __HTTP__
+    Tool (THttpServer* pServer);
+#endif
     Tool (const Tool& pTool);
     ~Tool();
 
