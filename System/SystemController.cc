@@ -242,6 +242,27 @@ namespace Ph2_System {
         }
     }
 
+    void SystemController::Start()
+    {
+        for (auto& cBoard : fBoardVector)
+            fBeBoardInterface->Start (cBoard);
+    }
+    void SystemController::Stop()
+    {
+        for (auto& cBoard : fBoardVector)
+            fBeBoardInterface->Stop (cBoard);
+    }
+    void SystemController::Pause()
+    {
+        for (auto& cBoard : fBoardVector)
+            fBeBoardInterface->Pause (cBoard);
+    }
+    void SystemController::Resume()
+    {
+        for (auto& cBoard : fBoardVector)
+            fBeBoardInterface->Resume (cBoard);
+    }
+
     void SystemController::Start (BeBoard* pBoard)
     {
         fBeBoardInterface->Start (pBoard);
@@ -250,9 +271,17 @@ namespace Ph2_System {
     {
         fBeBoardInterface->Stop (pBoard);
     }
+    void SystemController::Pause (BeBoard* pBoard)
+    {
+        fBeBoardInterface->Pause (pBoard);
+    }
+    void SystemController::Resume (BeBoard* pBoard)
+    {
+        fBeBoardInterface->Resume (pBoard);
+    }
 
     //method to read data standalone
-    uint32_t SystemController::ReadData (BeBoard* pBoard)
+    uint32_t SystemController::ReadData (BeBoard* pBoard, bool pWait)
     {
         //reset the data object
         //if (fData) delete fData;
@@ -267,7 +296,7 @@ namespace Ph2_System {
         //return the packet size
         //return cNPackets;
         std::vector<uint32_t> cData;
-        return this->ReadData (pBoard, cData, true);
+        return this->ReadData (pBoard, cData, pWait);
     }
 
     // for OTSDAQ
@@ -286,10 +315,10 @@ namespace Ph2_System {
         return cNPackets;
     }
 
-    void SystemController::ReadData()
+    void SystemController::ReadData (bool pWait)
     {
         for (auto cBoard : fBoardVector)
-            this->ReadData (cBoard);
+            this->ReadData (cBoard, pWait);
     }
 
     //standalone

@@ -153,7 +153,7 @@ namespace Ph2_System {
          * \param pBeBoard
          * \return: number of packets
          */
-        uint32_t ReadData (BeBoard* pBoard);
+        uint32_t ReadData (BeBoard* pBoard, bool pWait = true);
         /*!
          * \brief Read Data from pBoard for use with OTSDAQ
          * \param pBeBoard
@@ -163,13 +163,22 @@ namespace Ph2_System {
          */
         uint32_t ReadData (BeBoard* pBoard, std::vector<uint32_t>& pData, bool pWait = true);
 
-        void Start (BeBoard* pBoard);
-        void Stop (BeBoard* pBoard);
-
         /*!
          * \brief Read Data from all boards
          */
-        void ReadData();
+        void ReadData (bool pWait = true);
+
+        void Start();
+        void Stop();
+        void Pause();
+        void Resume();
+
+        //these start and stop acquistion on a single board
+        void Start (BeBoard* pBoard);
+        void Stop (BeBoard* pBoard);
+        void Pause (BeBoard* pBoard);
+        void Resume (BeBoard* pBoard);
+
 
         /*!
          * \brief Read N Events from pBoard
