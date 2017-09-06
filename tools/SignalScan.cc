@@ -1,6 +1,12 @@
 
 #include "SignalScan.h"
 
+SignalScan::SignalScan() : Tool()
+{}
+
+SignalScan::~SignalScan()
+{}
+
 void SignalScan::Initialize ()
 {
     for ( auto& cBoard : fBoardVector )

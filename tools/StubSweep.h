@@ -33,6 +33,7 @@ class StubSweep : public Tool
   public:
     StubSweep();
     ~StubSweep();
+
     void Initialize();
 
     // added for debugging - S.

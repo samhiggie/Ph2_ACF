@@ -53,7 +53,9 @@ void BiasSweep::InitializeAmuxMap()
 //cases: 1)VCth 2)Voltage & sweepable -> DMM 3) not sweepable: old code 4) current & sweepable: 1 reading on dmm with default setting, then sweep using PS
 
 #ifdef __USBINST__
-BiasSweep::BiasSweep (HMP4040Client* pClient, Ke2110Controller* pController) : fDAQrunning (false)
+BiasSweep::BiasSweep (HMP4040Client* pClient, Ke2110Controller* pController) :
+    Tool(),
+    fDAQrunning (false)
 {
 
     fKeController = pController;
@@ -64,7 +66,9 @@ BiasSweep::BiasSweep (HMP4040Client* pClient, Ke2110Controller* pController) : f
 
 }
 #endif
-BiasSweep::BiasSweep () : fDAQrunning (false)
+BiasSweep::BiasSweep () :
+    Tool(),
+    fDAQrunning (false)
 {}
 
 BiasSweep::~BiasSweep()

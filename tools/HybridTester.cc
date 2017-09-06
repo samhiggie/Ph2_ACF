@@ -32,6 +32,11 @@ struct HistogramFiller  : public HwDescriptionVisitor
     }
 };
 
+// Default C'tor
+HybridTester::HybridTester() : Tool() {}
+// Default D'tor
+HybridTester::~HybridTester() {}
+
 void HybridTester::ReconfigureCBCRegisters (std::string pDirectoryName )
 {
     bool cCheck;

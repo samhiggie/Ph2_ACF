@@ -30,6 +30,18 @@ struct HistogramFiller  : public HwDescriptionVisitor
     }
 };
 
+ShortFinder::ShortFinder() : Tool()
+{
+    fNShorts = 0;
+    fNShortsTop = 0 ;
+    fNShortsBottom = 0;
+    fTotalEvents = 0;
+    fNCbc = 2;
+}
+
+// D'tor
+ShortFinder::~ShortFinder() {}
+
 //Reload CBC registers from file found in results (fDirectoryName) directory .
 //If no directory is found use the default files for the different operational modes found in Ph2_ACF/settings
 void ShortFinder::ReconfigureRegisters()
@@ -69,7 +81,7 @@ void ShortFinder::ReconfigureRegisters()
                 else
                 {
                     char buffer[120];
-                    sprintf (buffer, "%s/FE%dCBC%d.txt" , fDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                    sprintf (buffer, "%s/FE%dCBC%d.txt", fDirectoryName.c_str(), cCbc->getFeId(), cCbc->getCbcId() );
                     pRegFile = buffer;
                 }
 
@@ -92,7 +104,7 @@ void ShortFinder::ConfigureVcth (uint16_t pVcth)
 void ShortFinder::writeGraphs()
 {
     fResultFile->cd();
-    fShortsCanvas->Write ( fShortsCanvas->GetName() , TObject::kOverwrite );
+    fShortsCanvas->Write ( fShortsCanvas->GetName(), TObject::kOverwrite );
     //fDataCanvas->Write ( fDataCanvas->GetName(), TObject::kOverwrite );
 }
 void ShortFinder::SaveResults()
@@ -127,7 +139,7 @@ void ShortFinder::Initialize()
     fDataCanvas = new TCanvas ( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
     fDataCanvas->Divide ( 2 );
 
-    fShortsCanvas = new TCanvas ("fShortsCanvas", "Shorts", 1200 , 800 );
+    fShortsCanvas = new TCanvas ("fShortsCanvas", "Shorts", 1200, 800 );
     fShortsCanvas->Divide (2 );
 
     InitialiseSettings();
@@ -158,7 +170,7 @@ void ShortFinder::InitializeHists()
 
     if ( fHistTopMerged ) delete fHistTopMerged;
 
-    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
     fHistTopMerged->SetFillColor ( 4 );
     fHistTopMerged->SetFillStyle ( 3001 );
 
@@ -167,7 +179,7 @@ void ShortFinder::InitializeHists()
 
     if ( fHistBottomMerged ) delete fHistBottomMerged;
 
-    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
     fHistBottomMerged->SetFillColor ( 4 );
     fHistBottomMerged->SetFillStyle ( 3001 );
 
@@ -177,7 +189,7 @@ void ShortFinder::InitializeHists()
 
     if ( fHistShortBackground ) delete fHistShortBackground;
 
-    fHistShortBackground = new TH2F ( cShortBackground, "", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 1.5 , 2  , -0.5 , 2.0 - 0.5 );
+    fHistShortBackground = new TH2F ( cShortBackground, "", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 1.5, 2, -0.5, 2.0 - 0.5 );
     fHistShortBackground->SetFillColor ( 4 );
     fHistShortBackground->SetFillStyle ( 3001 );
     //for( int i = 0 ; i < ( fNCbc / 2 * 254 ) ; i++ ) fHistShortsTop->Fill(i,0);
@@ -196,7 +208,7 @@ void ShortFinder::InitializeHists()
 
     if ( fHistShortsTop ) delete fHistShortsTop;
 
-    fHistShortsTop = new TH1F ( cShortsTopName, "Shorts on Front Pad Channels", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5  );
+    fHistShortsTop = new TH1F ( cShortsTopName, "Shorts on Front Pad Channels", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5  );
     fHistShortsTop->SetLineColor ( 3 );
     fHistShortsTop->SetFillColor ( 3 );
     fHistShortsTop->SetFillStyle ( 3005 );
@@ -219,7 +231,7 @@ void ShortFinder::InitializeHists()
 
     if ( fHistShortsBottom ) delete fHistShortsBottom;
 
-    fHistShortsBottom = new TH1F ( cShortsBackName, "Shorts on Back Pad Channels", ( fNCbc / 2 * 254 ) , -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistShortsBottom = new TH1F ( cShortsBackName, "Shorts on Back Pad Channels", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
     fHistShortsBottom->SetLineColor ( 4 );
     fHistShortsBottom->SetFillColor ( 4 );
     fHistShortsBottom->SetFillStyle ( 3005 );
@@ -302,7 +314,7 @@ void ShortFinder::SetBeBoard (BeBoard* pBoard)
     ThresholdVisitor cThresholdVisitor (fCbcInterface, 0x90);
     this->accept (cThresholdVisitor);
 }
-bool ShortFinder::CheckChannel (Short pShort , ShortsList pShortsList)
+bool ShortFinder::CheckChannel (Short pShort, ShortsList pShortsList)
 {
     for (auto cChannel : pShortsList)
     {
@@ -546,12 +558,12 @@ void ShortFinder::ReconstructShorts (ShortedGroupsList pShortedGroupsArray, std:
         {
             if ( cMemberChannel[0] == 0 )
             {
-                fHistShortsTop->Fill ( cMemberChannel[1] , 1 );
+                fHistShortsTop->Fill ( cMemberChannel[1], 1 );
                 fNShortsTop++;
             }
             else if ( cMemberChannel[0] == 1 )
             {
-                fHistShortsBottom->Fill ( cMemberChannel[1] , 1 );
+                fHistShortsBottom->Fill ( cMemberChannel[1], 1 );
                 fNShortsBottom++;
             }
 

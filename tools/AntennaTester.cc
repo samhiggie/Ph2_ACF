@@ -30,6 +30,16 @@ struct HistogramFiller  : public HwDescriptionVisitor
     }
 };
 
+AntennaTester::AntennaTester() :
+    Tool()
+{
+}
+
+// D'tor
+AntennaTester::~AntennaTester()
+{
+}
+
 void AntennaTester::Initialize()
 {
     gStyle->SetOptStat ( 000000 );

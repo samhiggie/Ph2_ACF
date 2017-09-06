@@ -53,9 +53,9 @@ class HybridTester : public Tool
 {
   public:
     // Default C'tor
-    HybridTester() {}
+    HybridTester();
     // Default D'tor
-    ~HybridTester() {}
+    ~HybridTester();
     /*!
     * \brief Initialize the Histograms and Canvasses for CMD line applications
     * \param pThresholdScan :  bool flag to initialize the additional canvas for the Threshold scan

@@ -1,5 +1,10 @@
 #include "PulseShape.h"
 
+PulseShape::PulseShape() : Tool()
+{}
+
+PulseShape::~PulseShape()
+{}
 
 void PulseShape::Initialize()
 {

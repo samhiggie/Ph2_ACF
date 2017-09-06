@@ -1,6 +1,6 @@
 #include "StubSweep.h"
 
-StubSweep::StubSweep()
+StubSweep::StubSweep() : Tool()
 {
     fReadBackAttempts = 20;
 }
