@@ -61,6 +61,8 @@
 		<Register name="i2c">
                 	<Register name="frequency"> 4 </Register>
 		</Register>
+ 		<Register name="phase_set"> 0 </Register>
+ 		<Register name="slvs5_shift"> 2 </Register>
 	</Register>
 	<!-- Readout Block -->
     	<Register name="readout_block">

@@ -96,7 +96,13 @@ namespace Ph2_HwInterface {
 
                     uint8_t cChipID = (0xE0000000 & list.at(word_id)) >> 29;
                     //LOG(INFO) << "ChipId: " << +cChipID << ", Word ID: " << +word_id;
-                    //uint8_t cDataType = (0x18000000 & list.at(word_id)) >> 27;
+                    uint8_t cDataType = (0x18000000 & list.at(word_id)) >> 27;
+
+		    // check sync bit
+		    if (cDataType == 1) {
+			uint8_t cSyncBit = (0x00000008 & list.at(word_id)) >> 3;
+                        if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;	
+	 	    }
 
                     // checks the last word
                     if (word_id == (address_offset + fe_data_size - 2)) cLastWord = true;
