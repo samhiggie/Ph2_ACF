@@ -156,7 +156,7 @@ void tokenize ( const std::string& str, std::vector<std::string>& tokens, const 
     tokens = cTokens;
 }
 
-std::string getDataFileName (const std::string& pPath, int& pRunNumber)
+void getRunNumber (const std::string& pPath, int& pRunNumber, bool pIncrement)
 {
 
     std::string line;
@@ -174,10 +174,14 @@ std::string getDataFileName (const std::string& pPath, int& pRunNumber)
         {
             cFile >> pRunNumber ;
 
-            pRunNumber ++;
-            cFile.clear();
-            cFile.seekp ( 0 );
-            cFile << pRunNumber;
+            if (pIncrement)
+            {
+                pRunNumber ++;
+                cFile.clear();
+                cFile.seekp ( 0 );
+                cFile << pRunNumber;
+            }
+
             cFile.close();
         }
     }
@@ -188,10 +192,6 @@ std::string getDataFileName (const std::string& pPath, int& pRunNumber)
         cFile << pRunNumber;
         cFile.close();
     }
-
-    //TString cRunString = Form ( "run_%04d.raw", pRunNumber );
-    //return cRunString.Data();
-    return string_format ("run_%04d.raw", pRunNumber);
 }
 
 std::string expandEnvironmentVariables ( std::string s )

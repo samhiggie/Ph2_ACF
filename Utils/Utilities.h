@@ -83,5 +83,5 @@ void tokenize ( const std::string& str, std::vector<std::string>& tokens, const 
 std::string expandEnvironmentVariables ( std::string s ) ;
 
 // get run number from file
-std::string getDataFileName (const std::string& pPath, int& pRunNumber);
+void getRunNumber (const std::string& pPath, int& pRunNumber, bool pIncrement = true);
 #endif

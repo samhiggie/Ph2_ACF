@@ -313,6 +313,7 @@ void Tool::InitResultFile ( const std::string& pFilename )
         try
         {
             fResultFile = TFile::Open ( cFilename.c_str(), "RECREATE" );
+            fResultFileName = cFilename;
         }
         catch (std::exception& e)
         {

@@ -46,6 +46,7 @@ class Tool : public SystemController
     TestGroupChannelMap fTestGroupChannelMap;
     std::string fDirectoryName;             /*< the Directoryname for the Root file with results */
     TFile* fResultFile;                /*< the Name for the Root file with results */
+    std::string fResultFileName;
 #ifdef __HTTP__
     THttpServer* fHttpServer;
 #endif
@@ -107,6 +108,14 @@ class Tool : public SystemController
         if (fHttpServer) fHttpServer->ProcessRequests();
 
 #endif
+    }
+
+    std::string getResultFileName()
+    {
+        if (!fResultFileName.empty() )
+            return fResultFileName;
+        else
+            return "";
     }
 
     void setRegBit ( uint16_t& pRegValue, uint8_t pPos, bool pValue )
