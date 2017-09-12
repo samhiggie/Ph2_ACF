@@ -38,12 +38,30 @@ namespace Ph2_HwInterface {
         std::vector< std::pair<std::string, uint32_t> > fStackReg;        /*!< Stack of registers*/
         //std::thread fThread;         [>!< Thread for timeout stack writing<]
         //bool fDeactiveThread;         [>!< Bool to terminate the thread in the destructor<]
-        std::mutex fBoardMutex;         /*!< Mutex to avoid conflict btw threads on shared resources*/
+        //std::mutex fBoardMutex;         [>!< Mutex to avoid conflict btw threads on shared resources<]
         const char* fUri;
         const char* fAddressTable;
         const char* fId;
 
       public:
+        // Connection w uHal
+        /*!
+         * \brief Constructor of the RegManager class
+         * \param puHalConfigFileName : path of the uHal Config File
+         * \param pBoardId Board Id in the XML configuration file. The uHAL connection name will be boardX where X is the number Id.
+         */
+        RegManager ( const char* puHalConfigFileName, uint32_t pBoardId );
+        /*!
+        * \brief Constructor of the RegManager class
+        * \param pId : id in the connections node
+        * \param pUri: URI string for uHAL
+        * \param pAddressTable: address table path
+        */
+        RegManager ( const char* pId, const char* pUri, const char* pAddressTable );
+        /*!
+         * \brief Destructor of the RegManager class
+         */
+        virtual ~RegManager();
         /*!
         * \brief Write a register
         * \param pRegNode : Node of the register to write
@@ -98,24 +116,6 @@ namespace Ph2_HwInterface {
         void StackWriteTimeOut();
 
       public:
-        // Connection w uHal
-        /*!
-         * \brief Constructor of the RegManager class
-         * \param puHalConfigFileName : path of the uHal Config File
-         * \param pBoardId Board Id in the XML configuration file. The uHAL connection name will be boardX where X is the number Id.
-         */
-        RegManager ( const char* puHalConfigFileName, uint32_t pBoardId );
-        /*!
-        * \brief Constructor of the RegManager class
-        * \param pId : id in the connections node
-        * \param pUri: URI string for uHAL
-        * \param pAddressTable: address table path
-        */
-        RegManager ( const char* pId, const char* pUri, const char* pAddressTable );
-        /*!
-         * \brief Destructor of the RegManager class
-         */
-        virtual ~RegManager();
         /*!
          * \brief Reset the HW Interface with different Id, Uri and Address Table
          */

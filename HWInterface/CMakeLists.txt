@@ -14,7 +14,7 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     
     #add the library
     add_library(Ph2_Interface SHARED ${SOURCES} ${HEADERS})
-    set(LIBS ${LIBS} Ph2_Description cactus_uhal_log cactus_uhal_uhal cactus_uhal_grammars boost_date_time)
+    set(LIBS ${LIBS} Ph2_Description cactus_uhal_log cactus_uhal_uhal cactus_uhal_grammars cactus_extern_pugixml boost_date_time)
     TARGET_LINK_LIBRARIES(Ph2_Interface ${LIBS})
     
 elseif()
@@ -36,6 +36,7 @@ elseif()
             cactus_uhal_grammars
             cactus_uhal_log
             cactus_uhal_uhal
+            cactus_extern_pugixml
             )
     
     install_headers()
