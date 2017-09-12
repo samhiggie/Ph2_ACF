@@ -48,7 +48,7 @@ namespace Ph2_HwInterface {
     {
         // Loging settings
         uhal::disableLogging();
-        //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
+        uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
 
         if (fBoard == nullptr) delete fBoard;
 

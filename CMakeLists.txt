@@ -91,7 +91,8 @@ else(uhal_boost)
     MESSAGE(STATUS "No boost headers found with uHAL (you are most likely using CC7) - make sure to install boost 1.53 (default version on CC7)")
 endif(uhal_boost)
 
-find_package(Boost 1.53 REQUIRED system filesystem thread program_options)
+#find_package(Boost 1.53 REQUIRED system filesystem thread program_options)
+find_package(Boost 1.53 REQUIRED filesystem system-mt )
 
 message("#### Done ####")
 

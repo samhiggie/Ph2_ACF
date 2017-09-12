@@ -7,8 +7,10 @@ export CACTUSLIB=/opt/cactus/lib
 export CACTUSINCLUDE=/opt/cactus/include
 
 # BOOST
-export BOOST_LIB=/opt/cactus/lib
-export BOOST_INCLUDE=/opt/cactus/include
+#export BOOST_LIB=/opt/cactus/lib
+#export BOOST_INCLUDE=/opt/cactus/include
+export BOOST_INCLUDE=/usr/include
+export BOOST_LIB=/usr/lib64
 
 #ROOT
 source /usr/local/bin/thisroot.sh
