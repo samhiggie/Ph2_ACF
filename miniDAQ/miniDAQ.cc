@@ -1,6 +1,6 @@
 #include <cstring>
 #include "../Utils/Utilities.h"
-#include "../Utils/pugixml.hpp"
+#include "pugixml/pugixml.hpp"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"

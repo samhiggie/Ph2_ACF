@@ -48,14 +48,11 @@ namespace Ph2_HwInterface {
     {
         // Loging settings
         uhal::disableLogging();
-        uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
+        //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
 
         if (fBoard == nullptr) delete fBoard;
 
         fBoard = new uhal::HwInterface (uhal::ConnectionManager::getDevice (fId, fUri, fAddressTable) );
-
-        //fBoard = new uhal::HwInterface (uhal::ConnectionManager::getDevice ("board", "chtcp-2.0://cmsuptracker009.cern.ch:10203?target=192.168.0.80:50001", "file://IC_cbc3_address_table.xml") );
-        //std::cout << "No problem?" << std::endl;
         //fThread.detach();
     }
 

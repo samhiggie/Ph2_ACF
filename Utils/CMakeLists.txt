@@ -2,7 +2,11 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
 
     #includes
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
     
+    #library directories
+    link_directories(${UHAL_UHAL_LIB_PREFIX})
+
     #find source files
     file(GLOB HEADERS *.h)
     file(GLOB SOURCES *.cc)
@@ -13,6 +17,8 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     
     #add the library
     add_library(Ph2_Utils SHARED ${SOURCES} ${HEADERS})
+    set(LIBS ${LIBS} cactus_extern_pugixml)
+    TARGET_LINK_LIBRARIES(Ph2_Utils ${LIBS})
     
     #check for ZMQ installed
     if(ZMQ_FOUND)

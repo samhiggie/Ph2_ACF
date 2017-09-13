@@ -27,8 +27,7 @@
 #include "../Utils/Utilities.h"
 #include "../Utils/Exception.h"
 #include "../Utils/ConditionDataSet.h"
-#include "../Utils/picojson.h"
-#include "../Utils/pugixml.hpp"
+#include "pugixml/pugixml.hpp"
 #include "../Utils/ConsoleColor.h"
 #include "../Utils/easylogging++.h"
 #include <iostream>
