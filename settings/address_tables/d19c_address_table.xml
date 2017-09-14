@@ -229,6 +229,7 @@
         </node>
 
         <node id="physical_interface_block"     address="0x3000">
+            <node id="hardware_ready"           address="0x002" mask="0x00010000"/>
         </node>
 
         <node id="be_proc"                      address="0x4000">

@@ -139,6 +139,11 @@ namespace Ph2_HwInterface {
         void ResetReadout();
 
         /*!
+          * \brief Check Hardware Ready Flag
+          */
+        void HardwareReady();
+
+        /*!
          * \brief Read data from DAQ
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read

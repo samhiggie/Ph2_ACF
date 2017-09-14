@@ -466,6 +466,7 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::Start()
     {
+        this->HardwareReady();
         this->ResetReadout();
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
@@ -494,6 +495,18 @@ namespace Ph2_HwInterface {
         usleep (10);
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
         usleep (10);
+    }
+
+    void D19cFWInterface::HardwareReady()
+    {
+        this->CbcFastReset();
+        usleep(10);
+        uint32_t hardware_ready = ReadReg("fc7_daq_stat.physical_interface_block.hardware_ready");
+        while(hardware_ready < 1) {
+            hardware_ready = ReadReg("fc7_daq_stat.physical_interface_block.hardware_ready");
+            LOG(INFO) << "Waiting for hardware ready flag";
+            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+        }
     }
 
     uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait)
