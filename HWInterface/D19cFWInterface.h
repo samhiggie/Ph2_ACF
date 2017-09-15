@@ -267,7 +267,7 @@ namespace Ph2_HwInterface {
         /*! \brief Delete one Fpga configuration (or firmware image)*/
         void DeleteFpgaConfig ( const std::string& strId);
         /*! \brief Reboot the board */
-        void RebootBoard() {}
+        void RebootBoard();
         /*! \brief Set or reset the start signal */
         void SetForceStart ( bool bStart) {}
     };

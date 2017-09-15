@@ -1019,6 +1019,13 @@ namespace Ph2_HwInterface {
             fpgaConfig = new CtaFpgaConfig ( this );
     }
 
+    void D19cFWInterface::RebootBoard()
+    {
+        if ( !fpgaConfig )
+            fpgaConfig = new CtaFpgaConfig ( this );
+        fpgaConfig->resetBoard();
+    }
+
     bool D19cFWInterface::cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2)
     {
         //TODO: cleanup
