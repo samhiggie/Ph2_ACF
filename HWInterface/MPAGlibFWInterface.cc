@@ -395,26 +395,6 @@ namespace Ph2_HwInterface
             	curData->insert( curData->end(), rData2.begin(), rData2.end() );
 		}
 
-
-
-	    /*
-	    std::cout<<"trig offset beam"<<std::endl;
-	    int iic = 0;
-            for( auto &vv : rData) {
-		    	      std::bitset<32> p(vv);
-
-                              std::cout<<iic++<<"  "<<p.to_string()<<std::endl;
-                        }
-
-	    std::cout<<"trig offset MPA"<<std::endl;
-	    int iic1 = 0;
-            for( auto &vv : rData2) {
-		    	      std::bitset<32> p(vv);
-
-                              std::cout<<iic1++<<"  "<<p.to_string()<<std::endl;
-                        }
-
-          */
           }
 
 	void MPAGlibFWInterface::HeaderInitMPA(int nmpa, bool lr)

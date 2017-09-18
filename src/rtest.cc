@@ -1,4 +1,8 @@
 
+//Simple bare bones daq to be used as a template for the 
+//relevant sections of usercode in order to test the middleware
+
+
 #include <cstring>
 #include <fstream>
 #include "../Utils/Utilities.h"
@@ -55,128 +59,202 @@ int main( int argc, char* argv[] )
 	mysyscontroller.InitializeHw( cHWFile );
 	std::cout << "\nMPAI";
         MPAInterface* fMPAInterface = mysyscontroller.fMPAInterface; 
-	std::cout << "\nBOARD";
+	std::cout << "\nBOARD"<<std::endl;
 	BeBoard* pBoard = mysyscontroller.fBoardVector.at( 0 );
+
+
+
+
 	
-        std::vector < MPA* > fMPAVector;
-
- 
-
-
 	uint8_t pBeId = 0;
 	uint8_t pFMCId = 0;
+
+	//One BE board, multiple FE's for module.  Cside identifies whether the firmware accesses the left
+	//or right six MPAs
+
+	//Left
 	uint8_t pFeId = 0;
-	uint8_t pMPAId = 1;
-	Module* MAPSA = new Module( pBeId, pFMCId, pFeId, 0 ); 
+	int cside=1;
+	Module* MAPSAR = new Module(); 
+	for (int i=0;i<6;i++)
+		{
+		MAPSAR->addMPA(new MPA(pBeId, pFMCId, pFeId, i, cside));
+		}
+	uint8_t nummpaR =MAPSAR->getNMPA();
 
- 	//MPA *mpa1 = new MPA(pBeId, pFMCId, pFeId, pMPAId) ;
-	//MAPSA->addMPA(mpa1);
+	//Right
+	pFeId = 1;
+	cside=0;
+	Module* MAPSAL = new Module(); 
+	for (int i=0;i<6;i++)
+		{
+		MAPSAL->addMPA(new MPA(pBeId, pFMCId, pFeId, i, cside));
+		}
+	uint8_t nummpaL =MAPSAL->getNMPA();
 
-	for (int i=0;i<12;i++)
-		MAPSA->addMPA(new MPA(pBeId, pFMCId, pFeId, i));
 
-	//std::cout << "\n"<<MAPSA->getNMPA();
-	pBoard->addModule(MAPSA);
+	std::cout<<"Number of MPAs in Left MAPSA "<<int(nummpaL)<<std::endl;
+	std::cout<<"Number of MPAs in Right MAPSA "<<int(nummpaR)<<std::endl;
 
+	//Add both modules to the BE board
+	pBoard->addModule(MAPSAL);
+	pBoard->addModule(MAPSAR);
 	
 
 
-
+	//Power on and check FW version.  These do not need to be called every time datataking begins. 
 	std::cout << "\nExecuting POWER ON...";
 	mysyscontroller.fBeBoardInterface->PowerOn(pBoard);
 	std::cout << "\nFirmware version: "; 
 	mysyscontroller.fBeBoardInterface->ReadVer(pBoard);
 	std::chrono::milliseconds cWait( 10 );
-	std::vector<std::vector< uint32_t >> confsL;
+
+
+	//Initialize configuration data 
 	std::vector<std::vector< uint32_t >> confsR;
+	std::vector<std::vector< uint32_t >> confsL;
 
-	for(int i=0;i<=5;i++)
+	//Manually set some configuration values for testing
+	int threshmod = 70;
+	int opmodemod = 3;
+	std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod1({"OM","THDAC"},{opmodemod,threshmod});
+
+
+	//Load up configuration for right and left MAPSAs into buffers
+	int curside;
+	for(int i=0;i<nummpaR;i++)
 	{
-
+		MPA* curmpa = (MAPSAR->getMPA(i));
+		curside =int(curmpa->getMPASide());
 		std::this_thread::sleep_for( cWait );
-
 		confsR.push_back(fMPAInterface->ReadConfig("calibratedRight", i+1, 1));
-		confsL.push_back(fMPAInterface->ReadConfig("calibratedLeft", i+1, 1));
-		std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod1({"OM","THDAC"},{3,50});
-
-		fMPAInterface->ModifyPerif(mod1,&confsR[i]);
-		fMPAInterface->ModifyPerif(mod1,&confsL[i]);
-
-		fMPAInterface->ConfigureMPA(&confsR[i], 1 , i+1, 0);
-		fMPAInterface->ConfigureMPA(&confsL[i], 1 , i+1, 1);
-
-
+		fMPAInterface->ModifyPerif(mod1,&confsR.back());
+		fMPAInterface->ConfigureMPA(&confsR.back(), 1 , i+1 , curside);
 
 	}
 
-	fMPAInterface->SendConfig(6,6);
+
+	for(int i=0;i<nummpaL;i++)
+	{
+		MPA* curmpa = (MAPSAL->getMPA(i));
+		curside =int(curmpa->getMPASide());
+		std::this_thread::sleep_for( cWait );
+		confsL.push_back(fMPAInterface->ReadConfig("calibratedLeft", i+1, 1));
+		fMPAInterface->ModifyPerif(mod1,&confsL.back());
+		fMPAInterface->ConfigureMPA(&confsL.back(), 1 , i+1 , curside);
+	}
+
+
+
+	//Transfer configuration information to MPAs after loading 
+	fMPAInterface->SendConfig(nummpaL,nummpaR);
 	std::chrono::milliseconds cWait1( 100 );//
 
 	int ibuffer = 1;
-	bool Kill=false;
 
 
 
-	//fMPAInterface->SequencerInit(1,500000,1,0);
-	fMPAInterface->TestbeamInit(500000,0, 0);
+	//Option 1 just takes data continuously, option 2 waits for triggers
+	fMPAInterface->SequencerInit(1,200000,1,0);
+	//fMPAInterface->TestbeamInit(500000,0, 0);
 
-	std::cout<<"Clearing buffers"<<std::endl;
-	for(int i=0;i<=1;i++)
-		{
-		for(int k=1;k<=4;k++)
+
+	//Always four buffers in current FW
+	int nbuffers = 4;
+
+
+	//Release all data currently stored before taking new data
+	for(int i=0;i<nummpaR;i++)
+	{
+		MPA* curmpa = (MAPSAR->getMPA(i));
+		curside =int(curmpa->getMPASide());
+		std::this_thread::sleep_for( cWait );
+
+		for(int k=1;k<=nbuffers;k++)
 			{
-			for(int j=1;j<=6;j++)
-				{
-					fMPAInterface->HeaderInitMPA(j,i);
-					std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(k,j,i);
-				}
+			fMPAInterface->HeaderInitMPA(i+1,curside);
+			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(k,i+1,curside);
 			fMPAInterface->ReadTrig(k);
 			}
-	}	fMPAInterface->Cleardata();
+	}
+	for(int i=0;i<nummpaL;i++)
+	{
+		MPA* curmpa = (MAPSAL->getMPA(i));
+		curside =int(curmpa->getMPASide());
+		std::this_thread::sleep_for( cWait );
+
+		for(int k=1;k<=nbuffers;k++)
+			{
+			fMPAInterface->HeaderInitMPA(i+1,curside);
+			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(k,i+1,curside);
+			fMPAInterface->ReadTrig(k);
+			}
+	}
+	fMPAInterface->Cleardata();
+
+
 
 	int spill = 0;
 	int tempspill = 0;
 	int nev = 0;
+
+
+
+
+	std::ofstream outFile_;
+  	outFile_.open ("output.dat");
+
+
+	bool Kill=false;
 	while (not Kill)
 	{
 
-	tempspill=spill;
-	spill+=fMPAInterface->WaitTestbeam();
-	if (tempspill!=spill) std::cout<<"Starting Spill "<<spill<<std::endl;
+		tempspill=spill;
+		spill+=fMPAInterface->WaitTestbeam();
+		if (tempspill!=spill) std::cout<<"Starting Spill "<<spill<<std::endl;
 
-	fMPAInterface->Cleardata();
-	fMPAInterface->ReadTrig(ibuffer);
+		fMPAInterface->Cleardata();
+		fMPAInterface->ReadTrig(ibuffer);
 
 
-
-	for(int i=0;i<=5;i++)
-	{
-
-		for(int j=0;j<=1;j++)
+		for(int i=0;i<nummpaL;i++)
 		{
-			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(ibuffer,i+1,j);
+			MPA* curmpa = (MAPSAL->getMPA(i));
+			curside =int(curmpa->getMPASide());
+			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(ibuffer,i+1,curside);
 		}
-	}
 
-	ibuffer+=1;
-	if (ibuffer >4) ibuffer=1 ;
-
-        //uint32_t PacketSize = mysyscontroller.fBeBoardInterface->ReadData ( pBoard, false );
-	
-
-	nev+=1;
-	if (nev%100==0)	std::cout<<nev<<" Events"<<std::endl;
-	
-
-        std::vector<uint32_t>*  curdata = fMPAInterface->GetcurData();
-	int iic1 = 0;
-        for( int iic1=0;iic1<curdata->size();iic1++) 
+		for(int i=0;i<nummpaR;i++)
 		{
-		std::cout<<iic1<<" "<< curdata->at(iic1) <<std::endl;
-                }
+			MPA* curmpa = (MAPSAR->getMPA(i));
+			curside =int(curmpa->getMPASide());
+			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(ibuffer,i+1,curside);
+		}
 
+
+
+		ibuffer+=1;
+		if (ibuffer >nbuffers) ibuffer=1 ;
+
+		nev+=1;
+		if (nev%100==0)	std::cout<<nev<<" Events"<<std::endl;
 	
-	}
+		//For testing puroses, output all collected data
 
-}
+		std::vector<uint32_t> cData = *(fMPAInterface->GetcurData());
+
+		int iic1 = 0;
+		for( unsigned int iic1=0;iic1<cData.size();iic1++)
+		{
+			outFile_.write( (char*)&cData.at(iic1), sizeof(uint32_t));
+	
+		}
+
+
+
+
+
+	}//while (not Kill)
+	outFile_.close();
+}//int main
 

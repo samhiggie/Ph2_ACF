@@ -22,14 +22,14 @@
 namespace Ph2_HwDescription {
     // C'tors with object FE Description
 
-    MPA::MPA ( const FrontEndDescription& pFeDesc, uint8_t pMPAId ) : FrontEndDescription ( pFeDesc ),
-        fMPAId ( pMPAId )
+    MPA::MPA ( const FrontEndDescription& pFeDesc, uint8_t pMPAId, uint8_t pMPASide ) : FrontEndDescription ( pFeDesc ),
+        fMPAId ( pMPAId ), fMPASide ( pMPASide )
 
     {}
 
     // C'tors which take BeId, FMCId, FeID, MPAId
 
-    MPA::MPA ( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pMPAId) : FrontEndDescription ( pBeId, pFMCId, pFeId ), fMPAId ( pMPAId )
+    MPA::MPA ( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pMPAId, uint8_t pMPASide) : FrontEndDescription ( pBeId, pFMCId, pFeId ), fMPAId ( pMPAId ), fMPASide ( pMPASide )
 
     {}
 

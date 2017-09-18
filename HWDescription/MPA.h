@@ -41,10 +41,10 @@ namespace Ph2_HwDescription {
       public:
 
         // C'tors which take BeId, FMCId, FeID, MPAId
-        MPA ( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pMPAId);
+        MPA ( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pMPAId, uint8_t pMPASide);
 
         // C'tors with object FE Description
-        MPA ( const FrontEndDescription& pFeDesc, uint8_t pMPAId);
+        MPA ( const FrontEndDescription& pFeDesc, uint8_t pMPAId , uint8_t pMPASide);
 
         // Default C'tor
         MPA();
@@ -69,9 +69,26 @@ namespace Ph2_HwDescription {
         }
 
 
+
+        uint8_t getMPASide() const
+        {
+            return fMPASide;
+        }
+        /*!
+         * \brief Set the MPA Id
+         * \param pMPAId
+         */
+        void setMPASide ( uint8_t pMPASide )
+        {
+            fMPASide = pMPASide;
+        }
+
+
+
       protected:
 
         uint8_t fMPAId;
+        uint8_t fMPASide;
 
 
     };

@@ -128,6 +128,20 @@ namespace Ph2_HwDescription {
          */
         Cbc* getCbc ( uint8_t pCbcId ) const;
 
+
+        /*!
+         * \brief Remove a MPA from the vector
+         * \param pMPAId
+         * \return a bool which indicate if the removing was successful
+         */
+        bool   removeMPA ( uint8_t pMPAId );
+        /*!
+         * \brief Get a MPA from the vector
+         * \param pMPAId
+         * \return a pointer of MPA, so we can manipulate directly the MPA contained in the vector
+         */
+        MPA* getMPA ( uint8_t pMPAId ) const;
+
         /*!
         * \brief Get the Module Id
         * \return The Module ID

@@ -65,4 +65,49 @@ namespace Ph2_HwDescription {
         return nullptr;
 
     }
+
+
+    MPA* Module::getMPA ( uint8_t pMPAId ) const
+    {
+
+        for ( MPA* m : fMPAVector )
+        {
+            if ( m->getMPAId() == pMPAId )
+                return m;
+        }
+
+        return nullptr;
+
+    }
+
+
+
+    bool Module::removeMPA ( uint8_t pMPAId )
+    {
+        std::vector < MPA* > :: iterator i;
+        bool found = false;
+
+        for ( i = fMPAVector.begin(); i != fMPAVector.end(); ++i )
+        {
+            if ( (*i)->getMPAId() == pMPAId )
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if ( found )
+        {
+            fMPAVector.erase ( i );
+            return true;
+        }
+        else
+        {
+            LOG (INFO) << "Error:The Module " << +fModuleId << " doesn't have the MPA " << +pMPAId ;
+            return false;
+        }
+    }
+
+
+
 }
