@@ -154,6 +154,10 @@
         </node>
 
         <node id="physical_interface_block"     address="0x3000">
+            <node id="control"                      address="0x000">
+                <node id="chip_hard_reset"                  mask="0x00000001"/>
+                <node id="cbc3_tune_again"                  mask="0x00000002"/>
+            </node>
         </node>
 
         <node id="readout_block"                address="0x5000">
@@ -230,7 +234,10 @@
 
         <node id="physical_interface_block"     address="0x3000">
             <node id="hardware_ready"           address="0x002" mask="0x00010000"/>
-        </node>
+            <node id="delay5_done"              address="0x002" mask="0x00000020"/>
+            <node id="serializer_done"          address="0x002" mask="0x00000040"/>
+            <node id="bitslip_done"             address="0x002" mask="0x00000080"/>
+        </node>       
 
         <node id="be_proc"                      address="0x4000">
             <node id="general"                          address="0x000">

@@ -51,6 +51,7 @@ namespace Ph2_HwInterface {
         // number of chips and hybrids defined in firmware (compiled for)
         int fFWNHybrids;
         int fFWNChips;
+        int fCBCVersion;
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
@@ -139,9 +140,9 @@ namespace Ph2_HwInterface {
         void ResetReadout();
 
         /*!
-          * \brief Check Hardware Ready Flag
+          * \brief Tune the 320MHz buses phase shift
           */
-        void HardwareReady();
+        void PhaseTuning(const BeBoard *pBoard);
 
         /*!
          * \brief Read data from DAQ
