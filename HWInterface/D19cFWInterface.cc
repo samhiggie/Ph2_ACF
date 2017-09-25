@@ -244,6 +244,7 @@ namespace Ph2_HwInterface {
         fCBCVersion = ReadReg ("fc7_daq_stat.general.info.cbc_version");
         fFWNHybrids = ReadReg ("fc7_daq_stat.general.info.num_hybrids");
         fFWNChips = ReadReg ("fc7_daq_stat.general.info.num_chips");
+        fCBC3Emulator = (ReadReg ("fc7_daq_stat.general.info.implementation") == 2);
 
         fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
@@ -509,7 +510,7 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::PhaseTuning(const BeBoard* pBoard)
     {
-        if(fCBCVersion == 3)
+        if(fCBCVersion == 3 && !fCBC3Emulator)
         {
             std::map<Cbc*, uint8_t> cStubLogictInputMap;
             std::map<Cbc*, uint8_t> cHipRegMap;

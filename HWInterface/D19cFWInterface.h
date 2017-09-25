@@ -52,6 +52,7 @@ namespace Ph2_HwInterface {
         int fFWNHybrids;
         int fFWNChips;
         int fCBCVersion;
+        bool fCBC3Emulator;
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
