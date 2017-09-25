@@ -173,9 +173,11 @@ class HybridTester : public Tool
     bool fHoleMode;
     int fSigmas;
     uint8_t fVcth;
+    uint8_t fTestPulseAmplitude;
     double fDecisionThreshold = 10.0;   /*!< Decision Threshold for channels occupancy based tests, values from 1 to 100 as % */
 
     void SetBeBoardForShortsFinding (BeBoard* pBoard);
+    void SetTestGroup(BeBoard* pBoard, uint8_t pTestGroup);
     void ReconstructShorts (std::array<std::vector<std::array<int, 5>>, 8> pShortedGroupsArray);
     void DisplayGroupsContent (std::array<std::vector<std::array<int, 5>>, 8> pShortedGroupsArray);
     bool CheckShortsConnection (std::vector<std::array<int, 2>> pShortA, std::vector<std::array<int, 2>> pShortB);

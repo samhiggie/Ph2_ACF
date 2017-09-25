@@ -316,6 +316,32 @@ bool ShortFinder::CheckChannel (Short pShort , ShortsList pShortsList)
 
     return false;
 }
+
+void ShortFinder::SetTestGroup(BeBoard* pBoard, uint8_t pTestGroup)
+{
+    for (auto cFe : pBoard->fModuleVector)
+    {
+        for (auto cCbc : cFe->fCbcVector)
+        {
+            std::vector<std::pair<std::string, uint8_t>> cRegVec;
+            uint8_t cRegValue = this->to_reg ( 0, pTestGroup );
+
+            if (cCbc->getChipType() == ChipType::CBC3)
+            {
+                //CBC3
+                cRegVec.push_back ( std::make_pair ( "TestPulseDel&ChanGroup",  cRegValue ) );
+            }
+            else
+            {
+                //CBC2
+                cRegVec.push_back ( std::make_pair ( "SelTestPulseDel&ChanGroup",  cRegValue ) );
+            }
+
+            this->fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);
+        }
+    }
+}
+
 //std::vector<std::array<int, 2>> HybridTester::MergeShorts(std::vector<std::array<int, 2>> pShortA, std::vector<std::array<int, 2>> pShortB)
 void ShortFinder::MergeShorts (ShortsList pShortsListA)
 {
@@ -355,7 +381,6 @@ void ShortFinder::FindShorts (std::ostream& os )
 
         SetBeBoard (pBoard);
 
-        CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", this->to_reg(0,cTestPulseGroupId));
         os << "\nShorted channels searching procedure\nSides: Top - 0\tBottom - 1 (Channel numbering starts from 0)\n" << std::endl;
         os << "      CBC\t| Side\t| Channel_ID\t| Group_ID\t| Shorted_With_Group_ID" << std::endl;
 
@@ -363,8 +388,7 @@ void ShortFinder::FindShorts (std::ostream& os )
         {
             cN = 1;
 
-            cWriter.setRegister ( "SelTestPulseDel&ChanGroup", this->to_reg(0,cTestPulseGroupId));
-            accept ( cWriter );
+            this->SetTestGroup(pBoard,(uint8_t)cTestPulseGroupId);
 
             ReadNEvents ( pBoard, fTotalEvents );
             const std::vector<Event*>& events = GetEvents ( pBoard );

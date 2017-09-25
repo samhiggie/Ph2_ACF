@@ -324,6 +324,11 @@ void Tool::setFWTestPulse()
         {
             cRegVec.push_back ({"cbc_system_cnfg.fast_signal_manager.fast_signal_generator.enable.test_pulse", 0x1});
         }
+        else if(cBoardType == BoardType::D19C)
+        {
+            cRegVec.push_back ({"fc7_daq_cnfg.fast_command_block.trigger_source", 6});
+            cRegVec.push_back ({"fc7_daq_ctrl.fast_command_block.control.load_config", 0x1});
+        }
 
         fBeBoardInterface->WriteBoardMultReg (cBoard, cRegVec);
     }

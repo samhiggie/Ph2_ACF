@@ -121,6 +121,7 @@ class ShortFinder : public Tool
 
     // functions/methods
     void SetBeBoard (BeBoard* pBoard);
+    void SetTestGroup(BeBoard* pBoard, uint8_t pTestGroup);
     bool CheckChannel (Short pShort , ShortsList pShortsList);
     void MergeShorts (ShortsList pShortA);
     void ReconstructShorts (ShortedGroupsList pShortedGroupsArray , std::ostream& os = std::cout );
