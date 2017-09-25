@@ -669,8 +669,7 @@ void HybridTester::TestRegisters()
 
             for ( const auto& cReg : cMap )
             {
-                // CHECKME bit 8 is not writable (page settings)
-                if ( !fInterface->WriteCbcReg ( &pCbc, cReg.first, (cReg.second.fAddress==0) ? 0x2A : cFirstBitPattern, true ) ) fBadRegisters[pCbc.getCbcId()] .insert ( cReg.first );
+                if ( !fInterface->WriteCbcReg ( &pCbc, cReg.first, cFirstBitPattern, true ) ) fBadRegisters[pCbc.getCbcId()] .insert ( cReg.first );
 
                 if ( !fInterface->WriteCbcReg ( &pCbc, cReg.first, cSecondBitPattern, true ) ) fBadRegisters[pCbc.getCbcId()] .insert ( cReg.first );
             }
