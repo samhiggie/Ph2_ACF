@@ -510,84 +510,86 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::PhaseTuning(const BeBoard* pBoard)
     {
-        if(fCBCVersion == 3 && !fCBC3Emulator)
+        if(fCBCVersion == 3)
         {
-            std::map<Cbc*, uint8_t> cStubLogictInputMap;
-            std::map<Cbc*, uint8_t> cHipRegMap;
-            std::vector<uint32_t> cVecReq;
+            if(!fCBC3Emulator) {
+                std::map<Cbc*, uint8_t> cStubLogictInputMap;
+                std::map<Cbc*, uint8_t> cHipRegMap;
+                std::vector<uint32_t> cVecReq;
 
-            cVecReq.clear();
-            for (auto cFe : pBoard->fModuleVector)
-            {
-                for (auto cCbc : cFe->fCbcVector)
+                cVecReq.clear();
+                for (auto cFe : pBoard->fModuleVector)
                 {
+                    for (auto cCbc : cFe->fCbcVector)
+                    {
 
-                    uint8_t cOriginalStubLogicInput = cCbc->getReg ("Pipe&StubInpSel&Ptwidth");
-                    uint8_t cOriginalHipReg = cCbc->getReg ("HIP&TestMode");
-                    cStubLogictInputMap[cCbc] = cOriginalStubLogicInput;
-                    cHipRegMap[cCbc] = cOriginalHipReg;
+                        uint8_t cOriginalStubLogicInput = cCbc->getReg ("Pipe&StubInpSel&Ptwidth");
+                        uint8_t cOriginalHipReg = cCbc->getReg ("HIP&TestMode");
+                        cStubLogictInputMap[cCbc] = cOriginalStubLogicInput;
+                        cHipRegMap[cCbc] = cOriginalHipReg;
 
 
-                    CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
-                    cRegItem.fValue = (cOriginalStubLogicInput & 0xCF) | (0x20 & 0x30);
-                    this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
+                        CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
+                        cRegItem.fValue = (cOriginalStubLogicInput & 0xCF) | (0x20 & 0x30);
+                        this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
 
-                    cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
-                    cRegItem.fValue = (cOriginalHipReg & ~ (0x1 << 4));
-                    this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
+                        cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
+                        cRegItem.fValue = (cOriginalHipReg & ~ (0x1 << 4));
+                        this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
 
+                    }
                 }
-            }
-            uint8_t cWriteAttempts = 0;
-            this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
-            std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                uint8_t cWriteAttempts = 0;
+                this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
 
-            int cCounter = 0;
-            int cMaxAttempts = 10;
+                int cCounter = 0;
+                int cMaxAttempts = 10;
 
-            uint32_t hardware_ready = 0;
-            while(hardware_ready < 1)
-            {
-                if (cCounter++ > cMaxAttempts)
+                uint32_t hardware_ready = 0;
+                while(hardware_ready < 1)
                 {
-                    uint32_t delay5_done = ReadReg("fc7_daq_stat.physical_interface_block.delay5_done");
-                    uint32_t serializer_done = ReadReg("fc7_daq_stat.physical_interface_block.serializer_done");
-                    uint32_t bitslip_done = ReadReg("fc7_daq_stat.physical_interface_block.bitslip_done");
-                    LOG (INFO) << "Clock Data Timing tuning failed after " << cMaxAttempts << " attempts with value - aborting!";
-                    LOG(INFO) << "Debug Info: delay5 done: " << delay5_done << ", serializer_done: " << serializer_done << ", bitslip_done: " << bitslip_done;
-                    exit (1);
+                    if (cCounter++ > cMaxAttempts)
+                    {
+                        uint32_t delay5_done = ReadReg("fc7_daq_stat.physical_interface_block.delay5_done");
+                        uint32_t serializer_done = ReadReg("fc7_daq_stat.physical_interface_block.serializer_done");
+                        uint32_t bitslip_done = ReadReg("fc7_daq_stat.physical_interface_block.bitslip_done");
+                        LOG (INFO) << "Clock Data Timing tuning failed after " << cMaxAttempts << " attempts with value - aborting!";
+                        LOG(INFO) << "Debug Info: delay5 done: " << delay5_done << ", serializer_done: " << serializer_done << ", bitslip_done: " << bitslip_done;
+                        exit (1);
+                    }
+
+                    this->CbcFastReset();
+                    usleep(10);
+                    // reset  the timing tuning
+                    WriteReg("fc7_daq_ctrl.physical_interface_block.control.cbc3_tune_again",0x1);
+
+                    std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+                    hardware_ready = ReadReg("fc7_daq_stat.physical_interface_block.hardware_ready");
                 }
 
-                this->CbcFastReset();
-                usleep(10);
-                // reset  the timing tuning
-                WriteReg("fc7_daq_ctrl.physical_interface_block.control.cbc3_tune_again",0x1);
-
-                std::this_thread::sleep_for (std::chrono::milliseconds (100) );
-                hardware_ready = ReadReg("fc7_daq_stat.physical_interface_block.hardware_ready");
-            }
-
-            //re-enable the stub logic
-            for (auto cFe : pBoard->fModuleVector)
-            {
-                for (auto cCbc : cFe->fCbcVector)
+                //re-enable the stub logic
+                for (auto cFe : pBoard->fModuleVector)
                 {
-                    cVecReq.clear();
+                    for (auto cCbc : cFe->fCbcVector)
+                    {
+                        cVecReq.clear();
 
-                    CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
-                    cRegItem.fValue = cStubLogictInputMap[cCbc];
-                    //this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
+                        CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
+                        cRegItem.fValue = cStubLogictInputMap[cCbc];
+                        //this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
 
-                    cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
-                    cRegItem.fValue = cHipRegMap[cCbc];
-                    this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
+                        cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
+                        cRegItem.fValue = cHipRegMap[cCbc];
+                        this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
 
+                    }
                 }
-            }
-            cWriteAttempts = 0;
-            this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+                cWriteAttempts = 0;
+                this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
 
-            LOG(INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
+                LOG(INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
+            }
         }
         else if (fCBCVersion == 2) {
             // no timing tuning needed
