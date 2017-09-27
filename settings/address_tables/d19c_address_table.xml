@@ -188,7 +188,7 @@
             </node>
             <node id="info"                             address="0x003">
                 <node id="implementation"                   mask="0x0000000f"/>
-                <node id="cbc_version"                      mask="0x000000f0"/>
+                <node id="chip_type"                        mask="0x000000f0"/>
                 <node id="num_hybrids"                      mask="0x0000ff00"/>
                 <node id="num_chips"                        mask="0x00ff0000"/>
 		<node id="fmc1_card_type"		    mask="0x0f000000"/>

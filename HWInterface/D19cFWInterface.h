@@ -51,7 +51,7 @@ namespace Ph2_HwInterface {
         // number of chips and hybrids defined in firmware (compiled for)
         int fFWNHybrids;
         int fFWNChips;
-        int fCBCVersion;
+        ChipType fFirwmareChipType;
         bool fCBC3Emulator;
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
@@ -172,6 +172,10 @@ namespace Ph2_HwInterface {
         void PowerOnDIO5();
         // get fmc card name
         std::string getFMCCardName (uint32_t id);
+        // convert code of the chip from firmware
+        std::string getChipName(uint32_t pChipCode);
+        ChipType getChipType(uint32_t pChipCode);
+
 
         //template to copy every nth element out of a vector to another vector
         template<class in_it, class out_it>

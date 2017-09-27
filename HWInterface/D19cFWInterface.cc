@@ -143,6 +143,50 @@ namespace Ph2_HwInterface {
         return name;
     }
 
+    std::string D19cFWInterface::getChipName(uint32_t pChipCode)
+    {
+        std::string name = "UNKNOWN";
+
+        switch (pChipCode)
+        {
+            case 0x0:
+                name = "CBC2";
+                break;
+
+            case 0x1:
+                name = "CBC3";
+                break;
+
+            case 0x2:
+                name = "MPA";
+                break;
+        }
+
+        return name;
+    }
+
+    ChipType D19cFWInterface::getChipType(uint32_t pChipCode)
+    {
+        ChipType chip_type = ChipType::UNDEFINED;
+
+        switch (pChipCode)
+        {
+            case 0x0:
+                chip_type = ChipType::CBC2;
+                break;
+
+            case 0x1:
+                chip_type = ChipType::CBC3;
+                break;
+
+            case 0x2:
+                chip_type = ChipType::UNDEFINED;
+                break;
+        }
+
+        return chip_type;
+    }
+
     uint32_t D19cFWInterface::getBoardInfo()
     {
         // firmware info
@@ -150,7 +194,7 @@ namespace Ph2_HwInterface {
         LOG (INFO) << BOLDGREEN << "General Firmware Info" << RESET;
 
         int implementation = ReadReg ("fc7_daq_stat.general.info.implementation");
-        int cbc_version = ReadReg ("fc7_daq_stat.general.info.cbc_version");
+        int chip_code = ReadReg ("fc7_daq_stat.general.info.chip_type");
         int num_hybrids = ReadReg ("fc7_daq_stat.general.info.num_hybrids");
         int num_chips = ReadReg ("fc7_daq_stat.general.info.num_chips");
         uint32_t fmc1_card_type = ReadReg ("fc7_daq_stat.general.info.fmc1_card_type");
@@ -168,7 +212,7 @@ namespace Ph2_HwInterface {
         LOG (INFO) << BOLDYELLOW << "FMC1 Card: " << RESET << getFMCCardName (fmc1_card_type);
         LOG (INFO) << BOLDYELLOW << "FMC2 Card: " << RESET << getFMCCardName (fmc2_card_type);
 
-        LOG (INFO) << "CBC Version: " << BOLDGREEN << cbc_version << RESET;
+        LOG (INFO) << "Chip Type: " << BOLDGREEN << getChipName(chip_code) << RESET;
         LOG (INFO) << "Number of Hybrids: " << BOLDGREEN << num_hybrids << RESET;
         LOG (INFO) << "Number of Chips per Hybrid: " << BOLDGREEN << num_chips << RESET;
 
@@ -241,7 +285,9 @@ namespace Ph2_HwInterface {
         usleep (500);
 
         // read info about current firmware
-        fCBCVersion = ReadReg ("fc7_daq_stat.general.info.cbc_version");
+        uint32_t cChipTypeCode = ReadReg ("fc7_daq_stat.general.info.chip_type");
+        std::string cChipName = getChipName(cChipTypeCode);
+        fFirwmareChipType = getChipType(cChipTypeCode);
         fFWNHybrids = ReadReg ("fc7_daq_stat.general.info.num_hybrids");
         fFWNChips = ReadReg ("fc7_daq_stat.general.info.num_chips");
         fCBC3Emulator = (ReadReg ("fc7_daq_stat.general.info.implementation") == 2);
@@ -249,7 +295,7 @@ namespace Ph2_HwInterface {
         fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
-        LOG (INFO) << BOLDGREEN << "According to the Firmware status registers, it was compiled for: " << fFWNHybrids << " hybrid(s), " << fFWNChips << " CBC" << fCBCVersion << " chip(s) per hybrid" << RESET;
+        LOG (INFO) << BOLDGREEN << "According to the Firmware status registers, it was compiled for: " << fFWNHybrids << " hybrid(s), " << fFWNChips << " " << cChipName << " chip(s) per hybrid" << RESET;
 
         int fNHybrids = 0;
         uint16_t hybrid_enable = 0;
@@ -510,7 +556,7 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::PhaseTuning(const BeBoard* pBoard)
     {
-        if(fCBCVersion == 3)
+        if(fFirwmareChipType == ChipType::CBC3)
         {
             if(!fCBC3Emulator) {
                 std::map<Cbc*, uint8_t> cStubLogictInputMap;
@@ -591,11 +637,11 @@ namespace Ph2_HwInterface {
                 LOG(INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
             }
         }
-        else if (fCBCVersion == 2) {
+        else if (fFirwmareChipType == ChipType::CBC2) {
             // no timing tuning needed
         }
         else {
-            LOG(INFO) << "No tuning procedure implemented for CBC version " << fCBCVersion;
+            LOG(INFO) << "No tuning procedure implemented for this chip type.";
             exit(1);
         }
     }
