@@ -30,6 +30,10 @@
             <node id="chips_enable_hyb_15"		address="0x005" mask="0xFF000000"/>	
         </node>
 
+        <node id="ttc"                          address="0x0006">
+            <node id="ttc_enable"			mask="0x00000001"/>
+        </node>
+
         <node id="command_processor_block"      address="0x1000">
             <node id="i2c_write_mask"                   address="0x001" mask="0x000000FF"/>
         </node>
