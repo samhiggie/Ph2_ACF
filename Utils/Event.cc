@@ -19,6 +19,10 @@ namespace Ph2_HwInterface {
     // Event implementation
     Event::Event ( const BeBoard* pBoard,  uint32_t pNbCbc, const std::vector<uint32_t>& list )
     {
+
+
+
+
         SetEvent ( pBoard, pNbCbc, list );
     }
 
@@ -32,6 +36,7 @@ namespace Ph2_HwInterface {
         fTDC ( pEvent.fTDC ),
         fEventSize (pEvent.fEventSize),
         fEventDataMap ( pEvent.fEventDataMap )
+
     {
 
     }
@@ -45,6 +50,8 @@ namespace Ph2_HwInterface {
     {
         fEventSize = pNbCbc *  CBC_EVENT_SIZE_32  + EVENT_HEADER_TDC_SIZE_32;
 
+
+        
         //now decode the header info
         fBunch = 0x00FFFFFF & list.at (0);
         fOrbit = 0x00FFFFFF & list.at (1);
@@ -54,6 +61,25 @@ namespace Ph2_HwInterface {
         fTDC = 0x000000FF & list.back();
 
 
+        //MPA header for now 
+
+
+
+        ftotal_trigs = 0x00FFFFFF & list.at (0);
+        ftrigger_total_counter = 0x00FFFFFF & list.at (1);
+        ftrigger_counter = 0x00FFFFFF & list.at (2);
+
+
+	ftrigger_offset_BEAM.clear();
+
+	ftrigger_offset_MPA.clear();
+
+
+        ftrigger_offset_BEAM.insert( ftrigger_offset_BEAM.begin(), list.begin()+3, list.begin()+(3+2048) );
+        ftrigger_offset_MPA.insert( ftrigger_offset_MPA.begin(), list.begin()+(3+2048), list.begin()+(3+2048*2) );
+
+
+
         //now decode FEEvents
         uint8_t cBeId = pBoard->getBeId();
         uint32_t cNFe = static_cast<uint32_t> ( pBoard->getNFe() );
@@ -61,7 +87,7 @@ namespace Ph2_HwInterface {
         for ( uint8_t cFeId = 0; cFeId < cNFe; cFeId++ )
         {
             uint32_t cNCbc;
-
+            uint32_t cNMPA;
             // if the NCbcDataSize in the FW Version node of the BeBoard is set, the DataSize is assumed fixed:
             // if 1 module is defined, the number of CBCs is the datasize given in the xml
             // if more than one module is defined, the number of CBCs for each FE is the datasize divided by the nFe
@@ -73,6 +99,8 @@ namespace Ph2_HwInterface {
             // if there is no FWVersion node in the xml, the CBCs will be counted for each module according to the xml file
             else cNCbc = static_cast<uint32_t> ( pBoard->getModule ( cFeId )->getNCbc() );
 
+            cNMPA = static_cast<uint32_t> ( pBoard->getModule ( cFeId )->getNMPA() );
+
             //now loop the CBCs and encode the IDs in key
             for ( uint8_t cCbcId = 0; cCbcId < cNCbc; cCbcId++ )
             {
@@ -83,8 +111,27 @@ namespace Ph2_HwInterface {
 
                 std::vector<uint32_t> cCbcData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
 
+
+
                 fEventDataMap[cKey] = cCbcData;
             }
+
+
+            for ( uint8_t cMPAId = 0; cMPAId < cNMPA; cMPAId++ )
+            {
+                uint16_t cKey = encodeId (cFeId, cMPAId);
+		
+                uint32_t begin = MPA_HEADER_SIZE_32 + cFeId * MPA_EVENT_SIZE_32 * cNMPA + cMPAId * MPA_EVENT_SIZE_32;
+                uint32_t end = begin + MPA_EVENT_SIZE_32;
+
+                std::vector<uint32_t> cMPAData (std::next (std::begin (list), begin), std::next (std::begin (list), end) );
+		
+
+
+                fEventDataMap[cKey] = cMPAData;
+            }
+
+
         }
     }
 
@@ -306,6 +353,8 @@ namespace Ph2_HwInterface {
     {
         std::stringbuf tmp;
         std::ostream os ( &tmp );
+        std::ios oldState (nullptr);
+        oldState.copyfmt (os);
         os << std::hex << std::setfill ('0');
 
         //get the CBC event for pFeId and pCbcId into vector<32bit> cbcData
@@ -320,7 +369,9 @@ namespace Ph2_HwInterface {
             os << std::setw (8) << cbcData.at (i);
 
         //the last word with only 8 bits
-        os << std::setw (2) << (cbcData.at (8) & 0xFF000000);
+        os << std::setw (2) << ( (cbcData.at (8) & 0xFF000000) >> 24);
+
+        os.copyfmt (oldState);
 
 
         //uint32_t cFirstByteP = OFFSET_CBCDATA / 8;

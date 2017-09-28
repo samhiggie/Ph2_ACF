@@ -99,6 +99,9 @@ namespace Ph2_System {
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new ICFc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
             else if ( !cBoardType.compare ( std::string ( "CBC3FC7" ) ) )
                 pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new Cbc3Fc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+            else if ( !cBoardType.compare ( std::string ( "MPAGLIB" ) ) )
+                pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new MPAGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+
 
             //else
             //cBeBoardFWInterface = new OtherFWInterface();
@@ -216,9 +219,11 @@ namespace Ph2_System {
 
             std::string cFileName;
 
-            if ( !cFilePrefix.empty() )
+            if ( !cFilePrefix.empty() ){
+		if (cFilePrefix.at(cFilePrefix.length()-1) != '/')
+			cFilePrefix.append("/");
                 cFileName = cFilePrefix + expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() );
-            else cFileName = expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() );
+            } else cFileName = expandEnvironmentVariables (cCbcNode.attribute ( "configfile" ).value() );
 
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
 
