@@ -626,4 +626,22 @@ namespace Ph2_HwInterface {
     }
 
 
+    void Cbc3Fc7FWInterface::PowerOn()
+    {
+
+    }
+
+    void Cbc3Fc7FWInterface::PowerOff()
+    {
+
+    }
+
+
+    void Cbc3Fc7FWInterface::ReadVer()
+    {
+
+    }
+
+
+
 }
