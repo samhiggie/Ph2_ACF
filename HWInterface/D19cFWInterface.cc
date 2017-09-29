@@ -291,6 +291,7 @@ namespace Ph2_HwInterface {
         fFWNHybrids = ReadReg ("fc7_daq_stat.general.info.num_hybrids");
         fFWNChips = ReadReg ("fc7_daq_stat.general.info.num_chips");
         fCBC3Emulator = (ReadReg ("fc7_daq_stat.general.info.implementation") == 2);
+        fIsDDR3Readout = (ReadReg("fc7_daq_stat.ddr3_block.is_ddr3_type") == 1);
 
         fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
@@ -547,11 +548,20 @@ namespace Ph2_HwInterface {
     }
 
     void D19cFWInterface::ResetReadout()
-    {
+    {        
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
         usleep (10);
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
         usleep (10);
+        if(fIsDDR3Readout) {
+            fDDR3Offset = 0;
+            bool cDDR3Calibrated = false;
+            while(!cDDR3Calibrated) {
+                LOG(INFO) << "Waiting for DDR3 to finish initial calibration";
+                std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
+                cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
+            }
+        }
     }
 
     void D19cFWInterface::PhaseTuning(const BeBoard* pBoard)
@@ -691,7 +701,10 @@ namespace Ph2_HwInterface {
             //LOG(INFO) << "NWords available this time: " << +cNWords;
 
             // read all the words
-            pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
+            if (fIsDDR3Readout)
+                pData = ReadBlockRegValue ("fc7_daq_ddr3", cNWords);
+            else
+                pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
         }
         else
         {
@@ -713,7 +726,11 @@ namespace Ph2_HwInterface {
                     cNEventsAvailable = (uint32_t)cNWords/cEventSize;
                 }
 
-                std::vector<uint32_t> event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
+                std::vector<uint32_t> event_data;
+                if (fIsDDR3Readout)
+                    event_data = ReadBlockRegValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize);
+                else
+                    event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
                 pData.insert (pData.end(), event_data.begin(), event_data.end() );
                 cNEvents+=cNEventsAvailable;
 
@@ -745,12 +762,13 @@ namespace Ph2_HwInterface {
 
         // start triggering machine which will collect N events
         this->Start();
-
+        exit(1);
         bool failed = false;
 
         for (uint32_t event = 0; event < pNEvents; event++)
         {
             uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+            LOG(INFO) << +cNWords;
 
             int cNTries = 0;
             int cNTriesMax = 50;
@@ -780,16 +798,25 @@ namespace Ph2_HwInterface {
             // reading header 1
             uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
             uint32_t cEventSize = (0x0000FFFF & header1);
+            LOG(INFO) << +cEventSize;
 
             while (cNWords < cEventSize - 1)
             {
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            }
+            }         
 
-            pData.push_back (header1);
-            std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
-            pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
+            std::vector<uint32_t> rest_of_data;
+            if (fIsDDR3Readout) {
+                // very tricky, needs to be changed
+                rest_of_data = ReadBlockRegValue ("fc7_daq_ddr3", cEventSize);
+                pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
+            }
+            else {
+                pData.push_back (header1);
+                rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
+                pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
+            }
 
         }
 

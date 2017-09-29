@@ -53,6 +53,8 @@ namespace Ph2_HwInterface {
         int fFWNChips;
         ChipType fFirwmareChipType;
         bool fCBC3Emulator;
+        bool fIsDDR3Readout;
+        uint32_t fDDR3Offset;
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
