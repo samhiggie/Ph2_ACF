@@ -702,7 +702,7 @@ namespace Ph2_HwInterface {
                 cNEvents = cPackageSize;
             }
 
-            LOG(INFO) << "NWords before readout: " << +cNWords;
+            //LOG(INFO) << "NWords before readout: " << +cNWords;
 
             // read all the words
             if (fIsDDR3Readout) {
@@ -738,7 +738,7 @@ namespace Ph2_HwInterface {
 
                 std::vector<uint32_t> event_data;
                 if (fIsDDR3Readout)
-                    event_data = ReadBlockRegValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize);
+                    event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);
                 else
                     event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
                 pData.insert (pData.end(), event_data.begin(), event_data.end() );
