@@ -344,7 +344,7 @@ void Tool::StartHttpServer ( const int pPort, bool pReadonly )
         fHttpServer = new THttpServer ( Form ( "http:%d", pPort ) );
         fHttpServer->SetReadOnly ( pReadonly );
         //fHttpServer->SetTimer ( pRefreshTime, kTRUE );
-        fHttpServer->SetTimer (1000, kFALSE);
+        fHttpServer->SetTimer (1000, kTRUE);
         fHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
 
         //configure the server
