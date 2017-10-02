@@ -1,0 +1,3408 @@
+diff --git a/CHANGELOG b/CHANGELOG
+index 339e7363..2085cc99 100755
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -36,8 +36,8 @@
+     - added a CMD line option: g for GUI, should only be used by the latter
+     - SystemController class can now parse .json files in addition to .xml
+ - 04/03/15: added GUI (v1-10)
+-- 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading. 
+-    - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog. 
++- 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading.
++    - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog.
+     - BeBoardInterface::FlashProm(...) uploads an MCS file into the FPGA
+ - 15/04/15 : Acquisition in a separate thread (v1-11)
+     - Start() should be called when acquisition begins, Stop() when it ends and ReadData(...) at each iteration.
+@@ -50,7 +50,7 @@
+     - added a stub bit method to the Event class
+     - restructured the ostream operator of the Event class
+ - 05/06/2015: minor modifications
+-    - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks. 
++    - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks.
+ - 11/06/2015: merging a new design for Data and Event classes (v1-20)
+     - Data class now holds a vector of Events and the events are directly decoded after acquisition - the char* databuffer does not exist any longer
+     - added methods: std::vector<Event*> GetEvents(); Event* GetEvent()
+@@ -86,7 +86,7 @@
+     - iterative readback-error correction (SW tries to write every register agin that produced an error for 5 times)
+     - simplified FastCalibration
+     - removed old Calibration algorithm
+-    - introduced new, bitwise and super-fast calibration algorithm 
++    - introduced new, bitwise and super-fast calibration algorithm
+ - 11/12/2015: new uHAL connection configuration:
+       - added new Constructors to RegManager, BeBoardFWInterface, GlibFWInterface, CtaFWInterface that take uhal connection: id, uri, address_table
+       - modified system controller accordingly so these strings are passed to the constructor
+@@ -109,7 +109,7 @@
+     - added ReadNEvents() method to BeBoardInterface that allows to read a given number of events from FW as 1 packet
+     - changed signatures of ReadData / Stop and remove the NthAcquisition parameter for simplicity
+     - simplified the iterative error correction features in both FW Interfaces
+-    - implemented broadcast I2C write operations in both FW Interfaces 
++    - implemented broadcast I2C write operations in both FW Interfaces
+     - added Support for AMC13
+     - included TDC aware Trigger latency scan in Commissioning
+     - adapted FW aware commissioning procedures & tools to check the beBoardFWVersion (GLIB vs ICGLIB)
+@@ -139,7 +139,7 @@
+     - for writing 1 FileHandler Instance per BeBoard is created
+     - file Headers are now included in all raw files and are marked with the BeId
+     - moved all HW Parsing features from System Controller to System/FileParser class for easier extension
+-- 31.08.2016: most likely v1-40 
++- 31.08.2016:
+     - updated Event Class with more streamlined and efficient code that uses less accesses when dealing with Events - should make for better performance
+     - updated DQM histogramer to work with new Event implementation
+     - revised mapping of Events vs CBC and FE
+@@ -190,4 +190,3 @@
+ - 21.07.2017
+     - merged changes required for OTSDAQ
+     - migrated project to CMAKE: instructions: cd build/ cmake .. make
+-
+diff --git a/HWDescription/Definition.h b/HWDescription/Definition.h
+index 9ff3d6ce..d53953ec 100644
+--- a/HWDescription/Definition.h
++++ b/HWDescription/Definition.h
+@@ -39,6 +39,10 @@
+ #define EVENT_HEADER_TDC_SIZE_32    6 // total of 6 32 bit words for HEADER + TDC
+ #define EVENT_HEADER_SIZE_32    5  // 5 words for the header
+ 
++#define MPA_HEADER_SIZE_32   4099 
++#define MPA_EVENT_SIZE_32   240 
++
++
+ //Event
+ #define OFFSET_BUNCH               8
+ #define WIDTH_BUNCH                24
+diff --git a/HWDescription/MPA.cc b/HWDescription/MPA.cc
+new file mode 100644
+index 00000000..c17f1fda
+--- /dev/null
++++ b/HWDescription/MPA.cc
+@@ -0,0 +1,51 @@
++/*!
++
++        Filename :                      MPA.cc
++        Content :                       MPA Description class, config of the MPAs
++        Programmer :                    Lorenzo BIDEGAIN
++        Version :                       1.0
++        Date of Creation :              25/06/14
++        Support :                       mail to : lorenzo.bidegain@gmail.com
++
++ */
++
++#include "MPA.h"
++#include <fstream>
++#include <cstdio>
++#include <sstream>
++#include <iostream>
++#include <string.h>
++#include <iomanip>
++#include "Definition.h"
++
++
++namespace Ph2_HwDescription {
++    // C'tors with object FE Description
++
++    MPA::MPA ( const FrontEndDescription& pFeDesc, uint8_t pMPAId, uint8_t pMPASide ) : FrontEndDescription ( pFeDesc ),
++        fMPAId ( pMPAId ), fMPASide ( pMPASide )
++
++    {}
++
++    // C'tors which take BeId, FMCId, FeID, MPAId
++
++    MPA::MPA ( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pMPAId, uint8_t pMPASide) : FrontEndDescription ( pBeId, pFMCId, pFeId ), fMPAId ( pMPAId ), fMPASide ( pMPASide )
++
++    {}
++
++    // Copy C'tor
++
++    MPA::MPA ( const MPA& MPAobj ) : FrontEndDescription ( MPAobj ),
++        fMPAId ( MPAobj.fMPAId )
++    {
++    }
++
++
++    // D'Tor
++
++    MPA::~MPA()
++    {
++
++    }
++
++}
+diff --git a/HWDescription/MPA.h b/HWDescription/MPA.h
+new file mode 100644
+index 00000000..7cfdff21
+--- /dev/null
++++ b/HWDescription/MPA.h
+@@ -0,0 +1,99 @@
++/*!
++
++        \file                   MPA.h
++        \brief                  MPA Description class, config of the MPAs
++        \author                 Lorenzo BIDEGAIN
++        \version                1.0
++        \date                   25/06/14
++        Support :               mail to : lorenzo.bidegain@gmail.com
++
++ */
++
++
++#ifndef MPA_h__
++#define MPA_h__
++
++#include "FrontEndDescription.h"
++#include "CbcRegItem.h"
++#include "../Utils/Visitor.h"
++#include "../Utils/Exception.h"
++#include "../Utils/easylogging++.h"
++#include <iostream>
++#include <map>
++#include <string>
++#include <stdint.h>
++#include <utility>
++#include <set>
++
++// MPA2 Chip HW Description Class
++
++
++/*!
++ * \namespace Ph2_HwDescription
++ * \brief Namespace regrouping all the hardware description
++ */
++namespace Ph2_HwDescription {
++
++
++    class MPA : public FrontEndDescription
++    {
++
++      public:
++
++        // C'tors which take BeId, FMCId, FeID, MPAId
++        MPA ( uint8_t pBeId, uint8_t pFMCId, uint8_t pFeId, uint8_t pMPAId, uint8_t pMPASide);
++
++        // C'tors with object FE Description
++        MPA ( const FrontEndDescription& pFeDesc, uint8_t pMPAId , uint8_t pMPASide);
++
++        // Default C'tor
++        MPA();
++
++        // Copy C'tor
++        MPA ( const MPA& MPAobj );
++
++        // D'Tor
++        ~MPA();
++
++        uint8_t getMPAId() const
++        {
++            return fMPAId;
++        }
++        /*!
++         * \brief Set the MPA Id
++         * \param pMPAId
++         */
++        void setMPAId ( uint8_t pMPAId )
++        {
++            fMPAId = pMPAId;
++        }
++
++
++
++        uint8_t getMPASide() const
++        {
++            return fMPASide;
++        }
++        /*!
++         * \brief Set the MPA Id
++         * \param pMPAId
++         */
++        void setMPASide ( uint8_t pMPASide )
++        {
++            fMPASide = pMPASide;
++        }
++
++
++
++      protected:
++
++        uint8_t fMPAId;
++        uint8_t fMPASide;
++
++
++    };
++
++
++}
++
++#endif
+diff --git a/HWDescription/Makefile b/HWDescription/Makefile
+index 2a553906..493d0549 100644
+--- a/HWDescription/Makefile
++++ b/HWDescription/Makefile
+@@ -3,7 +3,7 @@ RED='\033[1m\033[31m'
+ BLU='\033[1m\033[35m'
+ RESET='\033[0m'
+ 
+-Objs  			= FrontEndDescription.o BeBoard.o Cbc.o Module.o 
++Objs  			= FrontEndDescription.o BeBoard.o Cbc.o Module.o
+ CC              = g++
+ CXX             = g++
+ CCFlags         = -g -O1 -Wall -fPIC -pedantic
+diff --git a/HWDescription/Module.cc b/HWDescription/Module.cc
+index 838f47c1..28d9a7b3 100644
+--- a/HWDescription/Module.cc
++++ b/HWDescription/Module.cc
+@@ -65,4 +65,49 @@ namespace Ph2_HwDescription {
+         return nullptr;
+ 
+     }
++
++
++    MPA* Module::getMPA ( uint8_t pMPAId ) const
++    {
++
++        for ( MPA* m : fMPAVector )
++        {
++            if ( m->getMPAId() == pMPAId )
++                return m;
++        }
++
++        return nullptr;
++
++    }
++
++
++
++    bool Module::removeMPA ( uint8_t pMPAId )
++    {
++        std::vector < MPA* > :: iterator i;
++        bool found = false;
++
++        for ( i = fMPAVector.begin(); i != fMPAVector.end(); ++i )
++        {
++            if ( (*i)->getMPAId() == pMPAId )
++            {
++                found = true;
++                break;
++            }
++        }
++
++        if ( found )
++        {
++            fMPAVector.erase ( i );
++            return true;
++        }
++        else
++        {
++            LOG (INFO) << "Error:The Module " << +fModuleId << " doesn't have the MPA " << +pMPAId ;
++            return false;
++        }
++    }
++
++
++
+ }
+diff --git a/HWDescription/Module.h b/HWDescription/Module.h
+index 4acad510..3c1e43f2 100644
+--- a/HWDescription/Module.h
++++ b/HWDescription/Module.h
+@@ -14,6 +14,7 @@
+ 
+ #include "FrontEndDescription.h"
+ #include "Cbc.h"
++#include "MPA.h"
+ #include "../Utils/Visitor.h"
+ #include "../Utils/easylogging++.h"
+ #include <vector>
+@@ -51,6 +52,12 @@ namespace Ph2_HwDescription {
+                 if (pCbc) delete pCbc;
+ 
+             fCbcVector.clear();
++
++            for ( auto& pMPA : fMPAVector )
++                delete pMPA;
++
++            fMPAVector.clear();
++
+         };
+ 
+         /*!
+@@ -77,6 +84,14 @@ namespace Ph2_HwDescription {
+         {
+             return fCbcVector.size();
+         }
++
++
++        uint8_t getNMPA() const
++        {
++            return fMPAVector.size();
++        }
++
++
+         /*!
+          * \brief Adding a Cbc to the vector
+          * \param pCbc
+@@ -113,6 +128,17 @@ namespace Ph2_HwDescription {
+ 
+             fCbcVector.push_back ( pCbc );
+         }
++
++        void addMPA ( MPA& pMPA )
++        {
++            fMPAVector.push_back ( &pMPA );
++        }
++        void addMPA ( MPA* pMPA )
++        {
++            fMPAVector.push_back ( pMPA );
++        }
++
++
+         /*!
+          * \brief Remove a Cbc from the vector
+          * \param pCbcId
+@@ -126,6 +152,20 @@ namespace Ph2_HwDescription {
+          */
+         Cbc* getCbc ( uint8_t pCbcId ) const;
+ 
++
++        /*!
++         * \brief Remove a MPA from the vector
++         * \param pMPAId
++         * \return a bool which indicate if the removing was successful
++         */
++        bool   removeMPA ( uint8_t pMPAId );
++        /*!
++         * \brief Get a MPA from the vector
++         * \param pMPAId
++         * \return a pointer of MPA, so we can manipulate directly the MPA contained in the vector
++         */
++        MPA* getMPA ( uint8_t pMPAId ) const;
++
+         /*!
+         * \brief Get the Module Id
+         * \return The Module ID
+@@ -145,6 +185,7 @@ namespace Ph2_HwDescription {
+ 
+ 
+         std::vector < Cbc* > fCbcVector;
++        std::vector < MPA* > fMPAVector;
+ 
+ 
+       protected:
+diff --git a/HWInterface/BeBoardFWInterface.h b/HWInterface/BeBoardFWInterface.h
+index 496e65fb..7dcc2e4a 100644
+--- a/HWInterface/BeBoardFWInterface.h
++++ b/HWInterface/BeBoardFWInterface.h
+@@ -248,6 +248,25 @@ namespace Ph2_HwInterface {
+ 
+         virtual std::vector<uint32_t> ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize ) = 0;
+ 
++
++
++
++
++
++        /*!
++         * Activate power on and off sequence
++         */
++
++         virtual void PowerOn()=0;
++         virtual void PowerOff()=0;
++
++         /*!
++          * Read the firmware version
++          */
++
++         virtual void ReadVer()=0;
++
++
+         virtual BoardType getBoardType() const = 0;
+         /*! \brief Reboot the board */
+         virtual void RebootBoard() = 0;
+diff --git a/HWInterface/BeBoardInterface.cc b/HWInterface/BeBoardInterface.cc
+index b1500e97..b3c9567b 100644
+--- a/HWInterface/BeBoardInterface.cc
++++ b/HWInterface/BeBoardInterface.cc
+@@ -263,4 +263,27 @@ namespace Ph2_HwInterface {
+         setBoard ( pBoard->getBeBoardIdentifier() );
+         fBoardFW->SetForceStart ( bStart );
+     }
++
++
++
++
++    void BeBoardInterface::PowerOn( BeBoard* pBoard )
++    {
++        setBoard( pBoard->getBeBoardIdentifier() );
++        fBoardFW->PowerOn();
++    }
++
++    void BeBoardInterface::PowerOff( BeBoard* pBoard )
++    {
++        setBoard( pBoard->getBeBoardIdentifier() );
++        fBoardFW->PowerOff();
++    }
++
++    void BeBoardInterface::ReadVer( BeBoard* pBoard )
++    {
++        setBoard( pBoard->getBeBoardIdentifier() );
++        fBoardFW->ReadVer();
++    }
++
++
+ }
+diff --git a/HWInterface/BeBoardInterface.h b/HWInterface/BeBoardInterface.h
+index 0861df0f..733eed39 100644
+--- a/HWInterface/BeBoardInterface.h
++++ b/HWInterface/BeBoardInterface.h
+@@ -259,6 +259,30 @@ namespace Ph2_HwInterface {
+         void RebootBoard (BeBoard* pBoard);
+         /*! \brief Set or reset the start signal */
+         void SetForceStart (BeBoard* pBoard, bool bStart);
++
++
++
++
++        /*!
++         * Activate power on and off sequence 
++         */
++        void PowerOn( BeBoard* pBoard );
++
++        void PowerOff( BeBoard* pBoard );
++
++        /*!
++         * Read the firmware version
++         */
++        void ReadVer( BeBoard* pBoard );
++
++        /*!
++         * Returns data from buffernum and mpa.  Raw register output.
++         */
++        std::pair<std::vector<uint32_t>, std::vector<uint32_t>>   ReadData( BeBoard* pBoard, int buffernum, int mpa);
++
++
++
++
+     };
+ }
+ 
+diff --git a/HWInterface/CtaFWInterface.cc b/HWInterface/CtaFWInterface.cc
+index 1fcf2f33..13352175 100644
+--- a/HWInterface/CtaFWInterface.cc
++++ b/HWInterface/CtaFWInterface.cc
+@@ -801,4 +801,25 @@ namespace Ph2_HwInterface {
+         WriteReg ( "pc_commands.force_BG0_start", bStart ? 1 : 0);
+     }
+ 
++
++
++    void CtaFWInterface::PowerOn()
++    {
++
++    }
++
++    void CtaFWInterface::PowerOff()
++    {
++
++    }
++
++
++    void CtaFWInterface::ReadVer()
++    {
++
++    }
++
++
++
++
+ }
+diff --git a/HWInterface/CtaFWInterface.h b/HWInterface/CtaFWInterface.h
+index 6e98d313..c57cf56f 100644
+--- a/HWInterface/CtaFWInterface.h
++++ b/HWInterface/CtaFWInterface.h
+@@ -283,6 +283,14 @@ namespace Ph2_HwInterface {
+         void RebootBoard();
+         /*! \brief Set or reset the start signal */
+         void SetForceStart ( bool bStart);
++
++
++
++        void ReadVer() override;
++        void PowerOn() override;
++        void PowerOff() override;
++
++
+     };
+ }
+ 
+diff --git a/HWInterface/GlibFWInterface.cc b/HWInterface/GlibFWInterface.cc
+index 58824cbb..bdf3e004 100644
+--- a/HWInterface/GlibFWInterface.cc
++++ b/HWInterface/GlibFWInterface.cc
+@@ -771,4 +771,22 @@ namespace Ph2_HwInterface {
+     {
+         WriteReg ( "pc_commands2.force_BG0_start", bStart ? 1 : 0);
+     }
++
++
++
++    void GlibFWInterface::PowerOn()
++    {
++
++    }
++
++    void GlibFWInterface::PowerOff()
++    {
++
++    }
++
++
++    void GlibFWInterface::ReadVer()
++    {
++
++    }
+ }
+diff --git a/HWInterface/GlibFWInterface.h b/HWInterface/GlibFWInterface.h
+index 9567746b..dd6d384a 100644
+--- a/HWInterface/GlibFWInterface.h
++++ b/HWInterface/GlibFWInterface.h
+@@ -271,6 +271,12 @@ namespace Ph2_HwInterface {
+         void RebootBoard();
+         /*! \brief Set or reset the start signal */
+         void SetForceStart ( bool bStart);
++
++
++        void ReadVer() override;
++        void PowerOn() override;
++        void PowerOff() override;
++
+     };
+ }
+ 
+diff --git a/HWInterface/ICFc7FWInterface.cc b/HWInterface/ICFc7FWInterface.cc
+index 1a3f0f05..6ba33394 100644
+--- a/HWInterface/ICFc7FWInterface.cc
++++ b/HWInterface/ICFc7FWInterface.cc
+@@ -716,4 +716,23 @@ namespace Ph2_HwInterface {
+     }
+ 
+ 
++
++    void ICFc7FWInterface::PowerOn()
++    {
++
++    }
++
++    void ICFc7FWInterface::PowerOff()
++    {
++
++    }
++
++
++    void ICFc7FWInterface::ReadVer()
++    {
++
++    }
++
++
++
+ }
+diff --git a/HWInterface/ICFc7FWInterface.h b/HWInterface/ICFc7FWInterface.h
+index fa14a092..ecbb269a 100644
+--- a/HWInterface/ICFc7FWInterface.h
++++ b/HWInterface/ICFc7FWInterface.h
+@@ -253,6 +253,10 @@ namespace Ph2_HwInterface {
+         void RebootBoard() {}
+         /*! \brief Set or reset the start signal */
+         void SetForceStart ( bool bStart) {}
++
++        void ReadVer() override;
++        void PowerOn() override;
++        void PowerOff() override;
+     };
+ }
+ 
+diff --git a/HWInterface/ICGlibFWInterface.cc b/HWInterface/ICGlibFWInterface.cc
+index f448ad91..47b82546 100644
+--- a/HWInterface/ICGlibFWInterface.cc
++++ b/HWInterface/ICGlibFWInterface.cc
+@@ -693,4 +693,21 @@ namespace Ph2_HwInterface {
+     }
+ 
+ 
++    void ICGlibFWInterface::PowerOn()
++    {
++
++    }
++
++    void ICGlibFWInterface::PowerOff()
++    {
++
++    }
++
++
++    void ICGlibFWInterface::ReadVer()
++    {
++
++    }
++
++
+ }
+diff --git a/HWInterface/ICGlibFWInterface.h b/HWInterface/ICGlibFWInterface.h
+index ea4c0d8a..d56185e5 100644
+--- a/HWInterface/ICGlibFWInterface.h
++++ b/HWInterface/ICGlibFWInterface.h
+@@ -246,6 +246,13 @@ namespace Ph2_HwInterface {
+         void RebootBoard() {}
+         /*! \brief Set or reset the start signal */
+         void SetForceStart ( bool bStart) {}
++
++
++        void ReadVer() override;
++        void PowerOn() override;
++        void PowerOff() override;
++
++
+     };
+ }
+ 
+diff --git a/HWInterface/MPAGlibFWInterface.cc b/HWInterface/MPAGlibFWInterface.cc
+new file mode 100644
+index 00000000..ca990bd9
+--- /dev/null
++++ b/HWInterface/MPAGlibFWInterface.cc
+@@ -0,0 +1,453 @@
++/*
++
++        FileName :                    MPAGlibFWInterface.h
++        Content :                     MPAGlibFWInterface init/config of the Glib and its Cbc's
++        Programmer :                  Lorenzo BIDEGAIN, Nicolas PIERRE
++        Version :                     1.0
++        Date of creation :            28/07/14
++        Support :                     mail to : lorenzo.bidegain@gmail.com, nico.pierre@icloud.com
++
++ */
++
++#include <time.h>
++#include <chrono>
++#include <uhal/uhal.hpp>
++#include "MPAGlibFWInterface.h"
++#include "GlibFpgaConfig.h"
++//
++namespace Ph2_HwInterface
++{
++
++	MPAGlibFWInterface::MPAGlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId ) :
++		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
++		fpgaConfig( nullptr ),
++		fData( nullptr ),
++     		curData( new std::vector<uint32_t> )
++	{}
++
++
++	MPAGlibFWInterface::MPAGlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler ) :
++		BeBoardFWInterface( puHalConfigFileName, pBoardId ),
++		fpgaConfig( nullptr ),
++		fData( nullptr ),
++     		curData( new std::vector<uint32_t> ),
++		fFileHandler( pFileHandler )
++	{
++		if ( fFileHandler == nullptr ) fSaveToFile = false;
++		else fSaveToFile = true;
++	}
++
++	MPAGlibFWInterface::MPAGlibFWInterface( const char* pId, const char* pUri, const char* pAddressTable ) :
++		BeBoardFWInterface( pId, pUri, pAddressTable ),
++		fpgaConfig( nullptr ),
++		fData( nullptr ),
++     		curData( new std::vector<uint32_t> )
++	{}
++
++
++	MPAGlibFWInterface::MPAGlibFWInterface( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler ) :
++		BeBoardFWInterface( pId, pUri, pAddressTable ),
++		fpgaConfig( nullptr ),
++		fData( nullptr ),
++     		curData( new std::vector<uint32_t> ),
++		fFileHandler( pFileHandler )
++	{
++		if ( fFileHandler == nullptr ) fSaveToFile = false;
++		else fSaveToFile = true;
++	}
++
++
++        void MPAGlibFWInterface::setFileHandler (FileHandler* pHandler)
++        {
++            if (pHandler != nullptr )
++            {
++                fFileHandler = pHandler;
++                fSaveToFile = true;
++            }
++            else LOG (INFO) << "Error, can not set NULL FileHandler" ;
++        }
++
++        uint32_t MPAGlibFWInterface::getBoardInfo()
++        {
++
++        }
++
++	void MPAGlibFWInterface::Start()
++	{
++		TestbeamInit(500000,0, 0);
++
++	}
++
++	void MPAGlibFWInterface::Stop()
++	{
++		WriteReg( "Control.testbeam_mode", 0 );
++		WriteReg( "Control.beam_on", 0 );
++	}
++
++	void MPAGlibFWInterface::Cleardata()
++	{
++		delete curData;
++		curData=new std::vector<uint32_t>;
++	}
++
++
++
++
++	void MPAGlibFWInterface::Pause()
++	{
++
++
++	}
++
++
++	void MPAGlibFWInterface::Resume()
++	{
++
++	}
++
++	uint32_t MPAGlibFWInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger )
++	{
++
++        if ( fData ) delete fData;
++	fNpackets = 1;
++
++
++        fData = new Data();
++
++        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
++        fData->Set ( pBoard, *curData , fNpackets, false );
++
++        if ( fSaveToFile )
++        {
++            fFileHandler->set ( *curData );
++            fFileHandler->writeFile();
++        }
++
++        return fNpackets;
++
++
++	}
++
++
++
++	std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  MPAGlibFWInterface::ReadMPAData(int buffer_num, int mpa, bool lr)
++	  {
++	    std::string targ;
++	    if (lr) targ = "Readout_Right.Counter.MPA" + std::to_string(mpa);
++	    else targ = "Readout_Left.Counter.MPA" + std::to_string(mpa);
++	    targ = targ + ".buffer_" + std::to_string(buffer_num);
++	    std::vector<uint32_t> counterdata =  ReadBlockRegValue( targ, 25 );
++
++	    if (lr) targ = "Readout_Right.Memory.MPA" + std::to_string(mpa);
++	    else targ = "Readout_Left.Memory.MPA" + std::to_string(mpa);
++	    targ = targ + ".buffer_" + std::to_string(buffer_num);
++	    std::vector<uint32_t> memorydata =  ReadBlockRegValue( targ, 216 );
++
++	   // if (counterdata[0]!=(0xFFFFFFF0 + mpa))
++		//std::cout<<"Warning, header mismatch"<<std::endl;
++
++
++	    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata(counterdata,memorydata);
++
++	    curData->insert( curData->end(), counterdata.begin()+1, counterdata.end() );
++	    curData->insert( curData->end(), memorydata.begin(), memorydata.end() );
++
++	    return returndata;
++
++	  }
++
++
++
++
++	    /** compute the block size according to the number of CBC's on this board
++	     * this will have to change with a more generic FW */
++	uint32_t MPAGlibFWInterface::computeBlockSize( BeBoard* pBoard )
++	{
++
++	}
++
++	std::vector<uint32_t> MPAGlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
++	{
++		uhal::ValVector<uint32_t> valBlock = ReadBlockReg( pRegNode, pBlocksize );
++		std::vector<uint32_t> vBlock = valBlock.value();
++
++		// To avoid the IPBUS bug
++		// need to convert uHal::ValVector to vector<uint32_t> so we can replace the 256th word
++		if ( pBlocksize > 255 )
++		{
++			std::string fSram_256 = pRegNode + "_256";
++			uhal::ValWord<uint32_t> cWord = ReadReg( fSram_256 );
++			vBlock[255] = cWord.value();
++		}
++		return vBlock;
++	}
++
++	bool MPAGlibFWInterface::WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
++	{
++		bool cWriteCorr = RegManager::WriteBlockReg( pRegNode, pValues );
++
++		if ( pValues.size() > 255 )
++			WriteReg( pRegNode + "_256", pValues[255] );
++		return cWriteCorr;
++	}
++
++	void MPAGlibFWInterface::SelectDaqSRAM( uint32_t pNthAcq )
++	{
++
++	}
++
++
++
++	//Methods for Cbc's:
++
++	void MPAGlibFWInterface::threadAcquisitionLoop( BeBoard* pBoard, HwInterfaceVisitor* visitor )
++	{
++
++	};
++
++	bool MPAGlibFWInterface::I2cCmdAckWait( uint32_t pAckVal, uint8_t pNcount )
++	{
++
++	}
++
++	void MPAGlibFWInterface::WriteI2C( std::vector<uint32_t>& pVecReq, bool pWrite )
++	{
++
++	}
++
++	void MPAGlibFWInterface::ReadI2C( std::vector<uint32_t>& pVecReq )
++	{
++
++	}
++
++
++	void MPAGlibFWInterface::FlashProm( const std::string& strConfig, const char* pstrFile )
++	{
++
++	}
++
++	void MPAGlibFWInterface::JumpToFpgaConfig( const std::string& strConfig )
++	{
++
++	}
++
++
++
++
++
++
++	void MPAGlibFWInterface::PowerOn()
++	{
++		std::chrono::milliseconds cWait( 20 );
++
++		WriteReg( "Control.logic_reset",1);
++		WriteReg( "Control.testbeam_mode",0);
++		WriteReg( "Control.testbeam_clock",0);
++		WriteReg( "Control.MPA_clock_enable",1);
++		WriteReg( "Utility.CLKUTIL_freq",7);
++
++		std::this_thread::sleep_for( cWait );
++
++
++		WriteReg( "Utility.MPA_settings.VDDPST_enable", 1 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.MPA_settings.DVDD_enable", 1 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.MPA_settings.AVDD_enable", 1 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.MPA_settings.VBIAS_enable", 1 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.DAC_register", 0x12BE );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.DAC_register", 0x10BE );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.DAC_register", 0x11BE );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.MPA_settings.PVDD_enable", 1 );
++		std::this_thread::sleep_for( cWait );
++        	WriteReg("Control.MPA_clock_80",0);
++        	WriteReg("Control.MPA_clock_enable", 1);
++		std::this_thread::sleep_for( cWait );
++
++	}
++
++
++	void MPAGlibFWInterface::PowerOff()
++	{
++
++		std::chrono::milliseconds cWait( 10 );
++		WriteReg( "Utility.MPA_settings.PVDD_enable", 0 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.DAC_register", 0x1100 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.DAC_register", 0x1000 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.DAC_register", 0x1200 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.MPA_settings.VBIAS_enable", 0 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.MPA_settings.AVDD_enable", 0 );
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.MPA_settings.DVDD_enable", 0);
++		std::this_thread::sleep_for( cWait );
++		WriteReg( "Utility.MPA_settings.VDDPST_enable", 0 );
++		std::this_thread::sleep_for( cWait );
++
++	}
++
++
++
++	void MPAGlibFWInterface::ReadVer()
++	{
++	        std::cout<<"\nReading GLIB firmware version:";
++		std::cout<<ReadReg( "Control.firm_ver" )<<std::endl;
++
++	}
++
++
++
++
++
++
++
++
++
++
++	int MPAGlibFWInterface::WaitSequencer()
++	  {
++	    int i=0;
++	    
++	    uhal::ValWord<uint32_t> busyseq;
++	    std::chrono::milliseconds cWait( 1 );
++	    busyseq = ReadReg("Control.Sequencer.busy");
++	    while (busyseq == 1)
++	      {
++		busyseq = ReadReg("Control.Sequencer.busy");
++		std::this_thread::sleep_for( cWait );
++		i++;
++		if (i > 100) {
++		  std::cout<<"WaitSequence Timeout\n";
++		  return 0;
++		}
++	      }
++	    return 1;
++	  }
++
++
++
++	int MPAGlibFWInterface::WaitTestbeam()
++	  {
++	    int returnval = 0;
++	    int i=0;
++
++ 	    uhal::ValWord<uint32_t> buffers_num;
++	    std::chrono::milliseconds cWait( 1 );
++	    buffers_num = ReadReg("Control.Sequencer.buffers_num");
++	    while (buffers_num >= 4)
++	      {
++		buffers_num = ReadReg("Control.Sequencer.buffers_num");
++		i++;
++		if (i % 20000==0) 
++			{
++		  		std::cout<<"Waiting for Spill: "<<i/10000<<" seconds"<<std::endl;
++			}
++		if (i == 30000) 
++			{
++				returnval=1;
++			}
++	      }
++	    return returnval;
++	  }
++
++
++
++
++       void MPAGlibFWInterface::ReadTrig(int buffer_num)
++          {
++            int total_trigs = -1;
++            int trigger_counter = -1;
++            int trigger_total_counter = -1;
++            int Offset_BEAM = -1;
++            int Offset_MPA = -1;
++            std::string targ;
++
++            total_trigs = ReadReg("Control.total_triggers");
++
++            targ = "Control.trigger_counter.buffer_" + std::to_string(buffer_num);
++            trigger_counter = ReadReg(targ);
++
++            targ = "Control.trigger_total_counter.buffer_" + std::to_string(buffer_num);
++            trigger_total_counter = ReadReg(targ);
++            curData->push_back(total_trigs);
++            curData->push_back(trigger_total_counter);
++            curData->push_back(trigger_counter);
++	    for(int ii=0;ii<=7;ii++)
++		{
++
++
++            	targ = "Control.trigger_offset_BEAM.p" + std::to_string(ii+1) + ".buffer_" + std::to_string(buffer_num);
++            	std::vector<uint32_t> rData =  ReadBlockRegValue( targ, 256 );
++
++            	targ = "Control.trigger_offset_MPA.p" + std::to_string(ii+1) + ".buffer_" + std::to_string(buffer_num);
++            	std::vector<uint32_t> rData2 =  ReadBlockRegValue( targ, 256 );
++
++            	curData->insert( curData->end(), rData.begin(), rData.end() );
++            	curData->insert( curData->end(), rData2.begin(), rData2.end() );
++		}
++
++          }
++
++	void MPAGlibFWInterface::HeaderInitMPA(int nmpa, bool lr)
++	  {
++	    if (lr) WriteReg( "Readout_Right.Header.MPA"+std::to_string(nmpa), 0xFFFFFFF0 + nmpa );
++	    else WriteReg( "Readout_Left.Header.MPA"+std::to_string(nmpa), 0xFFFFFFF0 + nmpa );
++	  }
++
++	void MPAGlibFWInterface::TestbeamInit(int sdur,int clock, int phase)
++	  {
++	    WriteReg( "Control.beam_on", 0 );
++	    WriteReg("Control.readout", 1);
++	    WriteReg("Control.testbeam_clock", clock);
++	    WriteReg("Control.testbeam_mode", 1);
++	    WriteReg("Control.beam_on", 1 );
++	    WriteReg("Shutter.time", sdur);
++	    WriteReg("Control.shutter_delay", phase);
++	  }
++
++
++	void MPAGlibFWInterface::StrobeSettings(int snum, int sdel, int slen, 
++					       int sdist, int cal)
++	  {
++	    WriteReg("Shutter.Strobe.number", snum);
++	    WriteReg("Shutter.Strobe.delay", sdel);
++	    WriteReg("Shutter.Strobe.length", slen);
++	    WriteReg("Shutter.Strobe.distance", sdist);
++	    
++	    WriteReg("Control.calibration", cal);
++	  }
++
++
++	void MPAGlibFWInterface::SequencerInit(int smode,int sdur,int mem,int ibuff)
++	  {
++	    WriteReg("Shutter.time", sdur);
++	    WriteReg("Control.testbeam_mode", 0x0);
++	    WriteReg("Control.readout", mem);
++	    WriteReg("Control.Sequencer.datataking_continuous", smode);
++	    WriteReg("Control.Sequencer.buffers_index", ibuff);
++	  }
++
++
++	void MPAGlibFWInterface::upload( std::vector< uint32_t > *conf_upload, int conf, int nmpa, bool lr)
++	  {
++	    if (lr) WriteBlockReg( "Configuration_Right.Memory_DataConf.MPA"+std::to_string(nmpa)+".config_"+std::to_string(conf), (*conf_upload));
++	    else WriteBlockReg( "Configuration_Left.Memory_DataConf.MPA"+std::to_string(nmpa)+".config_"+std::to_string(conf), (*conf_upload));
++	  }
++	void MPAGlibFWInterface::write(int nummpal, int nummpar)
++	  {
++		WriteReg("Configuration_Left.num_MPA",nummpal);
++		WriteReg("Configuration_Right.num_MPA",nummpar);
++		WriteReg("Control.confs",0);
++		WriteReg("Control.conf_upload",1);
++	  }
++
++}
+diff --git a/HWInterface/MPAGlibFWInterface.h b/HWInterface/MPAGlibFWInterface.h
+new file mode 100644
+index 00000000..09bda4a4
+--- /dev/null
++++ b/HWInterface/MPAGlibFWInterface.h
+@@ -0,0 +1,303 @@
++/*!
++
++        \file                           MPAGlibFWInterface.h
++        \brief                          MPAGlibFWInterface init/config of the Glib and its Cbc's
++        \author                         Lorenzo BIDEGAIN, Nicolas PIERRE
++        \version            1.0
++        \date                           28/07/14
++        Support :                       mail to : lorenzo.bidegain@gmail.com, nico.pierre@icloud.com
++
++ */
++
++#ifndef __MPAGlibFWInterface_H__
++#define __MPAGlibFWInterface_H__
++
++#include <string>
++#include <map>
++#include <vector>
++#include <limits.h>
++#include <stdint.h>
++#include "BeBoardFWInterface.h"
++#include "../HWDescription/Module.h"
++#include "../Utils/Visitor.h"
++#include "../Utils/pugixml.hpp"
++#include "../Utils/Timer.h"
++using namespace Ph2_HwDescription;
++
++/*!
++ * \namespace Ph2_HwInterface
++ * \brief Namespace regrouping all the interfaces to the hardware
++ */
++namespace Ph2_HwInterface
++{
++class FpgaConfig;
++/*!
++ * \class MPAGlibFWInterface
++ * \brief init/config of the Glib and its Cbc's
++ */
++class MPAGlibFWInterface : public BeBoardFWInterface
++{
++
++private:
++    Data* fData; /*!< Data read storage*/
++
++    struct timeval fStartVeto;
++    std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
++    std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
++    FpgaConfig* fpgaConfig;
++    FileHandler* fFileHandler ;
++    std::vector<uint32_t>* curData;
++
++
++private:
++    /*!
++     * \brief SRAM selection for DAQ
++     * \param pNthAcq : actual number of acquisitions
++     */
++    void SelectDaqSRAM( uint32_t pNthAcq );
++
++public:
++    /*!
++     * \brief Constructor of the MPAGlibFWInterface class
++     * \param puHalConfigFileName : path of the uHal Config File
++     * \param pBoardId
++     */
++    MPAGlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId );
++    MPAGlibFWInterface( const char* puHalConfigFileName, uint32_t pBoardId, FileHandler* pFileHandler );
++    /*!
++    * \brief Constructor of the MPAGlibFWInterface class
++    * \param pId : ID string
++    * \param pUri: URI string
++    * \param pAddressTable: address tabel string
++    */
++    MPAGlibFWInterface( const char* pId, const char* pUri, const char* pAddressTable );
++    MPAGlibFWInterface( const char* pId, const char* pUri, const char* pAddressTable, FileHandler* pFileHandler );
++
++    void setFileHandler (FileHandler* pHandler);
++
++    uint32_t getBoardInfo();
++
++    /*!
++     * \brief Destructor of the MPAGlibFWInterface class
++     */
++    ~MPAGlibFWInterface()
++    {
++        if (fData) delete fData;
++    }
++
++
++
++
++
++
++
++
++
++    void EncodeReg ( const CbcRegItem& pRegItem,
++                                        uint8_t pCbcId,
++                                        std::vector<uint32_t>& pVecReq,
++                                        bool pRead,
++                                        bool pWrite ) {};
++
++    void EncodeReg ( const CbcRegItem& pRegItem,
++                                        uint8_t pFeId,
++                                        uint8_t pCbcId,
++                                        std::vector<uint32_t>& pVecReq,
++                                        bool pRead,
++                                        bool pWrite ) {};
++  
++    void BCEncodeReg ( const CbcRegItem& pRegItem,
++                                          uint8_t pNCbc,
++                                          std::vector<uint32_t>& pVecReq,
++                                          bool pRead,
++                                          bool pWrite ) {};
++
++
++    void DecodeReg ( CbcRegItem& pRegItem,
++                                        uint8_t& pCbcId,
++                                        uint32_t pWord,
++                                        bool& pRead,
++                                        bool& pFailed ) {};
++
++
++
++
++ 
++
++
++
++    /*!
++     * \brief Configure the board with its Config File
++     * \param pBoard
++     */
++    void ConfigureBoard( const BeBoard* pBoard ) override {};
++    /*!
++     * \brief Detect the right FE Id to write the right registers (not working with the latest Firmware)
++     */
++    //void SelectFEId();
++    /*!
++     * \brief Start a DAQ
++     */
++    void Start() override;
++    /*!
++     * \brief Stop a DAQ
++     * \param pNthAcq : actual number of acquisitions
++     */
++    void Stop() override;
++    /*!
++     * \brief Pause a DAQ
++     */
++    void Pause() override;
++
++    void Cleardata();
++
++    /*!
++     * \brief Unpause a DAQ
++     */
++    void Resume() override;
++    /*!
++     * \brief Read data from DAQ
++     * \param pNthAcq : actual number of acquisitions
++     * \param pBreakTrigger : if true, enable the break trigger
++     * \return cNPackets: the number of packets read
++     */
++
++
++
++
++    uint32_t ReadData( BeBoard* pBoard, bool pBreakTrigger ) override;
++    /*!
++     * \brief Get next event from data buffer
++     * \return Next event
++     */
++    const Event* GetNextEvent( const BeBoard* pBoard ) const override
++    {
++        return fData->GetNextEvent( pBoard );
++    }
++    const Event* GetEvent( const BeBoard* pBoard, int i ) const override
++    {
++        return fData->GetEvent( pBoard, i );
++    }
++    const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const override
++    {
++        return fData->GetEvents( pBoard );
++    }
++
++
++
++    std::vector<uint32_t>* GetcurData() const
++    {
++        return curData;
++    }
++
++
++    /*! \brief Read a block of a given size
++     * \param pRegNode Param Node name
++     * \param pBlocksize Number of 32-bit words to read
++     * \return Vector of validated 32-bit values
++     */
++    std::vector<uint32_t> ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize ) override;
++
++    bool WriteBlockReg( const std::string& pRegNode, const std::vector< uint32_t >& pValues ) override;
++
++    //Methods for the Cbc's:
++
++
++
++private:
++
++    //I2C Methods
++
++    /*!
++     * \brief Wait for the I2C command acknowledgement
++     * \param pAckVal : Expected status of acknowledgement, 1/0 -> true/false
++     * \param pNcount : Number of registers at stake
++     * \return boolean confirming the acknowledgement
++     */
++    bool I2cCmdAckWait( uint32_t pAckVal, uint8_t pNcount = 1 );
++    /*!
++     * \brief Send request to r/w blocks via I2C
++     * \param pVecReq : Block of words to send
++     * \param pWrite : 1/0 -> Write/Read
++     */
++    void WriteI2C( std::vector<uint32_t>& pVecReq, bool pWrite );
++    /*!
++     * \brief Read blocks from SRAM via I2C
++     * \param pVecReq : Vector to stack the read words
++     */
++    void ReadI2C( std::vector<uint32_t>& pVecReq );
++    /*!
++     * \brief Enable I2C communications
++     * \param pEnable : 1/0 -> Enable/Disable
++     */
++    //void EnableI2c( bool pEnable );
++
++    //void SelectFeSRAM( uint32_t pFe );
++
++    /*! Compute the size of an acquisition data block
++     * \return Number of 32-bit words to be read at each iteration */
++    uint32_t computeBlockSize(BeBoard* pBoard);
++
++
++public:
++
++    bool WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback) {};
++
++
++    bool BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback) {};
++ 
++
++    void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg ) {};
++
++    BoardType getBoardType() const {};
++
++
++    void RebootBoard() {};
++
++    void SetForceStart ( bool bStart) {};
++
++
++    void CbcFastReset() {};
++ 
++
++    void CbcHardReset() {};
++
++    void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents ) {};
++
++  
++    void FlashProm( const std::string& strConfig, const char* pstrFile );
++    /*! \brief Jump to an FPGA configuration */
++    void JumpToFpgaConfig( const std::string& strConfig);
++    /*! \brief Is the FPGA being configured ?
++     * \return FPGA configuring process or NULL if configuration occurs */
++    const FpgaConfig* getConfiguringFpga()
++    {
++        return fpgaConfig;
++    }
++    void threadAcquisitionLoop(BeBoard* pBoard, HwInterfaceVisitor* visitor);
++
++
++
++
++
++public:
++    void ReadVer() override;
++    void PowerOn() override;
++    void PowerOff() override;
++    void TestbeamInit(int sdur,int clock, int phase);
++    void StrobeSettings(int snum, int sdel, int slen, int sdist, int cal);
++    std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  ReadMPAData(int buffernum, int mpa, bool lr);
++    void SequencerInit(int smode,int sdur,int mem,int ibuff);
++    void upload(std::vector< uint32_t > *conf_upload, int conf, int nmpa, bool lr);
++    void write(int nummpal, int nummpar);
++
++    void HeaderInitMPA(int nmpa, bool lr);
++    void ReadTrig(int buffer_num);
++    int WaitSequencer();
++    int WaitTestbeam();
++
++
++};
++}
++
++#endif
+diff --git a/HWInterface/MPAInterface.cc b/HWInterface/MPAInterface.cc
+new file mode 100644
+index 00000000..28d7973a
+--- /dev/null
++++ b/HWInterface/MPAInterface.cc
+@@ -0,0 +1,484 @@
++/*
++
++        FileName :                     MPAInterface.cc
++        Content :                      User Interface to the MPAs
++        Programmer :                   Lorenzo BIDEGAIN, Nicolas PIERRE, Georg AUZINGER
++        Version :                      1.0
++        Date of creation :             10/07/14
++        Support :                      mail to : lorenzo.bidegain@gmail.com, nico.pierre@icloud.com
++
++ */
++
++#include "MPAInterface.h"
++#include "../Utils/ConsoleColor.h"
++#include <typeinfo>
++#define DEV_FLAG 0
++// #define COUNT_FLAG 0
++
++namespace Ph2_HwInterface
++{
++
++MPAInterface::MPAInterface( const BeBoardFWMap& pBoardMap ) :
++    fBoardMap( pBoardMap ),
++    fBoardFW( nullptr ),
++    prevBoardIdentifier( 65535 ),
++    fRegisterCount( 0 ),
++    fTransactionCount( 0 )
++{
++#ifdef COUNT_FLAG
++    std::cout << "Counting number of Transactions!" << std::endl;
++#endif
++}
++
++MPAInterface::~MPAInterface()
++{
++}
++
++void MPAInterface::setBoard( uint16_t pBoardIdentifier )
++{
++    if ( prevBoardIdentifier != pBoardIdentifier )
++    {
++        BeBoardFWMap::iterator i = fBoardMap.find( pBoardIdentifier );
++
++        if ( i == fBoardMap.end() )
++            std::cout << "The Board: " << +( pBoardIdentifier >> 8 ) << "  doesn't exist" << std::endl;
++        else
++        {
++            fBoardFW = i->second;
++	    fMPAFW = dynamic_cast<MPAGlibFWInterface*>(fBoardFW);
++            prevBoardIdentifier = pBoardIdentifier;
++        }
++    }
++}
++
++
++
++
++
++
++
++
++
++
++void MPAInterface::HeaderInitMPA(int nmpa, bool lr)
++{
++	setBoard(0);
++	fMPAFW->HeaderInitMPA( nmpa , lr);
++}
++
++
++
++void MPAInterface::ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa, bool lr)
++{
++	setBoard(0);
++	fMPAFW->upload( conf_upload, conf,nmpa , lr);
++}
++
++void MPAInterface::SendConfig(int nummpal, int nummpar)
++{
++	setBoard(0);
++	fMPAFW->write(nummpal, nummpar);
++}
++
++
++
++
++int MPAInterface::WaitTestbeam()
++{
++	setBoard(0);
++	return fMPAFW->WaitTestbeam();
++}
++
++
++
++
++void MPAInterface::SequencerInit(int smode,int sdur,int mem,int ibuff)
++{
++	setBoard(0);
++	fMPAFW->SequencerInit(smode,sdur,mem,ibuff);
++}
++
++
++void MPAInterface::TestbeamInit(int sdur,int clock, int phase)
++{
++	setBoard(0);
++	fMPAFW->TestbeamInit(sdur,clock, phase);
++}
++
++
++
++std::pair<std::vector<uint32_t>, std::vector<uint32_t>> MPAInterface::ReadMPAData(int buffer_num, int mpa, bool lr)
++{
++	setBoard(0);
++	fMPAFW->HeaderInitMPA( mpa , lr );
++	return fMPAFW->ReadMPAData(buffer_num, mpa, lr);
++}
++
++
++std::vector<uint32_t>*  MPAInterface::GetcurData()
++{
++	setBoard(0);
++	return fMPAFW->GetcurData();
++}
++
++void MPAInterface::ReadTrig(int buffer_num)
++{
++	setBoard(0);
++	return fMPAFW->ReadTrig(buffer_num);
++}
++
++
++
++void MPAInterface::Cleardata()
++{
++	setBoard(0);
++	fMPAFW->Cleardata( );
++}
++
++
++
++
++
++
++
++
++
++std::pair<std::vector<uint32_t>, std::vector<std::string>> MPAInterface::FormatData(std::pair<std::vector<uint32_t>, std::vector<uint32_t>> data)
++{
++		std::vector<uint32_t> counter_data = data.first;
++		std::vector<uint32_t> memory_data = data.second;
++		std::vector<uint32_t> bitpix(50);
++		std::vector<std::string> mem(96);
++
++	    	for (int x=0;x<24; x++) 
++			{
++				int shift1 = 0;
++				int shift2 = 16;
++
++
++
++				uint32_t l((counter_data[x+1] >> shift1) & 0xFFFF);
++				uint32_t r((counter_data[x+1] >> shift2) & 0xFFFF);
++				bitpix[2*x] = l;
++				bitpix[2*x+1] = r;
++
++			}
++
++		std::bitset<32> y(memory_data[215]);
++		std::string memory_string = y.to_string();
++		for (int x=1;x<216; x++)
++			{
++		    		std::bitset<32> y(memory_data[215 - x]);
++				memory_string = memory_string + y.to_string();
++			}
++		for (int x=0;x<96; x++)
++			{
++				mem[x] = memory_string.substr(x*72, 72);
++
++			}
++	    	std::pair<std::vector<uint32_t>, std::vector<std::string>>  returndata(bitpix,mem);
++		return 	returndata;
++}
++
++std::pair<std::vector<uint32_t>, std::vector<uint64_t>> MPAInterface::ReadMemory(std::vector<std::string> intmemory, int mode)
++{
++			std::string memory; 
++			std::vector<uint32_t> BX(96);
++			uint64_t hit;
++			std::vector<int> row(96);
++			std::vector<int> col(96);
++			std::vector<uint64_t> data(96);
++			std::vector<int> bend(96);
++			std::string header; 
++			//Only implements noprocessing mode 
++			if (mode == 3)
++				{
++				for (int x=0;x<96; x++)
++					{
++
++					header = intmemory[x].substr(0, 8);
++					if (header != "11111111") break;
++
++		    			std::bitset<16> b(intmemory[x].substr(8, 16));
++					BX[x] = b.to_ulong();
++
++		    			std::bitset<48> p(intmemory[x].substr(24, 48));
++					hit = p.to_ulong();
++					uint64_t temp = p.to_ulong();
++
++	    				data[x]=hit;
++					}
++
++				}
++		
++			std::pair<std::vector<uint32_t>, std::vector<uint64_t>> returndata(BX, data);	
++			return returndata;
++		
++}
++
++
++std::vector< uint32_t > MPAInterface::ReadConfig(const std::string& pFilename, int nmpa, int conf)
++{
++
++	   	        pugi::xml_document doc;
++			std::string fullname = "settings/Conf_"+pFilename+"_MPA"+std::to_string(nmpa)+"_config"+std::to_string(conf)+".xml";
++	    		pugi::xml_parse_result result = doc.load_file( fullname.c_str() );
++	    		if ( !result )
++	    		{
++				std::cout << "ERROR :\n Unable to open the file : " << pFilename << std::endl;
++				std::cout << "Error description : " << result.description() << std::endl;
++	    		}
++
++			std::vector< uint32_t > conf_upload(25);
++			int perif = -1;
++	    		for ( pugi::xml_node cBeBoardNode = doc.child( "CONF" ).child( "periphery" ).first_child(); cBeBoardNode; cBeBoardNode = cBeBoardNode.next_sibling() )
++				{
++				if (static_cast<std::string>(cBeBoardNode.name())=="OM") perif = convertAnyInt(cBeBoardNode.child_value());
++				if (static_cast<std::string>(cBeBoardNode.name())=="RT") perif |= ((convertAnyInt(cBeBoardNode.child_value())& 3)   << 2 );
++				if (static_cast<std::string>(cBeBoardNode.name())=="SCW") perif |= ((convertAnyInt(cBeBoardNode.child_value())& 15)   << 4 );
++				if (static_cast<std::string>(cBeBoardNode.name())=="SH2") perif |= ((convertAnyInt(cBeBoardNode.child_value())& 15)  << 8 );
++				if (static_cast<std::string>(cBeBoardNode.name())=="SH1") perif |= ((convertAnyInt(cBeBoardNode.child_value())& 15)  << 12);
++				if (static_cast<std::string>(cBeBoardNode.name())=="CALDAC") perif |= ((convertAnyInt(cBeBoardNode.child_value())& 255) << 16);
++				if (static_cast<std::string>(cBeBoardNode.name())=="THDAC") perif |= ((convertAnyInt(cBeBoardNode.child_value())& 255) << 24);
++				}
++			conf_upload[0] = perif;
++	    		for ( pugi::xml_node cBeBoardNode = doc.child( "CONF" ).first_child(); cBeBoardNode; cBeBoardNode = cBeBoardNode.next_sibling() )
++				{
++				int pix = 0;
++				if (static_cast<std::string>(cBeBoardNode.name())=="pixel")
++					{
++					int pixnum = convertAnyInt(cBeBoardNode.attribute("n").value());
++
++					if (pixnum<17 and pixnum>8)
++						{
++							for ( pugi::xml_node cBeBoardNode1 = cBeBoardNode.first_child(); cBeBoardNode1; cBeBoardNode1 = cBeBoardNode1.next_sibling() )
++							{
++								if (static_cast<std::string>(cBeBoardNode1.name())=="PMR") pix |= convertAnyInt(cBeBoardNode1.child_value());		
++								if (static_cast<std::string>(cBeBoardNode1.name())=="ARR") pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 1)	<< 1 );
++								if (static_cast<std::string>(cBeBoardNode1.name())=="TRIMDACL")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 31)	<< 2 );
++								if (static_cast<std::string>(cBeBoardNode1.name())=="CER")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 1)	<< 7 );
++								if (static_cast<std::string>(cBeBoardNode1.name())=="SP")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 1)	<< 8 );
++								if (static_cast<std::string>(cBeBoardNode1.name())=="SR")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 1)	<< 9 ) ;
++								if (static_cast<std::string>(cBeBoardNode1.name())=="PML")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 1)	<< 10);
++								if (static_cast<std::string>(cBeBoardNode1.name())=="ARL")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 1)	<< 11) ;
++								if (static_cast<std::string>(cBeBoardNode1.name())=="TRIMDACR")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 31)	<< 12) ;
++								if (static_cast<std::string>(cBeBoardNode1.name())=="CEL")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 1)	<< 17);
++								if (static_cast<std::string>(cBeBoardNode1.name())=="CW")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 2)	<< 18);
++			
++
++							}
++						}
++					else if (pixnum<25 and pixnum>0)
++						{
++							for ( pugi::xml_node cBeBoardNode1 = cBeBoardNode.first_child(); cBeBoardNode1; cBeBoardNode1 = cBeBoardNode1.next_sibling() )
++							{
++								if (static_cast<std::string>(cBeBoardNode1.name())=="PML") pix |= convertAnyInt(cBeBoardNode1.child_value());
++								if (static_cast<std::string>(cBeBoardNode1.name())=="ARL") pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 1)	<< 1 );
++								if (static_cast<std::string>(cBeBoardNode1.name())=="TRIMDACL")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 31)	<< 2 );
++								if (static_cast<std::string>(cBeBoardNode1.name())=="CEL")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 1)	<< 7 ) ;
++								if (static_cast<std::string>(cBeBoardNode1.name())=="CW")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 3)	<< 8  );
++								if (static_cast<std::string>(cBeBoardNode1.name())=="PMR")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 1)	<< 10) ;
++								if (static_cast<std::string>(cBeBoardNode1.name())=="ARR")  pix |= ((convertAnyInt(cBeBoardNode1.child_value())& 1)	<< 11);
++								if (static_cast<std::string>(cBeBoardNode1.name())=="TRIMDACR")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 31)	<< 12) ;
++								if (static_cast<std::string>(cBeBoardNode1.name())=="CER")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 1)	<< 17) ;
++								if (static_cast<std::string>(cBeBoardNode1.name())=="SP")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 1)	<< 18);
++								if (static_cast<std::string>(cBeBoardNode1.name())=="SR")  pix |= ((convertAnyInt(cBeBoardNode1.child_value()) & 1)	<< 19);
++
++							}
++						}
++					conf_upload[pixnum] = pix;
++					}
++
++				}
++	  return conf_upload;
++}
++
++
++
++
++void MPAInterface::ModifyPerif(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload)
++{
++	  std::vector<std::string> vars = mod.first;
++	  std::vector< uint32_t > vals = mod.second;
++	  int perif = conf_upload->at(0);
++
++	  for (int iperif=0;iperif<vars.size(); iperif++)
++	  {
++		if (vars[iperif]=="OM") 
++			{
++			perif = (perif&~3);
++			perif |= (vals[iperif]);
++			}
++		if (vars[iperif]=="RT") 
++			{
++			perif = (perif&~(3<<2));
++			perif |= ((vals[iperif]& 3)   << 2 );
++			}
++		if (vars[iperif]=="SCW") 
++			{
++			perif = (perif&~(15<<4));
++			perif |= ((vals[iperif]& 15)   << 4 );
++			}
++		if (vars[iperif]=="SH2") 
++			{
++			perif = (perif&~(15<<8));
++			perif |= ((vals[iperif]& 15)  << 8 );
++			}
++		if (vars[iperif]=="SH1") 
++			{
++			perif = (perif&~(15<<12));
++			perif |= ((vals[iperif]& 15)  << 12);
++			}
++		if (vars[iperif]=="CALDAC") 
++			{
++			perif = (perif&~(255<<16));
++			perif |= ((vals[iperif]& 255) << 16);
++			}
++		if (vars[iperif]=="THDAC") 
++			{
++			perif = (perif&~(255<<24));
++			perif |= ((vals[iperif]& 255) << 24);
++			}
++
++	  }
++	  conf_upload->at(0) = perif;
++
++}
++void MPAInterface::ModifyPix(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload ,  uint32_t  pixnum )
++{
++
++	  	std::vector<std::string> vars = mod.first;
++	  	std::vector< uint32_t > vals = mod.second;
++		
++		uint32_t pix = conf_upload->at(pixnum);
++		if (pixnum<17 and pixnum>8)
++			{
++				for (int ipix=0;ipix<vars.size(); ipix++)
++				{
++					if (vars[ipix]=="PMR") 
++					{
++						pix = (pix&~1);
++						pix |= (vals[ipix]);
++					}
++					if (vars[ipix]=="ARR") 
++					{
++						pix = (pix&~(1<<1));
++						pix |= ((vals[ipix]& 1) << 1);
++					}
++					if (vars[ipix]=="TRIMDACL")  
++					{
++						pix = (pix&~(31<<2));
++						pix |= ((vals[ipix]& 31) << 2);
++					}
++					if (vars[ipix]=="CER") 
++					{ 
++						pix = (pix&~(1<<7));
++						pix |= ((vals[ipix]& 1) << 7);
++					}
++					if (vars[ipix]=="SP") 
++					{ 
++						pix = (pix&~(1<<8));
++						pix |= ((vals[ipix]& 1) << 8);
++					}
++					if (vars[ipix]=="SR")  
++					{
++						pix = (pix&~(1<<9));
++						pix |= ((vals[ipix]& 1) << 9);
++					}
++					if (vars[ipix]=="PML")  
++					{
++						pix = (pix&~(1<<10));
++						pix |= ((vals[ipix]& 1) << 10);
++					}
++					if (vars[ipix]=="ARL")  
++					{
++						pix = (pix&~(1<<11));
++						pix |= ((vals[ipix]& 1) << 11);
++					}
++					if (vars[ipix]=="TRIMDACR") 
++					{ 
++						pix = (pix&~(31<<12));
++						pix |= ((vals[ipix]& 31) << 12);
++					}
++
++					if (vars[ipix]=="CEL")  
++					{
++						pix = (pix&~(1<<17));
++						pix |= ((vals[ipix]& 1) << 17);
++					}
++					if (vars[ipix]=="CW")  
++					{
++						pix = (pix&~(2<<18));
++						pix |= ((vals[ipix]& 2) << 18);
++					}
++				}
++			}
++		else if (pixnum<25 and pixnum>0)
++			{
++				for (int ipix=0;ipix<vars.size(); ipix++)
++				{
++					if (vars[ipix]=="PML") 
++					{
++						pix = (pix&~1);
++						pix |= (vals[ipix]);
++					}
++					if (vars[ipix]=="ARL") 
++					{
++						pix = (pix&~(1<<1));
++						pix |= ((vals[ipix]& 1) << 1);
++					}
++					if (vars[ipix]=="TRIMDACL")  
++					{
++						pix = (pix&~(31<<2));
++						pix |= ((vals[ipix]& 31) << 2);
++					}
++					if (vars[ipix]=="CEL")  
++					{
++						pix = (pix&~(1<<7));
++						pix |= ((vals[ipix]& 1) << 7);
++					}
++					if (vars[ipix]=="CW")  
++					{
++						pix = (pix&~(3<<8));
++						pix |= ((vals[ipix]& 3) << 8);
++					}
++					if (vars[ipix]=="PMR")  
++					{
++						pix = (pix&~(1<<10));
++						pix |= ((vals[ipix]& 1) << 10);
++					}
++					if (vars[ipix]=="ARR")  
++					{
++						pix = (pix&~(1<<11));
++						pix |= ((vals[ipix]& 1) << 11);
++					}
++					if (vars[ipix]=="TRIMDACR")  
++					{
++						pix = (pix&~(31<<12));
++						pix |= ((vals[ipix]& 31) << 12);
++					}
++					if (vars[ipix]=="CER")  
++					{
++						pix = (pix&~(1<<17));
++						pix |= ((vals[ipix]& 1) << 17);
++					}
++					if (vars[ipix]=="SP")  
++					{
++						pix = (pix&~(1<<18));
++						pix |= ((vals[ipix]& 1) << 18);
++					}
++					if (vars[ipix]=="SR")  
++					{
++						pix = (pix&~(1<<19));
++						pix |= ((vals[ipix]& 1) << 19);
++					}
++				}
++			}
++
++
++		conf_upload->at(pixnum) = pix;
++
++}
++
++
++}
+diff --git a/HWInterface/MPAInterface.h b/HWInterface/MPAInterface.h
+new file mode 100644
+index 00000000..cb528ced
+--- /dev/null
++++ b/HWInterface/MPAInterface.h
+@@ -0,0 +1,122 @@
++/*!
++
++        \file                                            MPAInterface.h
++        \brief                                           User Interface to the MPAs
++        \author                                          Lorenzo BIDEGAIN, Nicolas PIERRE
++        \version                                         1.0
++        \date                        31/07/14
++        Support :                    mail to : lorenzo.bidegain@gmail.com, nico.pierre@icloud.com
++
++ */
++
++#ifndef __MPAINTERFACE_H__
++#define __MPAINTERFACE_H__
++
++#include <vector>
++#include "../HWInterface/MPAGlibFWInterface.h"
++
++using namespace Ph2_HwDescription;
++
++/*!
++ * \namespace Ph2_HwInterface
++ * \brief Namespace regrouping all the interfaces to the hardware
++ */
++namespace Ph2_HwInterface
++{
++
++	using BeBoardFWMap = std::map<uint16_t, BeBoardFWInterface*>;    /*!< Map of Board connected */
++
++	/*!
++	 * \class MPAInterface
++	 * \brief Class representing the User Interface to the MPA on different boards
++	 */
++	class MPAInterface
++	{
++
++	  private:
++		BeBoardFWMap fBoardMap;                     /*!< Map of Board connected */
++		BeBoardFWInterface* fBoardFW;                     /*!< Board loaded */
++		MPAGlibFWInterface* fMPAFW;                     /*!< Board loaded */
++		uint16_t prevBoardIdentifier;                     /*!< Id of the previous board */
++
++		uint16_t fRegisterCount;                                /*!< Counter for the number of Registers written */
++		uint16_t fTransactionCount;         /*!< Counter for the number of Transactions */
++
++
++	  private:
++		/*!
++		 * \brief Set the board to talk with
++		 * \param pBoardId
++		 */
++		void setBoard( uint16_t pBoardIdentifier );
++
++	public:
++		/*!
++		* \brief Constructor of the MPAInterface Class
++		* \param pBoardMap
++		*/
++		MPAInterface( const BeBoardFWMap& pBoardMap );
++		/*!
++		* \brief Destructor of the MPAInterface Class
++		*/
++		~MPAInterface();
++
++		/*!
++		* \uploads configuration data to glib
++		*/
++		void ConfigureMPA(std::vector< uint32_t >* conf_upload, int conf ,int nmpa, bool lr);
++
++		/*!
++		* \sends configuration data to MAPSA from glib
++		*/
++		void SendConfig(int nummpal, int nummpar);
++
++
++		void ReadTrig(int buffer_num);
++
++		std::vector<uint32_t>* GetcurData();
++
++		/*!
++		* \initializes AR header 
++		*/
++		void HeaderInitMPA(int nmpa, bool lr);
++
++		/*!
++		* \modify periphery configuration  
++		*/
++    		void ModifyPerif(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload);
++    		int WaitTestbeam();
++		/*!
++		* \modify pixel configuration for pixel pixnum
++		*/
++    		void ModifyPix(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload, uint32_t  pixnum );
++
++		std::pair<std::vector<uint32_t>, std::vector<uint32_t>> ReadMPAData(int buffer_num, int mpa, bool lr);
++		/*!
++		* \format the raw data output of ReadData to organize into events. Segmented due to processing time 
++		*/
++ 		std::pair<std::vector<uint32_t>, std::vector<std::string>> FormatData(std::pair<std::vector<uint32_t>, std::vector<uint32_t>> data);
++
++		/*!
++		* \further formats the output of FormatData to a human readable format. Segmented due to processing time 
++		*/
++    		std::pair<std::vector<uint32_t>, std::vector<uint64_t>> ReadMemory(std::vector<std::string> intmemory, int mode);
++
++		/*!
++		* \reads in in configuration data from xml file for mpa nmpa and configuration number conf
++		*/
++    		std::vector< uint32_t > ReadConfig(const std::string& pFilename, int nmpa, int conf);
++
++		/*!
++		* \initializes sequencer (starts daq)
++		*/
++		void SequencerInit(int smode,int sdur,int mem,int ibuff);
++
++		void TestbeamInit(int sdur,int clock, int phase);
++
++
++		void Cleardata();
++	};
++}
++
++#endif
+diff --git a/System/SystemController.cc b/System/SystemController.cc
+index 8a208e82..e1a086be 100644
+--- a/System/SystemController.cc
++++ b/System/SystemController.cc
+@@ -96,7 +96,7 @@ namespace Ph2_System {
+ 
+         fBeBoardInterface = new BeBoardInterface ( fBeBoardFWMap );
+         fCbcInterface = new CbcInterface ( fBeBoardFWMap );
+-
++        fMPAInterface = new MPAInterface( fBeBoardFWMap );
+         if (fWriteHandlerEnabled)
+             this->initializeFileHandler();
+     }
+diff --git a/System/SystemController.h b/System/SystemController.h
+index 75c8d9f5..c90d1a06 100644
+--- a/System/SystemController.h
++++ b/System/SystemController.h
+@@ -15,6 +15,7 @@
+ 
+ #include "FileParser.h"
+ #include "../HWInterface/CbcInterface.h"
++#include "../HWInterface/MPAInterface.h"
+ #include "../HWInterface/BeBoardInterface.h"
+ #include "../HWInterface/BeBoardFWInterface.h"
+ #include "../HWInterface/GlibFWInterface.h"
+@@ -58,6 +59,7 @@ namespace Ph2_System {
+       public:
+         BeBoardInterface*       fBeBoardInterface;                     /*!< Interface to the BeBoard */
+         CbcInterface*           fCbcInterface;                         /*!< Interface to the Cbc */
++        MPAInterface*           fMPAInterface;                         /*!< Interface to the Cbc */
+         BeBoardVec              fBoardVector;                          /*!< Vector of Board pointers */
+         BeBoardFWMap            fBeBoardFWMap;
+         SettingsMap             fSettingsMap;                          /*!< Maps the settings */
+diff --git a/settings/HWDescription_MAPSA.xml b/settings/HWDescription_MAPSA.xml
+new file mode 100644
+index 00000000..9c014823
+--- /dev/null
++++ b/settings/HWDescription_MAPSA.xml
+@@ -0,0 +1,6 @@
++<?xml version='1.0' encoding='utf-8'?>
++<HwDescription>
++  <BeBoard Id="0" boardType="MPAGLIB">
++    <connection id="board" uri="ipbusudp-2.0://192.168.0.175:50001" address_table="file://settings/address_table_MaPSA.xml" />
++  </BeBoard>
++</HwDescription>
+diff --git a/settings/MPAFiles/MPA_default.xml b/settings/MPAFiles/MPA_default.xml
+new file mode 100644
+index 00000000..0452ddac
+--- /dev/null
++++ b/settings/MPAFiles/MPA_default.xml
+@@ -0,0 +1,323 @@
++<CONF>
++    <periphery>
++	<OM>3</OM>
++	<RT>0</RT>
++	<SCW>0</SCW>
++	<SH2>0</SH2>
++	<SH1>0</SH1>
++	<CALDAC>70</CALDAC>
++	<THDAC>100</THDAC>
++    </periphery>
++    <pixel n="1">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="2">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="3">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="4">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="5">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="6">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="7">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="8">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="9">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="10">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="11">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="12">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="13">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="14">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="15">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="16">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="17">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="18">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="19">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="20">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="21">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="22">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="23">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++    <pixel n="24">
++	<PML>1</PML>
++	<ARL>1</ARL>
++	<TRIMDACL>15</TRIMDACL>
++	<CEL>0</CEL>
++	<CW>0</CW>
++	<PMR>1</PMR>
++	<ARR>1</ARR>
++	<TRIMDACR>15</TRIMDACR>
++	<CER>0</CER>
++	<SP>1</SP>
++	<SR>1</SR>
++    </pixel>
++</CONF>
+diff --git a/settings/address_tables/address_table_MaPSA.xml b/settings/address_tables/address_table_MaPSA.xml
+new file mode 100644
+index 00000000..007355a5
+--- /dev/null
++++ b/settings/address_tables/address_table_MaPSA.xml
+@@ -0,0 +1,605 @@
++<?xml version="1.0" encoding="ISO-8859-1"?>
++<node id="Glib" address="0x40000000">
++	<node id="Control">
++    		<node id="logic_reset"            		address="0x00000000"  mask="0x00000001"   permission="w"    />
++    		<node id="beam_on"            			address="0x00000000"  mask="0x00000002"   permission="w"    />
++    		<node id="conf_upload"            		address="0x00000000"  mask="0x00000004"   permission="w"    />
++    		<node id="confs"            		address="0x00000000"  mask="0x00000018"   permission="w"    />
++    		<node id="firm_ver"            			address="0x00000000"  mask="0xFFFF0000"   permission="r"    />
++   	
++		<node id="strip_phase"		    		address="0x00000001"  mask="0x000001FF"  permission="rw"    />
++
++    		<node id="MPA_clock_enable"		    	address="0x00000002"  mask="0x00000001"  permission="rw"    />
++    		<node id="testbeam_mode"		    	address="0x00000002"  mask="0x00000002"  permission="rw"    />
++    		<node id="testbeam_clock"		    	address="0x00000002"  mask="0x00000004"  permission="rw"    />
++    		<node id="calibration"		 	    	address="0x00000002"  mask="0x00000008"  permission="rw"    />
++    		<node id="readout"		 	    	address="0x00000002"  mask="0x00000010"  permission="rw"    />
++    		<node id="MPA_clock_80"		 	    	address="0x00000002"  mask="0x00000020"  permission="rw"    />
++    	
++		<node id="total_triggers"            		address="0x00000003"  mask="0x0000FFFFF"   permission="r"    />
++
++    		<node id="shutter_delay"		    	address="0x00000004"  mask="0x0000000F"  permission="rw"    />
++
++    		<node id="halt_time"            		address="0x00000005"  mask="0x0FFFFFFFF"   permission="r"    />
++ 
++   		<node id="trigger_counter"		    	address="0x00000008"     >
++				<node id="buffer_1"            		address="0x00000000"  mask="0x00000FFF"  permission="r"    />
++				<node id="buffer_2"            		address="0x00000001"  mask="0x00000FFF"  permission="r"    />
++				<node id="buffer_3"            		address="0x00000002"  mask="0x00000FFF"  permission="r"    />
++				<node id="buffer_4"            		address="0x00000003"  mask="0x00000FFF"  permission="r"    />
++    		</node>
++    		<node id="trigger_total_counter"		    	address="0x00000008"     >
++				<node id="buffer_1"            		address="0x00000000"  mask="0xFFFFF000"  permission="r"    />
++				<node id="buffer_2"            		address="0x00000001"  mask="0xFFFFF000"  permission="r"    />
++				<node id="buffer_3"            		address="0x00000002"  mask="0xFFFFF000"  permission="r"    />
++				<node id="buffer_4"            		address="0x00000003"  mask="0xFFFFF000"  permission="r"    />
++    		</node>
++
++
++		<node id="trigger_offset_BEAM"		    	address="0x00004000"  >
++    			<node id="p1"		    	address="0x00000000"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p2"		    	address="0x00000100"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p3"		    	address="0x00000200"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p4"		    	address="0x00000300"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p5"		    	address="0x00000400"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p6"		    	address="0x00000500"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p7"		    	address="0x00000600"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p8"		    	address="0x00000700"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++
++    		</node>
++		<node id="trigger_offset_MPA"		    	address="0x00006000"  >
++    			<node id="p1"		    	address="0x00000000"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p2"		    	address="0x00000100"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p3"		    	address="0x00000200"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p4"		    	address="0x00000300"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p5"		    	address="0x00000400"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p6"		    	address="0x00000500"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p7"		    	address="0x00000600"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    			<node id="p8"		    	address="0x00000700"     >
++				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_2"            		address="0x00000800" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_3"            		address="0x00001000" mode="incremental" size="0x100"   permission="rw"    />
++    				<node id="buffer_4"            		address="0x00001800" mode="incremental" size="0x100"   permission="rw"    />
++
++				<node id="buffer_1_256"            		address="0x000000FF"    permission="rw"    />
++    				<node id="buffer_2_256"            		address="0x000008FF"    permission="rw"    />
++    				<node id="buffer_3_256"            		address="0x000010FF"    permission="rw"    />
++    				<node id="buffer_4_256"            		address="0x000018FF"    permission="rw"    />
++    			</node>
++    		</node>
++
++    		<node id="Sequencer" address="0x00000080">
++    			<node id="buffers_index"    			mask="0x0000000C"  permission="rw"    />
++    			<node id="datataking_continuous"    		mask="0x00000010"  permission="rw"    />
++    			<node id="buffers_num"    			mask="0x000000E0"  permission="r"    />
++    			<node id="spill"    			mask="0x00000100"  permission="r"    />
++    			<node id="busy"    				mask="0x80000000"  permission="r"    />
++    		</node>
++	</node>
++	<node id="Utility">
++    		<node id="CLKUTIL_freq"            		address="0x00000100"  mask="0x0000000F"  permission="rw"    />
++    		<node id="DAC_register"            		address="0x00000101"  mask="0x0000FFFF"   permission="rw"    />
++    		<node id="MPA_settings" address="0x00000102">
++    			<node id="strip_direction"            		mask="0x0000003F"   permission="rw"    />
++    			<node id="VDDPST_enable"            		mask="0x00000040"   permission="rw"    />
++    			<node id="DVDD_enable"            		mask="0x00000080"   permission="rw"    />
++    			<node id="AVDD_enable"            		mask="0x00000100"   permission="rw"    />
++    			<node id="PVDD_enable"            		mask="0x00000200"   permission="rw"    />
++    			<node id="VBIAS_enable"            		mask="0x00000400"   permission="rw"    />
++    			<node id="read_only"            		mask="0x80000000"   permission="w"    />
++    		</node>
++    		<node id="SPI_busy"            		address="0x00000103" mask="0x00000001"   permission="r"    />
++    		<node id="MPA_settings_read"            	address="0x00000104"  >
++    			<node id="strip_direction"            		mask="0x0000003F"   permission="r"    />
++    			<node id="VDDPST_enable"            		mask="0x00000040"   permission="r"    />
++    			<node id="DVDD_enable"            		mask="0x00000080"   permission="r"    />
++    			<node id="AVDD_enable"            		mask="0x00000100"   permission="r"    />
++    			<node id="PVDD_enable"            		mask="0x00000200"   permission="r"    />
++    			<node id="VBIAS_enable"            		mask="0x00000400"   permission="r"    />
++    		</node>
++    		<node id="MPA_status" address="0x00000105" >
++    			<node id="HITOR"            			mask="0x00000FFF"   permission="r"    />
++
++    		</node>
++	</node>
++	<node id="Shutter">
++    		<node id="Strobe" address="0x00000201">
++    			<node id="number"            			address="0x00000000" mask="0x0000FFFF"   permission="rw"    />
++    			<node id="length"            			address="0x00000001" mask="0x0000FFFF"   permission="rw"    />
++    			<node id="distance"          			address="0x00000002" mask="0x0000FFFF"   permission="rw"    />
++    			<node id="delay"             			address="0x00000003" mask="0x0000FFFF"   permission="rw"    />
++    		</node>
++    		<node id="time"            			address="0x00000205"  permission="rw"    />
++	</node>
++	<node id="Configuration_Left"		address="0x00002000">
++    		<node id="mode"        			address="0x00000000" mask="0x0000001F"   permission="w"   />
++    		<node id="busy"        			address="0x00000000" mask="0x00000001"   permission="r"   />
++    		<node id="num_MPA"          		address="0x00000001" mask="0x00000007"   permission="rw"    />
++		<node id="flip"          		address="0x00000001" mask="0x00000008"   permission="rw"    />
++    		<node id="DataConf_address"          	address="0x00000003" mask="0x00007FFF"   permission="r"    />
++    		<node id="OutConf_address"          	address="0x00000004" mask="0x00007FFF"   permission="r"    />
++
++    		<node id="Memory_DataConf"            	address="0x00000400"   >
++    			<node id="MPA1"            			address="0x00000000"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA2"            			address="0x00000020"     >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA3"            			address="0x00000040"     >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA4"            			address="0x00000060"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA5"            			address="0x00000080"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA6"            			address="0x000000A0"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    		</node>
++    		<node id="Memory_OutConf"            	address="0x00000800"   >
++    			<node id="MPA1"            			address="0x00000000"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA2"            			address="0x00000020"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA3"            			address="0x00000040"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA4"            			address="0x00000060"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA5"            			address="0x00000080"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA6"            			address="0x000000A0"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    		</node>
++	</node>
++	<node id="Configuration_Right" 		address="0x00003000"  >
++    		<node id="busy"        			address="0x00000000" mask="0x00000001"   permission="r"   />
++    		<node id="num_MPA"          		address="0x00000001" mask="0x00000007"   permission="rw"    />
++		<node id="flip"          		address="0x00000001" mask="0x00000008"   permission="rw"    />
++    		<node id="DataConf_address"          	address="0x00000003" mask="0x00007FFF"   permission="r"    />
++    		<node id="OutConf_address"          	address="0x00000004" mask="0x00007FFF"   permission="r"    />
++
++    		<node id="Memory_DataConf"            	address="0x00000400"   >
++    			<node id="MPA1"            			address="0x00000000"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA2"            			address="0x00000020"     >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA3"            			address="0x00000040"     >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA4"            			address="0x00000060"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA5"            			address="0x00000080"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    			<node id="MPA6"            			address="0x000000A0"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="rw"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="rw"    />
++			</node>
++    		</node>
++    		<node id="Memory_OutConf"            	address="0x00000800"   >
++    			<node id="MPA1"            			address="0x00000000"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA2"            			address="0x00000020"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA3"            			address="0x00000040"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA4"            			address="0x00000060"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA5"            			address="0x00000080"   >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA6"            			address="0x000000A0"    >
++    				<node id="config_1"            			address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_2"            			address="0x000000C0" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_3"            			address="0x00000180" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="config_4"            			address="0x00000240" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    		</node>
++	</node>
++	<node id="Readout_Left"	address="0x00008000" >
++		<node id="Memory">
++    			<node id="MPA1"            		address="0x00000000"    >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++    			<node id="MPA2"            		address="0x00000400"    >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>    		
++			<node id="MPA3"            		address="0x00000800"    >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++    			<node id="MPA4"            		address="0x00000C00"     >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++    			<node id="MPA5"            		address="0x00001000"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++    			<node id="MPA6"            		address="0x00001400"    >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++		</node>
++		<node id="Counter">
++    			<node id="MPA1"            		address="0x00001800"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA2"            		address="0x00001819"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA3"            		address="0x00001832"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node> 
++   			<node id="MPA4"            		address="0x0000184B"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA5"            		address="0x00001864"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA6"            		address="0x0000187D"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++		</node>
++		<node id="Header">
++    			<node id="MPA1"            		address="0x00001C10"   />
++    			<node id="MPA2"            		address="0x00001C11"   />
++    			<node id="MPA3"            		address="0x00001C12"   />
++    			<node id="MPA4"            		address="0x00001C13"   />
++    			<node id="MPA5"            		address="0x00001C14"   />
++    			<node id="MPA6"            		address="0x00001C15"   />
++		</node>
++	</node>
++	<node id="Readout_Right"	address="0x0000C000" >
++		<node id="Memory">
++    			<node id="MPA1"            		address="0x00000000"    >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++    			<node id="MPA2"            		address="0x00000400"    >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>    		
++			<node id="MPA3"            		address="0x00000800"    >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++    			<node id="MPA4"            		address="0x00000C00"     >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++    			<node id="MPA5"            		address="0x00001000"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++    			<node id="MPA6"            		address="0x00001400"    >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0xD8"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0xD8"   permission="r"    />
++			</node>
++		</node>
++		<node id="Counter">
++    			<node id="MPA1"            		address="0x00001800"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA2"            		address="0x00001819"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA3"            		address="0x00001832"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node> 
++   			<node id="MPA4"            		address="0x0000184B"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA5"            		address="0x00001864"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++    			<node id="MPA6"            		address="0x0000187D"   >
++    				<node id="buffer_1"            		address="0x00000000" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_2"            		address="0x00000100" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_3"            		address="0x00000200" mode="incremental" size="0x19"   permission="r"    />
++    				<node id="buffer_4"            		address="0x00000300" mode="incremental" size="0x19"   permission="r"    />
++			</node>
++		</node>
++		<node id="Header">
++    			<node id="MPA1"            		address="0x00001C10"   />
++    			<node id="MPA2"            		address="0x00001C11"   />
++    			<node id="MPA3"            		address="0x00001C12"   />
++    			<node id="MPA4"            		address="0x00001C13"   />
++    			<node id="MPA5"            		address="0x00001C14"   />
++    			<node id="MPA6"            		address="0x00001C15"   />
++		</node>
++	</node>
++</node>
+diff --git a/setup.sh b/setup.sh
+index 67cfa8be..74084ad0 100755
+--- a/setup.sh
++++ b/setup.sh
+@@ -6,12 +6,14 @@ export CACTUSBIN=/opt/cactus/bin
+ export CACTUSLIB=/opt/cactus/lib
+ export CACTUSINCLUDE=/opt/cactus/include
+ 
++
+ # BOOST
+ export BOOST_LIB=/opt/cactus/lib
+ export BOOST_INCLUDE=/opt/cactus/include
+ #export BOOST_INCLUDE=/usr/include
+ #export BOOST_LIB=/usr/lib64
+ 
++
+ #ROOT
+ source /usr/local/bin/thisroot.sh
+ #export ROOTLIB=/usr/local/lib/root
+diff --git a/src/Makefile b/src/Makefile
+index 34d32231..7a366df0 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -5,7 +5,7 @@ RESET='\033[0m'
+ 
+ CC              = gcc
+ CXX             = g++
+-CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
++CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC
+ 
+ CCFlagsRoot	= `root-config --cflags --glibs`
+ ROOTVERSION := $(shell root-config --has-http)
+@@ -14,7 +14,7 @@ RootLibraryPaths = $(RootLibraryDirs:%=-L%)
+ 
+ LibraryDirs = $(BOOST_LIB) ../lib
+ IncludeDirs     = $(BOOST_INCLUDE) ../ ../HWInterface ../System ../Utils ../tools
+-ExternalObjects= -lboost_system -lboost_thread -lcactus_uhal_uhal -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lPh2_Utils -lPh2_Description -lPh2_Interface -lPh2_System -lPh2_Tools 
++ExternalObjects= -lboost_system -lboost_thread -lcactus_uhal_uhal -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lPh2_Utils -lPh2_Description -lPh2_Interface -lPh2_System -lPh2_Tools
+ 
+ binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester d19c_test
+ 
+@@ -24,7 +24,7 @@ binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaco
+ ifneq (,$(findstring yes,$(ROOTVERSION)))
+ 	ExtObjectsRoot += $(RootLibraryPaths) -lRHTTP $(HttpFlag)
+ else
+-	ExtObjectsRoot += $(RootLibraryPaths) 
++	ExtObjectsRoot += $(RootLibraryPaths)
+ endif
+ 
+ ##################################################
+@@ -32,8 +32,8 @@ endif
+ ##################################################
+ ifneq ("$(wildcard ../$(ANTENNADIR))","")
+ 	IncludeDirs += $(ANTENNADIR)
+-	LibraryDirs += $(ANTENNALIB) /usr/lib64/ 
+-	ExternalObjects += -lPh2_Antenna $(AntennaFlag) 
++	LibraryDirs += $(ANTENNALIB) /usr/lib64/
++	ExternalObjects += -lPh2_Antenna $(AntennaFlag)
+ 	ANTENNAINSTALLED = yes
+ else
+ 	ANTENNAINSTALLED = no
+@@ -74,10 +74,10 @@ else
+ endif
+ 
+ IncludePaths = $(IncludeDirs:%=-I%)
+-LibraryPaths = $(LibraryDirs:%=-L%) 
++LibraryPaths = $(LibraryDirs:%=-L%)
+ 
+ .PHONY: clean $(binaries)
+-all: rootflags clean $(binaries) 
++all: rootflags clean $(binaries)
+ 
+ rootflags:
+ 	$(eval CCFlags += $(CCFlagsRoot))
+@@ -93,6 +93,10 @@ print:
+ 	@echo -e ${YEL}'ZeroMQ installed:' ${RED}$(ZMQINSTALLED)
+ 	@echo -e ${YEL}'****************************'${RESET}
+ 
++rtest: rtest.cc
++	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths)$(ExternalObjects)
++	cp $@ ../bin
++
+ integratedtester: integratedtester.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths)$(ExternalObjects)
+ 	cp $@ ../bin
+@@ -112,7 +116,7 @@ d19c_test: d19c_test.cc
+ calibrate: calibrate.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
+-	
++
+ configure: configure.cc
+ 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
+ 	cp $@ ../bin
+diff --git a/src/rtest.cc b/src/rtest.cc
+new file mode 100644
+index 00000000..43caef9e
+--- /dev/null
++++ b/src/rtest.cc
+@@ -0,0 +1,260 @@
++
++//Simple bare bones daq to be used as a template for the 
++//relevant sections of usercode in order to test the middleware
++
++
++#include <cstring>
++#include <fstream>
++#include "../Utils/Utilities.h"
++#include "../HWDescription/Cbc.h"
++#include "../HWDescription/Module.h"
++#include "../HWDescription/BeBoard.h"
++#include "../HWInterface/MPAInterface.h"
++#include "../HWInterface/MPAGlibFWInterface.h"
++#include "../HWInterface/CbcInterface.h"
++#include "../HWInterface/BeBoardInterface.h"
++#include "../HWDescription/Definition.h"
++#include "../HWDescription/FrontEndDescription.h"
++//#include "../tools/Calibration.h"
++#include "../Utils/Timer.h"
++//#include <TApplication.h>
++#include <inttypes.h>
++#include "../Utils/argvparser.h"
++#include "../Utils/ConsoleColor.h"
++#include "../System/SystemController.h"
++#include "../Utils/CommonVisitors.h"
++#include "../Tracker/TrackerEvent.h"
++
++using namespace Ph2_HwDescription;
++using namespace Ph2_HwInterface;
++using namespace Ph2_System;
++using namespace CommandLineProcessing;
++
++using namespace std;
++INITIALIZE_EASYLOGGINGPP
++
++int main( int argc, char* argv[] )
++{
++
++	ArgvParser cmd;
++
++	cmd.defineOption( "file", "Hw Description File . Default value: settings/HWDescription_MAPSA.xml", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
++	cmd.defineOptionAlternative( "file", "f" );
++
++	cmd.defineOption( "output", "Output Directory . Default value: Results", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
++	cmd.defineOptionAlternative( "output", "o" );
++
++	int result = cmd.parse( argc, argv );
++	if ( result != ArgvParser::NoParserError )
++	{
++		std::cout << cmd.parseErrorDescription( result );
++		exit( 1 );
++	}
++
++	std::string cHWFile = ( cmd.foundOption( "file" ) ) ? cmd.optionValue( "file" ) : "settings/HWDescription_MAPSA.xml";
++	std::string cDirectory = ( cmd.foundOption( "output" ) ) ? cmd.optionValue( "output" ) : "Results/";
++
++	SystemController mysyscontroller;
++	std::cout << "\nInitHW";
++	mysyscontroller.InitializeHw( cHWFile );
++	std::cout << "\nMPAI";
++        MPAInterface* fMPAInterface = mysyscontroller.fMPAInterface; 
++	std::cout << "\nBOARD"<<std::endl;
++	BeBoard* pBoard = mysyscontroller.fBoardVector.at( 0 );
++
++
++
++
++	
++	uint8_t pBeId = 0;
++	uint8_t pFMCId = 0;
++
++	//One BE board, multiple FE's for module.  Cside identifies whether the firmware accesses the left
++	//or right six MPAs
++
++	//Left
++	uint8_t pFeId = 0;
++	int cside=1;
++	Module* MAPSAR = new Module(); 
++	for (int i=0;i<6;i++)
++		{
++		MAPSAR->addMPA(new MPA(pBeId, pFMCId, pFeId, i, cside));
++		}
++	uint8_t nummpaR =MAPSAR->getNMPA();
++
++	//Right
++	pFeId = 1;
++	cside=0;
++	Module* MAPSAL = new Module(); 
++	for (int i=0;i<6;i++)
++		{
++		MAPSAL->addMPA(new MPA(pBeId, pFMCId, pFeId, i, cside));
++		}
++	uint8_t nummpaL =MAPSAL->getNMPA();
++
++
++	std::cout<<"Number of MPAs in Left MAPSA "<<int(nummpaL)<<std::endl;
++	std::cout<<"Number of MPAs in Right MAPSA "<<int(nummpaR)<<std::endl;
++
++	//Add both modules to the BE board
++	pBoard->addModule(MAPSAL);
++	pBoard->addModule(MAPSAR);
++	
++
++
++	//Power on and check FW version.  These do not need to be called every time datataking begins. 
++	std::cout << "\nExecuting POWER ON...";
++	mysyscontroller.fBeBoardInterface->PowerOn(pBoard);
++	std::cout << "\nFirmware version: "; 
++	mysyscontroller.fBeBoardInterface->ReadVer(pBoard);
++	std::chrono::milliseconds cWait( 10 );
++
++
++	//Initialize configuration data 
++	std::vector<std::vector< uint32_t >> confsR;
++	std::vector<std::vector< uint32_t >> confsL;
++
++	//Manually set some configuration values for testing
++	int threshmod = 70;
++	int opmodemod = 3;
++	std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod1({"OM","THDAC"},{opmodemod,threshmod});
++
++
++	//Load up configuration for right and left MAPSAs into buffers
++	int curside;
++	for(int i=0;i<nummpaR;i++)
++	{
++		MPA* curmpa = (MAPSAR->getMPA(i));
++		curside =int(curmpa->getMPASide());
++		std::this_thread::sleep_for( cWait );
++		confsR.push_back(fMPAInterface->ReadConfig("calibratedRight", i+1, 1));
++		fMPAInterface->ModifyPerif(mod1,&confsR.back());
++		fMPAInterface->ConfigureMPA(&confsR.back(), 1 , i+1 , curside);
++
++	}
++
++
++	for(int i=0;i<nummpaL;i++)
++	{
++		MPA* curmpa = (MAPSAL->getMPA(i));
++		curside =int(curmpa->getMPASide());
++		std::this_thread::sleep_for( cWait );
++		confsL.push_back(fMPAInterface->ReadConfig("calibratedLeft", i+1, 1));
++		fMPAInterface->ModifyPerif(mod1,&confsL.back());
++		fMPAInterface->ConfigureMPA(&confsL.back(), 1 , i+1 , curside);
++	}
++
++
++
++	//Transfer configuration information to MPAs after loading 
++	fMPAInterface->SendConfig(nummpaL,nummpaR);
++	std::chrono::milliseconds cWait1( 100 );//
++
++	int ibuffer = 1;
++
++
++
++	//Option 1 just takes data continuously, option 2 waits for triggers
++	fMPAInterface->SequencerInit(1,200000,1,0);
++	//fMPAInterface->TestbeamInit(500000,0, 0);
++
++
++	//Always four buffers in current FW
++	int nbuffers = 4;
++
++
++	//Release all data currently stored before taking new data
++	for(int i=0;i<nummpaR;i++)
++	{
++		MPA* curmpa = (MAPSAR->getMPA(i));
++		curside =int(curmpa->getMPASide());
++		std::this_thread::sleep_for( cWait );
++
++		for(int k=1;k<=nbuffers;k++)
++			{
++			fMPAInterface->HeaderInitMPA(i+1,curside);
++			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(k,i+1,curside);
++			fMPAInterface->ReadTrig(k);
++			}
++	}
++	for(int i=0;i<nummpaL;i++)
++	{
++		MPA* curmpa = (MAPSAL->getMPA(i));
++		curside =int(curmpa->getMPASide());
++		std::this_thread::sleep_for( cWait );
++
++		for(int k=1;k<=nbuffers;k++)
++			{
++			fMPAInterface->HeaderInitMPA(i+1,curside);
++			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(k,i+1,curside);
++			fMPAInterface->ReadTrig(k);
++			}
++	}
++	fMPAInterface->Cleardata();
++
++
++
++	int spill = 0;
++	int tempspill = 0;
++	int nev = 0;
++
++
++
++
++	std::ofstream outFile_;
++  	outFile_.open ("output.dat");
++
++
++	bool Kill=false;
++	while (not Kill)
++	{
++
++		tempspill=spill;
++		spill+=fMPAInterface->WaitTestbeam();
++		if (tempspill!=spill) std::cout<<"Starting Spill "<<spill<<std::endl;
++
++		fMPAInterface->Cleardata();
++		fMPAInterface->ReadTrig(ibuffer);
++
++
++		for(int i=0;i<nummpaL;i++)
++		{
++			MPA* curmpa = (MAPSAL->getMPA(i));
++			curside =int(curmpa->getMPASide());
++			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(ibuffer,i+1,curside);
++		}
++
++		for(int i=0;i<nummpaR;i++)
++		{
++			MPA* curmpa = (MAPSAR->getMPA(i));
++			curside =int(curmpa->getMPASide());
++			std::pair<std::vector<uint32_t>, std::vector<uint32_t>>  returndata = fMPAInterface->ReadMPAData(ibuffer,i+1,curside);
++		}
++
++
++
++		ibuffer+=1;
++		if (ibuffer >nbuffers) ibuffer=1 ;
++
++		nev+=1;
++		if (nev%100==0)	std::cout<<nev<<" Events"<<std::endl;
++	
++		//For testing puroses, output all collected data
++
++		std::vector<uint32_t> cData = *(fMPAInterface->GetcurData());
++
++		int iic1 = 0;
++		for( unsigned int iic1=0;iic1<cData.size();iic1++)
++		{
++			outFile_.write( (char*)&cData.at(iic1), sizeof(uint32_t));
++	
++		}
++
++
++
++
++
++	}//while (not Kill)
++	outFile_.close();
++}//int main
++
+diff --git a/tools/HybridTester.cc b/tools/HybridTester.cc
+index 11526625..096c7828 100644
+--- a/tools/HybridTester.cc
++++ b/tools/HybridTester.cc
+@@ -432,8 +432,6 @@ void HybridTester::ScanThreshold()
+         uint32_t cHitCounter = 0;
+ 
+         // maybe restrict to pBoard? instead of looping?
+-        if ( cAllOne ) break;
+-
+         for ( BeBoard* pBoard : fBoardVector )
+         {
+             fBeBoardInterface->Start ( pBoard );
