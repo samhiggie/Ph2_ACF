@@ -38,8 +38,6 @@ namespace Ph2_HwInterface {
     {
 
       private:
-        Data* fData; /*!< Data read storage*/
-
         struct timeval fStartVeto;
         std::string fStrSram, fStrSramUserLogic, fStrFull, fStrReadout, fStrOtherSram, fStrOtherSramUserLogic;
         //std::string fCbcStubLat, fCbcI2CCmdAck, fCbcI2CCmdRq, fCbcHardReset, fCbcFastReset;
@@ -77,8 +75,6 @@ namespace Ph2_HwInterface {
          */
         virtual ~GlibFWInterface()
         {
-            if (fData) delete fData;
-
             if (fFileHandler) delete fFileHandler;
         }
 
@@ -134,32 +130,13 @@ namespace Ph2_HwInterface {
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read
          */
-        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger ) override;
+        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait = true ) override;
         /*!
          * \brief Read data for pNEvents
          * \param pBoard : the pointer to the BeBoard
          * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
          */
-        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents);
-        /*!
-         * \brief Get next event from data buffer
-         * \return Next event
-         */
-        const Event* GetNextEvent ( const BeBoard* pBoard ) const override
-        {
-            return fData->GetNextEvent ( pBoard );
-        }
-        const Event* GetEvent ( const BeBoard* pBoard, int i ) const override
-        {
-            return fData->GetEvent ( pBoard, i );
-        }
-        const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const override
-        {
-            return fData->GetEvents ( pBoard );
-        }
-
-        //void StartThread (BeBoard* pBoard, uint32_t uNbAcq, HwInterfaceVisitor* visitor) override;
-        //void threadAcquisitionLoop (BeBoard* pBoard, HwInterfaceVisitor* visitor);
+        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait = true);
 
       private:
 
@@ -252,7 +229,7 @@ namespace Ph2_HwInterface {
          * \param pFeId : FrontEnd to work with
          * \param pVecReq : Vector to stack the read words
          */
-        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts ,  bool pReadback ) override;
+        bool WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts,  bool pReadback ) override;
         /*!
          * \brief Read register blocks of a Cbc
          * \param pFeId : FrontEnd to work with
@@ -268,6 +245,10 @@ namespace Ph2_HwInterface {
         void CbcHardReset();
 
         void CbcFastReset();
+
+        void CbcTrigger() {}
+
+        void CbcTestPulse() {}
 
         ///////////////////////////////////////////////////////
         //      FPGA CONFIG                                 //

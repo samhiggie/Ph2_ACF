@@ -4,6 +4,11 @@
 // This has no bad-strip masking and does not take a reduced number of active strips into account yet!
 
 // PUBLIC METHODS
+CMTester::CMTester() : Tool()
+{}
+
+CMTester::~CMTester()
+{}
 
 void CMTester::Initialize()
 {
@@ -74,6 +79,17 @@ void CMTester::Initialize()
                 cProfile->SetLineColor ( 9 );
                 cProfile->SetLineWidth ( 2 );
                 bookHistogram ( cCbc, "occupancyprojection", cProfile );
+
+                // 1D projection of the combined occupancy, but nearest neighbor calculated on both sides
+                cName =  Form ( "p_occupancyprojectionsymmetric_Fe%dCbc%d", cFeId, cCbcId );
+                cObj = gROOT->FindObject ( cName );
+
+                if ( cObj ) delete cObj;
+
+                cProfile = new TProfile ( cName, Form ( "Projection of combined Occupancy (+ and -) FE%d CBC%d;  NNeighbors (+-N); Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+                cProfile->SetLineColor ( 9 );
+                cProfile->SetLineWidth ( 2 );
+                bookHistogram ( cCbc, "occupancyprojectionplusminus", cProfile );
 
                 // 1D projection of the uncorrelated odccupancy
                 cName = Form ( "p_uncorr_occupancyprojection_Fe%dCbc%d", cFeId, cCbcId );
@@ -204,8 +220,8 @@ void CMTester::ScanNoiseChannels()
 
         //while ( cN <=  cTotalEvents )
         //{
-        fBeBoardInterface->ReadNEvents ( pBoard, cTotalEvents );
-        const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+        ReadNEvents ( pBoard, cTotalEvents );
+        const std::vector<Event*>& events = GetEvents ( pBoard );
 
         // Loop over Events from this Acquisition
         for ( auto& cEvent : events )
@@ -276,9 +292,21 @@ void CMTester::ScanNoiseChannels()
 
 void CMTester::TakeData()
 {
+
+    std::stringstream outp;
     parseSettings();
 
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
+    ThresholdVisitor cVisitor (fCbcInterface);
+    this->accept (cVisitor);
+    uint32_t cVcth = cVisitor.getThreshold();
+    LOG (INFO) << "Checking threshold...: " << cVcth << std::endl;
+
+    //    cVisitor.setOption ('w');
+    //    cVisitor.setThreshold (595);
+    //    cVcth = cVisitor.getThreshold();
+    //    std::cout<<"Now my threshold is: "<<cVcth<<std::endl;
+
+    //CbcRegReader cReader ( fCbcInterface, "VCth" );
     // accept( cReader );
 
     for ( BeBoard* pBoard : fBoardVector )
@@ -287,17 +315,21 @@ void CMTester::TakeData()
         uint32_t cNthAcq = 0;
 
         fBeBoardInterface->Start ( pBoard );
-
         //while ( cN <=  fNevents )
         //{
         // Run( pBoard, cNthAcq );
-        fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
-        const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+        //ReadData (pBoard);
+        ReadNEvents ( pBoard, fNevents );
+        const std::vector<Event*>& events = GetEvents ( pBoard );
 
         // Loop over Events from this Acquisition
 
         for ( auto& cEvent : events )
         {
+            // LOG (INFO) << cN << " "<< *cEvent;
+
+            if (cN > fNevents ) continue; // Needed when using ReadData on CBC3
+
             analyze ( pBoard, cEvent );
 
             if ( cN % 100 == 0 )
@@ -437,8 +469,12 @@ void CMTester::analyze ( BeBoard* pBoard, const Event* pEvent )
             TProfile* cTmpHitProb = dynamic_cast<TProfile*> ( getHist ( cCbc, "hitprob" ) );
             TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*> ( getHist ( cCbc, "combinedoccupancy" ) );
             TProfile* cTmpCombinedOcc = dynamic_cast<TProfile*> ( getHist ( cCbc, "occupancyprojection" ) );
+            TProfile* cTmpCombinedOccPM = dynamic_cast<TProfile*> ( getHist ( cCbc, "occupancyprojectionplusminus" ) );
 
             int cNHits = 0;
+            int cEventHits = pEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
+
+            if (cEventHits > 250) LOG (INFO) << " Found an event with " << cEventHits << " hits on a CBC! Is this expected?" ;
 
             // here add a check if the strip is masked and if I am simulating or not!
             std::vector<bool> cSimResult;
@@ -488,6 +524,9 @@ void CMTester::analyze ( BeBoard* pBoard, const Event* pEvent )
 
                         // Fill projection: this could be done in FinishRun() but then no live updates
                         if ( cChan - cChan2 >= 0 ) cTmpCombinedOcc->Fill ( cChan - cChan2, cfillValue );
+
+                        // Cross-check: what if we also consider the -N neighbors, not just +N ones? Should get the same result...
+                        cTmpCombinedOccPM->Fill ( abs (cChan - cChan2), cfillValue );
                     }
                 }
             }
@@ -599,9 +638,6 @@ void CMTester::updateHists ( bool pFinal )
             }
 
             cCanvas->second->Update();
-#ifdef __HTTP__
-            fHttpServer->ProcessRequests();
-#endif
 
         }
     }
@@ -670,7 +706,7 @@ void CMTester::parseSettings()
     // now read the settings from the map
     auto cSetting = fSettingsMap.find ( "Nevents" );
 
-    if ( cSetting != std::end ( fSettingsMap ) ) fNevents = cSetting->second;
+    if ( cSetting != std::end ( fSettingsMap ) ) fNevents = 10 * cSetting->second;
     else fNevents = 2000;
 
     cSetting = fSettingsMap.find ( "doSimulate" );
@@ -684,7 +720,7 @@ void CMTester::parseSettings()
     else fSimOccupancy = 50;
 
     LOG (INFO) << "Parsed the following settings:" ;
-    LOG (INFO) << "	Nevents = " << fNevents ;
+    LOG (INFO) << "	Nevents (.XML value times 10)= " << fNevents ;
     LOG (INFO) << "	simulate = " << int ( fDoSimulate ) ;
     LOG (INFO) << "	sim. Occupancy (%) = " << int ( fSimOccupancy ) ;
 

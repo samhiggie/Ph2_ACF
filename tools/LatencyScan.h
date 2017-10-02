@@ -41,7 +41,9 @@ class LatencyScan : public Tool
 {
 
   public:
-    void Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool bNoTdc);
+    LatencyScan();
+    ~LatencyScan();
+    void Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool pNoTdc = false);
     std::map<Module*, uint8_t> ScanLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20, bool pNoTdc = false );
     std::map<Module*, uint8_t> ScanStubLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 
@@ -52,11 +54,11 @@ class LatencyScan : public Tool
     void updateHists ( std::string pHistName, bool pFinal );
     void parseSettings();
 
-	//  Members
-	uint32_t fNevents;
-	//uint32_t fInitialThreshold;
-	uint32_t fHoleMode;
-	uint32_t fNCbc;
+    //  Members
+    uint32_t fNevents;
+    //uint32_t fInitialThreshold;
+    uint32_t fHoleMode;
+    uint32_t fNCbc;
 
     const uint32_t fTDCBins = 8;
 
@@ -68,11 +70,13 @@ class LatencyScan : public Tool
         return result + 1;
     }
 
-    const std::string getStubLatencyName(const std::string pBoardIdentifier)
+    const std::string getStubLatencyName (const BoardType pBoardType)
     {
-        if (pBoardIdentifier == "GLIB" ) return "cbc_stubdata_latency_adjust_fe1";
-        else if ( pBoardIdentifier == "CTA") return "cbc.STUBDATA_LATENCY_MODE";
-        else if (pBoardIdentifier == "ICGLIB" || pBoardIdentifier == "ICFC7") return "cbc_daq_ctrl.latencies.stub_latency";
+        if (pBoardType == BoardType::GLIB) return "cbc_stubdata_latency_adjust_fe1";
+        else if (pBoardType == BoardType::CTA) return "cbc.STUBDATA_LATENCY_MODE";
+        else if (pBoardType == BoardType::ICGLIB || pBoardType == BoardType::ICFC7) return "cbc_daq_ctrl.latencies.stub_latency";
+        else if (pBoardType == BoardType::CBC3FC7) return "cbc_system_cnfg.cbc_data_processor.cbc0.latencies.trig_data";
+        else if (pBoardType == BoardType::D19C) return "fc7_daq_cnfg.readout_block.global.common_stubdata_delay";
         else return "not recognized";
     }
 };

@@ -38,6 +38,8 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
 
         $> gcc --version
 
+    Alternatively you can use a gcc version > 4.7 from AFS
+
 1. Install uHAL  version 2.3:
 
         $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc6.x86_64.repo 
@@ -76,6 +78,13 @@ Follow these instructions to install and compile the libraries:
         $> source setup.sh
 
 1. Do a `make` in the root of the repo (make sure you have all µHal, root libraries on your computer).
+
+1. Alternatively you can use CMAKE (you will still need to source setup.sh to put the binaries in the path):
+
+        $> cd build/
+        $> cmake ..
+        $> make -jN
+        $> cd .. & source setup.sh
 
 1. Launch 
 
@@ -135,25 +144,6 @@ Follow these instructions to install and compile the libraries:
 
     to run the DQM code from the June '15 beamtest
 
-##### What can you do with the software ?
-
-At the moment the package provides the following features:
-
-  - Configure the Glib & Cbcs
-  - Manipulate the registers in the Glib
-  - Manipulate the registers in the Cbcs
-  - Read Data
-  - Calibrate Hybrids
-  - Validate Hybrids
-  - Perform CM noise tests
-  - user external trigger and clock signals for your tests
-  - upload .mcs files to the GLIB
-  - perform simple commissioning procedures
-  - save binary data to file
-  - create simple DQM histograms from binary data
-  - measure the pulseshape of the CBC amp
-  - any other routine you want to implement yourself ... 
-
 
 ##### Nota Bene:
 When you write a register in the Glib or the Cbc, the corresponding map of the HWDescription object in memory is also updated, so that you always have an exact replica of the HW Status in the memory.
@@ -168,177 +158,138 @@ For debugging purpose, you can activate DEV_FLAG in the sources or in the Makefi
 #### External Clock and Trigger:
 
 In order to use external Clock and Trigger functionality, a DIO5 mezzanine is required. It is available from the [CERN OHR](http://www.ohwr.org/projects/fmc-dio-5chttla) and sold by several commercial vendors.
-For instructions on how to use it, see this [file](https://github.com/gauzinge/Ph2_ACF/blob/Dev/doc/TK_DAQ_MONO_GLIB3_FMCDIO5_v3.0_09-12-2014.pdf). The [firmware](https://github.com/gauzinge/Ph2_ACF/tree/Dev/firmware) is included in this repository.
-
 
 
 #### Example HWDescription.xml File with DIO5 support:
 
 ```xml
 
-          <?xml version='1.0' encoding = 'UTF-8' ?>
-          <HwDescription>
-          <Connections name="file://settings/connections_2CBC.xml"/>
+<?xml version='1.0' encoding='utf-8'?>
+<HwDescription>
+  <BeBoard Id="0" boardType="D19C" eventType="VR">
+      <connection id="board" uri="ipbusudp-2.0://192.168.1.80:50001" address_table="file://settings/address_tables/d19c_address_table.xml" />
 
-          <Shelve Id="0" >
-          <BeBoard Id="0" connectionId="board0" boardType="GLIB">
-          <FW_Version NCbcDataSize="4"/>
+    <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
+       <!--<Global>-->
+           <!--<Settings threshold="120" latency="12"/>-->
+           <!--<TestPulse enable="1" polarity="0" amplitude="0x08" channelgroup="0" delay="0" groundothers="1"/>-->
+           <!--<ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0"/>-->
+           <!--<Misc analogmux="0b00000"/>-->
+           <!--<ChannelMask disable="1"/>-->
+       <!--</Global>-->
+        <CBC_Files path="./settings/CbcFiles/" />
+        <CBC Id="0" configfile="Cbc_default_electron.txt" />
+        <CBC Id="1" configfile="Cbc_default_electron.txt" />
+        <CBC Id="2" configfile="Cbc_default_electron.txt" />
+        <CBC Id="3" configfile="Cbc_default_electron.txt" />
+        <CBC Id="4" configfile="Cbc_default_electron.txt" />
+        <CBC Id="5" configfile="Cbc_default_electron.txt" />
+        <CBC Id="6" configfile="Cbc_default_electron.txt" />
+        <CBC Id="7" configfile="Cbc_default_electron.txt" />
+            <!--<Settings threshold="120" latency="80"/>-->
+            <!--<TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>-->
+            <!--<ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0"/>-->
+            <!--<Misc analogmux="0b00000"/>-->
+            <!--<ChannelMask disable=""/>-->
+            <!--<Register name="Pipe&StubInpSel&Ptwidth"> 0x63 </Register>-->
+    </Module>
 
-          <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
-          <!--Global_CBC_Register name="VCth"> 0x88 </Global_CBC_Register>
-          <Global_CBC_Register name="TriggerLatency"> 0x0C </Global_CBC_Register-->
+    <SLink>
+        <DebugMode type="FULL"/>
+        <ConditionData type="I2C" Register="VCth" FeId="0" CbcId="0"/>
+        <ConditionData type="User" UID="0x80" FeId="0" CbcId="0"> 0x22 </ConditionData>
+        <ConditionData type="HV" FeId="0" Sensor="2"> 250 </ConditionData>
+        <ConditionData type="TDC" FeId="0xFF"/>
+    </SLink>
 
-          <CBC_Files path="./settings/"/>
-          <CBC Id="0" configfile="Cbc_default_hole.txt"/>
-          <CBC Id="1" configfile="Cbc_default_hole.txt"/>
-          </Module>
+    <!--CONFIG-->
+    <Register name="fc7_daq_cnfg">
+        <!-- Fast Command Block -->
+        <Register name="fast_command_block">
+            <Register name="triggers_to_accept"> 0 </Register>
+		    <Register name="trigger_source"> 6 </Register>
+		    <Register name="user_trigger_frequency"> 1 </Register>
+		    <Register name="stubs_mask"> 1 </Register>
+		    <Register name="stub_trigger_latency"> 194 </Register>
+            <Register name="test_pulse">
+                <Register name="delay_after_fast_reset"> 50 </Register>
+                <Register name="delay_after_test_pulse"> 200 </Register>
+	            <Register name="delay_before_next_pulse"> 400 </Register>
+            </Register>
+        </Register>
+	<!-- I2C manager -->
+        <Register name="command_processor_block">
+                <Register name="i2c_write_mask"> 0xFF </Register>
+	</Register>
+	<!-- Phy Block -->
+	<Register name="physical_interface_block">
+		<Register name="i2c">
+                	<Register name="frequency"> 4 </Register>
+		</Register>
+	</Register>
+	<!-- Readout Block -->
+    	<Register name="readout_block">
+            <Register name="packet_nbr"> 99 </Register>
+            <Register name="global">
+		    <Register name="data_handshake_enable"> 1 </Register>
+                    <Register name="int_trig_enable"> 0 </Register>
+                    <Register name="int_trig_rate"> 0 </Register>
+                    <Register name="trigger_type"> 0 </Register>
+                    <Register name="data_type"> 0 </Register>
+                    <Register name="common_stubdata_delay"> 194 </Register>
+            </Register>
+    	</Register>
+	<!-- DIO5 Block -->
+	<Register name="dio5_block">
+	    <Register name="dio5_en"> 0 </Register>
+            <Register name="ch1">
+                <Register name="out_enable"> 1 </Register>
+                <Register name="term_enable"> 0 </Register>
+                <Register name="threshold"> 0 </Register>
+            </Register>
+	    <Register name="ch2">
+                <Register name="out_enable"> 0 </Register>
+                <Register name="term_enable"> 1 </Register>
+                <Register name="threshold"> 50 </Register>
+            </Register>
+	    <Register name="ch3">
+                <Register name="out_enable"> 1 </Register>
+                <Register name="term_enable"> 0 </Register>
+                <Register name="threshold"> 0 </Register>
+            </Register>
+	    <Register name="ch4">
+                <Register name="out_enable"> 0 </Register>
+                <Register name="term_enable"> 1 </Register>
+                <Register name="threshold"> 50 </Register>
+            </Register>
+	    <Register name="ch5">
+                <Register name="out_enable"> 0 </Register>
+                <Register name="term_enable"> 1 </Register>
+                <Register name="threshold"> 50 </Register>
+            </Register>
+	</Register>
+	<!-- TLU Block -->
+	<Register name="tlu_block">
+		<Register name="handshake_mode"> 2 </Register>
+	</Register>
+    </Register>
+  </BeBoard>
+</HwDescription>
 
-          <!-- Commissioning Mode -->
-          <!-- set to 1 to enable commissioning mode -->
-          <Register name="COMMISSIONNING_MODE_RQ">0</Register>
-          <!-- set to 1 to enable test pulse in commissioning mode -->
-          <Register name="COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID">0</Register>
-          <Register name="COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET">50</Register>
-          <Register name="COMMISSIONNING_MODE_DELAY_AFTER_L1A">400</Register>
-          <Register name="COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE">201</Register>
+<Settings>
+    <!--Calibration-->
+   <Setting name="TargetVcth">0x78</Setting>
+    <Setting name="TargetOffset">0x50</Setting>
+    <Setting name="Nevents">50</Setting>
+    <Setting name="TestPulsePotentiometer">0x00</Setting>
+    <Setting name="HoleMode">0</Setting>
+    <Setting name="VerificationLoop">1</Setting>
 
-          <!-- Acquisition -->
-          <Register name="cbc_stubdata_latency_adjust_fe1">1</Register>
-          <Register name="cbc_stubdata_latency_adjust_fe2">1</Register>
-          <Register name="user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER">9</Register>
+</Settings>
 
-          <!-- Trigger -->
-          <!-- set to 1 to use external triggers -->
-          <Register name="user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL">0</Register>
-          <Register name="user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ">10</Register>
-
-          <!-- Clock -->
-          <!-- set to 1 for external clocking -->
-          <Register name="user_wb_ttc_fmc_regs.dio5.clk_mux_sel">0</Register>
-
-          <!-- DIO5 Config -->
-          <!-- set to 0 for rising edge, 1 for falling -->
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge">0</Register>
-          <!-- set to 1 to output L1A signal, 0 for input pulse -->
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel">1</Register>
-          <!-- set to 1 for active low or 1 for active high || NEEDS TO BE 0 for the TLU-->
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_backpressure_out_polar">0</Register>
-
-          <!-- DIO5 threshold: [v]/3.3*256 -->
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in">40</Register>
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in">40</Register>
-
-          <!-- DIO5 Termination -->
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms">1</Register>
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms">0</Register>
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms">1</Register>
-          <Register name="user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms">0</Register>
-          </BeBoard>
-          </Shelve>
-          </HwDescription>
-
-          <Settings>
-          <Setting name="RunNumber"> 1 </Setting>
-          <Setting name="HoleMode"> 1 </Setting>
-          </Settings>
 
 ```
 
-#### Example HWDescription.json File with DIO5 support:
-
-```json
-{
-    "HwDescription":{
-        "Connections":"file://settings/connections_2CBC.xml",
-            "Shelves":[
-            {
-                "Id":0,
-                "BeBoards":[
-                {
-                    "Id":0,
-                    "boardType":"Glib",
-                    "connectionId":"board0",
-                    "Modules":[
-                    {
-                        "FeId":0,
-                        "FMCId":0,
-                        "ModuleId":0,
-                        "Status":1,
-                        "Global_CBC_Registers":{
-                            "VCth":"0x78",
-                            "TriggerLatency":"0x0C"
-                        },
-                        "CbcFilePath":"./settings/",
-                        "CBCs":[
-                        {
-                            "Id":0,
-                            "configfile":"Cbc_default_hole.txt",
-                            "Register":{
-                                "VCth":"0x78"
-                            }
-                        },
-                        {
-                            "Id":1,
-                            "configfile":"Cbc_default_hole.txt"
-                        }
-                        ]
-                    }
-                    ],
-                    "RegisterName":{
-                        "COMMISSIONNING_MODE_RQ":"//COMMISSIONING MODE REGISTERS",
-                        "COMMISSIONNING_MODE_RQ":"//set to 1 to enable commissioning mode",
-                        "COMMISSIONNING_MODE_RQ":1,
-                        "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID":"//set to 1 to enable test pulses in comissioningn mode",
-                        "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID":1,
-                        "COMMISSIONNING_MODE_DELAY_AFTER_FAST_RESET":50,
-                        "COMMISSIONNING_MODE_DELAY_AFTER_L1A":400,
-                        "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE":201,
-
-                        "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":"//TRIGGER",
-                        "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":"//set to 1 to enable external triggers",
-                        "user_wb_ttc_fmc_regs.pc_commands.TRIGGER_SEL":0,
-                        "user_wb_ttc_fmc_regs.pc_commands.INT_TRIGGER_FREQ":10,
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in":"//DIO5 threshold: [v]/3.3*256",
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_trig_in":40,
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge":"//set to 0 for rising edge, 1 for falling",
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_edge":0,
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_in_50ohms":1,
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_trig_out_50ohms":0,
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel":"//set to 1 to output L1A signal, 0 for input pulse ",
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_lemo2_sig_sel":1,
-
-                        "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":"//CLOCK",
-                        "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":"//set to 1 to enable external clocking",
-                        "user_wb_ttc_fmc_regs.dio5.clk_mux_sel":0,
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in":"//DIO5 threshold: [v]/3.3*256",
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_threshold_clk_in":40,
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_in_50ohms":1,
-                        "user_wb_ttc_fmc_regs.dio5.fmcdio5_clk_out_50ohms":0,
-
-                        "user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE":"//ACQUISITION",
-                        "user_wb_ttc_fmc_regs.pc_commands.ACQ_MODE":1,
-                        "cbc_stubdata_latency_adjust_fe1":1,
-                        "cbc_stubdata_latency_adjust_fe2":1,
-                        "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_GENE":1,
-                        "user_wb_ttc_fmc_regs.pc_commands.CBC_DATA_PACKET_NUMBER":10,
-                        "user_wb_ttc_fmc_regs.pc_commands2.clock_shift":0,
-
-                        "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC":"//POLARITY",
-                        "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_CBC":1,
-                        "user_wb_ttc_fmc_regs.pc_commands2.negative_logic_sTTS":0,
-                        "user_wb_ttc_fmc_regs.pc_commands2.polarity_tlu":0
-                    }
-                }
-                ]
-            }
-        ]
-    },
-        "Settings":{
-            "RunNumber":1,
-            "HoleMode":1
-        }
-}
-```
 
 ### Known Issues:
 

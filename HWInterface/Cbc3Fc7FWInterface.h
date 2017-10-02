@@ -21,6 +21,7 @@
 #include "BeBoardFWInterface.h"
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
+//#include "../Utils/Utilities.h"
 
 
 using namespace Ph2_HwDescription;
@@ -40,17 +41,14 @@ namespace Ph2_HwInterface {
     {
 
       private:
-        //this might just as well become cbc3 data
-        //create a new CBC3Data class that adheres to the interface of Data (more or less that is just used in Cbc3 Interfaces - and in there re-shuffle the bits such that it fits in an expanded event implementation)
-        //this way only CBC3 compliant interfaces use this data but the event implementation will be the same but grow a bit
-        Data* fData; /*!< Data read storage*/
-
         struct timeval fStartVeto;
         CtaFpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
         uint32_t fBroadcastCbcId;
         uint32_t fNCbc;
         uint32_t fFMCId;
+        std::map<uint16_t, uint8_t> fIDMap;
+        std::map<uint8_t, uint16_t> fIDMapReverse;
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
 
@@ -83,8 +81,6 @@ namespace Ph2_HwInterface {
 
         ~Cbc3Fc7FWInterface()
         {
-            if (fData) delete fData;
-
             if (fFileHandler) delete fFileHandler;
         }
 
@@ -139,35 +135,23 @@ namespace Ph2_HwInterface {
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read
          */
-        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger ) override;
+        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait = true ) override;
         /*!
          * \brief Read data for pNEvents
          * \param pBoard : the pointer to the BeBoard
          * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
          */
-        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents);
-        /*!
-         * \brief Get next event from data buffer
-         * \return Next event
-         */
-        const Event* GetNextEvent ( const BeBoard* pBoard ) const override
-        {
-            return fData->GetNextEvent ( pBoard );
-        }
-        const Event* GetEvent ( const BeBoard* pBoard, int i ) const override
-        {
-            return fData->GetEvent ( pBoard, i );
-        }
-        const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const override
-        {
-            return fData->GetEvents ( pBoard );
-        }
+        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait = true);
 
       private:
+        void DataClockTimingTune (const BeBoard* pBoard);
+        // private decode method to get the Cbc & Fe ID from an encoded I2C word
+        void DecodeIdsFromReg (uint32_t pWord, uint8_t& pCbcId, uint8_t& pFeId);
 
+        uint32_t computeEventSize ( BeBoard* pBoard );
         //I2C command sending implementation
-        bool WriteI2C (  std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, bool pWriteRead, bool pBroadcast );
-        bool ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies);
+        bool WriteI2C (  std::vector<uint32_t>& pVecSend, std::vector<uint32_t>& pReplies, uint8_t pFeId, bool pWriteRead, bool pBroadcast );
+        bool ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies, uint8_t pFeId);
 
         //binary predicate for comparing sent I2C commands with replies using std::mismatch
         static bool cmd_reply_comp (const uint32_t& cWord1, const uint32_t& cWord2);
@@ -208,7 +192,6 @@ namespace Ph2_HwInterface {
                 return ctoggle = !ctoggle;
             });
         }
-
 
       public:
         ///////////////////////////////////////////////////////
@@ -269,13 +252,6 @@ namespace Ph2_HwInterface {
         void RebootBoard() {}
         /*! \brief Set or reset the start signal */
         void SetForceStart ( bool bStart) {}
-
-
-        void ReadVer() override;
-        void PowerOn() override;
-        void PowerOff() override;
-
-
     };
 }
 

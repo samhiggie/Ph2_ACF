@@ -39,8 +39,6 @@ namespace Ph2_HwInterface {
     {
 
       private:
-        Data* fData; /*!< Data read storage*/
-
         struct timeval fStartVeto;
         FpgaConfig* fpgaConfig;
         FileHandler* fFileHandler ;
@@ -52,15 +50,15 @@ namespace Ph2_HwInterface {
 
         const uint32_t SINGLE_I2C_WAIT = 70; //usec for 1MHz I2C
         //  const uint32_t SINGLE_I2C_WAIT = 700; //usec for 100 kHz I2C
-        static const int RESET_ALL = 0x1;
-        static const int START = 0x2;
-        static const int STOP = 0x4;
-        static const int CTR_RESET = 0x800;
-        static const int HARD_RESET = 0x1;
-        static const int FAST_RESET = 0x2;
-        static const int I2C_REFRESH = 0x4;
-        static const int TEST_PULSE = 0x8;
-        static const int L1A =       0x010;
+        const int RESET_ALL = 0x1;
+        const int START = 0x2;
+        const int STOP = 0x4;
+        const int CTR_RESET = 0x800;
+        const int HARD_RESET = 0x1;
+        const int FAST_RESET = 0x2;
+        const int I2C_REFRESH = 0x4;
+        const int TEST_PULSE = 0x8;
+        const int L1A =       0x010;
 
 
       public:
@@ -86,8 +84,6 @@ namespace Ph2_HwInterface {
          */
         ~ICGlibFWInterface()
         {
-            if (fData) delete fData;
-
             if (fFileHandler) delete fFileHandler;
         }
 
@@ -142,29 +138,13 @@ namespace Ph2_HwInterface {
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read
          */
-        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger ) override;
+        uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait = true ) override;
         /*!
          * \brief Read data for pNEvents
          * \param pBoard : the pointer to the BeBoard
          * \param pNEvents :  the 1 indexed number of Events to read - this will set the packet size to this value -1
          */
-        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents);
-        /*!
-         * \brief Get next event from data buffer
-         * \return Next event
-         */
-        const Event* GetNextEvent ( const BeBoard* pBoard ) const override
-        {
-            return fData->GetNextEvent ( pBoard );
-        }
-        const Event* GetEvent ( const BeBoard* pBoard, int i ) const override
-        {
-            return fData->GetEvent ( pBoard, i );
-        }
-        const std::vector<Event*>& GetEvents ( const BeBoard* pBoard ) const override
-        {
-            return fData->GetEvents ( pBoard );
-        }
+        void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait = true);
 
       private:
 
@@ -231,7 +211,7 @@ namespace Ph2_HwInterface {
         void DecodeReg ( CbcRegItem& pRegItem, uint8_t& pCbcId, uint32_t pWord, bool& pRead, bool& pFailed ) override;
 
 
-        bool WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback) override;
+        bool WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts, bool pReadback) override;
         bool BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback) override;
         void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg );
 
@@ -239,11 +219,12 @@ namespace Ph2_HwInterface {
 
         void CbcFastReset();
 
+        void CbcTrigger();
+
         void CbcI2CRefresh();
 
         void CbcTestPulse();
 
-        void CbcTrigger();
         ///////////////////////////////////////////////////////
         //      FPGA CONFIG                                 //
         /////////////////////////////////////////////////////

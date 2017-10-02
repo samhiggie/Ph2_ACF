@@ -4,52 +4,65 @@
 FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption ) :
     fBinaryFileName ( pBinaryFileName ),
     fOption ( pOption ),
-    fFileIsOpened ( false ) ,
-    is_set ( false )
+    fFileIsOpened ( false ),
+    fHeader (),
+    fHeaderPresent (false)
 {
     openFile();
 
     if ( fOption == 'w' )
     {
         fThread = std::thread ( &FileHandler::writeFile, this );
-        fThread.detach();
+        //fThread.detach();
     }
 }
 
 FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, FileHeader pHeader ) :
     fBinaryFileName ( pBinaryFileName ),
     fOption ( pOption ),
-    fFileIsOpened ( false ) ,
-    is_set ( false ),
-    fHeader ( pHeader )
+    fFileIsOpened ( false ),
+    fHeader ( pHeader ),
+    fHeaderPresent (true)
 {
     openFile();
 
     if ( fOption == 'w' )
     {
         fThread = std::thread ( &FileHandler::writeFile, this );
-        fThread.detach();
+        //fThread.detach();
     }
 }
 
 //destructor
 FileHandler::~FileHandler()
 {
+    //signal that we want to end this
+    {
+        std::lock_guard<std::mutex> cLock (fMutex);
+        fFileIsOpened = false;
+    }
+
+    //join the thread since the thread function must have returned by now
     if (fOption == 'w' && fThread.joinable() )
         fThread.join();
 
+    //close the file
     closeFile();
 }
 
 void FileHandler::set ( std::vector<uint32_t> pVector )
 {
-    fMutex.lock();
-    fData.clear();
-    fData = pVector;
-    is_set = true;
+    //fMutex.lock();
+    //fData.clear();
+    //fData = pVector;
+    //is_set = true;
 
-    if ( is_set )
-        fMutex.unlock();
+    //if ( is_set )
+    //fMutex.unlock();
+
+    std::lock_guard<std::mutex> cLock (fMutex);
+    fQueue.push (pVector);
+    fSet.notify_one();
 }
 
 bool FileHandler::openFile( )
@@ -57,7 +70,8 @@ bool FileHandler::openFile( )
 
     if ( !file_open() )
     {
-        fMutex.lock();
+
+        std::lock_guard<std::mutex> cLock (fMutex);
 
         if ( fOption == 'w' )
         {
@@ -65,14 +79,15 @@ bool FileHandler::openFile( )
 
             // if the header is null or not valid, continue without and delete the header
             if ( fHeader.fValid == false )
+            {
                 LOG (INFO) << "FileHandler: Warning - No valid file Header provided, writing file without ... " ;
-            //if the header object is valid i serialize it in the file
+                fHeaderPresent = false;
+            }//if the header object is valid i serialize it in the file
             else if ( fHeader.fValid)
             {
                 std::vector<uint32_t> cHeaderVec = fHeader.encodeHeader();
-                uint32_t cBuffer[cHeaderVec.size()];
-                std::copy ( cHeaderVec.begin(), cHeaderVec.end(), cBuffer );
-                fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
+                fBinaryFile.write ( ( char* ) &cHeaderVec.at (0), cHeaderVec.size() * sizeof ( uint32_t ) );
+                fHeaderPresent = true;
             }
         }
 
@@ -91,32 +106,34 @@ bool FileHandler::openFile( )
             // and treat it as normal data
             if (!fHeader.fValid)
             {
+                fHeaderPresent = false;
                 LOG (INFO) << "FileHandler: No valid header found in file " << fBinaryFileName << " - resetting to 0 and treating as normal data!" ;
                 fBinaryFile.clear( );
                 fBinaryFile.seekg ( 0, std::ios::beg );
                 // if the file Header is nullptr I do not get info from it!
             }
-            else LOG (INFO) << "FileHandler: Found a valid header in file " << fBinaryFileName ;
+            else if (fHeader.fValid)
+            {
+                LOG (INFO) << "FileHandler: Found a valid header in file " << fBinaryFileName ;
+                fHeaderPresent = true;
+            }
         }
 
-        fMutex.unlock();
         fFileIsOpened = true;
     }
 
-    return file_open();
+    return fFileIsOpened;
 }
 
 void FileHandler::closeFile()
 {
-    fMutex.lock();
-
-    if (fFileIsOpened)
     {
-        fBinaryFile.close();
-        fFileIsOpened = false;
-    }
+        std::lock_guard<std::mutex> cLock (fMutex);
 
-    fMutex.unlock();
+        if (fFileIsOpened.load() )
+            fFileIsOpened = false;
+    }
+    fBinaryFile.close();
 }
 
 //read from raw file to vector
@@ -190,26 +207,33 @@ std::vector<uint32_t> FileHandler::readFileTail ( long pNbytes )
 
 void FileHandler::writeFile()
 {
-    //while ( true ) {
-    if ( is_set )
+    //new implementation using queue
+    //this needs to run in an infinite loop, otherwise it will end after the first data was processed and the second on is not ready I think
+    //anyway, dequeue will block this thread as long as fQueue is empty, if it is not, the first element will immediately be extracted
+    while (true)
     {
-        fMutex.lock();
-        uint32_t cBuffer[fData.size()];
-        std::copy ( fData.begin(), fData.end(), cBuffer );
-        fBinaryFile.write ( ( char* ) &cBuffer, sizeof ( cBuffer ) );
+        // a local data handle
+        std::vector<uint32_t> cData;
+        //populate the local handle with values from the queue -
+        //this method blocks this thread until it receives data
+        this->dequeue (cData);
+        //write the vector - this is guaranteed by the standard
+        fBinaryFile.write ( ( char* ) &cData.at (0), cData.size() * sizeof ( uint32_t ) );
         fBinaryFile.flush();
-        fData.clear();
-        is_set = false;
-        fMutex.unlock();
-        //continue;
+
+        //since dequeu is a blocking call this will only ever be checked after the last data has been written
+        if (!fFileIsOpened.load() ) break;
     }
 
-    else
-    {
-        fMutex.lock();
-        fMutex.unlock();
-        //continue;
-    }
+}
 
-    //}
+void FileHandler::dequeue (std::vector<uint32_t>& pData)
+{
+    std::unique_lock<std::mutex> cLock (fMutex);
+
+    while (fQueue.empty() )
+        fSet.wait (cLock);
+
+    pData = fQueue.front();
+    fQueue.pop();
 }

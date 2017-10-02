@@ -1,5 +1,6 @@
 #include <cstring>
 #include "../Utils/Utilities.h"
+#include "pugixml/pugixml.hpp"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
@@ -23,69 +24,6 @@ using namespace Ph2_System;
 
 using namespace CommandLineProcessing;
 INITIALIZE_EASYLOGGINGPP
-
-//Class used to process events acquired by a parallel acquisition
-//class AcqVisitor: public HwInterfaceVisitor
-//{
-//int cN;
-//public:
-//AcqVisitor()
-//{
-//cN = 0;
-//}
-////void init(std::ofstream* pfSave, bool bText);
-//virtual void visit ( const Ph2_HwInterface::Event& pEvent )
-//{
-//cN++;
-//std::cout << ">>> Event #" << cN << std::endl;
-//std::cout << pEvent << std::endl;
-//}
-//};
-
-//void syntax ( int argc )
-//{
-//if ( argc > 4 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
-//else if ( argc < 3 ) std::cerr << RED << "ERROR: Syntax: calibrationtest VCth NEvents (HWDescriptionFile)" << std::endl;
-//else return;
-//}
-
-
-std::string getFileName()
-{
-
-    std::string line;
-    std::fstream cFile;
-    int cRunNumber;
-
-    if ( boost::filesystem::exists ( ".run_number.txt" ) )
-    {
-
-        cFile.open ( ".run_number.txt", std::fstream::out | std::fstream::in );
-
-        if ( cFile.is_open() )
-        {
-            cFile >> cRunNumber ;
-
-            cRunNumber ++;
-            cFile.clear();
-            cFile.seekp ( 0 );
-            cFile << cRunNumber;
-            cFile.close();
-        }
-        else
-            LOG (WARNING) << "File not opened!" ;
-    }
-    else
-    {
-        cRunNumber = 1;
-        cFile.open ( ".run_number.txt", std::fstream::out );
-        cFile << cRunNumber;
-        cFile.close();
-    }
-
-    TString cRunString = Form ( "run_%03d.raw", cRunNumber );
-    return cRunString.Data();
-}
 
 int main ( int argc, char* argv[] )
 {
@@ -113,11 +51,11 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "events", "e" );
 
-    //cmd.defineOption( "parallel", "Acquisition running in parallel in a separate thread" );
-    //cmd.defineOptionAlternative( "parallel", "p" );
-
     cmd.defineOption ( "dqm", "Print every i-th event.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "dqm", "d" );
+
+    cmd.defineOption ( "daq", "Save the data into a .daq file using the phase-2 Tracker data format.  ", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "daq", "d" );
 
     int result = cmd.parse ( argc, argv );
 
@@ -133,19 +71,30 @@ int main ( int argc, char* argv[] )
     std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/HWDescription_2CBC.xml";
 
     const char* cDirectory = "Data";
-    mkdir ( cDirectory ,  777 );
-    cOutputFile = "Data/" + getFileName() ;
-
+    mkdir ( cDirectory,  777 );
+    int cRunNumber = 0;
+    getRunNumber ("${BASE_DIR}", cRunNumber) ;
+    cOutputFile = "Data/" + string_format ("run_%04d.raw", cRunNumber);
     pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10;
 
     cSystemController.addFileHandler ( cOutputFile, 'w' );
 
+    std::string cDAQFileName;
+    FileHandler* cDAQFileHandler = nullptr;
+    bool cDAQFile = cmd.foundOption ("daq");
+
+    if (cDAQFile)
+    {
+        cDAQFileName = cmd.optionValue ("daq");
+        cDAQFileHandler = new FileHandler (cDAQFileName, 'w');
+        LOG (INFO) << "Writing DAQ File to:   " << cDAQFileName << " - ConditionData, if present, parsed from " << cHWFile ;
+    }
+
     std::stringstream outp;
     cSystemController.InitializeHw ( cHWFile, outp );
-    LOG(INFO) << outp.str();
-    outp.str ("");
-    cSystemController.ConfigureHw (outp);
     LOG (INFO) << outp.str();
+    outp.str ("");
+    cSystemController.ConfigureHw ();
 
     BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
 
@@ -172,7 +121,7 @@ int main ( int argc, char* argv[] )
 
     while ( cN <= pEventsperVcth )
     {
-        uint32_t cPacketSize = cSystemController.fBeBoardInterface->ReadData ( pBoard, false );
+        uint32_t cPacketSize = cSystemController.ReadData ( pBoard );
 
         if ( cN + cPacketSize >= pEventsperVcth )
             cSystemController.fBeBoardInterface->Stop ( pBoard );
@@ -183,6 +132,12 @@ int main ( int argc, char* argv[] )
         {
             count++;
             cN++;
+
+            if (cDAQFile)
+            {
+                SLinkEvent cSLev = ev->GetSLinkEvent (pBoard);
+                cDAQFileHandler->set (cSLev.getData<uint32_t>() );
+            }
 
             if ( cmd.foundOption ( "dqm" ) )
             {
@@ -201,6 +156,9 @@ int main ( int argc, char* argv[] )
 
         cNthAcq++;
     }
+
+    if (cDAQFile)
+        delete cDAQFileHandler;
 
     //}
     cSystemController.Destroy();

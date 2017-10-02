@@ -16,6 +16,7 @@
 #include "Module.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/easylogging++.h"
+#include "../Utils/ConditionDataSet.h"
 #include <vector>
 #include <map>
 #include <stdint.h>
@@ -37,7 +38,6 @@ namespace Ph2_HwDescription {
     {
 
       public:
-
         // C'tors: the BeBoard only needs to know about which BE it is
         /*!
          * \brief Default C'tor
@@ -63,7 +63,7 @@ namespace Ph2_HwDescription {
         ~BeBoard()
         {
             for ( auto& pModule : fModuleVector )
-                delete pModule;
+                if (pModule) delete pModule;
 
             fModuleVector.clear();
         }
@@ -171,27 +171,47 @@ namespace Ph2_HwDescription {
         * \brief Set the Number of CBCs that are used to compute the data blob size of the BeBoard (according to FW version)
         * \param pNCbcDataSize
         */
-        void setNCbcDataSize ( uint16_t pNCbcDataSize )
-        {
-            fNCbcDataSize = pNCbcDataSize;
-        };
+        //void setNCbcDataSize ( uint16_t pNCbcDataSize )
+        //{
+        //fNCbcDataSize = pNCbcDataSize;
+        //};
         /*!
         * \brief Get the Number of CBCs that are used to compute the data blob size of the BeBoard (according to FW version)
         */
-        uint16_t getNCbcDataSize() const
-        {
-            return fNCbcDataSize;
-        };
+        //uint16_t getNCbcDataSize() const
+        //{
+        //return fNCbcDataSize;
+        //};
 
-        void setBoardType (const std::string& pBoardType)
+        void setBoardType (const BoardType pBoardType)
         {
             fBoardType = pBoardType;
         }
 
-        std::string getBoardType() const
+        BoardType getBoardType() const
         {
             return fBoardType;
         }
+
+        void setEventType (const EventType pEventType)
+        {
+            fEventType = pEventType;
+        }
+        EventType getEventType() const
+        {
+            return fEventType;
+        }
+
+        void addConditionDataSet (ConditionDataSet* pSet)
+        {
+            if (pSet != nullptr)
+                fCondDataSet = pSet;
+        }
+        ConditionDataSet* getConditionDataSet() const
+        {
+            return fCondDataSet;
+        }
+        void updateCondData (uint32_t& pTDCVal) const;
 
         // Vector of FEModules, each module is supposed to know which FMC slot it is connected to...
         std::vector< Module* > fModuleVector;
@@ -199,11 +219,13 @@ namespace Ph2_HwDescription {
       protected:
         //Connection Members
         uint8_t fBeId;
-        uint16_t fNCbcDataSize;
-        std::string fBoardType;
+        //uint16_t fNCbcDataSize;
+        BoardType fBoardType;
+        EventType fEventType;
 
 
         BeBoardRegMap fRegMap;             /*!< Map of BeBoard Register Names vs. Register Values */
+        ConditionDataSet* fCondDataSet;
 
       private:
 

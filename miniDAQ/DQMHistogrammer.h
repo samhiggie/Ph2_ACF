@@ -23,6 +23,7 @@ class TH1D;
 class TH2I;
 class TProfile;
 class TTree;
+class Tool;
 /*!
  * \class DQMHistogrammer
  * \brief Class to create and fill monitoring histograms

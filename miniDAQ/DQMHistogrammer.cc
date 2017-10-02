@@ -24,6 +24,7 @@
 #include "DQMHistogrammer.h"
 
 DQMHistogrammer::DQMHistogrammer (bool addTree, int ncol, bool eventFilter, bool skipHist) :
+    Tool(),
     addTree_ (addTree),
     nColumn_ (ncol),
     filterEvent_ (eventFilter),
@@ -536,7 +537,12 @@ void DQMHistogrammer::resetHistos()
 void DQMHistogrammer::bookEventTrendHisto (TH1I*& th, const TString& name, const TString& title, int size)
 {
     th = new TH1I (name, title, size, 0.5, size + 0.5);
+#ifdef ROOT5
     th->SetBit (TH1::kCanRebin); // valid for Root 5
+#endif
+#ifdef ROOT6
+    th->SetCanExtend (TH1::kXaxis);
+#endif
 }
 void DQMHistogrammer::fillEventTrendHisto (TH1I* th, unsigned long ival, unsigned int val)
 {

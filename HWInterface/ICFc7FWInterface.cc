@@ -23,10 +23,9 @@ namespace Ph2_HwInterface {
                                          uint32_t pBoardId ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
-        fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
-        fFMCId (1) 
+        fFMCId (1)
     {}
 
 
@@ -35,7 +34,6 @@ namespace Ph2_HwInterface {
                                          FileHandler* pFileHandler ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig (nullptr),
-        fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
         fFileHandler ( pFileHandler ),
@@ -50,7 +48,6 @@ namespace Ph2_HwInterface {
                                          const char* pAddressTable ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
-        fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
         fFMCId (1)
@@ -63,7 +60,6 @@ namespace Ph2_HwInterface {
                                          FileHandler* pFileHandler ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
-        fData ( nullptr ),
         fBroadcastCbcId (0),
         fReplyBufferSize (1024),
         fFileHandler ( pFileHandler ),
@@ -174,9 +170,9 @@ namespace Ph2_HwInterface {
         //before I'm done I need to reset all the state machines which loads the configuration
         //all the daq_ctrl registers have to be used with hex values and not with the sub-masks but they are auto clearing after 1 has been written
         //0x1 reset, 0x2 start, 0x4 stop, 0x8000 counter reset,
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
-        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", RESET_ALL });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->CTR_RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->RESET_ALL });
+        cVecReg.push_back ({"cbc_daq_ctrl.cbc_i2c_ctrl", this->RESET_ALL });
         cVecReg.push_back ({"cbc_daq_ctrl.fmcdio5ch_thr_dac_ctrl", 0x1 });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
@@ -203,7 +199,7 @@ namespace Ph2_HwInterface {
 
         //first reset all the counters and state machines
         cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->CTR_RESET });
 
         //according to Kirika, this is not necessary to set explicitly any more
         //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x1 });
@@ -212,7 +208,7 @@ namespace Ph2_HwInterface {
 
         //now issue start
         //cVecReg.push_back ({"commissioning_cycle_ctrl", 0x2 });
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->START });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
     }
@@ -235,7 +231,7 @@ namespace Ph2_HwInterface {
         WriteReg ( "cbc_daq_ctrl.daq_ctrl", 0x2000 );
     }
 
-    uint32_t ICFc7FWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger )
+    uint32_t ICFc7FWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait )
     {
         std::chrono::milliseconds cWait ( 1 );
         //first, read how many Events per Acquisition
@@ -248,30 +244,25 @@ namespace Ph2_HwInterface {
         while (cVal == 0)
         {
             cVal = ReadReg ("cbc_daq_ctrl.event_data_buf_status.data_ready" ) & 0x1;
-            std::this_thread::sleep_for ( cWait );
+
+            if (!pWait) return 0;
+            else
+                std::this_thread::sleep_for ( cWait );
         }
 
         //ok, packet complete, now let's read
-        std::vector<uint32_t> cData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
-
-        // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
-        if ( fData ) delete fData;
-
-        fData = new Data();
-
-        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNEventsperAcquistion, true );
+        pData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
 
         if ( fSaveToFile )
         {
-            fFileHandler->set ( cData );
-            fFileHandler->writeFile();
+            fFileHandler->set ( pData );
+            //fFileHandler->writeFile();
         }
 
         return fNEventsperAcquistion;
     }
 
-    void ICFc7FWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents )
+    void ICFc7FWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait )
     {
         // I need a check if pNEvents is grater than 2000 - in this case I have to split in packets of 2000
         uint32_t cNCycles = 1;
@@ -299,20 +290,19 @@ namespace Ph2_HwInterface {
 
         // probably no need to reset everything since I am calling this a lot during commissioning
         cVecReg.push_back ({"cbc_daq_ctrl.nevents_per_pcdaq", cNEvents});
-        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", RESET_ALL });
-        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", CTR_RESET });
+        cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->RESET_ALL });
+        //cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->CTR_RESET });
         WriteStackReg ( cVecReg );
         cVecReg.clear();
 
         //here I optimize for speed during calibration, so I explicitly set the nevents_per_pcdaq to the event number I desire
         fNEventsperAcquistion = cNEvents;
-        std::vector<uint32_t> cData;
 
         // I have to do cNCycles with cNEvents
         for (uint32_t cIndex = 0; cIndex < cNCycles; cIndex++)
         {
             //now issue start
-            cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", START} );
+            cVecReg.push_back ({"cbc_daq_ctrl.daq_ctrl", this->START} );
 
             WriteStackReg ( cVecReg );
             cVecReg.clear();
@@ -333,21 +323,13 @@ namespace Ph2_HwInterface {
 
             //ok, packet complete, now let's read and append to cData
             std::vector<uint32_t> cTmpData =  ReadBlockRegValue ( "data_buf", fNEventsperAcquistion * fDataSizeperEvent32 );
-            cData.insert (cData.end(), std::make_move_iterator (cTmpData.begin() ), std::make_move_iterator (cTmpData.end() ) );
+            pData.insert (pData.end(), std::make_move_iterator (cTmpData.begin() ), std::make_move_iterator (cTmpData.end() ) );
         }
-
-        // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
-        if ( fData ) delete fData;
-
-        fData = new Data();
-
-        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , cNCycles * fNEventsperAcquistion, true );
 
         if ( fSaveToFile )
         {
-            fFileHandler->set ( cData );
-            fFileHandler->writeFile();
+            fFileHandler->set ( pData );
+            //fFileHandler->writeFile();
         }
     }
 
@@ -462,8 +444,8 @@ namespace Ph2_HwInterface {
 
         //here i create a dummy reg item for decoding so I can find if 1 cFailed
         CbcRegItem cItem;
-        uint8_t cCbcId;
-        bool cRead;
+        //uint8_t cCbcId;
+        //bool cRead;
 
         //explicitly reset the nwdata word
         WriteReg ("cbc_daq_ctrl.cbc_i2c_ctrl", 0x2);
@@ -524,9 +506,9 @@ namespace Ph2_HwInterface {
 
 
 
-    bool ICFc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback)
+    bool ICFc7FWInterface::WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts, bool pReadback)
     {
-        
+
         uint8_t cMaxWriteAttempts = 5;
         // the actual write & readback command is in the vector
         std::vector<uint32_t> cReplies;
@@ -582,16 +564,16 @@ namespace Ph2_HwInterface {
             // if the number of errors is greater than 100, give up
             if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
             {
-                if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
-                else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
-            
+                if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
+                else LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " CBC CMD acknowledge bits missing -trying again!" << RESET ;
+
                 pWriteAttempts++;
                 this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
             }
             else if ( pWriteAttempts >= cMaxWriteAttempts )
             {
-                cSuccess = false; 
-                pWriteAttempts = 0 ;   
+                cSuccess = false;
+                pWriteAttempts = 0 ;
             }
             else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );
         }
@@ -619,7 +601,7 @@ namespace Ph2_HwInterface {
                     // infor bit is 0 which means that the transaction was acknowledged by the CBC
                     if ( ( (cWord >> 20) & 0x1) == 0)
                         cSuccess = true;
-                    else cSuccess == false;
+                    else cSuccess = false;
                 }
                 else
                     cSuccess = false;

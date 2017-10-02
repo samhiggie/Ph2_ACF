@@ -36,8 +36,8 @@
     - added a CMD line option: g for GUI, should only be used by the latter
     - SystemController class can now parse .json files in addition to .xml
 - 04/03/15: added GUI (v1-10)
-- 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading. 
-    - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog. 
+- 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading.
+    - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog.
     - BeBoardInterface::FlashProm(...) uploads an MCS file into the FPGA
 - 15/04/15 : Acquisition in a separate thread (v1-11)
     - Start() should be called when acquisition begins, Stop() when it ends and ReadData(...) at each iteration.
@@ -50,7 +50,7 @@
     - added a stub bit method to the Event class
     - restructured the ostream operator of the Event class
 - 05/06/2015: minor modifications
-    - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks. 
+    - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks.
 - 11/06/2015: merging a new design for Data and Event classes (v1-20)
     - Data class now holds a vector of Events and the events are directly decoded after acquisition - the char* databuffer does not exist any longer
     - added methods: std::vector<Event*> GetEvents(); Event* GetEvent()
@@ -86,7 +86,7 @@
     - iterative readback-error correction (SW tries to write every register agin that produced an error for 5 times)
     - simplified FastCalibration
     - removed old Calibration algorithm
-    - introduced new, bitwise and super-fast calibration algorithm 
+    - introduced new, bitwise and super-fast calibration algorithm
 - 11/12/2015: new uHAL connection configuration:
       - added new Constructors to RegManager, BeBoardFWInterface, GlibFWInterface, CtaFWInterface that take uhal connection: id, uri, address_table
       - modified system controller accordingly so these strings are passed to the constructor
@@ -109,7 +109,7 @@
     - added ReadNEvents() method to BeBoardInterface that allows to read a given number of events from FW as 1 packet
     - changed signatures of ReadData / Stop and remove the NthAcquisition parameter for simplicity
     - simplified the iterative error correction features in both FW Interfaces
-    - implemented broadcast I2C write operations in both FW Interfaces 
+    - implemented broadcast I2C write operations in both FW Interfaces
     - added Support for AMC13
     - included TDC aware Trigger latency scan in Commissioning
     - adapted FW aware commissioning procedures & tools to check the beBoardFWVersion (GLIB vs ICGLIB)
@@ -148,4 +148,45 @@
 - 28.10.2016: merged recent changes for HybridTesting (integratedtester)
     - new binary: integratedtester
     - support for exernal USB instruments (HMP4040, Ke2110, TCP sockets via ZEROMQ)
-- 31.10.2016: changed makefiles to use environment variables exported in setup.sh
+- 31.10.2016: v1-40
+    - changed makefiles to use environment variables exported in setup.sh
+- 15.11.2016: adding modifications for CBC3 usage:
+    - new Cbc3Fc7FWInterface and address tabel
+    - FileParser in System/ can now handle nested BeBoardRegisters like in uHAL address tables in HWDescription.xml config files
+    - new Cbc3 FW (K.Uchida) HWDescription file
+    - re-structured Data handling in the guts: Data object is now member of the SystemController and all methods like getting events etc are wrapped in system controller
+    - ReadData() and ReadNEvents() are now wrapped in SystemController and should thus only be used from there!
+    - FWInterfaces: ReadData() and ReadNEvents() now take a reference to std::vector<uint32_t>& to pass the data upwards to the Data object in SystemController
+    - re-structured the Data object internals: Data::Set() now decides the manipulation algorithm based on BoardType Enum class in Definition.h - no more set of boolean flags
+    - introduced an Event class Polymorphism: normal Event class is now the almost virtual base class and Cbc2/3Event inherit from it.
+    - Updated the Cbc class to handle comments in CbcConigFiles better and re-produce them in eventual output files
+    - harmonized the use of BoardType: now FWInterfaces and BeBoard classes use the same enum BoardType defined in Definition.h
+    - implemented GetNHits() and GetHits() methods in both Cbc2/3Event::print() which is used by the Event friend operator <<
+ - 25.11.2016:
+    - introduced a ChipType enum to identify CBC version. Each CBC and Module object has this identifier set and this can be used to adapt commissioning procedures accordingly
+    - introduces 2 new Visitors (ThresholdVisitor, LatencyVisitor) that take the different behavior of CBC2/3 into account (8 vs 10 bit Vcth register, 8 vs 9 bit Trg Latency)
+    - updated commissioning procedures accordingly to use the new Visitors
+ - 11.01.2017:
+    - added a new Settings node in the HWDescription.xml file to set up the CBC test pulse and most common settings without having to manually set bits in individual registers
+    - Cbc Registers nodes take precedence over Cbc Setting nodes, Global settings take precedence over individual CBC settins and Global CBC Registers take precedence over everything else - this is supposed to be the expert mode
+ - 17.01.2017:
+    - added and Debugged BiasSweep Tool class that should work with both versions of the CBC - in addition to TGraphs, a TTree with the bias sweep data is stored (biasname, FeId, CbcId, Timestamp, vectors of x and y data)
+    - implemented full functionality to sweep biases with external instruments: HMP4040, Ke2110, ArduinoNano
+    - Calibration et al work
+    - added StubSweep tool to check Stub addresses
+ - 07.02.2017:
+    - cleaned up root file handling
+    - cleaned up histogram binning in Calibration, PedeNoise and Channel classes
+    - added cbc3irrad binary to run the complete radiation test cycle
+    - added UsbUtilities helper functions to launch and query Ke2110 and HMP4040 servers running in Tmux
+    - renamed Vth to VCth for CBC3 too
+- 22.06.2017:
+    - new D19C FW Interface and D19C CBC3 Event classes to handle D19C
+    - new implementation of SLink 64 bit event data format for downstream DAQ chain - see example in datatest and miniDAQ
+    - with this comes new GenericPayload container that stores data internally as 64 bits but can return them in vectors of any wordsize < 64 - the data is always padded to 64 bits
+    - ability to parse a SLink node with all the condition data and debug level from the config file (Cbc3HWDescription.xml) - this ConditionDataSet object belongs to BeBoard pointers as this makes it easier to update I2C values for every event
+    - added "eventType" attribute to BeBoard node to indicate either ZeroSupressed or VirginRaw mode - even if the attribute is missing this will always be assumed VR unless ZS is explicitly specified - this is now also a member of BeBoard including setters and getters
+    - removed NCbcDataSize and corresponding nodes in HWDescription.xml files. only for GLIB and CTA, if the number of CBCs is smaller than 4, 4 is assumed, if the number is between 4 and 8, 8 is assumed and if the number is greater than 8, 16 is assumed
+- 21.07.2017
+    - merged changes required for OTSDAQ
+    - migrated project to CMAKE: instructions: cd build/ cmake .. make

@@ -1,18 +1,20 @@
-Objs                    = FrontEndDescription.o BeBoard.o Cbc.o MPA.o Module.o 
+YEL='\033[1m\033[33m'
+RED='\033[1m\033[31m'
+BLU='\033[1m\033[35m'
+RESET='\033[0m'
+
+Objs  			= FrontEndDescription.o BeBoard.o Cbc.o Module.o
 CC              = g++
 CXX             = g++
-CCFlags         = -g -O1 -Wall -fPIC
-DevFlags               =
+CCFlags         = -g -O1 -Wall -fPIC -pedantic
+
+IncludeDirs     =
+IncludePaths            = $(IncludeDirs:%=-I%)
 
 .PHONY: clean print
 
-
-IncludeDirs     =  /opt/cactus/include ../
-
-IncludePaths            = $(IncludeDirs:%=-I%)
-
 %.o: %.cc %.h
-	$(CXX) -std=c++11 $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) -c -o $@ $<
+	$(CXX) -std=c++11 $(CCFlags) $(IncludePaths) -c -o $@ $<
 
 
 all: print $(Objs)
@@ -20,8 +22,8 @@ all: print $(Objs)
 	mv libPh2_Description.so ../lib
 
 print:
-	@echo '****************************'
-	@echo 'Building HWDescription objects'
-	@echo '****************************'
+	@echo -e ${YEL}'****************************'${RESET}
+	@echo -e ${YEL}'Building HWDescription objects'${RESET}
+	@echo -e ${YEL}'****************************'${RESET}
 clean:
 	rm -f *.o

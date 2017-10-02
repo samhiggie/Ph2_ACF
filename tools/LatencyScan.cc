@@ -1,6 +1,11 @@
 #include "LatencyScan.h"
 
-void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool bNoTdc)
+LatencyScan::LatencyScan() : Tool()
+{}
+
+LatencyScan::~LatencyScan() {}
+
+void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool pNoTdc)
 {
     for ( auto& cBoard : fBoardVector )
     {
@@ -22,26 +27,20 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist;
-	    if (bNoTdc){
-		    cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) , pStartLatency ,  pStartLatency + (pLatencyRange )  );
-		    cLatHist->GetXaxis()->SetTitle ("Signal timing [TriggerLatency]" );
-	    } else {
-		    cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency ,  pStartLatency + (pLatencyRange )  * fTDCBins );
-		    //modify the axis labels
-		    uint32_t pLabel = pStartLatency;
+            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency,  pStartLatency + (pLatencyRange )  * fTDCBins );
+            //modify the axis labels
+            uint32_t pLabel = pStartLatency;
 
-		    for (uint32_t cLatency = pStartLatency; cLatency < pStartLatency + pLatencyRange; ++cLatency)
-		    {
-			    for (uint32_t cPhase = 0; cPhase < fTDCBins; ++cPhase)
-			    {
-				    int cBin = convertLatencyPhase (pStartLatency, cLatency, cPhase);
-				    cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
-			    }
-		    }
+            for (uint32_t cLatency = pStartLatency; cLatency < pStartLatency + pLatencyRange; ++cLatency)
+            {
+                for (uint32_t cPhase = 0; cPhase < fTDCBins; ++cPhase)
+                {
+                    int cBin = convertLatencyPhase (pStartLatency, cLatency, cPhase);
+                    cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
+                }
+            }
 
-		    cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency*%d+TDC]", fTDCBins) );
-	    }
+            cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency*%d+TDC]", fTDCBins) );
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -61,42 +60,46 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
     LOG (INFO) << "Histograms and Settings initialised." ;
 }
 
-std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uint8_t pLatencyRange, bool bNoTdc )
+std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uint8_t pLatencyRange, bool pNoTdc )
 {
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
-    this->accept ( cReader );
-    uint8_t cVcth = cReader.fRegValue;
+    // ThresholdVisitor in read mode
+    ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    this->accept (cThresholdVisitor);
+    uint16_t cVcth = cThresholdVisitor.getThreshold();
 
     int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
     LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
     cVcth += cVcthStep;
 
     //  Set that VCth Value on all FEs
-    CbcRegWriter cWriter ( fCbcInterface, "VCth", cVcth );
-    this->accept ( cWriter );
-    this->accept ( cReader );
+    cThresholdVisitor.setOption ('w');
+    cThresholdVisitor.setThreshold (cVcth);
+    this->accept (cThresholdVisitor);
 
     // Now the actual scan
     LOG (INFO) << "Scanning Latency ... " ;
     uint32_t cIterationCount = 0;
 
-    for ( uint8_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
+    LatencyVisitor cVisitor (fCbcInterface, 0);
+
+    for ( uint16_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
     {
         //  Set a Latency Value on all FEs
-        cWriter.setRegister ( "TriggerLatency", cLat );
-        this->accept ( cWriter );
+        cVisitor.setLatency (  cLat );
+        this->accept ( cVisitor );
+
 
         // Take Data for all Modules
         for ( BeBoard* pBoard : fBoardVector )
         {
             // I need this to normalize the TDC values I get from the Strasbourg FW
-            fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
-            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+            ReadNEvents ( pBoard, fNevents );
+            const std::vector<Event*>& events = GetEvents ( pBoard );
 
             // Loop over Events from this Acquisition
-            countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency, bNoTdc );
+            countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency, pNoTdc );
         }
 
         // done counting hits for all FE's, now update the Histograms
@@ -130,18 +133,19 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
 {
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
-    CbcRegReader cReader ( fCbcInterface, "VCth" );
-    this->accept ( cReader );
-    uint8_t cVcth = cReader.fRegValue;
+    // ThresholdVisitor in read mode
+    ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    this->accept (cThresholdVisitor);
+    uint16_t cVcth = cThresholdVisitor.getThreshold();
 
     int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
     LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
     cVcth += cVcthStep;
 
     //  Set that VCth Value on all FEs
-    CbcRegWriter cVcthWriter ( fCbcInterface, "VCth", cVcth );
-    this->accept ( cVcthWriter );
-    this->accept ( cReader );
+    cThresholdVisitor.setOption ('w');
+    cThresholdVisitor.setThreshold (cVcth);
+    this->accept (cThresholdVisitor);
 
     // Now the actual scan
     LOG (INFO) << "Scanning Stub Latency ... " ;
@@ -157,8 +161,8 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
             //here set the stub latency
             fBeBoardInterface->WriteBoardReg (pBoard, getStubLatencyName (pBoard->getBoardType() ), cLat);
 
-            fBeBoardInterface->ReadNEvents ( pBoard, fNevents );
-            const std::vector<Event*>& events = fBeBoardInterface->GetEvents ( pBoard );
+            ReadNEvents ( pBoard, fNevents );
+            const std::vector<Event*>& events = GetEvents ( pBoard );
 
             // if(cN <3 ) LOG(INFO) << *cEvent ;
 
@@ -209,7 +213,7 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
 
 int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency, bool pNoTdc)
 {
-    std::string cBoardType = pBoard->getBoardType();
+    BoardType cBoardType = pBoard->getBoardType();
     uint32_t cTotalHits = 0;
 
     for ( auto cFe : pBoard->fModuleVector )
@@ -229,32 +233,35 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
             //this should ensure that TDC value of 4 never happens
             uint8_t cFillVal = pParameter;
 
-            if (cTDCVal == 4 && cBoardType == "GLIB")
+            if (cTDCVal == 4 && cBoardType == BoardType::GLIB)
             {
                 cFillVal += 1;
                 cTDCVal = 12;
             }
 
             //for Strasbourg FW normalize to sane 3 bit values
-            if (cTDCVal != 0 && cBoardType == "GLIB") cTDCVal -= 5;
-            else if (cTDCVal != 0 && cBoardType == "CTA") cTDCVal -= 3;
+            if (cTDCVal != 0 && cBoardType == BoardType::GLIB) cTDCVal -= 5;
+            else if (cTDCVal != 0 && cBoardType == BoardType::CTA) cTDCVal -= 3;
 
-            if (!pNoTdc && cTDCVal > 8) LOG (INFO) << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
+            if (!pNoTdc && cTDCVal > 8 ) LOG (INFO) << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
+
             else
             {
                 for ( auto cCbc : cFe->fCbcVector )
                 {
                     //now loop the channels for this particular event and increment a counter
-                    for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
-                    {
-                        if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                            cHitCounter++;
-                    }
+                    cHitCounter += cEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
+
+                    //for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
+                    //{
+                    //if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
+                    //cHitCounter++;
+                    //}
                 }
 
                 //now I have the number of hits in this particular event for all CBCs and the TDC value
                 uint32_t cBin = convertLatencyPhase (pStartLatency, cFillVal, cTDCVal);
-                cTmpHist->Fill ( pNoTdc ? pParameter : cBin, cHitCounter);
+                cTmpHist->Fill (pNoTdc ? pParameter : cBin, cHitCounter);
                 cHitSum += cHitCounter;
             }
         }
@@ -308,9 +315,6 @@ void LatencyScan::updateHists ( std::string pHistName, bool pFinal )
             cCanvas.second->Update();
         }
 
-#ifdef __HTTP__
-        fHttpServer->ProcessRequests();
-#endif
     }
 }
 

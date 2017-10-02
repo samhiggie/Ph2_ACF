@@ -21,8 +21,7 @@ namespace Ph2_HwInterface {
                                        uint32_t pBoardId ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig ( nullptr ),
-        fData ( nullptr ),
-        fNthAcq (0) 
+        fNthAcq (0)
     {
     }
 
@@ -32,7 +31,6 @@ namespace Ph2_HwInterface {
                                        FileHandler* pFileHandler ) :
         BeBoardFWInterface ( puHalConfigFileName, pBoardId ),
         fpgaConfig ( nullptr ),
-        fData ( nullptr ),
         fFileHandler ( pFileHandler ),
         fNthAcq (0)
     {
@@ -45,7 +43,6 @@ namespace Ph2_HwInterface {
                                        const char* pAddressTable ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
-        fData ( nullptr ),
         fNthAcq (0)
     {
     }
@@ -57,7 +54,6 @@ namespace Ph2_HwInterface {
                                        FileHandler* pFileHandler ) :
         BeBoardFWInterface ( pId, pUri, pAddressTable ),
         fpgaConfig ( nullptr ),
-        fData ( nullptr ),
         fFileHandler ( pFileHandler ),
         fNthAcq (0)
     {
@@ -218,7 +214,7 @@ namespace Ph2_HwInterface {
         WriteReg ( "break_trigger", 0 );
     }
 
-    uint32_t GlibFWInterface::ReadData ( BeBoard* pBoard,  bool pBreakTrigger )
+    uint32_t GlibFWInterface::ReadData ( BeBoard* pBoard,  bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait)
     {
         //Readout settings
         std::chrono::milliseconds cWait ( 1 );
@@ -240,7 +236,11 @@ namespace Ph2_HwInterface {
             cVal = ReadReg ( fStrFull );
 
             if ( cVal == 0 )
-                std::this_thread::sleep_for ( cWait );
+            {
+                if (!pWait) return 0;
+                else
+                    std::this_thread::sleep_for ( cWait );
+            }
         }
         while ( cVal == 0 );
 
@@ -251,7 +251,7 @@ namespace Ph2_HwInterface {
         WriteReg ( fStrSramUserLogic, 0 );
 
         //Read SRAM
-        std::vector<uint32_t> cData =  ReadBlockRegValue ( fStrSram, fBlockSize );
+        pData =  ReadBlockRegValue ( fStrSram, fBlockSize );
 
         WriteReg ( fStrSramUserLogic, 1 );
         WriteReg ( fStrReadout, 1 );
@@ -275,24 +275,13 @@ namespace Ph2_HwInterface {
 
         if ( pBreakTrigger ) WriteReg ( "break_trigger", 0 );
 
-        // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
-        if ( fData ) delete fData;
-
-        fData = new Data();
-
-        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNpackets, false );
-
         if ( fSaveToFile )
-        {
-            fFileHandler->set ( cData );
-            fFileHandler->writeFile();
-        }
+            fFileHandler->set ( pData );
 
         return fNpackets;
     }
 
-    void GlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents )
+    void GlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait )
     {
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
@@ -316,7 +305,11 @@ namespace Ph2_HwInterface {
             cVal = ReadReg ( "status_flags.CMD_START_VALID" );
 
             if ( cVal == 0 )
-                std::this_thread::sleep_for ( cWait );
+            {
+                if (!pWait) return;
+                else
+                    std::this_thread::sleep_for ( cWait );
+            }
         }
         while ( cVal == 0 );
 
@@ -349,25 +342,17 @@ namespace Ph2_HwInterface {
         WriteReg ( fStrSramUserLogic, 0 );
 
         //Read SRAM
-        std::vector<uint32_t> cData =  ReadBlockRegValue ( fStrSram, fBlockSize );
+        pData =  ReadBlockRegValue ( fStrSram, fBlockSize );
 
         WriteReg ( fStrSramUserLogic, 1 );
 
         //need to increment the internal Acquisition counter
         fNthAcq++;
 
-        // just creates a new Data object, setting the pointers and getting the correct sizes happens in Set()
-        if ( fData ) delete fData;
-
-        fData = new Data();
-
-        // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, cData , fNpackets, false );
-
         if ( fSaveToFile )
         {
-            fFileHandler->set ( cData );
-            fFileHandler->writeFile();
+            fFileHandler->set ( pData );
+            //fFileHandler->writeFile();
         }
 
         WriteReg ( "pc_commands.PC_config_ok", 0 );
@@ -399,8 +384,16 @@ namespace Ph2_HwInterface {
         CbcCounter cCounter;
         pBoard->accept ( cCounter );
 
-        if ( pBoard->getNCbcDataSize() != 0 ) return fNpackets * ( pBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 );
-        else return fNpackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
+        //if ( pBoard->getNCbcDataSize() != 0 ) return fNpackets * ( pBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 );
+        //else return fNpackets * ( cCounter.getNCbc() * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32 ); // in 32 bit words
+
+        uint32_t cEvtSize = 0;
+
+        if (cCounter.getNCbc() <= 4) cEvtSize = std::max (cCounter.getNCbc(), (uint32_t) 4) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32;
+        else if (cCounter.getNCbc() > 4 && cCounter.getNCbc() <= 8) cEvtSize = std::max (cCounter.getNCbc(), (uint32_t) 8) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32;
+        else if (cCounter.getNCbc() > 8 ) cEvtSize = std::max (cCounter.getNCbc(), (uint32_t) 16) * CBC_EVENT_SIZE_32 + EVENT_HEADER_TDC_SIZE_32;
+
+        return cEvtSize * fNpackets;
     }
 
     std::vector<uint32_t> GlibFWInterface::ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -611,7 +604,7 @@ namespace Ph2_HwInterface {
     }
 
 
-    bool GlibFWInterface::WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts ,  bool pReadback)
+    bool GlibFWInterface::WriteCbcBlockReg (  std::vector<uint32_t>& pVecReq, uint8_t& pWriteAttempts,  bool pReadback)
     {
         int cMaxWriteAttempts = 5;
         bool cSuccess = false;
@@ -664,15 +657,15 @@ namespace Ph2_HwInterface {
                 // if the number of errors is greater than 100, give up
                 if (cWriteAgain.size() < 100 && pWriteAttempts < cMaxWriteAttempts )
                 {
-                    if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string(pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
-                    
+                    if (pReadback)  LOG (INFO) << BOLDRED <<  "(WRITE#"  << std::to_string (pWriteAttempts) << ") There were " << cWriteAgain.size() << " Readback Errors -trying again!" << RESET ;
+
                     pWriteAttempts++;
                     this->WriteCbcBlockReg ( cWriteAgain, pWriteAttempts, true);
                 }
                 else if ( pWriteAttempts >= cMaxWriteAttempts )
                 {
-                    cSuccess = false; 
-                    pWriteAttempts = 0 ;   
+                    cSuccess = false;
+                    pWriteAttempts = 0 ;
                 }
                 //else std::cout << "There were too many errors " << cWriteAgain.size() << " (>120 Registers). Something is wrong - aborting!" << std::endl;
                 else throw Exception ( "Too many CBC readback errors - no functional I2C communication. Check the Setup" );

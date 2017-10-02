@@ -13,6 +13,8 @@
 
 #include <iostream>
 #include <vector>
+#include "../HWDescription/Definition.h"
+
 #include "easylogging++.h"
 
 /*!
@@ -23,7 +25,6 @@
 class FileHeader
 {
   public:
-    bool fValid;
     // FW type
     std::string fType;
     //char fType[8];
@@ -36,27 +37,32 @@ class FileHeader
     uint32_t fEventSize32;
     //Header Size useful for encoding and decoding
     static const uint32_t fHeaderSize32 = 12;
+    //readout mode
+    EventType fEventType;
+    bool fValid;
 
   public:
     FileHeader() :
         fType ( "" ),
-        fValid (false),
         fVersionMajor (0),
         fVersionMinor (0),
         fBeId (0),
         fNCbc (0),
-        fEventSize32 (0)
+        fEventSize32 (0),
+        fEventType (EventType::VR),
+        fValid (false)
     {
     }
 
-    FileHeader (const std::string pType, const uint32_t& pFWMajor, const uint32_t& pFWMinor, const uint32_t& pBeId, const uint32_t& pNCbc, const uint32_t& pEventSize32) :
+    FileHeader (const std::string pType, const uint32_t& pFWMajor, const uint32_t& pFWMinor, const uint32_t& pBeId, const uint32_t& pNCbc, const uint32_t& pEventSize32, EventType pEventType = EventType::VR) :
+        fType (pType),
         fVersionMajor (pFWMajor),
         fVersionMinor (pFWMinor),
         fBeId (pBeId),
         fNCbc (pNCbc),
         fEventSize32 (pEventSize32),
-        fValid (true),
-        fType (pType)
+        fEventType (pEventType),
+        fValid (true)
     {
         //strcpy (fType, pType.c_str() );
     }
@@ -86,8 +92,8 @@ class FileHeader
         cVec.push_back (fVersionMinor);
 
         cVec.push_back (0xAAAAAAAA);
-        // 1 word w. BeBoardInfo: 10 LSBs: fBeId, ... to be filled as needed
-        cVec.push_back (fBeId & 0x000003FF);
+        // 1 word w. BeBoardInfo: 2MSBs: EventType (VR or ZS), 10 LSBs: fBeId, ... to be filled as needed
+        cVec.push_back ( (uint32_t (fEventType) & 0x3) << 30 | (fBeId & 0x000003FF) );
         // the number of CBCs
         cVec.push_back (fNCbc);
 
@@ -96,7 +102,12 @@ class FileHeader
         cVec.push_back (fEventSize32);
         cVec.push_back (0xAAAAAAAA);
 
-        LOG (INFO) << "Board Type: " << fType << " FWMajor " << fVersionMajor << " FWMinor " << fVersionMinor << " BeId " << fBeId << " fNCbc " << fNCbc << " EventSize32  " << fEventSize32 << " valid: " << fValid ;
+        std::string cEventTypeString;
+
+        if (fEventType == EventType::VR) cEventTypeString = "EventType::VR" ;
+        else cEventTypeString = "EventType::ZS";
+
+        LOG (INFO) << "Board Type: " << fType << " FWMajor " << fVersionMajor << " FWMinor " << fVersionMinor << "Event Type: " << cEventTypeString << " BeId " << fBeId << " fNCbc " << fNCbc << " EventSize32  " << fEventSize32 << " valid: " << fValid ;
         return cVec;
     }
 
@@ -107,15 +118,15 @@ class FileHeader
         if (pVec.at (0) == cMask && pVec.at (3) == cMask && pVec.at (6) == cMask && pVec.at (9) == cMask && pVec.at (11) == cMask )
         {
             char cType[8] = {0};
-            cType[0] = (pVec.at (1) && 0xFF000000) >> 24;
-            cType[1] = (pVec.at (1) && 0x00FF0000) >> 16;
-            cType[2] = (pVec.at (1) && 0x0000FF00) >> 8;
-            cType[3] = (pVec.at (1) && 0x000000FF);
+            cType[0] = (pVec.at (1) & 0xFF000000) >> 24;
+            cType[1] = (pVec.at (1) & 0x00FF0000) >> 16;
+            cType[2] = (pVec.at (1) & 0x0000FF00) >> 8;
+            cType[3] = (pVec.at (1) & 0x000000FF);
 
-            cType[4] = (pVec.at (2) && 0xFF000000) >> 24;
-            cType[5] = (pVec.at (2) && 0x00FF0000) >> 16;
-            cType[6] = (pVec.at (2) && 0x0000FF00) >> 8;
-            cType[7] = (pVec.at (2) && 0x000000FF);
+            cType[4] = (pVec.at (2) & 0xFF000000) >> 24;
+            cType[5] = (pVec.at (2) & 0x00FF0000) >> 16;
+            cType[6] = (pVec.at (2) & 0x0000FF00) >> 8;
+            cType[7] = (pVec.at (2) & 0x000000FF);
 
             std::string cTypeString (cType);
             fType = cTypeString;
@@ -123,13 +134,24 @@ class FileHeader
             fVersionMajor = pVec.at (4);
             fVersionMinor = pVec.at (5);
 
+            uint32_t cEventTypeId = (pVec.at (7) & 0xC0000000) >> 30;
             fBeId = pVec.at (7) & 0x000003FF;
             fNCbc = pVec.at (8);
 
             fEventSize32 = pVec.at (10);
             fValid = true;
+
+            if (cEventTypeId == 0) fEventType = EventType::VR;
+            else if (cEventTypeId == 1) fEventType = EventType::ZS;
+            else if (cEventTypeId == 2) fEventType = EventType::VR;
+
+            std::string cEventTypeString;
+
+            if (fEventType == EventType::VR) cEventTypeString = "EventType::VR" ;
+            else cEventTypeString = "EventType::ZS";
+
             LOG (INFO) << "Sucess, this is a valid header!" ;
-            LOG (INFO) << "Board Type: " << fType << " FWMajor " << fVersionMajor << " FWMinor " << fVersionMinor << " BeId " << fBeId << " fNCbc " << fNCbc << " EventSize32  " << fEventSize32 << " valid: " << fValid ;
+            LOG (INFO) << "Board Type: " << fType << " FWMajor " << fVersionMajor << " FWMinor " << fVersionMinor << " Event Type: " << cEventTypeString << " BeId " << fBeId << " fNCbc " << fNCbc << " EventSize32  " << fEventSize32 << " valid: " << fValid ;
         }
         else
         {
