@@ -5,7 +5,7 @@ RESET='\033[0m'
 
 CC              = g++
 CXX             = g++
-CCFlags         = -g -O1 -w -Wall -pedantic -pthread -fPIC `root-config --cflags --evelibs`
+CCFlags         = -g -O1 -w -Wall -pedantic -pthread -fPIC `root-config --cflags --evelibs` 
 
 Objs            = Tool.o Calibration.o Channel.o HybridTester.o CMTester.o LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o StubSweep.o
 
@@ -14,7 +14,7 @@ RootLibraryDirs = $(ROOTLIB)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 IncludeDirs = $(CACTUSINCLUDE) ../
-LibraryDirs = ../lib
+LibraryDirs = ../lib 
 ExternalObjects = -lboost_thread -lboost_filesystem -lPh2_System -lPh2_Description -lPh2_Interface -lPh2_Utils
 
 ##################################################
@@ -23,7 +23,7 @@ ExternalObjects = -lboost_thread -lboost_filesystem -lPh2_System -lPh2_Descripti
 ifneq (,$(findstring yes,$(ROOTVERSION)))
 	ExtObjectsRoot= -lRHTTP $(HttpFlag)
 else
-	ExtObjectsRoot=
+	ExtObjectsRoot= 
 endif
 
 ##################################################
@@ -31,7 +31,7 @@ endif
 ##################################################
 ifneq ("$(wildcard $(ANTENNADIR))","")
 	ANTENNAINSTALLED = yes
-	IncludeDirs     +=  $(ANTENNADIR)
+	IncludeDirs     +=  $(ANTENNADIR) 
 	LibraryDirs += $(ANTENNALIB)
 	ExternalObjects += -lusb -lPh2_Antenna $(AntennaFlag)
 else
@@ -71,7 +71,7 @@ else
 	ZMQINSTRUCTIONS = ZeroMQ library is required to build the lvSupervisor with the server option - get it with \'sudo yum install zeromq-devel\'
 endif
 
-LibraryPaths = $(LibraryDirs:%=-L%)
+LibraryPaths = $(LibraryDirs:%=-L%) 
 IncludePaths = $(IncludeDirs:%=-I%)
 
 .PHONY: print clean
