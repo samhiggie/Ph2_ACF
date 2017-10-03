@@ -183,7 +183,7 @@ namespace Ph2_System {
 
         if (cBoardTypeAttribute == nullptr)
         {
-            LOG (ERROR) << BOLDRED << "Error: Board Type not specified - aborting!";
+            LOG (ERROR) << BOLDRED << "Error: Board Type not specified - aborting!" << RESET;
             exit (1);
         }
 
