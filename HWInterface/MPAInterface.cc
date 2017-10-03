@@ -221,7 +221,7 @@ std::vector< uint32_t > MPAInterface::ReadConfig(const std::string& pFilename, i
 {
 
 	   	        pugi::xml_document doc;
-			std::string fullname = "settings/Conf_"+pFilename+"_MPA"+std::to_string(nmpa)+"_config"+std::to_string(conf)+".xml";
+			std::string fullname = "settings/MPAFiles/Conf_"+pFilename+"_MPA"+std::to_string(nmpa)+"_config"+std::to_string(conf)+".xml";
 	    		pugi::xml_parse_result result = doc.load_file( fullname.c_str() );
 	    		if ( !result )
 	    		{

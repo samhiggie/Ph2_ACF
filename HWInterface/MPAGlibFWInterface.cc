@@ -240,6 +240,7 @@ namespace Ph2_HwInterface
 
 	void MPAGlibFWInterface::PowerOn()
 	{
+
 		std::chrono::milliseconds cWait( 20 );
 
 		WriteReg( "Control.logic_reset",1);
@@ -453,5 +454,14 @@ namespace Ph2_HwInterface
 		WriteReg("Control.confs",0);
 		WriteReg("Control.conf_upload",1);
 	  }
+
+
+    	void MPAGlibFWInterface::CbcTestPulse()
+    	{
+    	}
+
+    	void MPAGlibFWInterface::CbcTrigger()
+    	{	
+	}
 
 }

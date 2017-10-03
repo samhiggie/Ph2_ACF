@@ -265,7 +265,9 @@ public:
     void threadAcquisitionLoop(BeBoard* pBoard, HwInterfaceVisitor* visitor);
 
 
+    void CbcTestPulse();
 
+    void CbcTrigger();
 
 
 public:

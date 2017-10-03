@@ -110,6 +110,8 @@ namespace Ph2_System {
                     pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new Cbc3Fc7FWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
                 else if (cBeBoard->getBoardType() == BoardType::D19C)
                     pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new D19cFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
+                else if (cBeBoard->getBoardType() == BoardType::MPAGLIB)
+                    pBeBoardFWMap[cBeBoard->getBeBoardIdentifier()] =  new MPAGlibFWInterface ( cId.c_str(), cUri.c_str(), cAddressTable.c_str() );
 
                 //else
                 //cBeBoardFWInterface = new OtherFWInterface();
@@ -196,6 +198,7 @@ namespace Ph2_System {
         else if (cBoardType == "ICFC7") cBeBoard->setBoardType (BoardType::ICFC7);
         else if (cBoardType == "CBC3FC7") cBeBoard->setBoardType (BoardType::CBC3FC7);
         else if (cBoardType == "D19C") cBeBoard->setBoardType (BoardType::D19C);
+        else if (cBoardType == "MPAGLIB") cBeBoard->setBoardType (BoardType::MPAGLIB);
         else
         {
             LOG (ERROR) << "Error: Unknown Board Type: " << cBoardType << " - aborting!";

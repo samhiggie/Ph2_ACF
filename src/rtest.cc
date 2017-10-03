@@ -7,6 +7,7 @@
 #include <fstream>
 #include "../Utils/Utilities.h"
 #include "../HWDescription/Cbc.h"
+#include "../HWDescription/MPA.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWInterface/MPAInterface.h"
@@ -23,7 +24,7 @@
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
 #include "../Utils/CommonVisitors.h"
-#include "../Tracker/TrackerEvent.h"
+
 
 using namespace Ph2_HwDescription;
 using namespace Ph2_HwInterface;
