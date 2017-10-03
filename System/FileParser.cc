@@ -46,7 +46,7 @@ namespace Ph2_System {
 
             if (!pIsFile) os << "Error offset: " << result.offset << " (error at [..." << (pFilename.c_str() + result.offset) << "]\n" << std::endl;
 
-            throw Exception ("Unable to parese XML source!");
+            throw Exception ("Unable to parse XML source!");
             return;
         }
 
@@ -405,7 +405,7 @@ namespace Ph2_System {
 
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
 
-            //here parse the specific CBC settings so that Registers take precedence
+            // parse the specific CBC settings so that Registers take precedence
             this->parseCbcSettings (pModuleNode.child ("CBC"), cCbc, os);
 
             for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
@@ -417,7 +417,7 @@ namespace Ph2_System {
             pModule->addCbc (cCbc);
         }
 
-        // here parese the GlobalCbcSettings so that Global CBC regisers take precedence over Global CBC settings which take precedence over CBC specific settings
+        // parse the GlobalCbcSettings so that Global CBC regisers take precedence over Global CBC settings which take precedence over CBC specific settings
         this->parseGlobalCbcSettings (pModuleNode, pModule, os);
     }
 

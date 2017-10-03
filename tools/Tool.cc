@@ -356,7 +356,7 @@ void Tool::StartHttpServer ( const int pPort, bool pReadonly )
     }
     catch (std::exception& e)
     {
-        LOG (ERROR) << "Exceptin when trying to start THttpServer: " << e.what();
+        LOG (ERROR) << "Exception when trying to start THttpServer: " << e.what();
     }
 
     LOG (INFO) << "Opening THttpServer on port " << pPort << ". Point your browser to: " << BOLDGREEN << hostname << ":" << pPort << RESET ;
