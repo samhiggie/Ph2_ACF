@@ -105,7 +105,9 @@ namespace Ph2_HwInterface
 
 	}
 
-	uint32_t MPAGlibFWInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger )
+
+
+        uint32_t MPAGlibFWInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait )
 	{
 
         if ( fData ) delete fData;
@@ -115,7 +117,7 @@ namespace Ph2_HwInterface
         fData = new Data();
 
         // set the vector<uint32_t> as event buffer and let him know how many packets it contains
-        fData->Set ( pBoard, *curData , fNpackets, false );
+        fData->Set ( pBoard, *curData , fNpackets, pBoard->getBoardType());
 
         if ( fSaveToFile )
         {
@@ -436,7 +438,9 @@ namespace Ph2_HwInterface
 	    WriteReg("Control.Sequencer.buffers_index", ibuff);
 	  }
 
-
+        void MPAGlibFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait)
+    	 {
+	 }
 	void MPAGlibFWInterface::upload( std::vector< uint32_t > *conf_upload, int conf, int nmpa, bool lr)
 	  {
 	    if (lr) WriteBlockReg( "Configuration_Right.Memory_DataConf.MPA"+std::to_string(nmpa)+".config_"+std::to_string(conf), (*conf_upload));

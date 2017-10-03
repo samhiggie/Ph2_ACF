@@ -5,7 +5,7 @@ RESET='\033[0m'
 
 CC              = gcc
 CXX             = g++
-CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC
+CCFlags         = -g -O0 -w -Wall -pedantic -pthread -std=c++0x -fPIC 
 
 CCFlagsRoot	= `root-config --cflags --glibs`
 ROOTVERSION := $(shell root-config --has-http)
@@ -14,7 +14,7 @@ RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
 LibraryDirs = $(BOOST_LIB) ../lib
 IncludeDirs     = $(BOOST_INCLUDE) ../ ../HWInterface ../System ../Utils ../tools
-ExternalObjects= -lboost_system -lboost_thread -lcactus_uhal_uhal -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lPh2_Utils -lPh2_Description -lPh2_Interface -lPh2_System -lPh2_Tools
+ExternalObjects= -lboost_system -lboost_thread -lcactus_uhal_uhal -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lPh2_Utils -lPh2_Description -lPh2_Interface -lPh2_System -lPh2_Tools 
 
 binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaconfig pulseshape configure integratedtester d19c_test
 
@@ -24,7 +24,7 @@ binaries=print systemtest datatest hybridtest cmtest calibrate commission fpgaco
 ifneq (,$(findstring yes,$(ROOTVERSION)))
 	ExtObjectsRoot += $(RootLibraryPaths) -lRHTTP $(HttpFlag)
 else
-	ExtObjectsRoot += $(RootLibraryPaths)
+	ExtObjectsRoot += $(RootLibraryPaths) 
 endif
 
 ##################################################
@@ -32,8 +32,8 @@ endif
 ##################################################
 ifneq ("$(wildcard ../$(ANTENNADIR))","")
 	IncludeDirs += $(ANTENNADIR)
-	LibraryDirs += $(ANTENNALIB) /usr/lib64/
-	ExternalObjects += -lPh2_Antenna $(AntennaFlag)
+	LibraryDirs += $(ANTENNALIB) /usr/lib64/ 
+	ExternalObjects += -lPh2_Antenna $(AntennaFlag) 
 	ANTENNAINSTALLED = yes
 else
 	ANTENNAINSTALLED = no
@@ -74,10 +74,10 @@ else
 endif
 
 IncludePaths = $(IncludeDirs:%=-I%)
-LibraryPaths = $(LibraryDirs:%=-L%)
+LibraryPaths = $(LibraryDirs:%=-L%) 
 
 .PHONY: clean $(binaries)
-all: rootflags clean $(binaries)
+all: rootflags clean $(binaries) 
 
 rootflags:
 	$(eval CCFlags += $(CCFlagsRoot))
@@ -92,10 +92,6 @@ print:
 	@echo -e ${YEL}'Ph2_USBInstDriver installed:' ${RED}$(USBINSTLIBINSTALLED)
 	@echo -e ${YEL}'ZeroMQ installed:' ${RED}$(ZMQINSTALLED)
 	@echo -e ${YEL}'****************************'${RESET}
-
-rtest: rtest.cc
-	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths)$(ExternalObjects)
-	cp $@ ../bin
 
 integratedtester: integratedtester.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths)$(ExternalObjects)
@@ -116,7 +112,7 @@ d19c_test: d19c_test.cc
 calibrate: calibrate.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
-
+	
 configure: configure.cc
 	$(CXX)  $(CCFlags) -o $@ $< $(IncludePaths) $(LibraryPaths) $(ExternalObjects)
 	cp $@ ../bin
@@ -159,3 +155,4 @@ arduinotest: Arduino.cc
 
 clean:
 	rm -f $(binaries) *.o
+

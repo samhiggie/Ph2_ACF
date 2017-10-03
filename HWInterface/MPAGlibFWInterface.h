@@ -20,8 +20,9 @@
 #include "BeBoardFWInterface.h"
 #include "../HWDescription/Module.h"
 #include "../Utils/Visitor.h"
-#include "../Utils/pugixml.hpp"
-#include "../Utils/Timer.h"
+#include "../Utils/easylogging++.h"
+
+
 using namespace Ph2_HwDescription;
 
 /*!
@@ -165,25 +166,12 @@ public:
 
 
 
-    uint32_t ReadData( BeBoard* pBoard, bool pBreakTrigger ) override;
+    uint32_t ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait = true ) override;
     /*!
      * \brief Get next event from data buffer
      * \return Next event
      */
-    const Event* GetNextEvent( const BeBoard* pBoard ) const override
-    {
-        return fData->GetNextEvent( pBoard );
-    }
-    const Event* GetEvent( const BeBoard* pBoard, int i ) const override
-    {
-        return fData->GetEvent( pBoard, i );
-    }
-    const std::vector<Event*>& GetEvents( const BeBoard* pBoard ) const override
-    {
-        return fData->GetEvents( pBoard );
-    }
-
-
+    void ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait = true);
 
     std::vector<uint32_t>* GetcurData() const
     {

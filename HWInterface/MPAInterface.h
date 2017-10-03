@@ -14,7 +14,7 @@
 
 #include <vector>
 #include "../HWInterface/MPAGlibFWInterface.h"
-
+#include "pugixml/pugixml.hpp"
 using namespace Ph2_HwDescription;
 
 /*!
