@@ -803,23 +803,4 @@ namespace Ph2_HwInterface {
 
 
 
-    void CtaFWInterface::PowerOn()
-    {
-
-    }
-
-    void CtaFWInterface::PowerOff()
-    {
-
-    }
-
-
-    void CtaFWInterface::ReadVer()
-    {
-
-    }
-
-
-
-
 }

@@ -1041,23 +1041,4 @@ namespace Ph2_HwInterface {
 
 
 
-    void D19cFWInterface::PowerOn()
-    {
-
-    }
-
-    void D19cFWInterface::PowerOff()
-    {
-
-    }
-
-
-    void D19cFWInterface::ReadVer()
-    {
-
-    }
-
-
-
-
 }

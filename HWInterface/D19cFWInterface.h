@@ -267,11 +267,6 @@ namespace Ph2_HwInterface {
         void SetForceStart ( bool bStart) {}
 
 
-        void ReadVer() override;
-        void PowerOn() override;
-        void PowerOff() override;
-
-
     };
 }
 

@@ -717,22 +717,4 @@ namespace Ph2_HwInterface {
 
 
 
-    void ICFc7FWInterface::PowerOn()
-    {
-
-    }
-
-    void ICFc7FWInterface::PowerOff()
-    {
-
-    }
-
-
-    void ICFc7FWInterface::ReadVer()
-    {
-
-    }
-
-
-
 }

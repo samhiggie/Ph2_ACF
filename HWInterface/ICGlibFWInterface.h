@@ -247,12 +247,6 @@ namespace Ph2_HwInterface {
         /*! \brief Set or reset the start signal */
         void SetForceStart ( bool bStart) {}
 
-
-        void ReadVer() override;
-        void PowerOn() override;
-        void PowerOff() override;
-
-
     };
 }
 

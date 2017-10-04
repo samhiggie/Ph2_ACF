@@ -257,14 +257,14 @@ namespace Ph2_HwInterface {
          * Activate power on and off sequence
          */
 
-         virtual void PowerOn()=0;
-         virtual void PowerOff()=0;
+         virtual void PowerOn();
+         virtual void PowerOff();
 
          /*!
           * Read the firmware version
           */
 
-         virtual void ReadVer()=0;
+         virtual void ReadVer();
 
 
         virtual BoardType getBoardType() const = 0;
