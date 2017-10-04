@@ -318,6 +318,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
             const std::vector<Event*>& events = GetEvents ( cBoard );
 
             fillOccupancyHist (cBoard, events);
+
         }
 
         //now I've filled the histogram with the occupancy
@@ -582,6 +583,11 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
             LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement << " Hitcounter: " << cHitCounter << " Max hits: " << cMaxHits;
             cValue = pStartValue + (cIncrement * cSign);
         }
+    }
+
+    if (fHttpServer){
+        gSystem->ProcessEvents();
+        fHttpServer->ProcessRequests();
     }
 
     LOG (INFO) << YELLOW << "Found minimal and maximal occupancy " << cMinBreakCount << " times, SCurves finished! " << RESET ;

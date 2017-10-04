@@ -411,6 +411,11 @@ void Calibration::FindOffsets()
             setOffset ( cOffset, cTGroup.first );
             LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
         }
+
+        if (fHttpServer){
+            gSystem->ProcessEvents();
+            fHttpServer->ProcessRequests();
+        }
     }
 
     setRegValues();
