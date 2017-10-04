@@ -318,6 +318,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
             const std::vector<Event*>& events = GetEvents ( cBoard );
 
             fillOccupancyHist (cBoard, events);
+
         }
 
         //now I've filled the histogram with the occupancy
@@ -361,6 +362,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
         }
 
         setThresholdtoNSigma (cBoard, 0);
+        this->HttpServerProcess();
     }
 }
 
@@ -584,6 +586,7 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
         }
     }
 
+    this->HttpServerProcess();
     LOG (INFO) << YELLOW << "Found minimal and maximal occupancy " << cMinBreakCount << " times, SCurves finished! " << RESET ;
 }
 
@@ -908,6 +911,7 @@ void PedeNoise::extractPedeNoise (std::string pHistName)
         }
 
         //end of Fe loop
+        this->HttpServerProcess();
     }
 
     //end of board loop

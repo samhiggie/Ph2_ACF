@@ -344,7 +344,7 @@ void Tool::StartHttpServer ( const int pPort, bool pReadonly )
         fHttpServer = new THttpServer ( Form ( "http:%d", pPort ) );
         fHttpServer->SetReadOnly ( pReadonly );
         //fHttpServer->SetTimer ( pRefreshTime, kTRUE );
-        fHttpServer->SetTimer (1000, kTRUE);
+        fHttpServer->SetTimer (0, kTRUE);
         fHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
 
         //configure the server
@@ -356,13 +356,26 @@ void Tool::StartHttpServer ( const int pPort, bool pReadonly )
     }
     catch (std::exception& e)
     {
-        LOG (ERROR) << "Exceptin when trying to start THttpServer: " << e.what();
+        LOG (ERROR) << "Exception when trying to start THttpServer: " << e.what();
     }
 
     LOG (INFO) << "Opening THttpServer on port " << pPort << ". Point your browser to: " << BOLDGREEN << hostname << ":" << pPort << RESET ;
 #else
     LOG (INFO) << "Error, ROOT version < 5.34 detected or not compiled with Http Server support!"  << " No THttpServer available! - The webgui will fail to show plots!" ;
     LOG (INFO) << "ROOT must be built with '--enable-http' flag to use this feature." ;
+#endif
+}
+
+void Tool::HttpServerProcess()
+{
+#ifdef __HTTP__
+
+    if (fHttpServer)
+    {
+        gSystem->ProcessEvents();
+        fHttpServer->ProcessRequests();
+    }
+
 #endif
 }
 

@@ -641,6 +641,8 @@ void CMTester::updateHists ( bool pFinal )
 
         }
     }
+
+    this->HttpServerProcess();
 }
 
 
