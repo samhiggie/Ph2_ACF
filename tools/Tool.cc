@@ -366,6 +366,19 @@ void Tool::StartHttpServer ( const int pPort, bool pReadonly )
 #endif
 }
 
+void Tool::HttpServerProcess()
+{
+#ifdef __HTTP__
+
+    if (fHttpServer)
+    {
+        gSystem->ProcessEvents();
+        fHttpServer->ProcessRequests();
+    }
+
+#endif
+}
+
 void Tool::dumpConfigFiles()
 {
     // visitor to call dumpRegFile on each Cbc

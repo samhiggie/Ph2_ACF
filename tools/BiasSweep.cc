@@ -440,6 +440,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         LOG (INFO) << "Bias Sweep finished, results saved!";
         LOG (INFO) << BOLDGREEN << "Stopping Triggers!" << RESET;
         this->StopDAQ();
+        this->HttpServerProcess();
     }
 }
 
@@ -585,6 +586,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
         {
             fSweepCanvas->Modified();
             fSweepCanvas->Update();
+            this->HttpServerProcess();
         }
 
         //now set the values for the ttree
@@ -663,25 +665,29 @@ void BiasSweep::sweepVCth (TGraph* pGraph, Cbc* pCbc)
         //now I have the value I set and the reading from the DMM
         pGraph->SetPoint (pGraph->GetN(), cThreshold, cReading);
 
-        if (cThreshold % 10 == 0) LOG (INFO) << "Set bias to " << cThreshold << " (0x" << std::hex << cThreshold << std::dec << ") DAC units and read " << cReading << " on the DMM";
-
-        //update the canvas
-        if (cThreshold == fStepSize) pGraph->Draw ("APL");
-        else if (cThreshold % 10 == 0 || cThreshold == 1022)
+        if (cThreshold % 10 == 0)
         {
-            fSweepCanvas->Modified();
-            fSweepCanvas->Update();
+            LOG (INFO) << "Set bias to " << cThreshold << " (0x" << std::hex << cThreshold << std::dec << ") DAC units and read " << cReading << " on the DMM";
+
+            //update the canvas
+            if (cThreshold == fStepSize) pGraph->Draw ("APL");
+            else if (cThreshold % 10 == 0 || cThreshold == 1022)
+            {
+                fSweepCanvas->Modified();
+                fSweepCanvas->Update();
+                this->HttpServerProcess();
+            }
+
+            //now set the values for the ttree
+            fData->fXValues.push_back (cThreshold);
+            fData->fYValues.push_back (cReading);
         }
 
-        //now set the values for the ttree
-        fData->fXValues.push_back (cThreshold);
-        fData->fYValues.push_back (cReading);
+        //now set back the original value
+        LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x" << std::hex << cOriginalThreshold << std::dec << ")";
+        cThresholdVisitor.setThreshold (cOriginalThreshold);
+        pCbc->accept (cThresholdVisitor);
     }
-
-    //now set back the original value
-    LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x" << std::hex << cOriginalThreshold << std::dec << ")";
-    cThresholdVisitor.setThreshold (cOriginalThreshold);
-    pCbc->accept (cThresholdVisitor);
 }
 
 void BiasSweep::writeObjects()

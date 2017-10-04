@@ -89,6 +89,7 @@ class Tool : public SystemController
     void InitResultFile ( const std::string& pFilename );
     void CloseResultFile();
     void StartHttpServer ( const int pPort = 8080, bool pReadonly = true );
+    void HttpServerProcess();
     void dumpConfigFiles();
     // general stuff that can be useful
     void setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool pTPState = false, bool pHoleMode = false );

@@ -316,6 +316,8 @@ void LatencyScan::updateHists ( std::string pHistName, bool pFinal )
         }
 
     }
+
+    this->HttpServerProcess();
 }
 
 

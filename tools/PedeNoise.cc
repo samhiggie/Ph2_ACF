@@ -362,6 +362,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
         }
 
         setThresholdtoNSigma (cBoard, 0);
+        this->HttpServerProcess();
     }
 }
 
@@ -585,11 +586,7 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
         }
     }
 
-    if (fHttpServer){
-        gSystem->ProcessEvents();
-        fHttpServer->ProcessRequests();
-    }
-
+    this->HttpServerProcess();
     LOG (INFO) << YELLOW << "Found minimal and maximal occupancy " << cMinBreakCount << " times, SCurves finished! " << RESET ;
 }
 
@@ -914,6 +911,7 @@ void PedeNoise::extractPedeNoise (std::string pHistName)
         }
 
         //end of Fe loop
+        this->HttpServerProcess();
     }
 
     //end of board loop

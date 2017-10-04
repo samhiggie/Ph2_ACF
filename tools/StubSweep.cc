@@ -297,6 +297,7 @@ void StubSweep::updateHists ( std::string pHistname )
         else LOG (INFO) << "Error, could not find Histogram with name " << pHistname ;
     }
 
+    this->HttpServerProcess();
 }
 
 uint8_t StubSweep::getStubPosition (std::vector<Event*> pEvents, uint32_t pFeId, uint32_t pCbcId, uint32_t pNEvents)

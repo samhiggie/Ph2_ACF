@@ -642,7 +642,7 @@ void HybridTester::updateSCurveCanvas ( BeBoard* pBoard )
     }
 
     fSCurveCanvas->Update();
-
+    this->HttpServerProcess();
 }
 
 
