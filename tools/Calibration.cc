@@ -192,6 +192,7 @@ void Calibration::FindVplus()
             }
 
             //updateHists ( "Vplus" );
+            this->HttpServerProcess();
             //
         }
     }
@@ -412,10 +413,7 @@ void Calibration::FindOffsets()
             LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
         }
 
-        if (fHttpServer){
-            gSystem->ProcessEvents();
-            fHttpServer->ProcessRequests();
-        }
+        this->HttpServerProcess();
     }
 
     setRegValues();
