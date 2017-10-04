@@ -1,3 +1,4 @@
+if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
 cmake_minimum_required(VERSION 2.8)
 project(Ph2_ACF)
 
@@ -100,18 +101,19 @@ message("#### Done ####")
 if(${CACTUS_AMC13_FOUND})
     add_subdirectory(AMC13)
 endif()
-add_subdirectory(Utils)
-add_subdirectory(HWDescription)
-add_subdirectory(HWInterface)
-add_subdirectory(System)
 
-if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     add_subdirectory(tools)
     add_subdirectory(RootWeb)
     add_subdirectory(src)
     add_subdirectory(miniDAQ)
-endif()
-
 message("#### Don't forget to set the path and ld_library_path by sourcing setup.sh before running")
 #set(ENV{PATH} "$ENV{PATH}:${PROJECT_SOURCE_DIR}/bin")
 #set(ENV{LD_LIBRARY_PATH} "${PROJECT_SOURCE_DIR}/lib:$ENV(LD_LIBRARY_PATH)")
+
+else()
+add_subdirectory(Utils)
+add_subdirectory(HWDescription)
+add_subdirectory(HWInterface)
+add_subdirectory(System)
+endif()
+

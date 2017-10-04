@@ -1,4 +1,4 @@
-if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
+if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     #includes
     include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -17,7 +17,7 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     set(LIBS ${LIBS} Ph2_Description cactus_uhal_uhal )
     TARGET_LINK_LIBRARIES(Ph2_Interface ${LIBS})
     
-elseif()
+else()
 
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/uhal/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/log/include)

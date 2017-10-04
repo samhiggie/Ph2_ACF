@@ -1,5 +1,6 @@
-if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
-
+if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
+    message("I AM IN THE WRONG SPOT")
+    message("$ENV{OTSDAQ_CMSOUTERTRACKER_DIR}")
     #includes
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
@@ -42,12 +43,14 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     
 else()
 
+    message("I AM IN THE RIGHT SPOT")
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/uhal/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/log/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/grammars/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/otsdaq-cmsoutertracker/Ph2_ACF)
     #include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/extern/pugixml/RPMBUILD/SOURCES/include/)
     
+
     cet_set_compiler_flags(
      EXTRA_FLAGS -Wno-reorder -Wl,--undefined
      )
@@ -56,6 +59,7 @@ else()
             LIBRARIES
     	pthread
     	${Boost_SYSTEM_LIBRARY}
+    	EXCLUDE UsbUtilities.h UsbUtilities.cc
             )
     
     install_headers()
