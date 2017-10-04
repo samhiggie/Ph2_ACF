@@ -688,89 +688,90 @@ void BiasSweep::sweepVCth (TGraph* pGraph, Cbc* pCbc)
         cThresholdVisitor.setThreshold (cOriginalThreshold);
         pCbc->accept (cThresholdVisitor);
     }
+}
 
-    void BiasSweep::writeObjects()
-    {
-        this->SaveResults();
-        //save the canvas too!
-        fResultFile->cd();
-        fSweepCanvas->Write ( fSweepCanvas->GetName(), TObject::kOverwrite );
-        //to clean up, just use Tool::SaveResults in here!
-        fResultFile->Flush();
-    }
+void BiasSweep::writeObjects()
+{
+    this->SaveResults();
+    //save the canvas too!
+    fResultFile->cd();
+    fSweepCanvas->Write ( fSweepCanvas->GetName(), TObject::kOverwrite );
+    //to clean up, just use Tool::SaveResults in here!
+    fResultFile->Flush();
+}
 
-    void BiasSweep::cleanup()
-    {
+void BiasSweep::cleanup()
+{
 #ifdef __USBINST__
 
-        if (fKeController)
-        {
-            fKeController->SendQuit();
-            delete fKeController;
-        }
+    if (fKeController)
+    {
+        fKeController->SendQuit();
+        delete fKeController;
+    }
 
-        if (fHMPClient)
-        {
-            fHMPClient->Quit();
-            delete fHMPClient;
-        }
+    if (fHMPClient)
+    {
+        fHMPClient->Quit();
+        delete fHMPClient;
+    }
 
-        if (fArdNanoController) delete fArdNanoController;
+    if (fArdNanoController) delete fArdNanoController;
 
 #endif
-    }
+}
 
-    void BiasSweep::DAQloop()
-    {
-        //1st method: do nothing
-        //2nd method: workloop
-        //while (fDAQrunning.load() )
-        //{
-        //std::unique_lock<std::mutex> cLock (fHWMutex);
-        //this->ReadData (fBoardVector.at (0) );
-        //cLock.unlock();
+void BiasSweep::DAQloop()
+{
+    //1st method: do nothing
+    //2nd method: workloop
+    //while (fDAQrunning.load() )
+    //{
+    //std::unique_lock<std::mutex> cLock (fHWMutex);
+    //this->ReadData (fBoardVector.at (0) );
+    //cLock.unlock();
 
-        //if (!fDAQrunning.load() )
-        //{
-        //this->Stop (fBoardVector.at (0) );
-        //break;
-        //}
-        //else
-        //std::this_thread::sleep_for (std::chrono::microseconds (100) );
-        //}
-    }
+    //if (!fDAQrunning.load() )
+    //{
+    //this->Stop (fBoardVector.at (0) );
+    //break;
+    //}
+    //else
+    //std::this_thread::sleep_for (std::chrono::microseconds (100) );
+    //}
+}
 
-    void BiasSweep::StartDAQ()
-    {
-        //1st method
-        this->fBeBoardInterface->WriteBoardReg (fBoardVector.at (0), "cbc_system_cnfg.global.misc.trigger_master_external", 0x1);
-        this->Start (fBoardVector.at (0) );
+void BiasSweep::StartDAQ()
+{
+    //1st method
+    this->fBeBoardInterface->WriteBoardReg (fBoardVector.at (0), "cbc_system_cnfg.global.misc.trigger_master_external", 0x1);
+    this->Start (fBoardVector.at (0) );
 
-        //2nd method
-        //if (!fDAQrunning.load() )
-        //{
-        //std::unique_lock<std::mutex> cLock (fHWMutex);
-        //this->Start (fBoardVector.at (0) );
-        //fDAQrunning = true;
-        //cLock.unlock();
-        //fThread = std::thread (&BiasSweep::DAQloop, this);
-        //}
-    }
+    //2nd method
+    //if (!fDAQrunning.load() )
+    //{
+    //std::unique_lock<std::mutex> cLock (fHWMutex);
+    //this->Start (fBoardVector.at (0) );
+    //fDAQrunning = true;
+    //cLock.unlock();
+    //fThread = std::thread (&BiasSweep::DAQloop, this);
+    //}
+}
 
-    void BiasSweep::StopDAQ()
-    {
-        //1st method
-        this->Stop (fBoardVector.at (0) );
-        this->fBeBoardInterface->WriteBoardReg (fBoardVector.at (0), "cbc_system_cnfg.global.misc.trigger_master_external", 0x0);
+void BiasSweep::StopDAQ()
+{
+    //1st method
+    this->Stop (fBoardVector.at (0) );
+    this->fBeBoardInterface->WriteBoardReg (fBoardVector.at (0), "cbc_system_cnfg.global.misc.trigger_master_external", 0x0);
 
-        //2nd method
-        //if (fDAQrunning.load() )
-        //{
-        //std::unique_lock<std::mutex> cLock (fHWMutex);
-        //fDAQrunning = false;
-        //cLock.unlock();
-        //std::this_thread::sleep_for (std::chrono::seconds (2) );
+    //2nd method
+    //if (fDAQrunning.load() )
+    //{
+    //std::unique_lock<std::mutex> cLock (fHWMutex);
+    //fDAQrunning = false;
+    //cLock.unlock();
+    //std::this_thread::sleep_for (std::chrono::seconds (2) );
 
-        //if (fThread.joinable() ) fThread.join();
-        //}
-    }
+    //if (fThread.joinable() ) fThread.join();
+    //}
+}
