@@ -1,6 +1,4 @@
 if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
-    message("I AM IN THE WRONG SPOT")
-    message("$ENV{OTSDAQ_CMSOUTERTRACKER_DIR}")
     #includes
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
@@ -43,7 +41,6 @@ if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     
 else()
 
-    message("I AM IN THE RIGHT SPOT")
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/uhal/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/log/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/grammars/include)
