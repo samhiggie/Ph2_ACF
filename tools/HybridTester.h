@@ -213,6 +213,7 @@ class HybridTester : public Tool
         fSummaryCanvas->cd ( 2);
         fHistOccupancyBottom->Draw();
         fSummaryCanvas->Update();
+        this->HttpServerProcess();
     }
 
     /*!
@@ -225,6 +226,7 @@ class HybridTester : public Tool
         fDataCanvas->cd ( 2 );
         fHistBottomMerged->Draw();
         fDataCanvas->Update();
+        this->HttpServerProcess();
     }
 
     // To measure the occupancy per Cbc

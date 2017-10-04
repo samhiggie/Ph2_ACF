@@ -114,6 +114,7 @@ void AntennaTester::UpdateHists()
     fDataCanvas->cd ( 2 );
     fHistBottom->Draw();
     fDataCanvas->Update();
+    this->HttpServerProcess();
 }
 void AntennaTester::UpdateHistsMerged()
 {
@@ -122,6 +123,7 @@ void AntennaTester::UpdateHistsMerged()
     fDataCanvas->cd ( 2 );
     fHistBottomMerged->Draw();
     fDataCanvas->Update();
+    this->HttpServerProcess();
 }
 void AntennaTester::ReconfigureCBCRegisters (std::string pDirectoryName )
 {

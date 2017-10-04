@@ -269,8 +269,7 @@ void ShortFinder::UpdateHists()
     fHistShortsBottom->Draw ("HistoSAME");
     fShortsCanvas->Update();
 
-
-
+    this->HttpServerProcess();
 }
 void ShortFinder::UpdateHistsMerged()
 {
@@ -280,7 +279,7 @@ void ShortFinder::UpdateHistsMerged()
     fHistBottomMerged->Draw();
     fDataCanvas->Update();
 
-
+    this->HttpServerProcess();
 }
 
 void ShortFinder::SetBeBoard (BeBoard* pBoard)
