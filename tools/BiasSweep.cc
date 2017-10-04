@@ -440,6 +440,7 @@ void BiasSweep::SweepBias (std::string pBias, Cbc* pCbc)
         LOG (INFO) << "Bias Sweep finished, results saved!";
         LOG (INFO) << BOLDGREEN << "Stopping Triggers!" << RESET;
         this->StopDAQ();
+        this->HttpServerProcess();
     }
 }
 
@@ -585,6 +586,7 @@ void BiasSweep::sweep8Bit (std::map<std::string, AmuxSetting>::iterator pAmuxVal
         {
             fSweepCanvas->Modified();
             fSweepCanvas->Update();
+            this->HttpServerProcess();
         }
 
         //now set the values for the ttree
@@ -663,109 +665,112 @@ void BiasSweep::sweepVCth (TGraph* pGraph, Cbc* pCbc)
         //now I have the value I set and the reading from the DMM
         pGraph->SetPoint (pGraph->GetN(), cThreshold, cReading);
 
-        if (cThreshold % 10 == 0) LOG (INFO) << "Set bias to " << cThreshold << " (0x" << std::hex << cThreshold << std::dec << ") DAC units and read " << cReading << " on the DMM";
-
-        //update the canvas
-        if (cThreshold == fStepSize) pGraph->Draw ("APL");
-        else if (cThreshold % 10 == 0 || cThreshold == 1022)
+        if (cThreshold % 10 == 0)
         {
-            fSweepCanvas->Modified();
-            fSweepCanvas->Update();
+            LOG (INFO) << "Set bias to " << cThreshold << " (0x" << std::hex << cThreshold << std::dec << ") DAC units and read " << cReading << " on the DMM";
+
+            //update the canvas
+            if (cThreshold == fStepSize) pGraph->Draw ("APL");
+            else if (cThreshold % 10 == 0 || cThreshold == 1022)
+            {
+                fSweepCanvas->Modified();
+                fSweepCanvas->Update();
+                this->HttpServerProcess();
+            }
+
+            //now set the values for the ttree
+            fData->fXValues.push_back (cThreshold);
+            fData->fYValues.push_back (cReading);
         }
 
-        //now set the values for the ttree
-        fData->fXValues.push_back (cThreshold);
-        fData->fYValues.push_back (cReading);
+        //now set back the original value
+        LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x" << std::hex << cOriginalThreshold << std::dec << ")";
+        cThresholdVisitor.setThreshold (cOriginalThreshold);
+        pCbc->accept (cThresholdVisitor);
     }
 
-    //now set back the original value
-    LOG (INFO) << "Re-setting original Threshold value of " << cOriginalThreshold << "(0x" << std::hex << cOriginalThreshold << std::dec << ")";
-    cThresholdVisitor.setThreshold (cOriginalThreshold);
-    pCbc->accept (cThresholdVisitor);
-}
+    void BiasSweep::writeObjects()
+    {
+        this->SaveResults();
+        //save the canvas too!
+        fResultFile->cd();
+        fSweepCanvas->Write ( fSweepCanvas->GetName(), TObject::kOverwrite );
+        //to clean up, just use Tool::SaveResults in here!
+        fResultFile->Flush();
+    }
 
-void BiasSweep::writeObjects()
-{
-    this->SaveResults();
-    //save the canvas too!
-    fResultFile->cd();
-    fSweepCanvas->Write ( fSweepCanvas->GetName(), TObject::kOverwrite );
-    //to clean up, just use Tool::SaveResults in here!
-    fResultFile->Flush();
-}
-
-void BiasSweep::cleanup()
-{
+    void BiasSweep::cleanup()
+    {
 #ifdef __USBINST__
 
-    if (fKeController)
-    {
-        fKeController->SendQuit();
-        delete fKeController;
-    }
+        if (fKeController)
+        {
+            fKeController->SendQuit();
+            delete fKeController;
+        }
 
-    if (fHMPClient)
-    {
-        fHMPClient->Quit();
-        delete fHMPClient;
-    }
+        if (fHMPClient)
+        {
+            fHMPClient->Quit();
+            delete fHMPClient;
+        }
 
-    if (fArdNanoController) delete fArdNanoController;
+        if (fArdNanoController) delete fArdNanoController;
 
 #endif
-}
+    }
 
-void BiasSweep::DAQloop()
-{
-    //1st method: do nothing
-    //2nd method: workloop
-    //while (fDAQrunning.load() )
-    //{
-    //std::unique_lock<std::mutex> cLock (fHWMutex);
-    //this->ReadData (fBoardVector.at (0) );
-    //cLock.unlock();
+    void BiasSweep::DAQloop()
+    {
+        //1st method: do nothing
+        //2nd method: workloop
+        //while (fDAQrunning.load() )
+        //{
+        //std::unique_lock<std::mutex> cLock (fHWMutex);
+        //this->ReadData (fBoardVector.at (0) );
+        //cLock.unlock();
 
-    //if (!fDAQrunning.load() )
-    //{
-    //this->Stop (fBoardVector.at (0) );
-    //break;
-    //}
-    //else
-    //std::this_thread::sleep_for (std::chrono::microseconds (100) );
-    //}
-}
+        //if (!fDAQrunning.load() )
+        //{
+        //this->Stop (fBoardVector.at (0) );
+        //break;
+        //}
+        //else
+        //std::this_thread::sleep_for (std::chrono::microseconds (100) );
+        //}
+    }
 
-void BiasSweep::StartDAQ()
-{
-    //1st method
-    this->fBeBoardInterface->WriteBoardReg (fBoardVector.at (0), "cbc_system_cnfg.global.misc.trigger_master_external", 0x1);
-    this->Start (fBoardVector.at (0) );
+    void BiasSweep::StartDAQ()
+    {
+        //1st method
+        this->fBeBoardInterface->WriteBoardReg (fBoardVector.at (0), "cbc_system_cnfg.global.misc.trigger_master_external", 0x1);
+        this->Start (fBoardVector.at (0) );
 
-    //2nd method
-    //if (!fDAQrunning.load() )
-    //{
-    //std::unique_lock<std::mutex> cLock (fHWMutex);
-    //this->Start (fBoardVector.at (0) );
-    //fDAQrunning = true;
-    //cLock.unlock();
-    //fThread = std::thread (&BiasSweep::DAQloop, this);
-    //}
-}
+        //2nd method
+        //if (!fDAQrunning.load() )
+        //{
+        //std::unique_lock<std::mutex> cLock (fHWMutex);
+        //this->Start (fBoardVector.at (0) );
+        //fDAQrunning = true;
+        //cLock.unlock();
+        //fThread = std::thread (&BiasSweep::DAQloop, this);
+        //}
+    }
 
-void BiasSweep::StopDAQ()
-{
-    //1st method
-    this->Stop (fBoardVector.at (0) );
-    this->fBeBoardInterface->WriteBoardReg (fBoardVector.at (0), "cbc_system_cnfg.global.misc.trigger_master_external", 0x0);
+    void BiasSweep::StopDAQ()
+    {
+        //1st method
+        this->Stop (fBoardVector.at (0) );
+        this->fBeBoardInterface->WriteBoardReg (fBoardVector.at (0), "cbc_system_cnfg.global.misc.trigger_master_external", 0x0);
 
-    //2nd method
-    //if (fDAQrunning.load() )
-    //{
-    //std::unique_lock<std::mutex> cLock (fHWMutex);
-    //fDAQrunning = false;
-    //cLock.unlock();
-    //std::this_thread::sleep_for (std::chrono::seconds (2) );
+        //2nd method
+        //if (fDAQrunning.load() )
+        //{
+        //std::unique_lock<std::mutex> cLock (fHWMutex);
+        //fDAQrunning = false;
+        //cLock.unlock();
+        //std::this_thread::sleep_for (std::chrono::seconds (2) );
 
-    //if (fThread.joinable() ) fThread.join();
-    //}
-}
+        //if (fThread.joinable() ) fThread.join();
+        //}
+    }
