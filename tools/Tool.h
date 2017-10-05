@@ -15,6 +15,7 @@
 
 #include "../System/SystemController.h"
 #include "TROOT.h"
+#include "TSystem.h"
 #include "TFile.h"
 #include "TObject.h"
 #include "TCanvas.h"
