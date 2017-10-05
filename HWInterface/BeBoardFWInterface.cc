@@ -58,6 +58,25 @@ namespace Ph2_HwInterface {
 
     }
 
+
+    void BeBoardFWInterface::PowerOn()
+    {
+
+    }
+
+    void BeBoardFWInterface::PowerOff()
+    {
+
+    }
+
+
+    void BeBoardFWInterface::ReadVer()
+    {
+
+    }
+
+
+
     //void BeBoardFWInterface::getBoardInfo()
     //{
     //LOG(INFO) << "FMC1 present : " << ReadReg( "status.fmc1_present" ) ;

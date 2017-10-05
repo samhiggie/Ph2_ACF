@@ -96,7 +96,7 @@ namespace Ph2_System {
 
         fBeBoardInterface = new BeBoardInterface ( fBeBoardFWMap );
         fCbcInterface = new CbcInterface ( fBeBoardFWMap );
-
+        fMPAInterface = new MPAInterface( fBeBoardFWMap );
         if (fWriteHandlerEnabled)
             this->initializeFileHandler();
     }
@@ -184,6 +184,13 @@ namespace Ph2_System {
                     cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 8 * CBC_EVENT_SIZE_32;
                 else if (cNCbc > 8 && cNCbc <= 16)
                     cNEventSize32 = EVENT_HEADER_SIZE_32 + 16 * CBC_EVENT_SIZE_32;
+            }
+            if (cBoardType == BoardType::MPAGLIB)
+            {
+                cBoardTypeString = "MPAGLIB";
+
+                cNEventSize32 = MPA_HEADER_SIZE_32 + 6 * MPA_EVENT_SIZE_32;
+
             }
             else if (cBoardType == BoardType::CTA)
             {
