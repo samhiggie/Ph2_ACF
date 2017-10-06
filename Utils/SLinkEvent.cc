@@ -1,5 +1,6 @@
 #include "SLinkEvent.h"
 
+CRCCalculator SLinkEvent::fCalculator;
 SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pChipType, uint32_t& pLV1Id, uint16_t& pBXId, int pSourceId) :
     fEventType (pEventType),
     fDebugMode (pMode),
@@ -7,8 +8,7 @@ SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pCh
     fSize (0),
     fCRCVal (0),
     fCondData (0),
-    fFake (0),
-    fCalculator()
+    fFake (0)
 {
     fData.clear();
     this->generateDAQHeader (pLV1Id, pBXId, pSourceId);
@@ -112,12 +112,14 @@ void SLinkEvent::generateConditionData (ConditionDataSet* pSet)
 
 void SLinkEvent::generateDAQTrailer()
 {
-    this->calulateCRC();
     fSize += 1;
     uint64_t cWord = 0;
     //EOE_1 | EvtLength | CRC | Event Stat | TTS
-    cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 12 | ( (uint64_t) fCRCVal & 0xFFFF) << 16 | (TTS_VALUE & 0xF) << 4);
+    cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 12  | (TTS_VALUE & 0xF) << 4);
+    //cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 12 | ( (uint64_t) fCRCVal & 0xFFFF) << 16 | (TTS_VALUE & 0xF) << 4);
     fData.push_back (cWord);
+    this->calculateCRC();
+    fData.back() |= ( (uint64_t) fCRCVal & 0xFFFF) << 16;
 }
 
 uint32_t SLinkEvent::getLV1Id()
@@ -148,7 +150,7 @@ uint32_t SLinkEvent::getSize64()
     return fData.size();
 }
 
-void SLinkEvent::calulateCRC ()
+void SLinkEvent::calculateCRC ()
 {
     //original code before CRC Calculator
     // i need to split the data vector in octets and then it should work
@@ -184,6 +186,6 @@ void SLinkEvent::calulateCRC ()
 
     //fCRCVal = cCRC;
     //CRCCalculator needs an array of unsigned char
-    std::vector<unsigned char> cData = fData.getData<unsigned char>();
-    fCRCVal = fCalculator.compute (&cData[0], sizeof (unsigned char) );
+    std::vector<uint8_t> cData = this->getData<uint8_t>();
+    fCRCVal = fCalculator.compute (&cData[0], sizeof (&cData) );
 }

@@ -64,10 +64,6 @@ class SLinkEvent
 
     void clear()
     {
-        fChipType = 0;
-        fEventType = 0;
-        fDebugMode = 0;
-
         fData.clear();
         fSize = 0;
         fCRCVal = 0xFFFF;
@@ -91,7 +87,7 @@ class SLinkEvent
     //flags to signal presence of condition data and fake or real events
     bool fCondData, fFake;
 
-    void calulateCRC ();
+    void calculateCRC ();
 };
 
 #endif

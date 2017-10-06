@@ -186,10 +186,6 @@ void CRCCalculator::compute (uint16_t& crc, const uint8_t* buffer, size_t bufSiz
 
     if ( bufSize == 0 ) return;
 
-    if ( havePCLMULQDQ_ )
-        crc = crc16_T10DIF_128x_extended (crc, buffer, bufSize);
-    else
-    {
         if (bufSize % 16 == 8)
         {
             computeCRC_32bit (crc, ( (uint32_t*) buffer) [1]);
@@ -213,7 +209,6 @@ void CRCCalculator::compute (uint16_t& crc, const uint8_t* buffer, size_t bufSiz
             computeCRC_32bit (crc, ( (uint32_t*) buffer) [1]);
             computeCRC_32bit (crc, ( (uint32_t*) buffer) [0]);
         }
-    }
 }
 
 
