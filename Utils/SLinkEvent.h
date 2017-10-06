@@ -12,6 +12,7 @@
 #include "ConsoleColor.h"
 #include "ConditionDataSet.h"
 #include "GenericPayload.h"
+#include "CRCCalculator.h"
 #include "easylogging++.h"
 
 #define BOE_1 0x5
@@ -40,6 +41,9 @@ class SLinkEvent
     // kind of important
     void generateConditionData (ConditionDataSet* pSet);
     void generateDAQTrailer();
+    uint32_t getLV1Id();
+    uint32_t getSourceId();
+    uint32_t getSize64();
 
     //template<typename T>
     //std::vector<T> getData();
@@ -58,12 +62,24 @@ class SLinkEvent
         return out;
     }
 
+    void clear()
+    {
+        fChipType = 0;
+        fEventType = 0;
+        fDebugMode = 0;
+
+        fData.clear();
+        fSize = 0;
+        fCRCVal = 0xFFFF;
+    }
+
 
   private:
     //Enums defined in HWDescription/Definition.h
     ChipType fChipType;
     EventType fEventType;
     SLinkDebugMode fDebugMode;
+    static CRCCalculator fCalculator;
 
 
     //using a std::deque as it is probably easier to push front and insert randomly
