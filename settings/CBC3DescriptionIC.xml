@@ -2,7 +2,7 @@
 <!--<?xml-stylesheet type="text/xsl" href="misc/HWDescription.xsl"?>-->
 <HwDescription>
   <BeBoard Id="0" boardType="CBC3FC7" eventType="VR">
-      <connection id="board" uri="chtcp-2.0://cmsuptracker009.cern.ch:10203?target=192.168.0.80:50001" address_table="file://settings/address_tables/IC_cbc3_address_table.xml" />
+      <connection id="board" uri="chtcp-2.0://cmsuptracker008.cern.ch:10203?target=192.168.0.82:50001" address_table="file://settings/address_tables/IC_cbc3_address_table.xml" />
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
         <!--<Global>-->
@@ -14,14 +14,15 @@
         <!--</Global>-->
         <!--<Global_CBC_Register name="TriggerLatency1"> 0x09 </Global_CBC_Register>-->
         <CBC_Files path="./settings/CbcFiles/" />
-        <CBC Id="0" configfile="CBC3_default.txt">
-            <Settings threshold="570" latency="199"/>
-            <TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>
-            <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
-            <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" testclock="1" dll="4"/>
-            <ChannelMask disable=""/>
-            <Register name="Pipe&amp;StubInpSel&amp;Ptwidth"> 0x63 </Register>
-        </CBC>
+        <CBC Id="0" configfile="CBC3_default.txt"/>
+        <CBC Id="1" configfile="CBC3_default.txt"/>
+            <!--<Settings threshold="570" latency="199"/>-->
+            <!--<TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>-->
+            <!--<ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>-->
+            <!--<Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" testclock="1" dll="4"/>-->
+            <!--<ChannelMask disable=""/>-->
+            <!--<Register name="Pipe&amp;StubInpSel&amp;Ptwidth"> 0x63 </Register>-->
+        <!--</CBC>-->
     </Module>
 
     <SLink>
@@ -43,11 +44,12 @@
         <!--to decide where the trigger veto is sent 0 for internal, 1 for external-->
         <Register name="global.misc.trigger_master_external"> 0 </Register>
         <!--use this if multiple single CBC FEs connected - in case of hybrid this is automatic and thus not required-->
-        <!--<Register name="global.cbc1.i2c_address"> 0x5F </Register>-->
-        <!--<Register name="global.cbc1.fe_id"> 1 </Register>-->
-        <!--<Register name="global.cbc2.i2c_address"> 0x5F </Register>-->
-        <!--<Register name="global.cbc2.fe_id"> 2 </Register>-->
-        <Register name="global.cbc2.active"> 0 </Register>
+        <!--I2C address and fe_id both need to be set-->
+        <Register name="global.cbc1.i2c_address"> 0x41 </Register>
+        <Register name="global.cbc1.fe_id"> 1 </Register>
+        <Register name="global.cbc2.i2c_address"> 0x42 </Register>
+        <Register name="global.cbc2.fe_id"> 1 </Register>
+        <!--<Register name="global.cbc2.active"> 0 </Register>-->
         <Register name="global.cbc3.active"> 0 </Register>
         <Register name="global.cbc4.active"> 0 </Register>
         <Register name="global.cbc5.active"> 0 </Register>

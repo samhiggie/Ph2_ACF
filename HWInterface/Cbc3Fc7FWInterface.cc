@@ -129,7 +129,8 @@ namespace Ph2_HwInterface {
                 uint8_t cFeId = cCbc->getFeId();
                 fIDMap[ (uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() ) )] = cNCbc + 1;
                 fIDMapReverse[cNCbc + 1] = uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() );
-                uint32_t cAddress = 0x5F + cCbcId;
+                //uint32_t cAddress = 0x5F + cCbcId; //single chip carrier
+                uint32_t cAddress = 0x41 + cCbcId;
                 std::string cRegString = string_format ("cbc_system_cnfg.global.cbc%d.", cNCbc + 1);
                 cVecReg.push_back ({cRegString + "active", 0x1});
                 //all IDs start with 1
@@ -184,7 +185,10 @@ namespace Ph2_HwInterface {
             bool cSuccess = false;
 
             for (auto& cWord : pReplies)
+            {
                 cSuccess = ( ( (cWord >> 20) & 0x1) == 0 && ( (cWord) & 0x000000FF) != 0 ) ? true : false;
+                std::cout << std::bitset<32> (cWord) << std::endl;
+            }
 
             if (cSuccess) LOG (INFO) << "Successfully received *Pings* from " << cActiveCbcs << " Cbcs on Fe " << +cFe->getFeId();
             else LOG (INFO) << "Error, did not receive the correct number of *Pings*; expected: " << cActiveCbcs << " on Fe " << +cFe->getFeId() << ", received: " << pReplies.size();
