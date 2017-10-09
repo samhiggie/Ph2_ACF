@@ -25,6 +25,7 @@
 class SLinkEvent
 {
   public:
+    SLinkEvent ();
     SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pChipType, uint32_t& pLV1Id, uint16_t& pBXId, int pSourceId = SOURCE_ID);
 
     ~SLinkEvent()

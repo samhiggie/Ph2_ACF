@@ -1,6 +1,16 @@
 #include "SLinkEvent.h"
 
 CRCCalculator SLinkEvent::fCalculator;
+
+SLinkEvent::SLinkEvent () :
+    fSize (0),
+    fCRCVal (0),
+    fCondData (0),
+    fFake (0)
+{
+    fData.clear();
+}
+
 SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pChipType, uint32_t& pLV1Id, uint16_t& pBXId, int pSourceId) :
     fEventType (pEventType),
     fDebugMode (pMode),
