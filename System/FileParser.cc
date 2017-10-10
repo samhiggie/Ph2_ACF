@@ -434,8 +434,22 @@ namespace Ph2_System {
 
         if (cGlobalCbcSettingsNode != nullptr)
         {
+            os << BOLDCYAN << "|\t|\t|----Global CBC Settings: " << RESET <<  std::endl;
+
+            int cCounter = 0;
+
             for (auto cCbc : pModule->fCbcVector)
-                this->parseCbcSettings (cGlobalCbcSettingsNode, cCbc, os);
+            {
+                if (cCounter == 0)
+                    this->parseCbcSettings (cGlobalCbcSettingsNode, cCbc, os);
+                else
+                {
+                    std::ofstream cDummy;
+                    this->parseCbcSettings (cGlobalCbcSettingsNode, cCbc, cDummy);
+                }
+
+                cCounter++;
+            }
         }
 
         // now that global has been applied to each CBC, handle the GlobalCBCRegisters

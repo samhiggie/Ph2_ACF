@@ -5,13 +5,13 @@
       <connection id="board" uri="chtcp-2.0://cmsuptracker008.cern.ch:10203?target=192.168.0.82:50001" address_table="file://settings/address_tables/IC_cbc3_address_table.xml" />
 
     <Module FeId="0" FMCId="1" ModuleId="0" Status="1">
-        <!--<Global>-->
-            <!--<Settings threshold="580" latency="200"/>-->
-            <!--<TestPulse enable="1" polarity="0" amplitude="0x08" channelgroup="0" delay="0" groundothers="1"/>-->
-            <!--<ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>-->
-            <!--<Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" dll="4"/>-->
-            <!--<ChannelMask disable="1"/>-->
-        <!--</Global>-->
+        <Global>
+            <Settings threshold="570" latency="199"/>
+            <TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>
+            <ClusterStub clusterwidth="4" ptwidth="3" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
+            <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" testclock="1" dll="4"/>
+            <ChannelMask disable=""/>
+        </Global>
         <!--<Global_CBC_Register name="TriggerLatency1"> 0x09 </Global_CBC_Register>-->
         <CBC_Files path="./settings/CbcFiles/" />
         <CBC Id="0" configfile="CBC3_default.txt"/>
@@ -69,12 +69,12 @@
                 <Register name="enable">
                     <Register name="fast_reset"> 1 </Register>
                     <Register name="trigger"> 1 </Register>
-                    <Register name="test_pulse"> 1 </Register>
+                    <Register name="test_pulse"> 0 </Register>
                     <Register name="orbit_reset"> 0 </Register>
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
                 <Register name="Ncycle"> 0 </Register>
-                <Register name="cycle_period"> 8000 </Register>
+                <Register name="cycle_period"> 80000 </Register>
                 <Register name="trigger_timing"> 19 </Register>
                 <Register name="test_pulse_timing"> 2 </Register>
                 <Register name="orbit_reset_timing"> 100 </Register>
@@ -87,10 +87,10 @@
                 <Register name="l1a"> 199 </Register>
                 <Register name="trig_data"> 196 </Register>
             </Register>
-            <!--<Register name="cbc2.latencies">-->
-                <!--<Register name="l1a"> 199 </Register>-->
-                <!--<Register name="trig_data"> 196 </Register>-->
-            <!--</Register>-->
+            <Register name="cbc2.latencies">
+                <Register name="l1a"> 199 </Register>
+                <Register name="trig_data"> 196 </Register>
+            </Register>
         </Register>
         <!--Cbc for data clock timing tuning per FE-->
         <Register name="io.fe1.cbc_sel"> 1 </Register>
