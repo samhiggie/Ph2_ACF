@@ -186,33 +186,33 @@ void CRCCalculator::compute (uint16_t& crc, const uint8_t* buffer, size_t bufSiz
 
     if ( bufSize == 0 ) return;
 
-        if (bufSize % 16 == 8)
-        {
-            computeCRC_32bit (crc, ( (uint32_t*) buffer) [1]);
-            computeCRC_32bit (crc, ( (uint32_t*) buffer) [0]);
-            bufSize -= 8;
-            buffer += 8;
-        }
+    if (bufSize % 16 == 8)
+    {
+        computeCRC_32bit (crc, ( (uint32_t*) buffer) [1]);
+        computeCRC_32bit (crc, ( (uint32_t*) buffer) [0]);
+        bufSize -= 8;
+        buffer += 8;
+    }
 
-        while (bufSize >= 16)
-        {
-            computeCRC_32bit (crc, ( (uint32_t*) buffer) [1]);
-            computeCRC_32bit (crc, ( (uint32_t*) buffer) [0]);
-            computeCRC_32bit (crc, ( (uint32_t*) buffer) [3]);
-            computeCRC_32bit (crc, ( (uint32_t*) buffer) [2]);
-            bufSize -= 16;
-            buffer += 16;
-        }
+    while (bufSize >= 16)
+    {
+        computeCRC_32bit (crc, ( (uint32_t*) buffer) [1]);
+        computeCRC_32bit (crc, ( (uint32_t*) buffer) [0]);
+        computeCRC_32bit (crc, ( (uint32_t*) buffer) [3]);
+        computeCRC_32bit (crc, ( (uint32_t*) buffer) [2]);
+        bufSize -= 16;
+        buffer += 16;
+    }
 
-        if (bufSize == 8)
-        {
-            computeCRC_32bit (crc, ( (uint32_t*) buffer) [1]);
-            computeCRC_32bit (crc, ( (uint32_t*) buffer) [0]);
-        }
+    if (bufSize == 8)
+    {
+        computeCRC_32bit (crc, ( (uint32_t*) buffer) [1]);
+        computeCRC_32bit (crc, ( (uint32_t*) buffer) [0]);
+    }
 }
 
 
-uint32_t CRCCalculator::crc32c (uint32_t crc, const unsigned char* buf, size_t len) const
-{
-    return haveSSE42_ ? crc32c_hw (crc, buf, len) : crc32c_sw (crc, buf, len);
-}
+//uint32_t CRCCalculator::crc32c (uint32_t crc, const unsigned char* buf, size_t len) const
+//{
+//return haveSSE42_ ? crc32c_hw (crc, buf, len) : crc32c_sw (crc, buf, len);
+//}

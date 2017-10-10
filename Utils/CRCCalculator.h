@@ -22,6 +22,7 @@
 #include <cassert>
 #include <stddef.h>
 #include <stdint.h>
+//#include "crc32c.cc"
 
 
 
@@ -47,7 +48,7 @@ class CRCCalculator
     /**
      * Compute CRC32-C
      */
-    uint32_t crc32c (uint32_t crc, const unsigned char* buf, size_t len) const;
+    //uint32_t crc32c (uint32_t crc, const unsigned char* buf, size_t len) const;
 
 
   private:
@@ -74,16 +75,16 @@ class CRCCalculator
 
 //extern "C"
 //{
-    //uint16_t crc16_T10DIF_128x_extended
-    //(
-        //uint16_t init_crc,            // initial CRC value, 16 bits
-        //const unsigned char* buffer,  // buffer pointer to calculate CRC on
-        //size_t bufSize                // buffer length in bytes (64-bit data)
-    //);
+//uint16_t crc16_T10DIF_128x_extended
+//(
+//uint16_t init_crc,            // initial CRC value, 16 bits
+//const unsigned char* buffer,  // buffer pointer to calculate CRC on
+//size_t bufSize                // buffer length in bytes (64-bit data)
+//);
 //}
 
 
-extern uint32_t crc32c_sw (uint32_t crc, const unsigned char* buf, size_t len);
-extern uint32_t crc32c_hw (uint32_t crc, const unsigned char* buf, size_t len);
+//extern uint32_t crc32c_sw (uint32_t crc, const unsigned char* buf, size_t len);
+//extern uint32_t crc32c_hw (uint32_t crc, const unsigned char* buf, size_t len);
 
 #endif // _CRCCalculator_h_
