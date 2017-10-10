@@ -36,8 +36,8 @@
     - added a CMD line option: g for GUI, should only be used by the latter
     - SystemController class can now parse .json files in addition to .xml
 - 04/03/15: added GUI (v1-10)
-- 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading. 
-    - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog. 
+- 05/03/15 : New FpgaConfig object in HWInterface to manage firmware uploading.
+    - added WriteBlockAtAddress and ReadAtAddress functions in RegManager used by the upload dialog.
     - BeBoardInterface::FlashProm(...) uploads an MCS file into the FPGA
 - 15/04/15 : Acquisition in a separate thread (v1-11)
     - Start() should be called when acquisition begins, Stop() when it ends and ReadData(...) at each iteration.
@@ -50,7 +50,7 @@
     - added a stub bit method to the Event class
     - restructured the ostream operator of the Event class
 - 05/06/2015: minor modifications
-    - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks. 
+    - BeBoardFWInterface::ReadData() now returns the number of packets read during the acquisition for faster event counter checks.
 - 11/06/2015: merging a new design for Data and Event classes (v1-20)
     - Data class now holds a vector of Events and the events are directly decoded after acquisition - the char* databuffer does not exist any longer
     - added methods: std::vector<Event*> GetEvents(); Event* GetEvent()
@@ -86,7 +86,7 @@
     - iterative readback-error correction (SW tries to write every register agin that produced an error for 5 times)
     - simplified FastCalibration
     - removed old Calibration algorithm
-    - introduced new, bitwise and super-fast calibration algorithm 
+    - introduced new, bitwise and super-fast calibration algorithm
 - 11/12/2015: new uHAL connection configuration:
       - added new Constructors to RegManager, BeBoardFWInterface, GlibFWInterface, CtaFWInterface that take uhal connection: id, uri, address_table
       - modified system controller accordingly so these strings are passed to the constructor
@@ -109,7 +109,7 @@
     - added ReadNEvents() method to BeBoardInterface that allows to read a given number of events from FW as 1 packet
     - changed signatures of ReadData / Stop and remove the NthAcquisition parameter for simplicity
     - simplified the iterative error correction features in both FW Interfaces
-    - implemented broadcast I2C write operations in both FW Interfaces 
+    - implemented broadcast I2C write operations in both FW Interfaces
     - added Support for AMC13
     - included TDC aware Trigger latency scan in Commissioning
     - adapted FW aware commissioning procedures & tools to check the beBoardFWVersion (GLIB vs ICGLIB)
@@ -139,7 +139,7 @@
     - for writing 1 FileHandler Instance per BeBoard is created
     - file Headers are now included in all raw files and are marked with the BeId
     - moved all HW Parsing features from System Controller to System/FileParser class for easier extension
-- 31.08.2016: most likely v1-40 
+- 31.08.2016:
     - updated Event Class with more streamlined and efficient code that uses less accesses when dealing with Events - should make for better performance
     - updated DQM histogramer to work with new Event implementation
     - revised mapping of Events vs CBC and FE
@@ -190,4 +190,3 @@
 - 21.07.2017
     - merged changes required for OTSDAQ
     - migrated project to CMAKE: instructions: cd build/ cmake .. make
-

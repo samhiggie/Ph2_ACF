@@ -3,7 +3,7 @@ RED='\033[1m\033[31m'
 BLU='\033[1m\033[35m'
 RESET='\033[0m'
 
-Objs  			= FrontEndDescription.o BeBoard.o Cbc.o Module.o 
+Objs  			= FrontEndDescription.o BeBoard.o Cbc.o MPA.o Module.o
 CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -Wall -fPIC -pedantic

@@ -80,3 +80,4 @@ clean:
 	(cd miniDAQ; make clean)
 	(cd AMC13; make clean)
 	(rm -f lib/* bin/*)
+

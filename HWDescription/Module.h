@@ -14,6 +14,7 @@
 
 #include "FrontEndDescription.h"
 #include "Cbc.h"
+#include "MPA.h"
 #include "../Utils/Visitor.h"
 #include "../Utils/easylogging++.h"
 #include <vector>
@@ -51,6 +52,12 @@ namespace Ph2_HwDescription {
                 if (pCbc) delete pCbc;
 
             fCbcVector.clear();
+
+            for ( auto& pMPA : fMPAVector )
+                delete pMPA;
+
+            fMPAVector.clear();
+
         };
 
         /*!
@@ -77,6 +84,14 @@ namespace Ph2_HwDescription {
         {
             return fCbcVector.size();
         }
+
+
+        uint8_t getNMPA() const
+        {
+            return fMPAVector.size();
+        }
+
+
         /*!
          * \brief Adding a Cbc to the vector
          * \param pCbc
@@ -113,6 +128,17 @@ namespace Ph2_HwDescription {
 
             fCbcVector.push_back ( pCbc );
         }
+
+        void addMPA ( MPA& pMPA )
+        {
+            fMPAVector.push_back ( &pMPA );
+        }
+        void addMPA ( MPA* pMPA )
+        {
+            fMPAVector.push_back ( pMPA );
+        }
+
+
         /*!
          * \brief Remove a Cbc from the vector
          * \param pCbcId
@@ -125,6 +151,20 @@ namespace Ph2_HwDescription {
          * \return a pointer of Cbc, so we can manipulate directly the Cbc contained in the vector
          */
         Cbc* getCbc ( uint8_t pCbcId ) const;
+
+
+        /*!
+         * \brief Remove a MPA from the vector
+         * \param pMPAId
+         * \return a bool which indicate if the removing was successful
+         */
+        bool   removeMPA ( uint8_t pMPAId );
+        /*!
+         * \brief Get a MPA from the vector
+         * \param pMPAId
+         * \return a pointer of MPA, so we can manipulate directly the MPA contained in the vector
+         */
+        MPA* getMPA ( uint8_t pMPAId ) const;
 
         /*!
         * \brief Get the Module Id
@@ -145,6 +185,7 @@ namespace Ph2_HwDescription {
 
 
         std::vector < Cbc* > fCbcVector;
+        std::vector < MPA* > fMPAVector;
 
 
       protected:
