@@ -55,6 +55,16 @@ int main ( int argc, char** argv )
 
     if ( cConfigure ) cSystemController.ConfigureHw ();
 
+    CbcRegReader cReader (cSystemController.fCbcInterface, "BandgapFuse");
+    cSystemController.accept (cReader);
+    cReader.setRegister ("ChipIDFuse1");
+    cSystemController.accept (cReader);
+    cReader.setRegister ("ChipIDFuse2");
+    cSystemController.accept (cReader);
+    cReader.setRegister ("ChipIDFuse3");
+    cSystemController.accept (cReader);
+
+
 
     //Timer t;
     //t.start();
