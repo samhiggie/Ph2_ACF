@@ -261,7 +261,7 @@ namespace Ph2_HwInterface {
             while (cDctt_fsm != 9)
             {
                 uint32_t cStatus = ReadReg ("cbc_system_stat.io.cbc1.slvs5");
-                //LOG (DEBUG) << cCounter << " " << std::bitset<32> (cStatus);
+                LOG (DEBUG) << cCounter << " " << std::bitset<32> (cStatus);
                 std::this_thread::sleep_for (std::chrono::microseconds (10) );
                 //CbcRegItem cRegItem (0, 0x1D, 0, 0);
                 //std::vector<uint32_t> cVecReq;
