@@ -11,7 +11,7 @@ CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -fPIC -Wcpp
 
 LibraryDirs =
-IncludeDirs =
+IncludeDirs = $(CACTUSINCLUDE)
 ExternalObjects=
 
 #################################################
