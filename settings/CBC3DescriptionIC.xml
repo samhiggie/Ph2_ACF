@@ -12,7 +12,8 @@
             <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" testclock="1" dll="4"/>
             <ChannelMask disable=""/>
         </Global>
-        <!--<Global_CBC_Register name="TriggerLatency1"> 0x09 </Global_CBC_Register>-->
+            <!--<Global_CBC_Register name="Pipe&amp;StubInpSel&amp;Ptwidth"> 0x53 </Global_CBC_Register>-->
+            <!--<Global_CBC_Register name="HIP&amp;TestMode"> 0x08 </Global_CBC_Register>-->
         <CBC_Files path="./settings/CbcFiles/" />
         <CBC Id="0" configfile="CBC3_default.txt"/>
         <CBC Id="1" configfile="CBC3_default.txt"/>
@@ -39,8 +40,8 @@
         <!--required-->
         <Register name="cbc_system_clk"> 0x1 </Register>
         <!--to output trigger-->
-        <Register name="global.test_out.1"> 0x0004 </Register>
-        <Register name="global.test_out.2"> 0x0100 </Register>
+        <Register name="global.test_out.1"> 0x0001 </Register>
+        <Register name="global.test_out.2"> 0x0004 </Register>
         <!--to decide where the trigger veto is sent 0 for internal, 1 for external-->
         <Register name="global.misc.trigger_master_external"> 0 </Register>
         <!--use this if multiple single CBC FEs connected - in case of hybrid this is automatic and thus not required-->
@@ -67,14 +68,14 @@
             <!--FAST SIGNAL GENERATOR CONFIG-->
             <Register name="fast_signal_generator">
                 <Register name="enable">
-                    <Register name="fast_reset"> 1 </Register>
+                    <Register name="fast_reset"> 0 </Register>
                     <Register name="trigger"> 1 </Register>
                     <Register name="test_pulse"> 0 </Register>
                     <Register name="orbit_reset"> 0 </Register>
                 </Register>
                 <!--FAST SIGNAL GENERATOR TIMING-->
                 <Register name="Ncycle"> 0 </Register>
-                <Register name="cycle_period"> 80000 </Register>
+                <Register name="cycle_period"> 8000 </Register>
                 <Register name="trigger_timing"> 19 </Register>
                 <Register name="test_pulse_timing"> 2 </Register>
                 <Register name="orbit_reset_timing"> 100 </Register>
@@ -94,6 +95,7 @@
         </Register>
         <!--Cbc for data clock timing tuning per FE-->
         <Register name="io.fe1.cbc_sel"> 1 </Register>
+        <Register name="io.data_clock_timing_tuning.idelay_offset"> 0x3 </Register>
         <!--<Register name="io.fe2.cbc_sel"> 1 </Register>-->
     </Register>
   </BeBoard>
