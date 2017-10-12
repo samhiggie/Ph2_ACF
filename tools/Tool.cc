@@ -183,12 +183,20 @@ TObject* Tool::getHist ( Cbc* pCbc, std::string pName )
 {
     auto cCbcHistMap = fCbcHistMap.find ( pCbc );
 
-    if ( cCbcHistMap == std::end ( fCbcHistMap ) ) LOG (ERROR) << RED << "Error: could not find the Histograms for CBC " << int ( pCbc->getCbcId() ) <<  " (FE " << int ( pCbc->getFeId() ) << ")" << RESET ;
+    if ( cCbcHistMap == std::end ( fCbcHistMap ) )
+    {
+        LOG (ERROR) << RED << "Error: could not find the Histograms for CBC " << int ( pCbc->getCbcId() ) <<  " (FE " << int ( pCbc->getFeId() ) << ")" << RESET ;
+        return nullptr;
+    }
     else
     {
         auto cHisto = cCbcHistMap->second.find ( pName );
 
-        if ( cHisto == std::end ( cCbcHistMap->second ) ) LOG (ERROR) << RED << "Error: could not find the Histogram with the name " << pName << RESET ;
+        if ( cHisto == std::end ( cCbcHistMap->second ) )
+        {
+            LOG (ERROR) << RED << "Error: could not find the Histogram with the name " << pName << RESET ;
+            return nullptr;
+        }
         else
             return cHisto->second;
     }
@@ -198,12 +206,20 @@ TObject* Tool::getHist ( Module* pModule, std::string pName )
 {
     auto cModuleHistMap = fModuleHistMap.find ( pModule );
 
-    if ( cModuleHistMap == std::end ( fModuleHistMap ) ) LOG (ERROR) << RED << "Error: could not find the Histograms for Module " << int ( pModule->getFeId() ) << RESET ;
+    if ( cModuleHistMap == std::end ( fModuleHistMap ) )
+    {
+        LOG (ERROR) << RED << "Error: could not find the Histograms for Module " << int ( pModule->getFeId() ) << RESET ;
+        return nullptr;
+    }
     else
     {
         auto cHisto = cModuleHistMap->second.find ( pName );
 
-        if ( cHisto == std::end ( cModuleHistMap->second ) ) LOG (ERROR) << RED << "Error: could not find the Histogram with the name " << pName << RESET ;
+        if ( cHisto == std::end ( cModuleHistMap->second ) )
+        {
+            LOG (ERROR) << RED << "Error: could not find the Histogram with the name " << pName << RESET ;
+            return nullptr;
+        }
         else return cHisto->second;
     }
 }
