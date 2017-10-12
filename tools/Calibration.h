@@ -62,7 +62,7 @@ class Calibration : public Tool
 
     void setOffset ( uint8_t pOffset, int  pTGroupId, bool pVPlus = false );
 
-    void toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin );
+    void toggleOffset ( int pTGroup, uint8_t pBit, bool pBegin );
 
     void measureOccupancy ( uint32_t pNEvents, int pTGroup );
 
@@ -102,6 +102,7 @@ class Calibration : public Tool
     uint16_t fTargetVcth;
     uint8_t fTargetOffset;
     bool fCheckLoop;
+    bool fAllChan;
 
 };
 

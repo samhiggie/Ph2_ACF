@@ -23,6 +23,7 @@ void Calibration::Initialise ( bool pAllChan )
 {
     // Initialize the TestGroups
     this->MakeTestGroups ( pAllChan );
+    this->fAllChan = pAllChan;
 
     // now read the settings from the map
     auto cSetting = fSettingsMap.find ( "HoleMode" );
@@ -412,6 +413,26 @@ void Calibration::FindOffsets()
             setOffset ( cOffset, cTGroup.first );
             LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
         }
+        else if (cTGroup.first == -1 && fAllChan)
+        {
+            LOG (INFO) << GREEN << "Enabling all channels ... Test Group Id " << cTGroup.first << RESET ;
+
+            bitwiseOffset ( cTGroup.first );
+
+            if ( fCheckLoop )
+            {
+                // now all the bits are toggled or not, I still want to verify that the occupancy is ok
+                int cMultiple = 3;
+                LOG (INFO) << "Verifying Occupancy with final offsets by taking " << fEventsPerPoint* cMultiple << " Triggers!" ;
+                measureOccupancy ( fEventsPerPoint  * cMultiple, cTGroup.first );
+                // now find the occupancy for each channel and update the TProfile
+            }
+
+            updateHists ( "Occupancy" );
+            uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
+            setOffset ( cOffset, cTGroup.first );
+            LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
+        }
 
         this->HttpServerProcess();
     }
@@ -566,7 +587,7 @@ void Calibration::setOffset ( uint8_t pOffset, int  pGroup, bool pVPlus )
     }
 }
 
-void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
+void Calibration::toggleOffset ( int pTGroup, uint8_t pBit, bool pBegin )
 {
     for ( auto cBoard : fBoardVector )
     {
@@ -586,7 +607,7 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                 RegisterVector cRegVec;   // vector of pairs for the write operation
 
                 // loop the channels of the current group and toggle bit i in the global map
-                for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
+                for ( auto& cChannel : fTestGroupChannelMap[pTGroup] )
                 {
                     TString cRegName = Form ( "Channel%03d", cChannel + 1 );
 

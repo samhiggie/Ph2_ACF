@@ -45,7 +45,7 @@ class PedeNoise : public Tool
     PedeNoise();
     ~PedeNoise();
 
-    void Initialise();
+    void Initialise (bool pAllChan = false);
     void measureNoise (uint8_t pTPAmplitude = 0); //method based on the one below that actually analyzes the scurves and extracts the noise
     std::string sweepSCurves (uint8_t pTPAmplitude); // actual methods to measure SCurves
     void Validate (uint32_t pNoiseStripThreshold = 1, uint32_t pMultiple = 100);

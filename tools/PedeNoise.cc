@@ -23,9 +23,9 @@ PedeNoise::~PedeNoise()
 {
 }
 
-void PedeNoise::Initialise()
+void PedeNoise::Initialise (bool pAllChan)
 {
-    this->MakeTestGroups ( false );
+    this->MakeTestGroups ( pAllChan );
 
     //is to be called after system controller::InitialiseHW, InitialiseSettings
     // populates all the maps
@@ -244,43 +244,45 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
     // now measure some SCurves
     for ( auto& cTGrpM : fTestGroupChannelMap )
     {
-        if (cTGrpM.first != -1)
+        // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
+        if (fTestPulse && cTGrpM.first != -1)
         {
-            // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
-            if (fTestPulse)
-            {
-                LOG (INFO) << GREEN <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
-                setFWTestPulse();
-                setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true, fHoleMode );
-            }
+            LOG (INFO) << GREEN <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
+            setFWTestPulse();
+            setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true, fHoleMode );
+        }
+        else if (fTestPulse && cTGrpM.first == -1)
+        {
+            fTestPulse = false;
+            LOG (INFO) << RED <<  "Test groups disabled. Can't enable Test Pulse for Test Group " << cTGrpM.first << RESET ;
+        }
 
-            LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
-            // this leaves the offset values at the tuned values for cTGrp and disables all other groups
-            enableTestGroupforNoise ( cTGrpM.first );
+        LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
+        // this leaves the offset values at the tuned values for cTGrp and disables all other groups
+        enableTestGroupforNoise ( cTGrpM.first );
 
-            // measure the SCurves, the false is indicating that I am sweeping Vcth
-            measureSCurves ( cTGrpM.first, cHistogramname, cStartValue );
+        // measure the SCurves, the false is indicating that I am sweeping Vcth
+        measureSCurves ( cTGrpM.first, cHistogramname, cStartValue );
 
-            for (auto& cCbc : fHitCountMap)
-            {
-                TH2F* cSCurveHist = dynamic_cast<TH2F*> (this->getHist (cCbc.first, cHistogramname) );
-                fNoiseCanvas->cd (cCbc.first->getCbcId() + 1);
-                double cMean = cSCurveHist->GetMean (2);
-                TH1D* cTmp = cSCurveHist->ProjectionY();
-                cSCurveHist->GetYaxis()->SetRangeUser ( cTmp->GetBinCenter (cTmp->FindFirstBinAbove (0) ) - 10, cTmp->GetBinCenter (cTmp->FindLastBinAbove (0.99) ) + 10 );
-                //cSCurveHist->GetYaxis()->SetRangeUser (cMean - 30, cMean + 30);
-                cSCurveHist->Draw ("colz2");
-            }
+        for (auto& cCbc : fHitCountMap)
+        {
+            TH2F* cSCurveHist = dynamic_cast<TH2F*> (this->getHist (cCbc.first, cHistogramname) );
+            fNoiseCanvas->cd (cCbc.first->getCbcId() + 1);
+            double cMean = cSCurveHist->GetMean (2);
+            TH1D* cTmp = cSCurveHist->ProjectionY();
+            cSCurveHist->GetYaxis()->SetRangeUser ( cTmp->GetBinCenter (cTmp->FindFirstBinAbove (0) ) - 10, cTmp->GetBinCenter (cTmp->FindLastBinAbove (0.99) ) + 10 );
+            //cSCurveHist->GetYaxis()->SetRangeUser (cMean - 30, cMean + 30);
+            cSCurveHist->Draw ("colz2");
+        }
 
-            fNoiseCanvas->Modified();
-            fNoiseCanvas->Update();
+        fNoiseCanvas->Modified();
+        fNoiseCanvas->Update();
 
-            if (fTestPulse)
-            {
-                LOG (INFO) << RED <<  "Disabling Test Pulse for Test Group " << cTGrpM.first << RESET ;
-                setSystemTestPulse ( 0, cTGrpM.first, false, fHoleMode );
+        if (fTestPulse)
+        {
+            LOG (INFO) << RED <<  "Disabling Test Pulse for Test Group " << cTGrpM.first << RESET ;
+            setSystemTestPulse ( 0, cTGrpM.first, false, fHoleMode );
 
-            }
         }
     }
 
