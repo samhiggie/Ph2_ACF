@@ -549,7 +549,7 @@ namespace Ph2_HwInterface {
     }
 
     void D19cFWInterface::ResetReadout()
-    {        
+    {
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
         usleep (10);
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
@@ -558,9 +558,11 @@ namespace Ph2_HwInterface {
         if (fIsDDR3Readout) {
             fDDR3Offset = 0;
             bool cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
+            int i=0;
             while(!cDDR3Calibrated) {
-                LOG(INFO) << "Waiting for DDR3 to finish initial calibration";
-                std::this_thread::sleep_for (std::chrono::milliseconds (1000) );
+                if(i==0) LOG(INFO) << "Waiting for DDR3 to finish initial calibration";
+                i++;
+                std::this_thread::sleep_for (std::chrono::milliseconds (100) );
                 cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
             }
         }
@@ -690,11 +692,23 @@ namespace Ph2_HwInterface {
 
             if (pBoard->getEventType() == EventType::VR)
             {
-                if ( (cNWords % computeEventSize (pBoard) ) == 0) cNEvents = cNWords / computeEventSize (pBoard);
-                else {
-                    LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
-                    LOG(ERROR) << "nwords: " << cNWords << ", eventsize: " << computeEventSize(pBoard);
+                if ( (cNWords % computeEventSize (pBoard) ) != 0)
+                {
+                    uint32_t cNTries = 0;
+                    while( (cNWords % computeEventSize (pBoard) ) == 0 ) {
+                        if (cNTries < 50) {
+                            usleep (0.1);
+                            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+                            cNTries++;
+                        }
+                        else {
+                            LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
+                            LOG(ERROR) << "nwords: " << cNWords << ", eventsize: " << computeEventSize(pBoard);
+                            break;
+                        }
+                    }
                 }
+                cNEvents = cNWords / computeEventSize (pBoard);
             }
             else
             {
@@ -738,7 +752,7 @@ namespace Ph2_HwInterface {
 
                 std::vector<uint32_t> event_data;
                 if (fIsDDR3Readout)
-                    event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);
+                    event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);                
                 else
                     event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
                 pData.insert (pData.end(), event_data.begin(), event_data.end() );
@@ -767,9 +781,6 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
         usleep (1);
 
-        // reset readout
-        this->ResetReadout();
-
         // start triggering machine which will collect N events
         this->Start();
 
@@ -795,8 +806,7 @@ namespace Ph2_HwInterface {
                         break;
                     }
                     else cNTries = 0;
-                }
-
+                }                
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
                 cNTries++;
@@ -839,7 +849,7 @@ namespace Ph2_HwInterface {
             this->ResetReadout();
 
             this->ReadNEvents (pBoard, pNEvents, pData);
-        }
+        }        
 
         if (fSaveToFile)
             fFileHandler->set (pData);
