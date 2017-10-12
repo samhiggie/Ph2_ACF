@@ -72,6 +72,7 @@ class PedeNoise : public Tool
     uint32_t fNFe;
 
     // Settings
+    bool fAllChan;
     bool fHoleMode;
     bool fTestPulse;
     bool fFitted;
