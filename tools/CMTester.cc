@@ -298,8 +298,8 @@ void CMTester::TakeData()
 
     ThresholdVisitor cVisitor (fCbcInterface);
     this->accept (cVisitor);
-    uint32_t cVcth = cVisitor.getThreshold();
-    LOG (INFO) << "Checking threshold...: " << cVcth << std::endl;
+    fVcth = cVisitor.getThreshold();
+    LOG (INFO) << "Checking threshold on latest CBC that was touched...: "<<fVcth<<std::endl;
 
     //    cVisitor.setOption ('w');
     //    cVisitor.setThreshold (595);
@@ -359,8 +359,12 @@ void CMTester::FinishRun()
     // first CBCs
     LOG (INFO) << "per CBC ..";
 
+    ThresholdVisitor cVisitor (fCbcInterface); // No Vcth given, so default option is 'r'
+    int iCbc = 0;
     for ( auto cCbc : fCbcHistMap )
     {
+        cCbc.first->accept (cVisitor);
+        uint32_t cVcth = cVisitor.getThreshold();
 
         TH1F* cTmpNHits = dynamic_cast<TH1F*> ( getHist ( cCbc.first, "nhits" ) );
         TH1F* cNoCM = dynamic_cast<TH1F*> ( getHist ( cCbc.first, "nocm" ) );
@@ -373,6 +377,14 @@ void CMTester::FinishRun()
         // Fit NHits and create 0 CM
         fitDistribution ( cTmpNHits, cNHitsFit, cNactiveChan );
         createNoiseDistribution ( cNoCM, cNHitsFit->GetParameter ( 0 ), 0, cNHitsFit->GetParameter ( 2 ), cNHitsFit->GetParameter ( 3 ) );
+
+	float CMnoiseFrac = fabs ( cNHitsFit->GetParameter ( 1 ) );
+	float CMnoiseFracErr = fabs ( cNHitsFit->GetParError ( 1 ) );
+	if (fTotalNoise[iCbc]>0) 
+	    LOG (INFO) << BOLDRED << "Average noise on FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " : " << fTotalNoise[iCbc] << " . At Vcth " << cVcth << " CM is " << CMnoiseFrac << "+/-" <<  CMnoiseFracErr << "%, so "<<CMnoiseFrac*fTotalNoise[iCbc]<<" VCth." << RESET ;
+	else 
+	    LOG (INFO) << BOLDRED << "FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " . At Vcth " << cVcth << " CM is " << CMnoiseFrac << "+/-" <<  CMnoiseFracErr << "%" << RESET ;
+
 
         // now compute the correlation coefficient and the uncorrelated probability
         TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*> ( getHist ( cCbc.first, "combinedoccupancy" ) );
@@ -401,6 +413,7 @@ void CMTester::FinishRun()
                 if ( xy == xy ) cCorrProjection->Fill ( cIdx - cIdy, xy );
             }
         }
+	iCbc++;
     }
 
     LOG (INFO) << " done!" ;
@@ -570,6 +583,7 @@ void CMTester::analyze ( BeBoard* pBoard, const Event* pEvent )
 void CMTester::updateHists ( bool pFinal )
 {
     // method to iterate over the histograms that I want to draw and update the canvases
+    int iCbc = 0;
     for ( auto& cCbc : fCbcHistMap )
     {
         auto cCanvas = fCanvasMap.find ( cCbc.first );
@@ -607,8 +621,9 @@ void CMTester::updateHists ( bool pFinal )
                 cLegend->SetBorderSize ( 0 );
                 cLegend->SetFillColor ( kWhite );
                 cLegend->AddEntry ( cTmpNHits, "Data", "f" );
-                cLegend->AddEntry ( cCMFit, Form ( "Fit (CM %4.2f+-%4.2f, THR %4.2f)", fabs ( cCMFit->GetParameter ( 1 ) ), cCMFit->GetParError ( 1 ), cCMFit->GetParameter ( 0 ) ), "l" );
+                cLegend->AddEntry ( cCMFit, Form ( "Fit (CM %4.2f+-%4.2f, THR %4.2f). ", fabs ( cCMFit->GetParameter ( 1 ) ), cCMFit->GetParError ( 1 ), cCMFit->GetParameter ( 0 ) ), "l" );
                 cLegend->AddEntry ( cNoCM, "CM = 0", "l" );
+		if (fTotalNoise[iCbc]>0) cLegend->AddEntry ( (TObject*)0, Form ( "Noise: %4.2f (total), %4.2f (CM)", fTotalNoise[iCbc],  fabs ( cCMFit->GetParameter ( 1 ) )*fTotalNoise[iCbc] ), "" );
                 cLegend->SetTextSize ( 0.05 );
                 cLegend->Draw ( "same" );
             }
@@ -640,6 +655,7 @@ void CMTester::updateHists ( bool pFinal )
             cCanvas->second->Update();
 
         }
+	iCbc++;
     }
 
     this->HttpServerProcess();
@@ -700,6 +716,10 @@ bool CMTester::isMasked ( int pGlobalChannel )
     }
 }
 
+void CMTester::SetTotalNoise ( std::vector<double> pTotalNoise ) {
+  // Just used in plotting.
+  fTotalNoise = pTotalNoise;
+} 
 
 
 
