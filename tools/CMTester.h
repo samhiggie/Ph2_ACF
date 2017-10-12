@@ -55,6 +55,8 @@ class CMTester : public Tool
     void ScanNoiseChannels();
     void TakeData();
     void FinishRun();
+    void SetTotalNoise ( std::vector<double> pTotalNoise);
+
 
   private:
     void updateHists ( bool pFinal = false );
@@ -65,6 +67,8 @@ class CMTester : public Tool
     bool isMasked ( int pGlobalChannel );
 
     uint32_t fNevents, fDoSimulate, fSimOccupancy;
+     std::vector<double> fTotalNoise;
+    uint32_t fVcth;
 
     std::map<Cbc*, std::set<int> > fNoiseStripMap;
 
