@@ -73,11 +73,13 @@ namespace Ph2_HwInterface {
         {
             //this is to protect from readback errors during Configure as the BandgapFuse and ChipIDFuse registers should be e-fused in the CBC3
             if (cRegItem.first.find ("BandgapFuse") == std::string::npos && cRegItem.first.find ("ChipIDFuse") == std::string::npos)
+            {
                 fBoardFW->EncodeReg (cRegItem.second, pCbc->getFeId(), pCbc->getCbcId(), cVec, pVerifLoop, true);
 
 #ifdef COUNT_FLAG
-            fRegisterCount++;
+                fRegisterCount++;
 #endif
+            }
         }
 
         // write the registers, the answer will be in the same cVec
