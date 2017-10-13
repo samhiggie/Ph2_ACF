@@ -19,8 +19,9 @@ Calibration::~Calibration()
 
 }
 
-void Calibration::Initialise ( bool pAllChan )
+void Calibration::Initialise ( bool pAllChan, bool pDisableStubLogic )
 {
+    fDisableStubLogic = pDisableStubLogic;
     // Initialize the TestGroups
     this->MakeTestGroups ( pAllChan );
     this->fAllChan = pAllChan;
@@ -65,6 +66,16 @@ void Calibration::Initialise ( bool pAllChan )
 
             for ( auto cCbc : cFe->fCbcVector )
             {
+                //if it is a CBC3, disable the stub logic for this procedure
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - thus disabling Stub logic for offset tuning" << RESET ;
+                    fStubLogicValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth");
+                    fHIPCountValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "HIP&TestMode");
+                    fCbcInterface->WriteCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth", 0x23);
+                    fCbcInterface->WriteCbcReg (cCbc, "HIP&TestMode", 0x08);
+                }
+
                 uint32_t cCbcId = cCbc->getCbcId();
                 cCbcCount++;
 
@@ -744,6 +755,13 @@ void Calibration::setRegValues()
                     TString cRegName = Form ( "Channel%03d", iChan + 1 );
                     cRegVec.push_back ( {cRegName.Data(), cOffset} );
                     //LOG (INFO) << GREEN << "Offset for CBC " << cCbc->getCbcId() << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << " -applying to chip" << RESET ;
+                }
+
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - re-enabling stub logic to original value!" << RESET;
+                    cRegVec.push_back ({"Pipe&StubInpSel&Ptwidth", fStubLogicValue[cCbc]});
+                    cRegVec.push_back ({"HIP&TestMode", fHIPCountValue[cCbc]});
                 }
 
                 fCbcInterface->WriteCbcMultReg ( cCbc, cRegVec );

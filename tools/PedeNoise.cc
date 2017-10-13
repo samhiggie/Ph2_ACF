@@ -23,8 +23,9 @@ PedeNoise::~PedeNoise()
 {
 }
 
-void PedeNoise::Initialise (bool pAllChan)
+void PedeNoise::Initialise (bool pAllChan, bool pDisableStubLogic)
 {
+    fDisableStubLogic = pDisableStubLogic;
     this->MakeTestGroups ( pAllChan );
     fAllChan = pAllChan;
 
@@ -56,6 +57,16 @@ void PedeNoise::Initialise (bool pAllChan)
 
             for ( auto cCbc : cFe->fCbcVector )
             {
+                //if it is a CBC3, disable the stub logic for this procedure
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - thus disabling Stub logic for offset tuning" << RESET ;
+                    fStubLogicValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth");
+                    fHIPCountValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "HIP&TestMode");
+                    fCbcInterface->WriteCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth", 0x23);
+                    fCbcInterface->WriteCbcReg (cCbc, "HIP&TestMode", 0x08);
+                }
+
                 uint32_t cCbcId = cCbc->getCbcId();
                 cCbcCount++;
 
@@ -258,32 +269,32 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
             LOG (INFO) << RED <<  "Test groups disabled. Can't enable Test Pulse for Test Group " << cTGrpM.first << RESET ;
         }
 
-	if (cTGrpM.first != -1 || fAllChan)
+        if (cTGrpM.first != -1 || fAllChan)
         {
 
-	    LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
-	    // this leaves the offset values at the tuned values for cTGrp and disables all other groups
-	    enableTestGroupforNoise ( cTGrpM.first );
-	    
-	    // measure the SCurves, the false is indicating that I am sweeping Vcth
-	    measureSCurves ( cTGrpM.first, cHistogramname, cStartValue );
-	    
-	    for (auto& cCbc : fHitCountMap)
-	    {
-		TH2F* cSCurveHist = dynamic_cast<TH2F*> (this->getHist (cCbc.first, cHistogramname) );
-		fNoiseCanvas->cd (cCbc.first->getCbcId() + 1);
-		double cMean = cSCurveHist->GetMean (2);
-		TH1D* cTmp = cSCurveHist->ProjectionY();
-		cSCurveHist->GetYaxis()->SetRangeUser ( cTmp->GetBinCenter (cTmp->FindFirstBinAbove (0) ) - 10, cTmp->GetBinCenter (cTmp->FindLastBinAbove (0.99) ) + 10 );
-		//cSCurveHist->GetYaxis()->SetRangeUser (cMean - 30, cMean + 30);
-		cSCurveHist->Draw ("colz2");
-	    }
-	    
-	    fNoiseCanvas->Modified();
-	    fNoiseCanvas->Update();
+            LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
+            // this leaves the offset values at the tuned values for cTGrp and disables all other groups
+            enableTestGroupforNoise ( cTGrpM.first );
 
-	}
-	    
+            // measure the SCurves, the false is indicating that I am sweeping Vcth
+            measureSCurves ( cTGrpM.first, cHistogramname, cStartValue );
+
+            for (auto& cCbc : fHitCountMap)
+            {
+                TH2F* cSCurveHist = dynamic_cast<TH2F*> (this->getHist (cCbc.first, cHistogramname) );
+                fNoiseCanvas->cd (cCbc.first->getCbcId() + 1);
+                double cMean = cSCurveHist->GetMean (2);
+                TH1D* cTmp = cSCurveHist->ProjectionY();
+                cSCurveHist->GetYaxis()->SetRangeUser ( cTmp->GetBinCenter (cTmp->FindFirstBinAbove (0) ) - 10, cTmp->GetBinCenter (cTmp->FindLastBinAbove (0.99) ) + 10 );
+                //cSCurveHist->GetYaxis()->SetRangeUser (cMean - 30, cMean + 30);
+                cSCurveHist->Draw ("colz2");
+            }
+
+            fNoiseCanvas->Modified();
+            fNoiseCanvas->Update();
+
+        }
+
         if (fTestPulse)
         {
             LOG (INFO) << RED <<  "Disabling Test Pulse for Test Group " << cTGrpM.first << RESET ;
@@ -989,6 +1000,13 @@ void PedeNoise::setInitialOffsets()
                     cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
                     cRegVec.push_back ({ Form ( "Channel%03d", iChan + 1 ), cOffset } );
                     //LOG(INFO) << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET ;
+                }
+
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - re-enabling stub logic to original value!" << RESET;
+                    cRegVec.push_back ({"Pipe&StubInpSel&Ptwidth", fStubLogicValue[cCbc]});
+                    cRegVec.push_back ({"HIP&TestMode", fHIPCountValue[cCbc]});
                 }
 
                 fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);

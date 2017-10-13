@@ -46,7 +46,7 @@ class Calibration : public Tool
     Calibration();
     ~Calibration();
 
-    void Initialise ( bool pAllChan = false );
+    void Initialise ( bool pAllChan = false, bool pDisableStubLogic = true );
     void FindVplus();
     // offsets are found by taking pMultiple*fEvents triggers
     void FindOffsets();
@@ -103,7 +103,11 @@ class Calibration : public Tool
     uint8_t fTargetOffset;
     bool fCheckLoop;
     bool fAllChan;
+    bool fDisableStubLogic;
 
+    //to hold the original register values
+    std::map<Cbc*, uint8_t> fStubLogicValue;
+    std::map<Cbc*, uint8_t> fHIPCountValue;
 };
 
 

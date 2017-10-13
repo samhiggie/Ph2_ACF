@@ -104,8 +104,8 @@ int main ( int argc, char* argv[] )
     // now create a calibration object
     Calibration cCalibration;
     cCalibration.Inherit (&cTool);
-    //cCalibration->ConfigureHw();
-    cCalibration.Initialise ( cAllChan );
+    //second parameter disables stub logic on CBC3
+    cCalibration.Initialise ( cAllChan, true );
 
     if ( cVplus ) cCalibration.FindVplus();
 
@@ -122,8 +122,8 @@ int main ( int argc, char* argv[] )
         //tool provides an Inherit(Tool* pTool) for this purpose
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        //cPedeNoise.ConfigureHw ();
-        cPedeNoise.Initialise (cAllChan); // canvases etc. for fast calibration
+        //second parameter disables stub logic on CBC3
+        cPedeNoise.Initialise (cAllChan, true); // canvases etc. for fast calibration
         cPedeNoise.measureNoise();
 
         //cPedeNoise.sweepSCurves (225);
