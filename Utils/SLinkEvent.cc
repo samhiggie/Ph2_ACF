@@ -23,6 +23,15 @@ SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pCh
     fData.clear();
     this->generateDAQHeader (pLV1Id, pBXId, pSourceId);
 }
+SLinkEvent::SLinkEvent (std::vector<uint64_t>& pDataVec) :
+    fSize (pDataVec.size() )
+{
+    fData.clear();
+    fData = pDataVec;
+    //fEventType = ;
+    //fDebugMode = ;
+    //fCRCVal = ;
+}
 
 //template<typename T>
 //std::vector<T> SLinkEvent::getData()

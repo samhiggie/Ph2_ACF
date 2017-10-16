@@ -67,6 +67,23 @@ class FileHeader
         //strcpy (fType, pType.c_str() );
     }
 
+    BoardType getBoardType()
+    {
+        if (fType == "GLIB")
+            return BoardType::GLIB;
+        else if (fType == "MPAGLIB")
+            return BoardType::MPAGLIB;
+        else if (fType == "CTA")
+            return BoardType::CTA;
+        else if (fType == "ICGLIB")
+            return BoardType::ICGLIB;
+        else if (fType == "ICFC7")
+            return BoardType::ICFC7;
+        else if (fType == "CBC3FC7")
+            return BoardType::CBC3FC7;
+        else if (fType == "D19C")
+            return BoardType::D19C;
+    }
 
     std::vector<uint32_t> encodeHeader()
     {
