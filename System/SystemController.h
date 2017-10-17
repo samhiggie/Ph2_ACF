@@ -96,6 +96,7 @@ namespace Ph2_System {
          * \param pFilename : the filename of the binary file
         */
         void addFileHandler ( const std::string& pFilename, char pOption );
+        void closeFileHandler();
 
         FileHandler* getFileHandler()
         {

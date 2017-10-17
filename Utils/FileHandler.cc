@@ -37,29 +37,21 @@ FileHandler::FileHandler ( const std::string& pBinaryFileName, char pOption, Fil
 FileHandler::~FileHandler()
 {
     //signal that we want to end this
-    {
-        std::lock_guard<std::mutex> cLock (fMutex);
-        fFileIsOpened = false;
-    }
+    //{
+    //std::lock_guard<std::mutex> cLock (fMemberMutex);
+    //fFileIsOpened = false;
+    //}
 
     //join the thread since the thread function must have returned by now
-    if (fOption == 'w' && fThread.joinable() )
-        fThread.join();
+    //if (fOption == 'w' && fThread.joinable() )
+    //fThread.join();
 
     //close the file
-    closeFile();
+    this->closeFile();
 }
 
 void FileHandler::set ( std::vector<uint32_t> pVector )
 {
-    //fMutex.lock();
-    //fData.clear();
-    //fData = pVector;
-    //is_set = true;
-
-    //if ( is_set )
-    //fMutex.unlock();
-
     std::lock_guard<std::mutex> cLock (fMutex);
     fQueue.push (pVector);
     fSet.notify_one();
@@ -71,7 +63,7 @@ bool FileHandler::openFile( )
     if ( !file_open() )
     {
 
-        std::lock_guard<std::mutex> cLock (fMutex);
+        std::lock_guard<std::mutex> cLock (fMemberMutex);
 
         if ( fOption == 'w' )
         {
@@ -127,13 +119,27 @@ bool FileHandler::openFile( )
 
 void FileHandler::closeFile()
 {
-    {
-        std::lock_guard<std::mutex> cLock (fMutex);
+    std::lock_guard<std::mutex> cLock (fMemberMutex);
 
-        if (fFileIsOpened.load() )
-            fFileIsOpened = false;
-    }
-    fBinaryFile.close();
+    if (fBinaryFile.is_open() )
+        fBinaryFile.close();
+
+    if (fFileIsOpened.load() )
+        fFileIsOpened = false;
+
+    LOG (INFO) << "Closing data file "  << fBinaryFileName ;
+    std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+
+    if (fOption == 'w' && fThread.joinable() )
+        fThread.join();
+
+    //{
+    //std::lock_guard<std::mutex> cLock (fMemberMutex);
+
+    //if (fFileIsOpened.load() )
+    //fFileIsOpened = false;
+    //}
+    //fBinaryFile.close();
 }
 
 //read from raw file to vector
@@ -144,10 +150,8 @@ std::vector<uint32_t> FileHandler::readFile( )
     //open file for reading
     while ( !fBinaryFile.eof() )
     {
-        char buffer[4];
-        fBinaryFile.read ( buffer, 4 );
         uint32_t word;
-        std::memcpy ( &word, buffer, 4 );
+        fBinaryFile.read ( (char*) &word, sizeof (uint32_t) );
         cVector.push_back ( word );
     }
 
@@ -159,23 +163,25 @@ std::vector<uint32_t> FileHandler::readFile( )
 std::vector<uint32_t> FileHandler::readFileChunks ( uint32_t pNWords32 )
 {
     std::vector<uint32_t> cVector;
-    uint32_t cWordCounter = 0;
+    //cVector.reserve (pNWords32);
+    //uint32_t cWordCounter = 0;
 
-    //open file for reading
-    while (!fBinaryFile.eof() && cWordCounter < pNWords32)
+    for (size_t i = 0; i < pNWords32; i++)
     {
-        char buffer[4];
-        fBinaryFile.read ( buffer, 4 );
-        uint32_t word;
-        std::memcpy ( &word, buffer, 4 );
-        cVector.push_back ( word );
-        cWordCounter++;
+        if (!fBinaryFile.eof() )
+        {
+            uint32_t cBuf;
+            fBinaryFile.read ( (char*) &cBuf, sizeof (uint32_t) );
+            cVector.push_back (cBuf);
+        }
+        else
+        {
+            LOG (INFO) << "FileHandler: Attention, input file " << fBinaryFileName << " ended before reading " << pNWords32 << " 32-bit words!" ;
+
+            closeFile();
+            break;
+        }
     }
-
-    if (fBinaryFile.eof() )
-        closeFile();
-
-    if (cWordCounter < pNWords32) LOG (INFO) << "FileHandler: Attention, input file " << fBinaryFileName << " ended before reading " << pNWords32 << " 32-bit words!" ;
 
     return cVector;
 }
@@ -216,24 +222,39 @@ void FileHandler::writeFile()
         std::vector<uint32_t> cData;
         //populate the local handle with values from the queue -
         //this method blocks this thread until it receives data
-        this->dequeue (cData);
-        //write the vector - this is guaranteed by the standard
-        fBinaryFile.write ( ( char* ) &cData.at (0), cData.size() * sizeof ( uint32_t ) );
-        fBinaryFile.flush();
+        bool cDataPresent = this->dequeue (cData);
+        //this->dequeue (cData);
 
+        if (cDataPresent)
+        {
+            std::lock_guard<std::mutex> cLock (fMemberMutex);
+            //write the vector - this is guaranteed by the standard
+            fBinaryFile.write ( ( char* ) &cData.at (0), cData.size() * sizeof ( uint32_t ) );
+            fBinaryFile.flush();
+        }
         //since dequeu is a blocking call this will only ever be checked after the last data has been written
-        if (!fFileIsOpened.load() ) break;
+        else if (!fFileIsOpened.load() )
+            break;
     }
-
 }
 
-void FileHandler::dequeue (std::vector<uint32_t>& pData)
+bool FileHandler::dequeue (std::vector<uint32_t>& pData)
 {
     std::unique_lock<std::mutex> cLock (fMutex);
+    bool cQueueEmpty = fSet.wait_for (cLock, std::chrono::microseconds (100), [&] { return  FileHandler::fQueue.empty();});
 
-    while (fQueue.empty() )
-        fSet.wait (cLock);
+    if (!cQueueEmpty)
+    {
+        pData = fQueue.front();
+        fQueue.pop();
+    }
 
-    pData = fQueue.front();
-    fQueue.pop();
+    return !cQueueEmpty;
+    //std::unique_lock<std::mutex> cLock (fMutex);
+
+    //while (fQueue.empty() )
+    //fSet.wait (cLock);
+
+    //pData = fQueue.front();
+    //fQueue.pop();
 }

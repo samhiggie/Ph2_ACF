@@ -83,6 +83,18 @@ namespace Ph2_System {
 
     }
 
+    void SystemController::closeFileHandler()
+    {
+        if (fFileHandler)
+        {
+            //if (fFileHandler->file_open() ) fFileHandler->closeFile();
+
+            if (fFileHandler) delete fFileHandler;
+
+            fFileHandler = nullptr;
+        }
+    }
+
     void SystemController::readFile ( std::vector<uint32_t>& pVec, uint32_t pNWords32 )
     {
         if (pNWords32 == 0) pVec = fFileHandler->readFile( );
