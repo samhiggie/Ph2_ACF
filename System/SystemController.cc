@@ -87,7 +87,7 @@ namespace Ph2_System {
     {
         if (fFileHandler)
         {
-            //if (fFileHandler->file_open() ) fFileHandler->closeFile();
+            if (fFileHandler->file_open() ) fFileHandler->closeFile();
 
             if (fFileHandler) delete fFileHandler;
 

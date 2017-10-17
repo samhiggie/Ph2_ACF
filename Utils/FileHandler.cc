@@ -119,19 +119,25 @@ bool FileHandler::openFile( )
 
 void FileHandler::closeFile()
 {
-    std::lock_guard<std::mutex> cLock (fMemberMutex);
+    if (fFileIsOpened.load() )
+    {
+        fFileIsOpened = false;
+
+        if (fOption == 'w' && fThread.joinable() )
+            fThread.join();
+    }
+
+    //std::lock_guard<std::mutex> cLock (fMemberMutex);
 
     if (fBinaryFile.is_open() )
         fBinaryFile.close();
 
-    if (fFileIsOpened.load() )
-        fFileIsOpened = false;
+    //if (fFileIsOpened.load() )
+    //fFileIsOpened = false;
 
     LOG (INFO) << "Closing data file "  << fBinaryFileName ;
-    std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+    //std::this_thread::sleep_for (std::chrono::milliseconds (100) );
 
-    if (fOption == 'w' && fThread.joinable() )
-        fThread.join();
 
     //{
     //std::lock_guard<std::mutex> cLock (fMemberMutex);
@@ -216,25 +222,28 @@ void FileHandler::writeFile()
     //new implementation using queue
     //this needs to run in an infinite loop, otherwise it will end after the first data was processed and the second on is not ready I think
     //anyway, dequeue will block this thread as long as fQueue is empty, if it is not, the first element will immediately be extracted
-    while (true)
+    //while (true)
+    while (fFileIsOpened.load() )
     {
-        // a local data handle
-        std::vector<uint32_t> cData;
-        //populate the local handle with values from the queue -
-        //this method blocks this thread until it receives data
-        bool cDataPresent = this->dequeue (cData);
-        //this->dequeue (cData);
-
-        if (cDataPresent)
-        {
-            std::lock_guard<std::mutex> cLock (fMemberMutex);
-            //write the vector - this is guaranteed by the standard
-            fBinaryFile.write ( ( char* ) &cData.at (0), cData.size() * sizeof ( uint32_t ) );
-            fBinaryFile.flush();
-        }
-        //since dequeu is a blocking call this will only ever be checked after the last data has been written
-        else if (!fFileIsOpened.load() )
+        if (!fFileIsOpened.load() )
             break;
+
+        else
+        {
+            // a local data handle
+            std::vector<uint32_t> cData;
+            //populate the local handle with values from the queue -
+            //this method blocks this thread until it receives data
+            bool cDataPresent = this->dequeue (cData);
+
+            if (cDataPresent)
+            {
+                std::lock_guard<std::mutex> cLock (fMemberMutex);
+                //write the vector - this is guaranteed by the standard
+                fBinaryFile.write ( ( char* ) &cData.at (0), cData.size() * sizeof ( uint32_t ) );
+                fBinaryFile.flush();
+            }
+        }
     }
 }
 
