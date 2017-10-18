@@ -32,6 +32,7 @@ namespace Ph2_HwInterface {
         char cBuff[7];
         sprintf ( cBuff, "board%d", pBoardId );
         fBoard = new uhal::HwInterface ( cm.getDevice ( ( cBuff ) ) );
+        fBoard->setTimeoutPeriod (1000);
         //fThread.detach();
     }
 
@@ -53,6 +54,7 @@ namespace Ph2_HwInterface {
         if (fBoard == nullptr) delete fBoard;
 
         fBoard = new uhal::HwInterface (uhal::ConnectionManager::getDevice (fId, fUri, fAddressTable) );
+        fBoard->setTimeoutPeriod (1000);
         //fThread.detach();
     }
 

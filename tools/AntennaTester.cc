@@ -184,74 +184,72 @@ void AntennaTester::Measure()
     InitializeHists();
 #ifdef __ANTENNA__
     Antenna cAntenna;
-    cAntenna.initializeAntenna();
-
-    for (int channel = 0; channel < fNCbc; channel++) cAntenna.ConfigureSpiSlave ( channel );
+    uint8_t cADCChipSlave = 4;
+    cAntenna.initializeAntenna(); //initialize USB communication
+    cAntenna.ConfigureADC (cADCChipSlave); //initialize SPI communication for ADC
+    cAntenna.ConfigureClockGenerator (3, 8); //configure clock for trigger generator
+    cAntenna.ConfigureDigitalPotentiometer (2, 125); //configure bias for antenna pull-up
+    sleep ( 0.1 );
 
     fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
     fHistBottom->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
 
-    for ( uint8_t analog_switch_cs = 0; analog_switch_cs < fNCbc; analog_switch_cs++ )
+    uint8_t analog_switch_cs = 0;
+    cAntenna.ConfigureAnalogueSwitch (analog_switch_cs); //configure communication with analogue switch
+    LOG (INFO)  << "Chip Select ID " << +analog_switch_cs ;
+
+    for ( uint8_t channel_position = 1; channel_position < 5; channel_position++ )
     {
-        LOG (INFO)  << "Chip Select ID " << +analog_switch_cs ;
-        cAntenna.ConfigureSpiSlave ( analog_switch_cs );
+        cAntenna.TurnOnAnalogSwitchChannel ( channel_position );
 
-        for ( uint8_t channel_position = 1; channel_position < 10; channel_position++ )
+        if (channel_position == 9) break;
+
+        for ( BeBoard* pBoard : this->fBoardVector )
         {
-            cAntenna.TurnOnAnalogSwitchChannel ( channel_position );
+            uint32_t cN = 1;
+            uint32_t cNthAcq = 0;
 
-            if (channel_position == 9) break;
+            this->Start ( pBoard );
 
-            for ( auto& cShelve : fShelveVector )
+            while ( cN <=  fTotalEvents )
             {
-                for ( BeBoard* pBoard : cShelve->fBoardVector )
+                // Run( pBoard, cNthAcq );
+                ReadData ( pBoard );
+                const std::vector<Event*>& events = GetEvents ( pBoard );
+
+                // Loop over Events from this Acquisition
+                for ( auto& cEvent : events )
                 {
-                    uint32_t cN = 1;
-                    uint32_t cNthAcq = 0;
+                    HistogramFiller cFiller ( fHistBottom, fHistTop, cEvent );
+                    pBoard->accept ( cFiller );
 
-                    fBeBoardInterface->Start ( pBoard );
+                    if ( cN % 100 == 0 ) UpdateHists();
 
-                    while ( cN <=  fTotalEvents )
-                    {
-                        // Run( pBoard, cNthAcq );
-                        ReadData ( pBoard );
-                        const std::vector<Event*>& events = GetEvents ( pBoard );
-
-                        // Loop over Events from this Acquisition
-                        for ( auto& cEvent : events )
-                        {
-                            HistogramFiller cFiller ( fHistBottom, fHistTop, cEvent );
-                            pBoard->accept ( cFiller );
-
-                            if ( cN % 100 == 0 ) UpdateHists();
-
-                            cN++;
-                        }
-
-                        cNthAcq++;
-                    }
-
-                    fBeBoardInterface->Stop ( pBoard, cNthAcq );
-
-                    /*Here the reconstruction of histograms happens*/
-                    for ( uint16_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
-                    {
-                        if ( fHistTopMerged->GetBinContent ( channel_id ) < fHistTop->GetBinContent ( channel_id ) ) fHistTopMerged->SetBinContent ( channel_id, fHistTop->GetBinContent ( channel_id ) );
-
-                        if ( fHistBottomMerged->GetBinContent ( channel_id ) < fHistBottom->GetBinContent ( channel_id ) ) fHistBottomMerged->SetBinContent ( channel_id, fHistBottom->GetBinContent ( channel_id ) );
-                    }
-
-                    /*Here clearing histograms after each event*/
-                    fHistBottom->Reset();
-                    fHistTop->Reset();
+                    cN++;
                 }
 
+                cNthAcq++;
             }
 
+            this->Stop ( pBoard);
+
+            /*Here the reconstruction of histograms happens*/
+            for ( uint16_t channel_id = 1; channel_id < fNCbc * 127 + 1; channel_id++ )
+            {
+                if ( fHistTopMerged->GetBinContent ( channel_id ) < fHistTop->GetBinContent ( channel_id ) ) fHistTopMerged->SetBinContent ( channel_id, fHistTop->GetBinContent ( channel_id ) );
+
+                if ( fHistBottomMerged->GetBinContent ( channel_id ) < fHistBottom->GetBinContent ( channel_id ) ) fHistBottomMerged->SetBinContent ( channel_id, fHistBottom->GetBinContent ( channel_id ) );
+            }
+
+            /*Here clearing histograms after each event*/
+            fHistBottom->Reset();
+            fHistTop->Reset();
         }
+
+
     }
 
-    cAntenna.close();
+    //cAntenna.close();
 #endif
     fHistTopMerged->Scale ( 100 / double_t ( fTotalEvents ) );
     fHistTopMerged->GetYaxis()->SetRangeUser ( 0, 100 );
@@ -262,7 +260,5 @@ void AntennaTester::Measure()
     LOG (INFO) << BOLDGREEN << "Mean occupancy (measured w/ antenna) for the Top side: " << GetMeanOccupancyTop() <<  "%." << RESET  ;
     LOG (INFO) << BOLDGREEN << "Mean occupancy (measured w/ antenna) for the Botton side: " << GetMeanOccupancyBottom() << "%." << RESET ;
 
-
-    //TestChannels( fDecisionThreshold );
 
 }
