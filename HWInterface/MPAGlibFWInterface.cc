@@ -69,7 +69,7 @@ namespace Ph2_HwInterface
 
         uint32_t MPAGlibFWInterface::getBoardInfo()
         {
-
+        	return 0;
         }
 
 	void MPAGlibFWInterface::Start()
@@ -165,7 +165,7 @@ namespace Ph2_HwInterface
 	     * this will have to change with a more generic FW */
 	uint32_t MPAGlibFWInterface::computeBlockSize( BeBoard* pBoard )
 	{
-
+		return 0;
 	}
 
 	std::vector<uint32_t> MPAGlibFWInterface::ReadBlockRegValue( const std::string& pRegNode, const uint32_t& pBlocksize )
@@ -209,7 +209,7 @@ namespace Ph2_HwInterface
 
 	bool MPAGlibFWInterface::I2cCmdAckWait( uint32_t pAckVal, uint8_t pNcount )
 	{
-
+		return true;
 	}
 
 	void MPAGlibFWInterface::WriteI2C( std::vector<uint32_t>& pVecReq, bool pWrite )
@@ -370,8 +370,8 @@ namespace Ph2_HwInterface
             int total_trigs = -1;
             int trigger_counter = -1;
             int trigger_total_counter = -1;
-            int Offset_BEAM = -1;
-            int Offset_MPA = -1;
+            //int Offset_BEAM = -1;
+            //int Offset_MPA = -1;
             std::string targ;
 
             total_trigs = ReadReg("Control.total_triggers");

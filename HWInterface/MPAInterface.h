@@ -61,6 +61,9 @@ namespace Ph2_HwInterface
 		*/
 		~MPAInterface();
 
+		void setFileHandler (FileHandler* pHandler);
+
+
 		/*!
 		* \uploads configuration data to glib
 		*/
@@ -92,6 +95,8 @@ namespace Ph2_HwInterface
     		void ModifyPix(std::pair < std::vector< std::string > ,std::vector< uint32_t >> mod , std::vector< uint32_t >* conf_upload, uint32_t  pixnum );
 
 		std::pair<std::vector<uint32_t>, std::vector<uint32_t>> ReadMPAData(int buffer_num, int mpa, bool lr);
+
+		uint32_t ReadData( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait );
 		/*!
 		* \format the raw data output of ReadData to organize into events. Segmented due to processing time 
 		*/

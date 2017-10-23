@@ -83,6 +83,8 @@ class FileHeader
             return BoardType::CBC3FC7;
         else if (fType == "D19C")
             return BoardType::D19C;
+        else//LORE ADDED default to D19C
+        	return BoardType::D19C;
     }
 
     std::vector<uint32_t> encodeHeader()

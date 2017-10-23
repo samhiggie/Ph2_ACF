@@ -54,6 +54,11 @@ void MPAInterface::setBoard( uint16_t pBoardIdentifier )
 
 
 
+void MPAInterface::setFileHandler (FileHandler* pHandler)
+{
+	setBoard(0);
+	fMPAFW->setFileHandler ( pHandler);
+}
 
 
 
@@ -113,6 +118,15 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> MPAInterface::ReadMPADat
 	fMPAFW->HeaderInitMPA( mpa , lr );
 	return fMPAFW->ReadMPAData(buffer_num, mpa, lr);
 }
+
+
+
+uint32_t MPAInterface::ReadData( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait )
+{
+	setBoard(0);
+	return fMPAFW->ReadData( pBoard, pBreakTrigger, pData, pWait );
+}
+
 
 
 std::vector<uint32_t>*  MPAInterface::GetcurData()
@@ -204,7 +218,6 @@ std::pair<std::vector<uint32_t>, std::vector<uint64_t>> MPAInterface::ReadMemory
 
 		    			std::bitset<48> p(intmemory[x].substr(24, 48));
 					hit = p.to_ulong();
-					uint64_t temp = p.to_ulong();
 
 	    				data[x]=hit;
 					}
@@ -300,9 +313,9 @@ void MPAInterface::ModifyPerif(std::pair < std::vector< std::string > ,std::vect
 {
 	  std::vector<std::string> vars = mod.first;
 	  std::vector< uint32_t > vals = mod.second;
-	  int perif = conf_upload->at(0);
+	  uint32_t perif = conf_upload->at(0);
 
-	  for (int iperif=0;iperif<vars.size(); iperif++)
+	  for (uint32_t iperif=0;iperif<vars.size(); iperif++)
 	  {
 		if (vars[iperif]=="OM") 
 			{
@@ -353,7 +366,7 @@ void MPAInterface::ModifyPix(std::pair < std::vector< std::string > ,std::vector
 		uint32_t pix = conf_upload->at(pixnum);
 		if (pixnum<17 and pixnum>8)
 			{
-				for (int ipix=0;ipix<vars.size(); ipix++)
+				for (uint32_t ipix=0;ipix<vars.size(); ipix++)
 				{
 					if (vars[ipix]=="PMR") 
 					{
@@ -415,7 +428,7 @@ void MPAInterface::ModifyPix(std::pair < std::vector< std::string > ,std::vector
 			}
 		else if (pixnum<25 and pixnum>0)
 			{
-				for (int ipix=0;ipix<vars.size(); ipix++)
+				for (uint32_t ipix=0;ipix<vars.size(); ipix++)
 				{
 					if (vars[ipix]=="PML") 
 					{
