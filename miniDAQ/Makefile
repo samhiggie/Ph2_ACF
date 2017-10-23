@@ -13,9 +13,9 @@ ROOTVERSION := $(shell root-config --version)
 RootLibraryDirs = $(ROOTLIB)
 RootLibraryPaths = $(RootLibraryDirs:%=-L%)
 
-LibraryDirs = $(CACTUSLIB) ../lib ../RootWeb/lib
+LibraryDirs = $(CACTUSLIB) ../lib ../RootWeb/lib ../Tool
 IncludeDirs     =  $(CACTUSINCLUDE) ../
-ExternalObjects= -lpthread -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lboost_filesystem -lboost_program_options -lRootWeb
+ExternalObjects= -lpthread -lcactus_extern_pugixml -lcactus_uhal_log -lcactus_uhal_grammars -lcactus_uhal_uhal -lboost_system -lPh2_Interface -lPh2_Description -lPh2_System -lPh2_Utils -lPh2_Tools -lboost_filesystem -lboost_program_options -lRootWeb
 
 ##################################################
 ## check if the Root has THttp
@@ -70,7 +70,7 @@ rootflags:
 publisher.o: publisher.cc publisher.h
 	$(CXX) $(DevFlags) $(CCFlags) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(LibraryPaths) -c -o $@ $<
 
-DQMHistogrammer.o: DQMHistogrammer.cc DQMHistogrammer.h
+DQMHistogrammer.o: DQMHistogrammer.cc DQMHistogrammer.h 
 	$(CXX) $(DevFlags) $(CCFlags) $(CCFlagsRoot) $(UserCCFlags) $(CCDefines) $(IncludePaths) $(LibraryPaths) $(ExternalObjects) -c -o $@ $<
 
 miniDQM: miniDQM.cc publisher.h publisher.o DQMHistogrammer.h DQMHistogrammer.o

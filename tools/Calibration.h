@@ -46,7 +46,7 @@ class Calibration : public Tool
     Calibration();
     ~Calibration();
 
-    void Initialise ( bool pAllChan = false );
+    void Initialise ( bool pAllChan = false, bool pDisableStubLogic = true );
     void FindVplus();
     // offsets are found by taking pMultiple*fEvents triggers
     void FindOffsets();
@@ -62,7 +62,7 @@ class Calibration : public Tool
 
     void setOffset ( uint8_t pOffset, int  pTGroupId, bool pVPlus = false );
 
-    void toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin );
+    void toggleOffset ( int pTGroup, uint8_t pBit, bool pBegin );
 
     void measureOccupancy ( uint32_t pNEvents, int pTGroup );
 
@@ -102,7 +102,12 @@ class Calibration : public Tool
     uint16_t fTargetVcth;
     uint8_t fTargetOffset;
     bool fCheckLoop;
+    bool fAllChan;
+    bool fDisableStubLogic;
 
+    //to hold the original register values
+    std::map<Cbc*, uint8_t> fStubLogicValue;
+    std::map<Cbc*, uint8_t> fHIPCountValue;
 };
 
 

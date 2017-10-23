@@ -96,6 +96,7 @@ namespace Ph2_System {
          * \param pFilename : the filename of the binary file
         */
         void addFileHandler ( const std::string& pFilename, char pOption );
+        void closeFileHandler();
 
         FileHandler* getFileHandler()
         {
@@ -108,6 +109,7 @@ namespace Ph2_System {
         * \brief issues a FileHandler for writing files to every BeBoardFWInterface if addFileHandler was called
         */
         void initializeFileHandler ();
+        uint32_t computeEventSize32 (BeBoard* pBoard);
 
       public:
         /*!
@@ -115,6 +117,12 @@ namespace Ph2_System {
          * \param pVec : the data vector
         */
         void readFile ( std::vector<uint32_t>& pVec, uint32_t pNWords32 = 0 );
+        /*!
+        * \brief set the Data read from file in the previous Method to the interanl data object
+         * \param pVec : the data vector
+         * \param pBoard : the BeBoard
+        */
+        void setData (BeBoard* pBoard, std::vector < uint32_t>& pVec, uint32_t pNEvents);
         /*!
          * \brief acceptor method for HwDescriptionVisitor
          * \param pVisitor

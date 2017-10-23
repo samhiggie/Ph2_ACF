@@ -129,7 +129,8 @@ namespace Ph2_HwInterface {
                 uint8_t cFeId = cCbc->getFeId();
                 fIDMap[ (uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() ) )] = cNCbc + 1;
                 fIDMapReverse[cNCbc + 1] = uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() );
-                uint32_t cAddress = 0x5F + cCbcId;
+                //uint32_t cAddress = 0x5F + cCbcId; //single chip carrier
+                uint32_t cAddress = 0x41 + cCbcId;
                 std::string cRegString = string_format ("cbc_system_cnfg.global.cbc%d.", cNCbc + 1);
                 cVecReg.push_back ({cRegString + "active", 0x1});
                 //all IDs start with 1
@@ -226,6 +227,7 @@ namespace Ph2_HwInterface {
         //this needs to happen on all CBCs
         //before running the Dctt I need to disable the stub logic so the alignment can be done!
         //could I do this with broadcast?
+        //since this procedure runs only once, we do the I2C transaction individually for each CBC in case they are on multiple FEs - this could be changed by removing the cVecReq.clear() call and do ing the write outsiude of the loop
         std::map<Cbc*, uint8_t> cStubLogictInputMap;
         std::vector<uint32_t> cVecReq;
 
@@ -235,17 +237,12 @@ namespace Ph2_HwInterface {
                 uint8_t cStubLogicInput = cCbc->getReg ("Pipe&StubInpSel&Ptwidth");
                 cStubLogictInputMap[cCbc] = cStubLogicInput;
                 CbcRegItem cRegItem (0, 0x12, 0, ( (cStubLogicInput & 0xCF) | (0x20 & 0x30) ) );
-                uint8_t cGlobalCbcId = fIDMap[uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() )];
-                //cGlobalCbcId-1 because EncodeReg increments by 1 again - don't ask
-                this->EncodeReg (cRegItem, cGlobalCbcId - 1, cVecReq, true, true);
+                cVecReq.clear();
+                this->EncodeReg (cRegItem, cFe->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
                 uint8_t cWriteAttempts = 0 ;
                 this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
             }
-
-        //uint8_t cWriteAttempts = 0 ;
-        //this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
-        //std::this_thread::sleep_for (std::chrono::milliseconds (10) );
 
         //just to be safe, stop everything
         WriteReg ("cbc_system_ctrl.fast_signal_manager.fast_signal_generator_stop", 0x1);
@@ -264,7 +261,7 @@ namespace Ph2_HwInterface {
             while (cDctt_fsm != 9)
             {
                 uint32_t cStatus = ReadReg ("cbc_system_stat.io.cbc1.slvs5");
-                //LOG (DEBUG) << cCounter << " " << std::bitset<32> (cStatus);
+                LOG (DEBUG) << cCounter << " " << std::bitset<32> (cStatus);
                 std::this_thread::sleep_for (std::chrono::microseconds (10) );
                 //CbcRegItem cRegItem (0, 0x1D, 0, 0);
                 //std::vector<uint32_t> cVecReq;
@@ -300,16 +297,13 @@ namespace Ph2_HwInterface {
             if (cDctt_fsm != 9) LOG (INFO) << "DCTT FSM Status bad: " << cDctt_fsm ;
         }
 
-        //re-enable the stub logic
-        cVecReq.clear();
 
         for (auto cFe : pBoard->fModuleVector)
             for (auto cCbc : cFe->fCbcVector)
             {
                 CbcRegItem cRegItem (0, 0x12, 0, cStubLogictInputMap[cCbc] );
-                uint8_t cGlobalCbcId = fIDMap[uint16_t (cFe->getFeId() << 8 | cCbc->getCbcId() )];
-                //cGlobalCbcId-1 because EncodeReg increments by 1 again - don't ask
-                this->EncodeReg (cRegItem, cGlobalCbcId - 1, cVecReq, true, true);
+                cVecReq.clear();
+                this->EncodeReg (cRegItem, cFe->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
                 uint8_t cWriteAttempts = 0;
                 this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
@@ -365,15 +359,15 @@ namespace Ph2_HwInterface {
         while (cNWords == 0)
         {
 
-            //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
-            cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
+            cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_all");
+            //cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
 
             if (!pWait) return 0;
             else
                 std::this_thread::sleep_for (std::chrono::milliseconds (100) );
 
-            //LOG (DEBUG) << cNWords;
-            //LOG (DEBUG) << "Data frame counter: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processor.cbc0_data_frame_counter") );
+            LOG (DEBUG) << cNWords;
+            LOG (DEBUG) << "Data frame counter Cbc0: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processors.cbc1.data_frame_counter") ) << " Data frame counter Cbc1: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processors.cbc2.data_frame_counter") );
         }
 
         pData = ReadBlockRegValue ("data", cNWords);
@@ -448,10 +442,7 @@ namespace Ph2_HwInterface {
             }
             uint32_t getNCbc()
             {
-                if ( fNCbc == 2 )
-                    // since the 2 CBC FW outputs data for 4 CBCs (beamtest heritage, might have to change in the future)
-                    return 2 * fNCbc;
-                else return fNCbc;
+                return fNCbc;
             }
         };
 
@@ -500,7 +491,6 @@ namespace Ph2_HwInterface {
     {
         //use fBroadcastCBCId for broadcast commands
         uint8_t cGlobalCbcId = fIDMap[uint16_t (pFeId << 8 | pCbcId)];
-
         pVecReq.push_back  ( ( cGlobalCbcId << 24 ) | (  pRead << 21 ) | (  pWrite << 20 ) | ( (pRegItem.fPage ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
@@ -598,9 +588,7 @@ namespace Ph2_HwInterface {
             throw except;
         }
 
-
         uint32_t cNReplies = pVecSend.size() * ( pReadback ? 2 : 1 ) * ( pBroadcast ? fNCbc : 1 );
-
         cFailed = ReadI2C (  cNReplies, pReplies, pFeId) ;
 
         return cFailed;

@@ -23,9 +23,11 @@ PedeNoise::~PedeNoise()
 {
 }
 
-void PedeNoise::Initialise()
+void PedeNoise::Initialise (bool pAllChan, bool pDisableStubLogic)
 {
-    this->MakeTestGroups ( false );
+    fDisableStubLogic = pDisableStubLogic;
+    this->MakeTestGroups ( pAllChan );
+    fAllChan = pAllChan;
 
     //is to be called after system controller::InitialiseHW, InitialiseSettings
     // populates all the maps
@@ -55,6 +57,16 @@ void PedeNoise::Initialise()
 
             for ( auto cCbc : cFe->fCbcVector )
             {
+                //if it is a CBC3, disable the stub logic for this procedure
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - thus disabling Stub logic for offset tuning" << RESET ;
+                    fStubLogicValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth");
+                    fHIPCountValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "HIP&TestMode");
+                    fCbcInterface->WriteCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth", 0x23);
+                    fCbcInterface->WriteCbcReg (cCbc, "HIP&TestMode", 0x08);
+                }
+
                 uint32_t cCbcId = cCbc->getCbcId();
                 cCbcCount++;
 
@@ -244,15 +256,21 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
     // now measure some SCurves
     for ( auto& cTGrpM : fTestGroupChannelMap )
     {
-        if (cTGrpM.first != -1)
+        // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
+        if (fTestPulse && cTGrpM.first != -1)
         {
-            // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
-            if (fTestPulse)
-            {
-                LOG (INFO) << GREEN <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
-                setFWTestPulse();
-                setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true, fHoleMode );
-            }
+            LOG (INFO) << GREEN <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
+            setFWTestPulse();
+            setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true, fHoleMode );
+        }
+        else if (fTestPulse && cTGrpM.first == -1)
+        {
+            fTestPulse = false;
+            LOG (INFO) << RED <<  "Test groups disabled. Can't enable Test Pulse for Test Group " << cTGrpM.first << RESET ;
+        }
+
+        if (cTGrpM.first != -1 || fAllChan)
+        {
 
             LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
             // this leaves the offset values at the tuned values for cTGrp and disables all other groups
@@ -275,12 +293,13 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
             fNoiseCanvas->Modified();
             fNoiseCanvas->Update();
 
-            if (fTestPulse)
-            {
-                LOG (INFO) << RED <<  "Disabling Test Pulse for Test Group " << cTGrpM.first << RESET ;
-                setSystemTestPulse ( 0, cTGrpM.first, false, fHoleMode );
+        }
 
-            }
+        if (fTestPulse)
+        {
+            LOG (INFO) << RED <<  "Disabling Test Pulse for Test Group " << cTGrpM.first << RESET ;
+            setSystemTestPulse ( 0, cTGrpM.first, false, fHoleMode );
+
         }
     }
 
@@ -981,6 +1000,13 @@ void PedeNoise::setInitialOffsets()
                     cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
                     cRegVec.push_back ({ Form ( "Channel%03d", iChan + 1 ), cOffset } );
                     //LOG(INFO) << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET ;
+                }
+
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - re-enabling stub logic to original value!" << RESET;
+                    cRegVec.push_back ({"Pipe&StubInpSel&Ptwidth", fStubLogicValue[cCbc]});
+                    cRegVec.push_back ({"HIP&TestMode", fHIPCountValue[cCbc]});
                 }
 
                 fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);

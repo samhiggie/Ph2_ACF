@@ -116,14 +116,6 @@ class HybridTester : public Tool
     */
     void AntennaScan();
     /*!
-    * \brief private method that checks channels malfunction based on occupancy histograms, produces output report in .txt format
-    */
-    void TestChannels();
-    /*!
-    * \brief overload method that checks channels malfunction based on occupancy histograms, produces output report in .txt format, does not rely on shared arrays
-    */
-    void TestChannels ( double pDecisionThreshold );
-    /*!
     * \brief Save the results of channels testing performed with antenna scan
     */
     void SaveTestingResults (std::string pHybridId);

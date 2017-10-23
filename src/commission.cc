@@ -63,6 +63,9 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "batch", "b" );
 
+    cmd.defineOption ( "allChan", "Do pedestal and noise measurement using all channels? Default: false", ArgvParser::NoOptionAttribute );
+    cmd.defineOptionAlternative ( "allChan", "a" );
+
     int result = cmd.parse ( argc, argv );
 
     if ( result != ArgvParser::NoParserError )
@@ -83,6 +86,7 @@ int main ( int argc, char* argv[] )
     else if ( cNoise ) cDirectory += "NoiseScan";
 
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
+    bool cAllChan = ( cmd.foundOption ( "allChan" ) ) ? true : false;
 
     uint8_t cStartLatency = ( cmd.foundOption ( "minimum" ) ) ? convertAnyInt ( cmd.optionValue ( "minimum" ).c_str() ) :  0;
     uint8_t cLatencyRange = ( cmd.foundOption ( "range" ) )   ?  convertAnyInt ( cmd.optionValue ( "range" ).c_str() ) :  10;
@@ -137,7 +141,7 @@ int main ( int argc, char* argv[] )
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
         //cPedeNoise.ConfigureHw ();
-        cPedeNoise.Initialise(); // canvases etc. for fast calibration
+        cPedeNoise.Initialise (cAllChan); // canvases etc. for fast calibration
         t.start();
         cPedeNoise.measureNoise();
         t.stop();

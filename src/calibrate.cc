@@ -51,8 +51,8 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "noise", "Perform noise scan after Offset tuning", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "noise", "n" );
 
-    //cmd.defineOption ( "allChan", "Do calibration using all channels? Default: false", ArgvParser::NoOptionAttribute );
-    //cmd.defineOptionAlternative ( "allChan", "a" );
+    cmd.defineOption ( "allChan", "Do calibration using all channels? Default: false", ArgvParser::NoOptionAttribute );
+    cmd.defineOptionAlternative ( "allChan", "a" );
 
     cmd.defineOption ( "batch", "Run the application in batch mode", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "batch", "b" );
@@ -73,7 +73,7 @@ int main ( int argc, char* argv[] )
     bool cVplus = ( cmd.foundOption ( "skip" ) ) ? false : true;
     //bool cOld = ( cmd.foundOption( "old" ) ) ? true : false;
 
-    //bool cCalibrateTGrp = ( cmd.foundOption ( "allChan" ) ) ? true : false;
+    bool cAllChan = ( cmd.foundOption ( "allChan" ) ) ? true : false;
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cNoiseScan = ( cmd.foundOption ("noise") ) ? true : false;
 
@@ -104,8 +104,8 @@ int main ( int argc, char* argv[] )
     // now create a calibration object
     Calibration cCalibration;
     cCalibration.Inherit (&cTool);
-    //cCalibration->ConfigureHw();
-    cCalibration.Initialise ( false );
+    //second parameter disables stub logic on CBC3
+    cCalibration.Initialise ( cAllChan, true );
 
     if ( cVplus ) cCalibration.FindVplus();
 
@@ -122,8 +122,8 @@ int main ( int argc, char* argv[] )
         //tool provides an Inherit(Tool* pTool) for this purpose
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        //cPedeNoise.ConfigureHw ();
-        cPedeNoise.Initialise(); // canvases etc. for fast calibration
+        //second parameter disables stub logic on CBC3
+        cPedeNoise.Initialise (cAllChan, true); // canvases etc. for fast calibration
         cPedeNoise.measureNoise();
 
         //cPedeNoise.sweepSCurves (225);

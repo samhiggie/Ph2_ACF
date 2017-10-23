@@ -2,6 +2,7 @@ if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     #includes
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
+    #include_directories(${EXTERN_PUGIXML_INCLUDE_PREFIX})
     
     #library directories
     link_directories(${UHAL_UHAL_LIB_PREFIX})

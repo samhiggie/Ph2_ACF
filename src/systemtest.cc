@@ -53,24 +53,13 @@ int main ( int argc, char** argv )
     LOG (INFO) << outp.str();
     outp.str ("");
 
-    if ( cConfigure ) cSystemController.ConfigureHw ();
+    if ( cConfigure )
+    {
+        cSystemController.ConfigureHw ();
 
-
-    //Timer t;
-    //t.start();
-
-    //for(uint8_t cVcth = 0x00; cVcth < 0xFF; cVcth++)
-    //{
-    //std::vector<std::pair<std::string, uint8_t>> cRegVec;
-    //cRegVec.push_back({"VCth", cVcth});
-    //cRegVec.push_back({"TriggerLatency", 255 - cVcth});
-    //std::cout << "Writing Vcth " << +cVcth << " Trigger Lat:" << 255-cVcth << std::endl;
-    //cSystemController.fCbcInterface->WriteBroadcastMultReg(cSystemController.fBoardVector.at(0)->fModuleVector.at(0), cRegVec);
-    //CbcRegReader cReader(cSystemController.fCbcInterface, "TriggerLatency");
-    //cSystemController.accept(cReader);
-    //}
-    //t.stop();
-    //t.show("Time to loop VCth from 0 to ff with broadcast:");
+        CbcIdReader cIdReader (cSystemController.fCbcInterface);
+        cSystemController.accept (cIdReader);
+    }
 
     LOG (INFO) << "*** End of the System test ***" ;
     cSystemController.Destroy();
