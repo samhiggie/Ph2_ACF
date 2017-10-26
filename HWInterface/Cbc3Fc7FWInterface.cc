@@ -220,6 +220,9 @@ namespace Ph2_HwInterface {
         }
 
         this->DataClockTimingTune (pBoard);
+
+        fTriggerSourceWord = this->ReadReg ("cbc_system_cnfg.fast_signal_manager.fast_signal_enable");
+        LOG (INFO) << BOLDBLUE << "The following trigger sources are enabled: External L1A: " << bool (fTriggerSourceWord & 0x1) << " FMC: " << bool (fTriggerSourceWord & 0x2) << " IPBUS: " << bool (fTriggerSourceWord & 0x4) << " Internal Generator: " << bool (fTriggerSourceWord & 0x8) << RESET;
     }
 
     void Cbc3Fc7FWInterface::DataClockTimingTune (const BeBoard* pBoard)
@@ -322,16 +325,21 @@ namespace Ph2_HwInterface {
         //then start the triggers
         WriteReg ("cbc_system_ctrl.fast_signal_manager.start_trigger", 0x1);
 
+        //if (fTriggerSourceWord & 0x8)
+        //{
         //reload the config of the fast_command_manager
         WriteReg ("cbc_system_ctrl.fast_signal_manager.fast_signal_generator_load_config", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (100) );
         //start the periodic fast signals if enabled
         WriteReg ("cbc_system_ctrl.fast_signal_manager.fast_signal_generator_start", 0x1);
+        //}
     }
 
     void Cbc3Fc7FWInterface::Stop()
     {
+        //if (fTriggerSourceWord & 0x8)
         WriteReg ("cbc_system_ctrl.fast_signal_manager.fast_signal_generator_stop", 0x1);
+
         WriteReg ("cbc_system_ctrl.fast_signal_manager.stop_trigger", 0x1);
     }
 
@@ -366,8 +374,8 @@ namespace Ph2_HwInterface {
             else
                 std::this_thread::sleep_for (std::chrono::milliseconds (100) );
 
-            LOG (DEBUG) << cNWords;
-            LOG (DEBUG) << "Data frame counter Cbc0: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processors.cbc1.data_frame_counter") ) << " Data frame counter Cbc1: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processors.cbc2.data_frame_counter") );
+            //LOG (DEBUG) << cNWords;
+            //LOG (DEBUG) << "Data frame counter Cbc0: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processors.cbc1.data_frame_counter") ) << " Data frame counter Cbc1: " << static_cast<int> (ReadReg ("cbc_system_stat.cbc_data_processors.cbc2.data_frame_counter") );
         }
 
         pData = ReadBlockRegValue ("data", cNWords);
@@ -398,11 +406,16 @@ namespace Ph2_HwInterface {
 
         // configure fast signal generator
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
+
         // configure the fast command cycle to send triggers
-        cVecReg.push_back ({"cbc_system_cnfg.fast_signal_manager.fast_signal_generator.enable.trigger", 0x1});
-        cVecReg.push_back ({"cbc_system_cnfg.fast_signal_manager.fast_signal_generator.Ncycle", pNEvents});
-        WriteStackReg ( cVecReg );
-        cVecReg.clear();
+        // but only if the internal trigger generator is enabled
+        if (fTriggerSourceWord & 0x8)
+        {
+            cVecReg.push_back ({"cbc_system_cnfg.fast_signal_manager.fast_signal_generator.enable.trigger", 0x1});
+            cVecReg.push_back ({"cbc_system_cnfg.fast_signal_manager.fast_signal_generator.Ncycle", pNEvents});
+            WriteStackReg ( cVecReg );
+            cVecReg.clear();
+        }
 
         this->Start();
 
@@ -412,16 +425,26 @@ namespace Ph2_HwInterface {
 
         while (cNWords < pNEvents * cEventSize )
         {
-            std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+            std::this_thread::sleep_for (std::chrono::microseconds (100) );
             cNWords = ReadReg ("cbc_system_stat.data_buffer.nword_events");
         }
 
-        if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
+        //if the internal trigger is enabled, we need to throw this error when the numbers don't match since then clearly something is wrong
+        if (fTriggerSourceWord & 0x8)
+            if (cNWords != pNEvents * cEventSize) LOG (ERROR) << "Error, did not read correct number of words for " << pNEvents << " Events! (read value= " << cNWords << "; expected= " << pNEvents* cEventSize << ")";
 
         //disable triggers
         this->Stop();
+
         //and read data
-        pData = ReadBlockRegValue ("data", cNWords);
+        if (fTriggerSourceWord & 0x8)
+            pData = ReadBlockRegValue ("data", cNWords);
+        else
+        {
+            //in case of external triggers we don't have control over the frequency, so the buffer might already have more events than requested during the polling interval - in this case just read what we requested and discard the rest via a DAQ reset
+            pData = ReadBlockRegValue ("data", pNEvents * cEventSize);
+            //WriteReg ("cbc_system_ctrl.global.daq_reset", 0x1);
+        }
 
         if ( fSaveToFile )
             fFileHandler->set ( pData );

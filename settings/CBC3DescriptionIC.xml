@@ -30,24 +30,6 @@
         <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->
         <!--required-->
         <Register name="cbc_system_clk"> 0x1 </Register>
-        <!--to output trigger-->
-        <Register name="global.test_out.1"> 0x0001 </Register>
-        <Register name="global.test_out.2"> 0x0004 </Register>
-        <!--to decide where the trigger veto is sent 0 for internal, 1 for external-->
-        <Register name="global.misc.trigger_master_external"> 0 </Register>
-        <!--use this if multiple single CBC FEs connected - in case of hybrid this is automatic and thus not required-->
-        <!--I2C address and fe_id both need to be set-->
-        <Register name="global.cbc1.i2c_address"> 0x41 </Register>
-        <Register name="global.cbc1.fe_id"> 1 </Register>
-        <Register name="global.cbc2.i2c_address"> 0x42 </Register>
-        <Register name="global.cbc2.fe_id"> 1 </Register>
-        <!--<Register name="global.cbc2.active"> 0 </Register>-->
-        <Register name="global.cbc3.active"> 0 </Register>
-        <Register name="global.cbc4.active"> 0 </Register>
-        <Register name="global.cbc5.active"> 0 </Register>
-        <Register name="global.cbc6.active"> 0 </Register>
-        <Register name="global.cbc7.active"> 0 </Register>
-        <Register name="global.cbc8.active"> 0 </Register>
         <!--FAST SIGNAL SOURCE-->
         <Register name="fast_signal_manager">
             <Register name="fast_signal_enable">
@@ -72,6 +54,24 @@
                 <Register name="orbit_reset_timing"> 100 </Register>
             </Register>
         </Register>
+        <!--to output trigger-->
+        <Register name="global.test_out.1"> 0x0001 </Register>
+        <Register name="global.test_out.2"> 0x0004 </Register>
+        <!--to decide where the trigger veto is sent 0 for internal, 1 for external-->
+        <Register name="global.misc.trigger_master_external"> 0 </Register>
+        <!--use this if multiple single CBC FEs connected - in case of hybrid this is automatic and thus not required-->
+        <!--I2C address and fe_id both need to be set-->
+        <Register name="global.cbc1.i2c_address"> 0x41 </Register>
+        <Register name="global.cbc1.fe_id"> 1 </Register>
+        <Register name="global.cbc2.i2c_address"> 0x42 </Register>
+        <Register name="global.cbc2.fe_id"> 1 </Register>
+        <!--<Register name="global.cbc2.active"> 0 </Register>-->
+        <Register name="global.cbc3.active"> 0 </Register>
+        <Register name="global.cbc4.active"> 0 </Register>
+        <Register name="global.cbc5.active"> 0 </Register>
+        <Register name="global.cbc6.active"> 0 </Register>
+        <Register name="global.cbc7.active"> 0 </Register>
+        <Register name="global.cbc8.active"> 0 </Register>
         <!--LATENCIES-->
         <!--Cbc IDs start with 1 in FW-->
         <Register name="cbc_data_processors">
