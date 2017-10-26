@@ -53,9 +53,9 @@ class HybridTester : public Tool
 {
   public:
     // Default C'tor
-    HybridTester() {}
+    HybridTester();
     // Default D'tor
-    ~HybridTester() {}
+    ~HybridTester();
     /*!
     * \brief Initialize the Histograms and Canvasses for CMD line applications
     * \param pThresholdScan :  bool flag to initialize the additional canvas for the Threshold scan
@@ -115,14 +115,6 @@ class HybridTester : public Tool
     * \brief Measure the single strip efficiency
     */
     void AntennaScan();
-    /*!
-    * \brief private method that checks channels malfunction based on occupancy histograms, produces output report in .txt format
-    */
-    void TestChannels();
-    /*!
-    * \brief overload method that checks channels malfunction based on occupancy histograms, produces output report in .txt format, does not rely on shared arrays
-    */
-    void TestChannels ( double pDecisionThreshold );
     /*!
     * \brief Save the results of channels testing performed with antenna scan
     */
@@ -215,6 +207,7 @@ class HybridTester : public Tool
         fSummaryCanvas->cd ( 2);
         fHistOccupancyBottom->Draw();
         fSummaryCanvas->Update();
+        this->HttpServerProcess();
     }
 
     /*!
@@ -227,6 +220,7 @@ class HybridTester : public Tool
         fDataCanvas->cd ( 2 );
         fHistBottomMerged->Draw();
         fDataCanvas->Update();
+        this->HttpServerProcess();
     }
 
     // To measure the occupancy per Cbc

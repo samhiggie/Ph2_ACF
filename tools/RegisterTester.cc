@@ -1,5 +1,12 @@
 #include "RegisterTester.h"
 
+RegisterTester::RegisterTester() : Tool()
+{
+    fNBadRegisters = 0;
+}
+
+// D'tor
+RegisterTester::~RegisterTester() {}
 
 void RegisterTester::TestRegisters()
 {

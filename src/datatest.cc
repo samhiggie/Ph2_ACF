@@ -79,18 +79,32 @@ int main ( int argc, char* argv[] )
     }
 
     bool cSaveToFile = false;
+    bool cReadFromFile = false;
     std::string cOutputFile;
+    std::string cInputFile;
+
+    //file handler for reading
+    uint32_t fPlaybackEventSize32;
+
     // now query the parsing results
     std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/HWDescription_2CBC.xml";
 
     if ( cmd.foundOption ( "save" ) )
         cSaveToFile = true ;
+    if( cmd.foundOption("read") )
+        cReadFromFile = true;
 
     if ( cSaveToFile )
     {
         cOutputFile =  cmd.optionValue ( "save" );
         cSystemController.addFileHandler ( cOutputFile, 'w' );
         LOG (INFO) << "Writing Binary Rawdata to:   " << cOutputFile ;
+    }
+    else if (cReadFromFile)
+    {
+        cInputFile = cmd.optionValue("read");    
+        cSystemController.addFileHandler ( cInputFile, 'r' );
+        LOG (INFO) << "Reading Binary Rawdata file from:   " << cInputFile ;
     }
 
     std::string cDAQFileName;
@@ -144,26 +158,42 @@ int main ( int argc, char* argv[] )
 
     if (!cmd.foundOption ( "read") )
         cSystemController.fBeBoardInterface->Start ( pBoard );
+    else
+    {
+            FileHeader cHeader = cSystemController.fFileHandler->getHeader();
+            //the below ensures we have the right Event Object that is used when calling Data.set()
+            pBoard->setBoardType (cHeader.getBoardType());
+            pBoard->setEventType (cHeader.fEventType);
+            fPlaybackEventSize32 = cHeader.fEventSize32;
+
+            if (cHeader.fNCbc != cCbcCounter.getNCbc() )
+            {
+                LOG(ERROR) << "Error, wrong number of CBCs in config file w.r.t. File Header; config file: "<< +cCbcCounter.getNCbc() << " - header: " << cHeader.fNCbc << " - aborting!";
+                exit(1);
+            }
+            std::cout << "Get here open file and get header! " << std::endl;
+    }
 
     const std::vector<Event*>* pEvents ;
+    int itCounter = 0;
 
     while ( cN <= pEventsperVcth )
     {
         if (cmd.foundOption ( "read") )
         {
-            //FileHandler fFile (cmd.optionValue ("read"), 'r');
-            ////TODO
-            ////uint32_t cEventSize = ;
-            ////std::vector<uint32_t> cReadVec = fFile.readFileChunks (cEventSize * pEventsperVcth);
-            //std::vector<uint32_t> cReadVec = fFile.readFileChunks (940000);
-            //data.Set ( pBoard, cReadVec, 10000, cSystemController.fBeBoardInterface->getBoardType (pBoard) );
+            std::vector<uint32_t> cReadVec;
+            //fFile->readFileChunks(
+            cSystemController.readFile (cReadVec, 10 * fPlaybackEventSize32);
+            //cSystemController.readFile (cReadVec);
+            size_t cCalcEvents = cReadVec.size() / fPlaybackEventSize32;
+            cSystemController.setData (pBoard, cReadVec, cCalcEvents);
             //pEvents = &data.GetEvents ( pBoard);
-            LOG (ERROR) << "Read option currently not supported!";
+            pEvents = &cSystemController.GetEvents ( pBoard );
+            std::cout << "Get here! iteration  second" << itCounter << std::endl;
         }
         else
         {
             uint32_t cPacketSize = cSystemController.ReadData ( pBoard );
-
 
             if ( cN + cPacketSize > pEventsperVcth )
                 cSystemController.fBeBoardInterface->Stop ( pBoard );
@@ -180,10 +210,13 @@ int main ( int argc, char* argv[] )
             {
                 SLinkEvent cSLev = ev->GetSLinkEvent (pBoard);
                 cDAQFileHandler->set (cSLev.getData<uint32_t>() );
+                cSLev.print(std::cout);
             }
         }
 
         cNthAcq++;
+        cN += pEvents->size();
+        itCounter++;
     }
 
     t.stop();

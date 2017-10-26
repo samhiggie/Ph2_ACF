@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="LATIN1"?>
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
 <node id="FPGA1" address="0x00000000" >
 	<!-- FC7 system register address table -->
         <node id="sysreg" address="0x00000000" module="file://fc7_system_address_table.xml"/>

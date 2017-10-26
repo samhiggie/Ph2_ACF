@@ -1,5 +1,6 @@
 #include <cstring>
 #include "../Utils/Utilities.h"
+#include "pugixml/pugixml.hpp"
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
@@ -23,43 +24,6 @@ using namespace Ph2_System;
 
 using namespace CommandLineProcessing;
 INITIALIZE_EASYLOGGINGPP
-
-std::string getFileName()
-{
-
-    std::string line;
-    std::fstream cFile;
-    int cRunNumber;
-
-    if ( boost::filesystem::exists ( ".run_number.txt" ) )
-    {
-
-        cFile.open ( ".run_number.txt", std::fstream::out | std::fstream::in );
-
-        if ( cFile.is_open() )
-        {
-            cFile >> cRunNumber ;
-
-            cRunNumber ++;
-            cFile.clear();
-            cFile.seekp ( 0 );
-            cFile << cRunNumber;
-            cFile.close();
-        }
-        else
-            LOG (WARNING) << "File not opened!" ;
-    }
-    else
-    {
-        cRunNumber = 1;
-        cFile.open ( ".run_number.txt", std::fstream::out );
-        cFile << cRunNumber;
-        cFile.close();
-    }
-
-    TString cRunString = Form ( "run_%03d.raw", cRunNumber );
-    return cRunString.Data();
-}
 
 int main ( int argc, char* argv[] )
 {
@@ -108,8 +72,9 @@ int main ( int argc, char* argv[] )
 
     const char* cDirectory = "Data";
     mkdir ( cDirectory,  777 );
-    cOutputFile = "Data/" + getFileName() ;
-
+    int cRunNumber = 0;
+    getRunNumber ("${BASE_DIR}", cRunNumber) ;
+    cOutputFile = "Data/" + string_format ("run_%04d.raw", cRunNumber);
     pEventsperVcth = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10;
 
     cSystemController.addFileHandler ( cOutputFile, 'w' );

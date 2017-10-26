@@ -4,6 +4,11 @@
 // This has no bad-strip masking and does not take a reduced number of active strips into account yet!
 
 // PUBLIC METHODS
+CMTester::CMTester() : Tool()
+{}
+
+CMTester::~CMTester()
+{}
 
 void CMTester::Initialize()
 {
@@ -74,6 +79,17 @@ void CMTester::Initialize()
                 cProfile->SetLineColor ( 9 );
                 cProfile->SetLineWidth ( 2 );
                 bookHistogram ( cCbc, "occupancyprojection", cProfile );
+
+                // 1D projection of the combined occupancy, but nearest neighbor calculated on both sides
+                cName =  Form ( "p_occupancyprojectionsymmetric_Fe%dCbc%d", cFeId, cCbcId );
+                cObj = gROOT->FindObject ( cName );
+
+                if ( cObj ) delete cObj;
+
+                cProfile = new TProfile ( cName, Form ( "Projection of combined Occupancy (+ and -) FE%d CBC%d;  NNeighbors (+-N); Probability", cFeId, cCbcId ), NCHANNELS + 1, -.5, NCHANNELS + 0.5 );
+                cProfile->SetLineColor ( 9 );
+                cProfile->SetLineWidth ( 2 );
+                bookHistogram ( cCbc, "occupancyprojectionplusminus", cProfile );
 
                 // 1D projection of the uncorrelated odccupancy
                 cName = Form ( "p_uncorr_occupancyprojection_Fe%dCbc%d", cFeId, cCbcId );
@@ -276,7 +292,19 @@ void CMTester::ScanNoiseChannels()
 
 void CMTester::TakeData()
 {
+
+    std::stringstream outp;
     parseSettings();
+
+    ThresholdVisitor cVisitor (fCbcInterface);
+    this->accept (cVisitor);
+    fVcth = cVisitor.getThreshold();
+    LOG (INFO) << "Checking threshold on latest CBC that was touched...: "<<fVcth<<std::endl;
+
+    //    cVisitor.setOption ('w');
+    //    cVisitor.setThreshold (595);
+    //    cVcth = cVisitor.getThreshold();
+    //    std::cout<<"Now my threshold is: "<<cVcth<<std::endl;
 
     //CbcRegReader cReader ( fCbcInterface, "VCth" );
     // accept( cReader );
@@ -287,10 +315,10 @@ void CMTester::TakeData()
         uint32_t cNthAcq = 0;
 
         fBeBoardInterface->Start ( pBoard );
-
         //while ( cN <=  fNevents )
         //{
         // Run( pBoard, cNthAcq );
+        //ReadData (pBoard);
         ReadNEvents ( pBoard, fNevents );
         const std::vector<Event*>& events = GetEvents ( pBoard );
 
@@ -298,6 +326,10 @@ void CMTester::TakeData()
 
         for ( auto& cEvent : events )
         {
+            // LOG (INFO) << cN << " "<< *cEvent;
+
+            if (cN > fNevents ) continue; // Needed when using ReadData on CBC3
+
             analyze ( pBoard, cEvent );
 
             if ( cN % 100 == 0 )
@@ -327,8 +359,12 @@ void CMTester::FinishRun()
     // first CBCs
     LOG (INFO) << "per CBC ..";
 
+    ThresholdVisitor cVisitor (fCbcInterface); // No Vcth given, so default option is 'r'
+    int iCbc = 0;
     for ( auto cCbc : fCbcHistMap )
     {
+        cCbc.first->accept (cVisitor);
+        uint32_t cVcth = cVisitor.getThreshold();
 
         TH1F* cTmpNHits = dynamic_cast<TH1F*> ( getHist ( cCbc.first, "nhits" ) );
         TH1F* cNoCM = dynamic_cast<TH1F*> ( getHist ( cCbc.first, "nocm" ) );
@@ -341,6 +377,14 @@ void CMTester::FinishRun()
         // Fit NHits and create 0 CM
         fitDistribution ( cTmpNHits, cNHitsFit, cNactiveChan );
         createNoiseDistribution ( cNoCM, cNHitsFit->GetParameter ( 0 ), 0, cNHitsFit->GetParameter ( 2 ), cNHitsFit->GetParameter ( 3 ) );
+
+	float CMnoiseFrac = fabs ( cNHitsFit->GetParameter ( 1 ) );
+	float CMnoiseFracErr = fabs ( cNHitsFit->GetParError ( 1 ) );
+	if (fTotalNoise[iCbc]>0) 
+	    LOG (INFO) << BOLDRED << "Average noise on FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " : " << fTotalNoise[iCbc] << " . At Vcth " << cVcth << " CM is " << CMnoiseFrac << "+/-" <<  CMnoiseFracErr << "%, so "<<CMnoiseFrac*fTotalNoise[iCbc]<<" VCth." << RESET ;
+	else 
+	    LOG (INFO) << BOLDRED << "FE " << +cCbc.first->getFeId() << " CBC " << +cCbc.first->getCbcId() << " . At Vcth " << cVcth << " CM is " << CMnoiseFrac << "+/-" <<  CMnoiseFracErr << "%" << RESET ;
+
 
         // now compute the correlation coefficient and the uncorrelated probability
         TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*> ( getHist ( cCbc.first, "combinedoccupancy" ) );
@@ -369,6 +413,7 @@ void CMTester::FinishRun()
                 if ( xy == xy ) cCorrProjection->Fill ( cIdx - cIdy, xy );
             }
         }
+	iCbc++;
     }
 
     LOG (INFO) << " done!" ;
@@ -437,8 +482,12 @@ void CMTester::analyze ( BeBoard* pBoard, const Event* pEvent )
             TProfile* cTmpHitProb = dynamic_cast<TProfile*> ( getHist ( cCbc, "hitprob" ) );
             TProfile2D* cTmpOccProfile = dynamic_cast<TProfile2D*> ( getHist ( cCbc, "combinedoccupancy" ) );
             TProfile* cTmpCombinedOcc = dynamic_cast<TProfile*> ( getHist ( cCbc, "occupancyprojection" ) );
+            TProfile* cTmpCombinedOccPM = dynamic_cast<TProfile*> ( getHist ( cCbc, "occupancyprojectionplusminus" ) );
 
             int cNHits = 0;
+            int cEventHits = pEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
+
+            if (cEventHits > 250) LOG (INFO) << " Found an event with " << cEventHits << " hits on a CBC! Is this expected?" ;
 
             // here add a check if the strip is masked and if I am simulating or not!
             std::vector<bool> cSimResult;
@@ -488,6 +537,9 @@ void CMTester::analyze ( BeBoard* pBoard, const Event* pEvent )
 
                         // Fill projection: this could be done in FinishRun() but then no live updates
                         if ( cChan - cChan2 >= 0 ) cTmpCombinedOcc->Fill ( cChan - cChan2, cfillValue );
+
+                        // Cross-check: what if we also consider the -N neighbors, not just +N ones? Should get the same result...
+                        cTmpCombinedOccPM->Fill ( abs (cChan - cChan2), cfillValue );
                     }
                 }
             }
@@ -531,6 +583,7 @@ void CMTester::analyze ( BeBoard* pBoard, const Event* pEvent )
 void CMTester::updateHists ( bool pFinal )
 {
     // method to iterate over the histograms that I want to draw and update the canvases
+    int iCbc = 0;
     for ( auto& cCbc : fCbcHistMap )
     {
         auto cCanvas = fCanvasMap.find ( cCbc.first );
@@ -568,8 +621,9 @@ void CMTester::updateHists ( bool pFinal )
                 cLegend->SetBorderSize ( 0 );
                 cLegend->SetFillColor ( kWhite );
                 cLegend->AddEntry ( cTmpNHits, "Data", "f" );
-                cLegend->AddEntry ( cCMFit, Form ( "Fit (CM %4.2f+-%4.2f, THR %4.2f)", fabs ( cCMFit->GetParameter ( 1 ) ), cCMFit->GetParError ( 1 ), cCMFit->GetParameter ( 0 ) ), "l" );
+                cLegend->AddEntry ( cCMFit, Form ( "Fit (CM %4.2f+-%4.2f, THR %4.2f). ", fabs ( cCMFit->GetParameter ( 1 ) ), cCMFit->GetParError ( 1 ), cCMFit->GetParameter ( 0 ) ), "l" );
                 cLegend->AddEntry ( cNoCM, "CM = 0", "l" );
+		if (fTotalNoise[iCbc]>0) cLegend->AddEntry ( (TObject*)0, Form ( "Noise: %4.2f (total), %4.2f (CM)", fTotalNoise[iCbc],  fabs ( cCMFit->GetParameter ( 1 ) )*fTotalNoise[iCbc] ), "" );
                 cLegend->SetTextSize ( 0.05 );
                 cLegend->Draw ( "same" );
             }
@@ -601,7 +655,10 @@ void CMTester::updateHists ( bool pFinal )
             cCanvas->second->Update();
 
         }
+	iCbc++;
     }
+
+    this->HttpServerProcess();
 }
 
 
@@ -659,6 +716,10 @@ bool CMTester::isMasked ( int pGlobalChannel )
     }
 }
 
+void CMTester::SetTotalNoise ( std::vector<double> pTotalNoise ) {
+  // Just used in plotting.
+  fTotalNoise = pTotalNoise;
+} 
 
 
 
@@ -667,7 +728,7 @@ void CMTester::parseSettings()
     // now read the settings from the map
     auto cSetting = fSettingsMap.find ( "Nevents" );
 
-    if ( cSetting != std::end ( fSettingsMap ) ) fNevents = cSetting->second;
+    if ( cSetting != std::end ( fSettingsMap ) ) fNevents = 10 * cSetting->second;
     else fNevents = 2000;
 
     cSetting = fSettingsMap.find ( "doSimulate" );
@@ -681,7 +742,7 @@ void CMTester::parseSettings()
     else fSimOccupancy = 50;
 
     LOG (INFO) << "Parsed the following settings:" ;
-    LOG (INFO) << "	Nevents = " << fNevents ;
+    LOG (INFO) << "	Nevents (.XML value times 10)= " << fNevents ;
     LOG (INFO) << "	simulate = " << int ( fDoSimulate ) ;
     LOG (INFO) << "	sim. Occupancy (%) = " << int ( fSimOccupancy ) ;
 

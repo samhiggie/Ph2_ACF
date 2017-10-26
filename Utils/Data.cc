@@ -29,7 +29,9 @@ namespace Ph2_HwInterface {
 
     void Data::Set (const BeBoard* pBoard, const std::vector<uint32_t>& pData, uint32_t pNevents, BoardType pType)
     {
-        fFuture = std::async (&Data::privateSet, this, pBoard, pData, pNevents, pType);
+        if (pData.size() != 0)
+            fFuture = std::async (&Data::privateSet, this, pBoard, pData, pNevents, pType);
+
         //fFuture.share();
     }
 
@@ -44,10 +46,12 @@ namespace Ph2_HwInterface {
 
         EventType fEventType = pBoard->getEventType();
 
-        if (pType == BoardType::D19C) {
+        if (pType == BoardType::D19C)
+        {
             uint32_t fNFe = pBoard->getNFe();
+
             if (fEventType == EventType::ZS) fNCbc = 0;
-            else fNCbc = (fEventSize-D19C_EVENT_HEADER1_SIZE_32_CBC3 - fNFe*D19C_EVENT_HEADER2_SIZE_32_CBC3)/CBC_EVENT_SIZE_32_CBC3;
+            else fNCbc = (fEventSize - D19C_EVENT_HEADER1_SIZE_32_CBC3 - fNFe * D19C_EVENT_HEADER2_SIZE_32_CBC3) / CBC_EVENT_SIZE_32_CBC3;
         }
         else if (pType == BoardType::CBC3FC7) fNCbc = (fEventSize - (EVENT_HEADER_SIZE_32_CBC3) ) / (CBC_EVENT_SIZE_32_CBC3);
         else fNCbc = ( fEventSize - ( EVENT_HEADER_TDC_SIZE_32 ) ) / ( CBC_EVENT_SIZE_32 );
@@ -86,8 +90,10 @@ namespace Ph2_HwInterface {
 #endif
 
             lvec.push_back ( word );
-            if (fEventType == EventType::ZS) {
-                if ( cZSWordIndex == fZSEventSize-1 )
+
+            if (fEventType == EventType::ZS)
+            {
+                if ( cZSWordIndex == fZSEventSize - 1 )
                 {
                     //LOG(INFO) << "Packing event # " << fEventList.size() << ", Event size is " << fZSEventSize << " words";
                     if (pType == BoardType::D19C)
@@ -96,23 +102,28 @@ namespace Ph2_HwInterface {
                         fEventList.push_back ( new D19cCbc3EventZS ( pBoard, fZSEventSize, lvec ) );
 
                     lvec.clear();
+
                     if (fEventList.size() >= fNevents) break;
                 }
-                else if ( cZSWordIndex == fZSEventSize ) {
+                else if ( cZSWordIndex == fZSEventSize )
+                {
                     // get next event size
-                    cZSWordIndex = 0;                    
+                    cZSWordIndex = 0;
+
                     if (pType == BoardType::D19C) fZSEventSize = (0x0000FFFF & word);
                     else fZSEventSize = fEventSize;
-                    if (fZSEventSize > pData.size())
+
+                    if (fZSEventSize > pData.size() )
                     {
-                        LOG(ERROR) << "Missaligned data, not accepted";
+                        LOG (ERROR) << "Missaligned data, not accepted";
                         break;
                     }
 
                 }
 
             }
-            else {
+            else
+            {
                 if ( cWordIndex > 0 &&  (cWordIndex + 1) % fEventSize == 0 )
                 {
                     if (pType == BoardType::D19C)

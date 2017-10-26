@@ -49,22 +49,28 @@ class CMTester : public Tool
 {
 
   public:
-	void Initialize();
-	void ScanNoiseChannels();
-	void TakeData();
-	void FinishRun();
+    CMTester();
+    ~CMTester();
+    void Initialize();
+    void ScanNoiseChannels();
+    void TakeData();
+    void FinishRun();
+    void SetTotalNoise ( std::vector<double> pTotalNoise);
+
 
   private:
-	void updateHists( bool pFinal = false );
-	void parseSettings();
-	void analyze( BeBoard* pBoard, const Event* pEvent );
-	bool randHit( float pProbability );
-	bool isMasked( Cbc* pCbc, int pChan );
-	bool isMasked( int pGlobalChannel );
+    void updateHists ( bool pFinal = false );
+    void parseSettings();
+    void analyze ( BeBoard* pBoard, const Event* pEvent );
+    bool randHit ( float pProbability );
+    bool isMasked ( Cbc* pCbc, int pChan );
+    bool isMasked ( int pGlobalChannel );
 
-	uint32_t fNevents, fDoSimulate, fSimOccupancy;
+    uint32_t fNevents, fDoSimulate, fSimOccupancy;
+     std::vector<double> fTotalNoise;
+    uint32_t fVcth;
 
-	std::map<Cbc*, std::set<int> > fNoiseStripMap;
+    std::map<Cbc*, std::set<int> > fNoiseStripMap;
 
 };
 

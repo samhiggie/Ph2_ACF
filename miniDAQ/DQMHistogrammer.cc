@@ -24,6 +24,7 @@
 #include "DQMHistogrammer.h"
 
 DQMHistogrammer::DQMHistogrammer (bool addTree, int ncol, bool eventFilter, bool skipHist) :
+    Tool(),
     addTree_ (addTree),
     nColumn_ (ncol),
     filterEvent_ (eventFilter),

@@ -16,16 +16,32 @@ using namespace Ph2_HwInterface;
 
 namespace Ph2_System {
 
-    SystemController::SystemController()
-        : fFileHandler (nullptr),
-          fWriteHandlerEnabled (false),
-          fData (nullptr)
+    SystemController::SystemController() :
+        fBeBoardInterface (nullptr),
+        fCbcInterface (nullptr),
+        fBoardVector(),
+        fSettingsMap(),
+        fFileHandler (nullptr),
+        fRawFileName (""),
+        fWriteHandlerEnabled (false),
+        fData (nullptr)
     {
     }
 
     SystemController::~SystemController()
     {
     }
+
+    void SystemController::Inherit (SystemController* pController)
+    {
+        fBeBoardInterface = pController->fBeBoardInterface;
+        fCbcInterface = pController->fCbcInterface;
+        fBoardVector = pController->fBoardVector;
+        fBeBoardFWMap = pController->fBeBoardFWMap;
+        fSettingsMap = pController->fSettingsMap;
+        fFileHandler = pController->fFileHandler;
+    }
+
     void SystemController::Destroy()
     {
         if (fFileHandler)
@@ -67,27 +83,51 @@ namespace Ph2_System {
 
     }
 
+    void SystemController::closeFileHandler()
+    {
+        if (fFileHandler)
+        {
+            if (fFileHandler->file_open() ) fFileHandler->closeFile();
+
+            if (fFileHandler) delete fFileHandler;
+
+            fFileHandler = nullptr;
+        }
+    }
+
     void SystemController::readFile ( std::vector<uint32_t>& pVec, uint32_t pNWords32 )
     {
         if (pNWords32 == 0) pVec = fFileHandler->readFile( );
         else pVec = fFileHandler->readFileChunks (pNWords32);
     }
 
-
-    void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os )
+    void SystemController::setData (BeBoard* pBoard, std::vector<uint32_t>& pData, uint32_t pNEvents)
     {
-        this->fParser.parseHW (pFilename, fBeBoardFWMap, fBoardVector, os );
+        //reset the data object
+        if (fData) delete fData;
+
+        fData = new Data();
+
+        //pass data by reference to set and let it know what board we are dealing with
+        fData->Set (pBoard, pData, pNEvents, pBoard->getBoardType () );
+        //return the packet size
+    }
+
+    void SystemController::InitializeHw ( const std::string& pFilename, std::ostream& os, bool pIsFile )
+    {
+        this->fParser.parseHW (pFilename, fBeBoardFWMap, fBoardVector, os, pIsFile );
 
         fBeBoardInterface = new BeBoardInterface ( fBeBoardFWMap );
         fCbcInterface = new CbcInterface ( fBeBoardFWMap );
+        fMPAInterface = new MPAInterface ( fBeBoardFWMap );
 
         if (fWriteHandlerEnabled)
             this->initializeFileHandler();
     }
 
-    void SystemController::InitializeSettings ( const std::string& pFilename, std::ostream& os )
+    void SystemController::InitializeSettings ( const std::string& pFilename, std::ostream& os, bool pIsFile )
     {
-        this->fParser.parseSettings (pFilename, fSettingsMap, os );
+        this->fParser.parseSettings (pFilename, fSettingsMap, os, pIsFile );
     }
 
     void SystemController::ConfigureHw ( bool bIgnoreI2c )
@@ -147,8 +187,8 @@ namespace Ph2_System {
             uint32_t cBeId = cBoard->getBeId();
             uint32_t cNCbc = 0;
 
-            uint32_t cNFe = cBoard->getNFe();
-            uint32_t cNEventSize32 = 0;
+            //uint32_t cNFe = cBoard->getNFe();
+            uint32_t cNEventSize32 = this->computeEventSize32 (cBoard);
 
             for (const auto& cFe : cBoard->fModuleVector)
                 cNCbc += cFe->getNCbc();
@@ -157,51 +197,19 @@ namespace Ph2_System {
             BoardType cBoardType = cBoard->getBoardType();
 
             if (cBoardType == BoardType::GLIB)
-            {
                 cBoardTypeString = "GLIB";
-
-                //this is legacy as the fNCbcDataSize is not used any more
-                //cNEventSize32 = (cBoard->getNCbcDataSize() == 0 ) ? EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32 : EVENT_HEADER_TDC_SIZE_32 + cBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32;
-                if (cNCbc <= 4)
-                    cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 4 * CBC_EVENT_SIZE_32;
-                else if (cNCbc > 4 && cNCbc <= 8)
-                    cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 8 * CBC_EVENT_SIZE_32;
-                else if (cNCbc > 8 && cNCbc <= 16)
-                    cNEventSize32 = EVENT_HEADER_SIZE_32 + 16 * CBC_EVENT_SIZE_32;
-            }
+            else if (cBoardType == BoardType::MPAGLIB)
+                cBoardTypeString = "MPAGLIB";
             else if (cBoardType == BoardType::CTA)
-            {
                 cBoardTypeString = "CTA";
-
-                //this is legacy as the fNCbcDataSize is not used any more
-                //cNEventSize32 = (cBoard->getNCbcDataSize() == 0 ) ? EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32 : EVENT_HEADER_TDC_SIZE_32 + cBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32;
-                if (cNCbc <= 4)
-                    cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 4 * CBC_EVENT_SIZE_32;
-                else if (cNCbc > 4 && cNCbc <= 8)
-                    cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 8 * CBC_EVENT_SIZE_32;
-                else if (cNCbc > 8 && cNCbc <= 16)
-                    cNEventSize32 = EVENT_HEADER_SIZE_32 + 16 * CBC_EVENT_SIZE_32;
-            }
             else if (cBoardType == BoardType::ICGLIB)
-            {
                 cBoardTypeString = "ICGLIB";
-                cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32;
-            }
             else if (cBoardType == BoardType::ICFC7)
-            {
                 cBoardTypeString = "ICFC7";
-                cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32;
-            }
             else if (cBoardType == BoardType::CBC3FC7)
-            {
                 cBoardTypeString = "CBC3FC7";
-                cNEventSize32 = EVENT_HEADER_TDC_SIZE_32_CBC3 + cNCbc * CBC_EVENT_SIZE_32_CBC3;
-            }
             else if (cBoardType == BoardType::D19C)
-            {
                 cBoardTypeString = "D19C";
-                cNEventSize32 = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cNFe * D19C_EVENT_HEADER2_SIZE_32_CBC3 + cNCbc * CBC_EVENT_SIZE_32_CBC3;
-            }
 
             uint32_t cFWWord = fBeBoardInterface->getBoardInfo (cBoard);
             uint32_t cFWMajor = (cFWWord & 0xFFFF0000) >> 16;
@@ -225,6 +233,73 @@ namespace Ph2_System {
             LOG (INFO) << BOLDBLUE << "Saving binary raw data to: " << fRawFileName << ".fedId" << RESET ;
         }
     }
+    uint32_t SystemController::computeEventSize32 (BeBoard* pBoard)
+    {
+        uint32_t cNEventSize32 = 0;
+        uint32_t cNCbc = 0;
+        uint32_t cNFe = pBoard->getNFe();
+
+        for (const auto& cFe : pBoard->fModuleVector)
+            cNCbc += cFe->getNCbc();
+
+        if (pBoard->getBoardType() == BoardType::GLIB)
+        {
+            //this is legacy as the fNCbcDataSize is not used any more
+            //cNEventSize32 = (cBoard->getNCbcDataSize() == 0 ) ? EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32 : EVENT_HEADER_TDC_SIZE_32 + cBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32;
+            if (cNCbc <= 4)
+                cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 4 * CBC_EVENT_SIZE_32;
+            else if (cNCbc > 4 && cNCbc <= 8)
+                cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 8 * CBC_EVENT_SIZE_32;
+            else if (cNCbc > 8 && cNCbc <= 16)
+                cNEventSize32 = EVENT_HEADER_SIZE_32 + 16 * CBC_EVENT_SIZE_32;
+        }
+
+        if (pBoard->getBoardType() == BoardType::MPAGLIB)
+            cNEventSize32 = MPA_HEADER_SIZE_32 + 6 * MPA_EVENT_SIZE_32;
+
+        else if (pBoard->getBoardType() == BoardType::CTA)
+        {
+            //this is legacy as the fNCbcDataSize is not used any more
+            //cNEventSize32 = (cBoard->getNCbcDataSize() == 0 ) ? EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32 : EVENT_HEADER_TDC_SIZE_32 + cBoard->getNCbcDataSize() * CBC_EVENT_SIZE_32;
+            if (cNCbc <= 4)
+                cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 4 * CBC_EVENT_SIZE_32;
+            else if (cNCbc > 4 && cNCbc <= 8)
+                cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + 8 * CBC_EVENT_SIZE_32;
+            else if (cNCbc > 8 && cNCbc <= 16)
+                cNEventSize32 = EVENT_HEADER_SIZE_32 + 16 * CBC_EVENT_SIZE_32;
+        }
+        else if (pBoard->getBoardType() == BoardType::ICGLIB)
+            cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32;
+        else if (pBoard->getBoardType() == BoardType::ICFC7)
+            cNEventSize32 = EVENT_HEADER_TDC_SIZE_32 + cNCbc * CBC_EVENT_SIZE_32;
+        else if (pBoard->getBoardType() == BoardType::CBC3FC7)
+            cNEventSize32 = EVENT_HEADER_TDC_SIZE_32_CBC3 + cNCbc * CBC_EVENT_SIZE_32_CBC3;
+        else if (pBoard->getBoardType() == BoardType::D19C)
+            cNEventSize32 = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cNFe * D19C_EVENT_HEADER2_SIZE_32_CBC3 + cNCbc * CBC_EVENT_SIZE_32_CBC3;
+
+        return cNEventSize32;
+    }
+
+    void SystemController::Start()
+    {
+        for (auto& cBoard : fBoardVector)
+            fBeBoardInterface->Start (cBoard);
+    }
+    void SystemController::Stop()
+    {
+        for (auto& cBoard : fBoardVector)
+            fBeBoardInterface->Stop (cBoard);
+    }
+    void SystemController::Pause()
+    {
+        for (auto& cBoard : fBoardVector)
+            fBeBoardInterface->Pause (cBoard);
+    }
+    void SystemController::Resume()
+    {
+        for (auto& cBoard : fBoardVector)
+            fBeBoardInterface->Resume (cBoard);
+    }
 
     void SystemController::Start (BeBoard* pBoard)
     {
@@ -234,9 +309,17 @@ namespace Ph2_System {
     {
         fBeBoardInterface->Stop (pBoard);
     }
+    void SystemController::Pause (BeBoard* pBoard)
+    {
+        fBeBoardInterface->Pause (pBoard);
+    }
+    void SystemController::Resume (BeBoard* pBoard)
+    {
+        fBeBoardInterface->Resume (pBoard);
+    }
 
     //method to read data standalone
-    uint32_t SystemController::ReadData (BeBoard* pBoard)
+    uint32_t SystemController::ReadData (BeBoard* pBoard, bool pWait)
     {
         //reset the data object
         //if (fData) delete fData;
@@ -251,7 +334,7 @@ namespace Ph2_System {
         //return the packet size
         //return cNPackets;
         std::vector<uint32_t> cData;
-        return this->ReadData (pBoard, cData, true);
+        return this->ReadData (pBoard, cData, pWait);
     }
 
     // for OTSDAQ
@@ -270,10 +353,10 @@ namespace Ph2_System {
         return cNPackets;
     }
 
-    void SystemController::ReadData()
+    void SystemController::ReadData (bool pWait)
     {
         for (auto cBoard : fBoardVector)
-            this->ReadData (cBoard);
+            this->ReadData (cBoard, pWait);
     }
 
     //standalone

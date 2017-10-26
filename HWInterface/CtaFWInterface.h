@@ -283,6 +283,8 @@ namespace Ph2_HwInterface {
         void RebootBoard();
         /*! \brief Set or reset the start signal */
         void SetForceStart ( bool bStart);
+
+
     };
 }
 

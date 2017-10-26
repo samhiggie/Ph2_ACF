@@ -15,6 +15,7 @@
 
 #include "FileParser.h"
 #include "../HWInterface/CbcInterface.h"
+#include "../HWInterface/MPAInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWInterface/BeBoardFWInterface.h"
 #include "../HWInterface/GlibFWInterface.h"
@@ -58,6 +59,7 @@ namespace Ph2_System {
       public:
         BeBoardInterface*       fBeBoardInterface;                     /*!< Interface to the BeBoard */
         CbcInterface*           fCbcInterface;                         /*!< Interface to the Cbc */
+        MPAInterface*           fMPAInterface;                         /*!< Interface to the Cbc */
         BeBoardVec              fBoardVector;                          /*!< Vector of Board pointers */
         BeBoardFWMap            fBeBoardFWMap;
         SettingsMap             fSettingsMap;                          /*!< Maps the settings */
@@ -84,15 +86,7 @@ namespace Ph2_System {
          * \brief Method to construct a system controller object from another one while re-using the same members
          */
         //here all my members are set to the objects contained already in pController, I can then safely delete pController (because the destructor does not delete any of the objects)
-        void Inherit (SystemController* pController)
-        {
-            fBeBoardInterface = pController->fBeBoardInterface;
-            fCbcInterface = pController->fCbcInterface;
-            fBoardVector = pController->fBoardVector;
-            fBeBoardFWMap = pController->fBeBoardFWMap;
-            fSettingsMap = pController->fSettingsMap;
-            fFileHandler = pController->fFileHandler;
-        }
+        void Inherit (SystemController* pController);
         /*!
          * \brief Destroy the SystemController object: clear the HWDescription Objects, FWInterface etc.
          */
@@ -102,6 +96,7 @@ namespace Ph2_System {
          * \param pFilename : the filename of the binary file
         */
         void addFileHandler ( const std::string& pFilename, char pOption );
+        void closeFileHandler();
 
         FileHandler* getFileHandler()
         {
@@ -114,6 +109,7 @@ namespace Ph2_System {
         * \brief issues a FileHandler for writing files to every BeBoardFWInterface if addFileHandler was called
         */
         void initializeFileHandler ();
+        uint32_t computeEventSize32 (BeBoard* pBoard);
 
       public:
         /*!
@@ -121,6 +117,12 @@ namespace Ph2_System {
          * \param pVec : the data vector
         */
         void readFile ( std::vector<uint32_t>& pVec, uint32_t pNWords32 = 0 );
+        /*!
+        * \brief set the Data read from file in the previous Method to the interanl data object
+         * \param pVec : the data vector
+         * \param pBoard : the BeBoard
+        */
+        void setData (BeBoard* pBoard, std::vector < uint32_t>& pVec, uint32_t pNEvents);
         /*!
          * \brief acceptor method for HwDescriptionVisitor
          * \param pVisitor
@@ -138,14 +140,14 @@ namespace Ph2_System {
          * \param pFilename : HW Description file
          *\param os : ostream to dump output
          */
-        void InitializeHw ( const std::string& pFilename, std::ostream& os = std::cout  );
+        void InitializeHw ( const std::string& pFilename, std::ostream& os = std::cout, bool pIsFile = true );
 
         /*!
          * \brief Initialize the settings
          * \param pFilename :   settings file
          *\param os : ostream to dump output
         */
-        void InitializeSettings ( const std::string& pFilename, std::ostream& os = std::cout  );
+        void InitializeSettings ( const std::string& pFilename, std::ostream& os = std::cout, bool pIsFile = true );
         /*!
          * \brief Configure the Hardware with XML file indicated values
          */
@@ -161,7 +163,7 @@ namespace Ph2_System {
          * \param pBeBoard
          * \return: number of packets
          */
-        uint32_t ReadData (BeBoard* pBoard);
+        uint32_t ReadData (BeBoard* pBoard, bool pWait = true);
         /*!
          * \brief Read Data from pBoard for use with OTSDAQ
          * \param pBeBoard
@@ -171,13 +173,22 @@ namespace Ph2_System {
          */
         uint32_t ReadData (BeBoard* pBoard, std::vector<uint32_t>& pData, bool pWait = true);
 
-        void Start (BeBoard* pBoard);
-        void Stop (BeBoard* pBoard);
-
         /*!
          * \brief Read Data from all boards
          */
-        void ReadData();
+        void ReadData (bool pWait = true);
+
+        void Start();
+        void Stop();
+        void Pause();
+        void Resume();
+
+        //these start and stop acquistion on a single board
+        void Start (BeBoard* pBoard);
+        void Stop (BeBoard* pBoard);
+        void Pause (BeBoard* pBoard);
+        void Resume (BeBoard* pBoard);
+
 
         /*!
          * \brief Read N Events from pBoard

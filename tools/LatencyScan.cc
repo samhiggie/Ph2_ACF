@@ -1,5 +1,10 @@
 #include "LatencyScan.h"
 
+LatencyScan::LatencyScan() : Tool()
+{}
+
+LatencyScan::~LatencyScan() {}
+
 void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool pNoTdc)
 {
     for ( auto& cBoard : fBoardVector )
@@ -319,6 +324,8 @@ void LatencyScan::updateHists ( std::string pHistName, bool pFinal )
         }
 
     }
+
+    this->HttpServerProcess();
 }
 
 

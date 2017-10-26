@@ -16,7 +16,6 @@
 #define DEV_FLAG    0
 
 namespace Ph2_HwInterface {
-    std::string RegManager::strDummyXml = "file://HWInterface/dummy.xml";
 
     RegManager::RegManager ( const char* puHalConfigFileName, uint32_t pBoardId ) //:
     //fThread ( [ = ]
@@ -28,39 +27,34 @@ namespace Ph2_HwInterface {
         // Loging settings
         uhal::disableLogging();
         //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
-
         fUHalConfigFileName = puHalConfigFileName;
-
         uhal::ConnectionManager cm ( fUHalConfigFileName ); // Get connection
         char cBuff[7];
         sprintf ( cBuff, "board%d", pBoardId );
-
         fBoard = new uhal::HwInterface ( cm.getDevice ( ( cBuff ) ) );
-
+        fBoard->setTimeoutPeriod (1000);
         //fThread.detach();
-
     }
 
-    RegManager::RegManager ( const char* pId, const char* pUri, const char* pAddressTable ) //:
-    //fThread ( [ = ]
-    //{
-    //StackWriteTimeOut();
-    //} ),
-    //fDeactiveThread ( false )
+    RegManager::RegManager ( const char* pId, const char* pUri, const char* pAddressTable )  :
+        fBoard (nullptr),
+        fId (pId),
+        fUri (pUri),
+        fAddressTable (pAddressTable)
+        //fThread ( [ = ]
+        //{
+        //StackWriteTimeOut();
+        //} ),
+        //fDeactiveThread ( false )
     {
         // Loging settings
         uhal::disableLogging();
         //uhal::setLogLevelTo (uhal::Debug() ); //Raise the log level
 
-        std::string cFilename = strDummyXml;
+        if (fBoard == nullptr) delete fBoard;
 
-        if (getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") != nullptr)
-            cFilename = std::string ("file://") + getenv ("OTSDAQ_CMSOUTERTRACKER_DIR") + "/otsdaq-cmsoutertracker/Ph2_ACF/HWInterface/dummy.xml";
-
-        uhal::ConnectionManager cm ( cFilename ); // Get connection
-
-        fBoard = new uhal::HwInterface ( cm.getDevice ( pId, pUri, pAddressTable ) );
-
+        fBoard = new uhal::HwInterface (uhal::ConnectionManager::getDevice (fId, fUri, fAddressTable) );
+        fBoard->setTimeoutPeriod (1000);
         //fThread.detach();
     }
 
@@ -72,14 +66,9 @@ namespace Ph2_HwInterface {
         if ( fBoard ) delete fBoard;
     }
 
-    void RegManager::setDummyXml ( const std::string strDummy)
-    {
-        strDummyXml = strDummy;
-    }
-
     bool RegManager::WriteReg ( const std::string& pRegNode, const uint32_t& pVal )
     {
-        std::lock_guard<std::mutex> cGuard (fBoardMutex);
+        //std::lock_guard<std::mutex> cGuard (fBoardMutex);
         fBoard->getNode ( pRegNode ).write ( pVal );
         fBoard->dispatch();
 
@@ -108,7 +97,7 @@ namespace Ph2_HwInterface {
 
     bool RegManager::WriteStackReg ( const std::vector< std::pair<std::string, uint32_t> >& pVecReg )
     {
-        std::lock_guard<std::mutex> cGuard (fBoardMutex);
+        //std::lock_guard<std::mutex> cGuard (fBoardMutex);
 
         for ( auto const& v : pVecReg )
         {
@@ -162,7 +151,7 @@ namespace Ph2_HwInterface {
 
     bool RegManager::WriteBlockReg ( const std::string& pRegNode, const std::vector< uint32_t >& pValues )
     {
-        std::lock_guard<std::mutex> cGuard (fBoardMutex);
+        //std::lock_guard<std::mutex> cGuard (fBoardMutex);
         fBoard->getNode ( pRegNode ).writeBlock ( pValues );
         fBoard->dispatch();
 
@@ -199,7 +188,7 @@ namespace Ph2_HwInterface {
 
     bool RegManager::WriteBlockAtAddress ( uint32_t uAddr, const std::vector< uint32_t >& pValues, bool bNonInc )
     {
-        std::lock_guard<std::mutex> cGuard (fBoardMutex);
+        //std::lock_guard<std::mutex> cGuard (fBoardMutex);
         fBoard->getClient().writeBlock ( uAddr, pValues, bNonInc ? uhal::defs::NON_INCREMENTAL : uhal::defs::INCREMENTAL );
         fBoard->dispatch();
 
@@ -232,7 +221,7 @@ namespace Ph2_HwInterface {
 
     uhal::ValWord<uint32_t> RegManager::ReadReg ( const std::string& pRegNode )
     {
-        std::lock_guard<std::mutex> cGuard (fBoardMutex);
+        //std::lock_guard<std::mutex> cGuard (fBoardMutex);
         uhal::ValWord<uint32_t> cValRead = fBoard->getNode ( pRegNode ).read();
         fBoard->dispatch();
         //LOG (DEBUG) << "Read: " << pRegNode << ": " << static_cast<uint32_t> (cValRead);
@@ -248,7 +237,7 @@ namespace Ph2_HwInterface {
 
     uhal::ValWord<uint32_t> RegManager::ReadAtAddress ( uint32_t uAddr, uint32_t uMask )
     {
-        std::lock_guard<std::mutex> cGuard (fBoardMutex);
+        //std::lock_guard<std::mutex> cGuard (fBoardMutex);
         uhal::ValWord<uint32_t> cValRead = fBoard->getClient().read ( uAddr, uMask );
         fBoard->dispatch();
 
@@ -264,7 +253,7 @@ namespace Ph2_HwInterface {
 
     uhal::ValVector<uint32_t> RegManager::ReadBlockReg ( const std::string& pRegNode, const uint32_t& pBlockSize )
     {
-        std::lock_guard<std::mutex> cGuard (fBoardMutex);
+        //std::lock_guard<std::mutex> cGuard (fBoardMutex);
         uhal::ValVector<uint32_t> cBlockRead = fBoard->getNode ( pRegNode ).readBlock ( pBlockSize );
         fBoard->dispatch();
         //LOG (DEBUG) << "Read block: " << pRegNode;
@@ -330,7 +319,7 @@ namespace Ph2_HwInterface {
 
     const uhal::Node& RegManager::getUhalNode ( const std::string& pStrPath )
     {
-        std::lock_guard<std::mutex> cGuard (fBoardMutex);
+        //std::lock_guard<std::mutex> cGuard (fBoardMutex);
         return fBoard->getNode ( pStrPath );
     }
 

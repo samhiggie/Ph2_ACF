@@ -72,7 +72,6 @@
     <!--<Register name="cbc_daq_ctrl.fmcdio5ch_in_50ohm_en.vtrig"> 0 </Register>-->
     <!--<Register name="cbc_daq_ctrl.fmcdio5ch_in_50ohm_en.tsigo"> 0 </Register>-->
   </BeBoard>
-</HwDescription>
 
 <Settings>
     <Setting name="TargetVcth">0x78</Setting>
@@ -89,3 +88,4 @@
     <Setting name="StepSize" > 15 </Setting>
     <Setting name="FitSCurves" > 0 </Setting>
 </Settings>
+</HwDescription>

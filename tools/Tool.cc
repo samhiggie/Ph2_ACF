@@ -1,16 +1,128 @@
 #include "Tool.h"
 
-Tool::Tool (const Tool& pTool) :
-    SystemController ( pTool )
+Tool::Tool() :
+    SystemController(),
+    fCanvasMap(),
+    fCbcHistMap(),
+    fModuleHistMap(),
+    fType(),
+    fTestGroupChannelMap(),
+    fDirectoryName (""),
+    fResultFile (nullptr)
 {
+#ifdef __HTTP__
+    fHttpServer = nullptr;
+#endif
+}
+
+#ifdef __HTTP__
+Tool::Tool (THttpServer* pHttpServer) :
+    SystemController(),
+    fCanvasMap(),
+    fCbcHistMap(),
+    fModuleHistMap(),
+    fType(),
+    fTestGroupChannelMap(),
+    fDirectoryName (""),
+    fResultFile (nullptr),
+    fHttpServer (pHttpServer)
+{
+}
+#endif
+
+Tool::Tool (const Tool& pTool)
+{
+    fBeBoardInterface = pTool.fBeBoardInterface;
+    fCbcInterface = pTool.fCbcInterface;
+    fBoardVector = pTool.fBoardVector;
+    fBeBoardFWMap = pTool.fBeBoardFWMap;
+    fSettingsMap = pTool.fSettingsMap;
+    fFileHandler = pTool.fFileHandler;
+
     fDirectoryName = pTool.fDirectoryName;             /*< the Directoryname for the Root file with results */
     fResultFile = pTool.fResultFile;                /*< the Name for the Root file with results */
+    fType = pTool.fType;
 #ifdef __HTTP__
     fHttpServer = pTool.fHttpServer;
 #endif
     fCanvasMap = pTool.fCanvasMap;
     fCbcHistMap = pTool.fCbcHistMap;
     fModuleHistMap = pTool.fModuleHistMap;
+    fTestGroupChannelMap = pTool.fTestGroupChannelMap;
+}
+
+Tool::~Tool()
+{
+}
+
+void Tool::Inherit (Tool* pTool)
+{
+    fBeBoardInterface = pTool->fBeBoardInterface;
+    fCbcInterface = pTool->fCbcInterface;
+    fBoardVector = pTool->fBoardVector;
+    fBeBoardFWMap = pTool->fBeBoardFWMap;
+    fSettingsMap = pTool->fSettingsMap;
+    fFileHandler = pTool->fFileHandler;
+    fDirectoryName = pTool->fDirectoryName;
+    fResultFile = pTool->fResultFile;
+    fType = pTool->fType;
+#ifdef __HTTP__
+    fHttpServer = pTool->fHttpServer;
+#endif
+    fCanvasMap = pTool->fCanvasMap;
+    fCbcHistMap = pTool->fCbcHistMap;
+    fModuleHistMap = pTool->fModuleHistMap;
+    fTestGroupChannelMap = pTool->fTestGroupChannelMap;
+}
+
+void Tool::Inherit (SystemController* pSystemController)
+{
+    fBeBoardInterface = pSystemController->fBeBoardInterface;
+    fCbcInterface = pSystemController->fCbcInterface;
+    fBoardVector = pSystemController->fBoardVector;
+    fBeBoardFWMap = pSystemController->fBeBoardFWMap;
+    fSettingsMap = pSystemController->fSettingsMap;
+    fFileHandler = pSystemController->fFileHandler;
+}
+
+void Tool::Destroy()
+{
+    LOG (INFO) << BOLDRED << "Destroying memory objects" << RESET;
+    SystemController::Destroy();
+#ifdef __HTTP__
+
+    if (fHttpServer) delete fHttpServer;
+
+#endif
+
+    if (fResultFile != nullptr)
+    {
+        if (fResultFile->IsOpen() ) fResultFile->Close();
+
+        if (fResultFile) delete fResultFile;
+    }
+
+    fCanvasMap.clear();
+    fCbcHistMap.clear();
+    fModuleHistMap.clear();
+    fTestGroupChannelMap.clear();
+}
+
+void Tool::SoftDestroy()
+{
+    LOG (INFO) << BOLDRED << "Destroying only tool memory objects" << RESET;
+
+    if (fResultFile != nullptr)
+    {
+        if (fResultFile->IsOpen() ) fResultFile->Close();
+
+        if (fResultFile) delete fResultFile;
+    }
+
+    fCanvasMap.clear();
+    fCbcHistMap.clear();
+    fModuleHistMap.clear();
+    fTestGroupChannelMap.clear();
 }
 
 void Tool::bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject )
@@ -35,7 +147,7 @@ void Tool::bookHistogram ( Cbc* pCbc, std::string pName, TObject* pObject )
     cCbcHistMap->second[pName] = pObject;
 #ifdef __HTTP__
 
-    if (fHttpServer) fHttpServer->Register ("/", pObject);
+    if (fHttpServer) fHttpServer->Register ("/Histograms", pObject);
 
 #endif
 }
@@ -62,7 +174,7 @@ void Tool::bookHistogram ( Module* pModule, std::string pName, TObject* pObject 
     cModuleHistMap->second[pName] = pObject;
 #ifdef __HTTP__
 
-    if (fHttpServer) fHttpServer->Register ("/", pObject);
+    if (fHttpServer) fHttpServer->Register ("/Histograms", pObject);
 
 #endif
 }
@@ -71,12 +183,20 @@ TObject* Tool::getHist ( Cbc* pCbc, std::string pName )
 {
     auto cCbcHistMap = fCbcHistMap.find ( pCbc );
 
-    if ( cCbcHistMap == std::end ( fCbcHistMap ) ) LOG (ERROR) << RED << "Error: could not find the Histograms for CBC " << int ( pCbc->getCbcId() ) <<  " (FE " << int ( pCbc->getFeId() ) << ")" << RESET ;
+    if ( cCbcHistMap == std::end ( fCbcHistMap ) )
+    {
+        LOG (ERROR) << RED << "Error: could not find the Histograms for CBC " << int ( pCbc->getCbcId() ) <<  " (FE " << int ( pCbc->getFeId() ) << ")" << RESET ;
+        return nullptr;
+    }
     else
     {
         auto cHisto = cCbcHistMap->second.find ( pName );
 
-        if ( cHisto == std::end ( cCbcHistMap->second ) ) LOG (ERROR) << RED << "Error: could not find the Histogram with the name " << pName << RESET ;
+        if ( cHisto == std::end ( cCbcHistMap->second ) )
+        {
+            LOG (ERROR) << RED << "Error: could not find the Histogram with the name " << pName << RESET ;
+            return nullptr;
+        }
         else
             return cHisto->second;
     }
@@ -86,12 +206,20 @@ TObject* Tool::getHist ( Module* pModule, std::string pName )
 {
     auto cModuleHistMap = fModuleHistMap.find ( pModule );
 
-    if ( cModuleHistMap == std::end ( fModuleHistMap ) ) LOG (ERROR) << RED << "Error: could not find the Histograms for Module " << int ( pModule->getFeId() ) << RESET ;
+    if ( cModuleHistMap == std::end ( fModuleHistMap ) )
+    {
+        LOG (ERROR) << RED << "Error: could not find the Histograms for Module " << int ( pModule->getFeId() ) << RESET ;
+        return nullptr;
+    }
     else
     {
         auto cHisto = cModuleHistMap->second.find ( pName );
 
-        if ( cHisto == std::end ( cModuleHistMap->second ) ) LOG (ERROR) << RED << "Error: could not find the Histogram with the name " << pName << RESET ;
+        if ( cHisto == std::end ( cModuleHistMap->second ) )
+        {
+            LOG (ERROR) << RED << "Error: could not find the Histogram with the name " << pName << RESET ;
+            return nullptr;
+        }
         else return cHisto->second;
     }
 }
@@ -176,7 +304,14 @@ void Tool::CreateResultDirectory ( const std::string& pDirname, bool pMode, bool
     LOG (INFO)  << "Creating directory: " << nDirname  ;
     std::string cCommand = "mkdir -p " + nDirname;
 
-    system ( cCommand.c_str() );
+    try
+    {
+        system ( cCommand.c_str() );
+    }
+    catch (std::exception& e)
+    {
+        LOG (ERROR) << "Exceptin when trying to create Result Directory: " << e.what();
+    }
 
     fDirectoryName = nDirname;
 }
@@ -190,11 +325,27 @@ void Tool::InitResultFile ( const std::string& pFilename )
     if ( !fDirectoryName.empty() )
     {
         std::string cFilename = fDirectoryName + "/" + pFilename + ".root";
-        fResultFile = TFile::Open ( cFilename.c_str(), "RECREATE" );
+
+        try
+        {
+            fResultFile = TFile::Open ( cFilename.c_str(), "RECREATE" );
+            fResultFileName = cFilename;
+        }
+        catch (std::exception& e)
+        {
+            LOG (ERROR) << "Exceptin when trying to create Result File: " << e.what();
+        }
     }
     else LOG (INFO) << RED << "ERROR: " << RESET << "No Result Directory initialized - not saving results!" ;
 }
 
+void Tool::CloseResultFile()
+{
+    LOG (INFO) << BOLDRED << "closing result file!" << RESET;
+
+    if (fResultFile)
+        fResultFile->Close();
+}
 void Tool::StartHttpServer ( const int pPort, bool pReadonly )
 {
 #ifdef __HTTP__
@@ -202,24 +353,45 @@ void Tool::StartHttpServer ( const int pPort, bool pReadonly )
     if (fHttpServer)
         delete fHttpServer;
 
-    fHttpServer = new THttpServer ( Form ( "http:%d", pPort ) );
-    fHttpServer->SetReadOnly ( pReadonly );
-    //fHttpServer->SetTimer ( pRefreshTime, kTRUE );
-    fHttpServer->SetTimer (1000, kFALSE);
-    fHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
-
-    //configure the server
-    // see: https://root.cern.ch/gitweb/?p=root.git;a=blob_plain;f=tutorials/http/httpcontrol.C;hb=HEAD
-    fHttpServer->SetItemField ("/", "_monitoring", "5000");
-    fHttpServer->SetItemField ("/", "_layout", "grid2x2");
-
     char hostname[HOST_NAME_MAX];
-    gethostname (hostname, HOST_NAME_MAX);
+
+    try
+    {
+        fHttpServer = new THttpServer ( Form ( "http:%d", pPort ) );
+        fHttpServer->SetReadOnly ( pReadonly );
+        //fHttpServer->SetTimer ( pRefreshTime, kTRUE );
+        fHttpServer->SetTimer (0, kTRUE);
+        fHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
+
+        //configure the server
+        // see: https://root.cern.ch/gitweb/?p=root.git;a=blob_plain;f=tutorials/http/httpcontrol.C;hb=HEAD
+        fHttpServer->SetItemField ("/", "_monitoring", "5000");
+        fHttpServer->SetItemField ("/", "_layout", "grid2x2");
+
+        gethostname (hostname, HOST_NAME_MAX);
+    }
+    catch (std::exception& e)
+    {
+        LOG (ERROR) << "Exception when trying to start THttpServer: " << e.what();
+    }
 
     LOG (INFO) << "Opening THttpServer on port " << pPort << ". Point your browser to: " << BOLDGREEN << hostname << ":" << pPort << RESET ;
 #else
     LOG (INFO) << "Error, ROOT version < 5.34 detected or not compiled with Http Server support!"  << " No THttpServer available! - The webgui will fail to show plots!" ;
     LOG (INFO) << "ROOT must be built with '--enable-http' flag to use this feature." ;
+#endif
+}
+
+void Tool::HttpServerProcess()
+{
+#ifdef __HTTP__
+
+    if (fHttpServer)
+    {
+        gSystem->ProcessEvents();
+        fHttpServer->ProcessRequests();
+    }
+
 #endif
 }
 
@@ -376,4 +548,18 @@ void Tool::MakeTestGroups ( bool pAllChan )
         fTestGroupChannelMap[cGId] = tempchannelVec;
 
     }
+}
+
+void Tool::CreateReport()
+{
+    std::ofstream report;
+    report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);
+    report.close();
+}
+void Tool::AmmendReport (std::string pString )
+{
+    std::ofstream report;
+    report.open (fDirectoryName + "/TestReport.txt", std::ofstream::out | std::ofstream::app);
+    report << pString << std::endl;
+    report.close();
 }

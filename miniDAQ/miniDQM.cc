@@ -14,6 +14,7 @@
 #include "../Utils/argvparser.h"
 #include "../Utils/ConsoleColor.h"
 #include "../System/SystemController.h"
+#include "../tools/Tool.h"
 
 #include "TROOT.h"
 #include "publisher.h"

@@ -41,6 +41,8 @@ class SignalScan : public Tool
 {
 
   public:
+    SignalScan();
+    ~SignalScan();
     void Initialize ();
     void ScanSignal (int pSignalScanLength);
 

@@ -1,5 +1,16 @@
 #include "SLinkEvent.h"
 
+CRCCalculator SLinkEvent::fCalculator;
+
+SLinkEvent::SLinkEvent () :
+    fSize (0),
+    fCRCVal (0),
+    fCondData (0),
+    fFake (0)
+{
+    fData.clear();
+}
+
 SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pChipType, uint32_t& pLV1Id, uint16_t& pBXId, int pSourceId) :
     fEventType (pEventType),
     fDebugMode (pMode),
@@ -11,6 +22,15 @@ SLinkEvent::SLinkEvent (EventType pEventType, SLinkDebugMode pMode, ChipType pCh
 {
     fData.clear();
     this->generateDAQHeader (pLV1Id, pBXId, pSourceId);
+}
+SLinkEvent::SLinkEvent (std::vector<uint64_t>& pDataVec) :
+    fSize (pDataVec.size() )
+{
+    fData.clear();
+    fData = pDataVec;
+    //fEventType = ;
+    //fDebugMode = ;
+    //fCRCVal = ;
 }
 
 //template<typename T>
@@ -111,74 +131,79 @@ void SLinkEvent::generateConditionData (ConditionDataSet* pSet)
 
 void SLinkEvent::generateDAQTrailer()
 {
-    this->calulateCRC();
     fSize += 1;
     uint64_t cWord = 0;
     //EOE_1 | EvtLength | CRC | Event Stat | TTS
-    cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 12 | ( (uint64_t) fCRCVal & 0xFFFF) << 16 | (TTS_VALUE & 0xF) << 4);
+    cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 32  | (TTS_VALUE & 0xF) << 4);
     fData.push_back (cWord);
+    this->calculateCRC();
+    fData.back() |= ( (uint64_t) fCRCVal & 0xFFFF) << 16;
 }
 
-void SLinkEvent::calulateCRC ()
+uint32_t SLinkEvent::getLV1Id()
 {
-    // i need to split the data vector in octets and then it should work
-    //uint16_t TrackerEvent::Crc16 (const char* Adresse_tab, uint32_t Taille_max, uint16_t Crc = 0xFFFF) const
-    //{
-    //uint16_t Polynome = 0xA001;// Polynome 2^16 + 2^15 + 2^2 + 2^0 = 0x8005.
-    //uint32_t CptOctet;
-    //unsigned char CptBit, Parity;
-
-    //for ( CptOctet = 0 ; CptOctet < Taille_max ; CptOctet++)
-    //{
-    //Crc ^= * ( Adresse_tab + CptOctet); //Ou exculsif entre octet message et CRC
-
-    //for ( CptBit = 0; CptBit <= 7 ; CptBit++) [> Mise a 0 du compteur nombre de bits <]
-    //{
-    //Parity = Crc % 2;
-    //Crc >>= 1; // Decalage a droite du crc
-
-    //if (Parity)
-    //Crc ^= Polynome; // Test si nombre impair -> Apres decalage a droite il y aura une retenue
-    //} // "ou exclusif" entre le CRC et le polynome generateur.
-    //}
-
-    //return (Crc);
-    uint16_t cCRC = 0xFFFF;
-    uint16_t cPolynomial = 0xA001;// Polynomial 2^16 + 2^15 + 2^2 + 2^0 = 0x8005.
-    uint8_t cBit, cParity;
-
-    for (uint32_t cWord = 0; cWord < fData.size(); cWord++) // iterate through data in words
+    if (fData.size() != 0)
+        return (fData.at (0) >> 32 ) & 0x00FFFFFF;
+    else
     {
-        uint8_t cOctetIndex = 0;
-        uint8_t cByte = 0;
-        uint64_t cWord64 = fData[cWord];
+        LOG (ERROR) << BOLDRED << "No content in Event!" << RESET;
+        return 0;
+    }
+}
 
-        do
-        {
-            //ATTENTION: cByte holds the LSBs first - if this needs to be reversed, keep the code
-            cByte = cWord64 & 0xFF;
-            cCRC ^= cByte;
-
-            for (cBit = 0; cBit < 8; cBit++)
-            {
-                cParity = cCRC % 2;
-                cCRC >>= 1;
-
-                if (cParity)
-                    cCRC ^= cPolynomial;
-            }
-
-            cOctetIndex++;
-        }
-        while (cWord64 >>= 8);
+uint32_t SLinkEvent::getSourceId()
+{
+    if (fData.size() != 0)
+        return (fData.at (0) >> 8 ) & 0x00000FFF;
+    else
+    {
+        LOG (ERROR) << BOLDRED << "No content in Event!" << RESET;
+        return 0;
     }
 
-    fCRCVal = cCRC;
 }
-//original split64_t algorighm
-//https://stackoverflow.com/questions/20041899/how-to-split-a-64-bit-integral-data-type-into-eight-8-bit-types
-//{
-//uint64_t v= _64bitVariable;
-//uint8_t i=0,parts[8]={0};
-//do parts[i++]=v&0xFF; while (v>>=8);
-//}
+
+uint32_t SLinkEvent::getSize64()
+{
+    return fData.size();
+}
+
+void SLinkEvent::calculateCRC ()
+{
+    //original code before CRC Calculator
+    // i need to split the data vector in octets and then it should work
+    //uint16_t cCRC = 0xFFFF;
+    //uint16_t cPolynomial = 0xA001;// Polynomial 2^16 + 2^15 + 2^2 + 2^0 = 0x8005.
+    //uint8_t cBit, cParity;
+
+    //for (uint32_t cWord = 0; cWord < fData.size(); cWord++) // iterate through data in words
+    //{
+    //uint8_t cOctetIndex = 0;
+    //uint8_t cByte = 0;
+    //uint64_t cWord64 = fData[cWord];
+
+    //do
+    //{
+    ////ATTENTION: cByte holds the LSBs first - if this needs to be reversed, keep the code
+    //cByte = cWord64 & 0xFF;
+    //cCRC ^= cByte;
+
+    //for (cBit = 0; cBit < 8; cBit++)
+    //{
+    //cParity = cCRC % 2;
+    //cCRC >>= 1;
+
+    //if (cParity)
+    //cCRC ^= cPolynomial;
+    //}
+
+    //cOctetIndex++;
+    //}
+    //while (cWord64 >>= 8);
+    //}
+
+    //fCRCVal = cCRC;
+    //CRCCalculator needs an array of unsigned char
+    std::vector<uint8_t> cData = this->getData<uint8_t>();
+    fCRCVal = fCalculator.compute (&cData[0], sizeof (&cData) );
+}
