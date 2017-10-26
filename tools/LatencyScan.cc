@@ -78,9 +78,9 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
     cThresholdVisitor.setThreshold (cVcth);
     this->accept (cThresholdVisitor);
 
-    // set test pulse
-    setFWTestPulse();
-    setSystemTestPulse ( fTestPulseAmplitude, 0, true, fHoleMode );
+    // set test pulse (if needed)
+    //setFWTestPulse();
+    //setSystemTestPulse ( fTestPulseAmplitude, 0, true, fHoleMode );
 
     // Now the actual scan
     LOG (INFO) << "Scanning Latency ... " ;
@@ -151,9 +151,9 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
     cThresholdVisitor.setThreshold (cVcth);
     this->accept (cThresholdVisitor);
 
-    // set test pulse
-    setFWTestPulse();
-    setSystemTestPulse ( fTestPulseAmplitude, 0, true, fHoleMode );
+    // set test pulse (if needed)
+    //setFWTestPulse();
+    //setSystemTestPulse ( fTestPulseAmplitude, 0, true, fHoleMode );
 
     // Now the actual scan
     LOG (INFO) << "Scanning Stub Latency ... " ;
@@ -342,11 +342,11 @@ void LatencyScan::parseSettings()
     if ( cSetting != std::end ( fSettingsMap ) )  fHoleMode = cSetting->second;
     else fHoleMode = 1;
 
-    cSetting = fSettingsMap.find ( "TestPulsePotentiometer" );
-    fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x7F;
+    //cSetting = fSettingsMap.find ( "TestPulsePotentiometer" );
+    //fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x7F;
 
     LOG (INFO) << "Parsed the following settings:" ;
     LOG (INFO) << "	Nevents = " << fNevents ;
     LOG (INFO) << "	HoleMode = " << int ( fHoleMode ) ;
-    LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
+    //LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
 }
