@@ -89,12 +89,13 @@ void HybridTester::ReconfigureCBCRegisters (std::string pDirectoryName )
 
 void HybridTester::InitializeHists()
 {
+    uint32_t cNBinsX = (fNCbc * 254) / 2;
     TString cFrontName ( "fHistTop" );
     fHistTop = ( TH1F* ) ( gROOT->FindObject ( cFrontName ) );
 
     if ( fHistTop ) delete fHistTop;
 
-    fHistTop = new TH1F ( cFrontName, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistTop = new TH1F ( cFrontName, "Front Pad Channels; Pad Number; Occupancy [%]", cNBinsX, -0.5, cNBinsX - 0.5 );
     fHistTop->SetFillColor ( 4 );
     fHistTop->SetFillStyle ( 3001 );
 
@@ -103,7 +104,7 @@ void HybridTester::InitializeHists()
 
     if ( fHistBottom ) delete fHistBottom;
 
-    fHistBottom = new TH1F ( cBackName, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistBottom = new TH1F ( cBackName, "Back Pad Channels; Pad Number; Occupancy [%]", cNBinsX, -0.5, cNBinsX - 0.5 );
     fHistBottom->SetFillColor ( 4 );
     fHistBottom->SetFillStyle ( 3001 );
 
@@ -112,7 +113,7 @@ void HybridTester::InitializeHists()
 
     if ( fHistTopMerged ) delete fHistTopMerged;
 
-    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", cNBinsX, -0.5, cNBinsX - 0.5 );
     fHistTopMerged->SetFillColor ( 4 );
     fHistTopMerged->SetFillStyle ( 3001 );
 
@@ -121,7 +122,7 @@ void HybridTester::InitializeHists()
 
     if ( fHistBottomMerged ) delete fHistBottomMerged;
 
-    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", cNBinsX, -0.5, cNBinsX - 0.5 );
     fHistBottomMerged->SetFillColor ( 4 );
     fHistBottomMerged->SetFillStyle ( 3001 );
 
@@ -204,7 +205,8 @@ void HybridTester::InitialiseSettings()
     fTotalEvents = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 999;
     cSetting = fSettingsMap.find ( "HoleMode" );
     fHoleMode = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : true;
-
+    cSetting = fSettingsMap.find ( "TestPulsePotentiometer" );
+    fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x7F;
 
     // LOG(INFO) << "Read the following Settings: " ;
     // LOG(INFO) << "Hole Mode: " << fHoleMode << std::endl << "NEvents: " << fTotalEvents << std::endl << "NSigmas: " << fSigmas ;
@@ -399,7 +401,7 @@ void HybridTester::ScanThreshold()
     LOG (INFO) << "Scanning noise Occupancy to find threshold for test with external source ... " ;
 
     // Necessary variables
-    uint32_t cEventsperVcth = 10;
+    uint32_t cEventsperVcth = fTotalEvents;
     bool cNonZero = false;
     bool cAllOne = false;
     bool cSlopeZero = false;
@@ -471,7 +473,7 @@ void HybridTester::ScanThreshold()
                 continue;
             }
 
-            if ( cNonZero && cHitCounter != 0 )
+            if ( cNonZero && (cHitCounter != 0) )
             {
                 // check if all Cbcs have reached full occupancy
                 if ( cHitCounter > 0.95 * cEventsperVcth * fNCbc * NCHANNELS ) cAllOneCounter++;
@@ -512,7 +514,7 @@ void HybridTester::processSCurves ( uint32_t pEventsperVcth )
     {
         fSCurveCanvas->cd ( cScurve.first->getCbcId() + 1 );
 
-        cScurve.second->Scale ( 1 / double_t ( pEventsperVcth * NCHANNELS ) );
+        cScurve.second->Scale ( 1.0 / double_t ( pEventsperVcth * NCHANNELS ) );
         cScurve.second->Draw ( "P" );
         // Write to file
         cScurve.second->Write ( cScurve.second->GetName(), TObject::kOverwrite );
@@ -891,41 +893,61 @@ void HybridTester::ReconstructShorts (std::array<std::vector<std::array<int, 5>>
 
 void HybridTester::SetBeBoardForShortsFinding (BeBoard* pBoard)
 {
-    fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_RQ", 1 );
-    fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID", 1 );
-    fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", 2 );
+    if (pBoard->getBoardType() == BoardType::GLIB || pBoard->getBoardType() == BoardType::CTA) fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", 2 );
+    else if(pBoard->getBoardType() == BoardType::D19C) fBeBoardInterface->WriteBoardReg(pBoard, "fc7_daq_cnfg.fast_command_block.test_pulse.delay_after_test_pulse", 1);
+    setFWTestPulse();
 
-    LOG (INFO) << "COMMISSIONNING_MODE_RQ: " << fBeBoardInterface->ReadBoardReg ( pBoard, "COMMISSIONNING_MODE_RQ" ) ;
-    LOG (INFO) << "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID: " << fBeBoardInterface->ReadBoardReg ( pBoard, "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID" ) ;
-    LOG (INFO) << "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE: " << fBeBoardInterface->ReadBoardReg ( pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE" ) ;
-
-    std::vector<std::pair<std::string, uint8_t>> cRegVec;
-
-    if ( fHoleMode )
-        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0xE1 ) );
-    else
-        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0x61 ) );
-
-    cRegVec.push_back ( std::make_pair ( "TestPulsePot", 0xF0 ) );
-
-    //cRegVec.push_back ( std::make_pair ( "VCth", 0x90 ) );
-
-    //cRegVec.push_back ( std::make_pair ( "TriggerLatency", 0x01 ) );
-
-    CbcMultiRegWriter cMultiWriter ( fCbcInterface, cRegVec );
-    this->accept ( cMultiWriter );
+    // (potential, group, enable test pulse, hole mode)
+    setSystemTestPulse(fTestPulseAmplitude,0x00,true,fHoleMode);
 
     //edit G.A: in order to be compatible with CBC3 (9 bit trigger latency) the recommended method is this:
     LatencyVisitor cLatencyVisitor (fCbcInterface, 0x01);
     this->accept (cLatencyVisitor);
-    ThresholdVisitor cThresholdVisitor (fCbcInterface, 0x90);
+
+    // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
+    // ThresholdVisitor in read mode
+    ThresholdVisitor cThresholdVisitor (fCbcInterface);
     this->accept (cThresholdVisitor);
+    uint16_t cVcth = cThresholdVisitor.getThreshold();
+
+    int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
+    LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
+    cVcth += cVcthStep;
+
+    //  Set that VCth Value on all FEs
+    cThresholdVisitor.setOption ('w');
+    cThresholdVisitor.setThreshold (cVcth);
+    this->accept (cThresholdVisitor);
+}
+
+void HybridTester::SetTestGroup(BeBoard* pBoard, uint8_t pTestGroup)
+{
+    for (auto cFe : pBoard->fModuleVector)
+    {
+        for (auto cCbc : cFe->fCbcVector)
+        {
+            std::vector<std::pair<std::string, uint8_t>> cRegVec;
+            uint8_t cRegValue = this->to_reg ( 0, pTestGroup );
+
+            if (cCbc->getChipType() == ChipType::CBC3)
+            {
+                //CBC3
+                cRegVec.push_back ( std::make_pair ( "TestPulseDel&ChanGroup",  cRegValue ) );
+            }
+            else
+            {
+                //CBC2
+                cRegVec.push_back ( std::make_pair ( "SelTestPulseDel&ChanGroup",  cRegValue ) );
+            }
+
+            this->fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);
+        }
+    }
 }
 
 void HybridTester::FindShorts()
 {
     std::stringstream ss;
-    uint8_t cGroupAddress[8] = {0, 4, 2, 6, 1, 5, 3, 7};
     uint8_t cTestPulseGroupId = 0;
     std::array<int, 5> cShortedChannelInfo;
     std::array<std::vector<std::array<int, 5>>, 8> cShortedGroupsArray;
@@ -945,8 +967,6 @@ void HybridTester::FindShorts()
 
         SetBeBoardForShortsFinding (pBoard);
 
-        CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", cGroupAddress[cTestPulseGroupId]);
-        //CbcRegReader cReader( fCbcInterface, "SelTestPulseDel&ChanGroup" );
         ss << "\nShorted channels searching procedure\nSides: Top - 0\tBottom - 1 (Channel numbering starts from 0)\n" << std::endl;
         ss << "      Side\t| Channel_ID\t| Group_ID\t| Shorted_With_Group_ID" << std::endl;
 
@@ -955,9 +975,7 @@ void HybridTester::FindShorts()
             cN = 1;
             cNthAcq = 0;
 
-            cWriter.setRegister ( "SelTestPulseDel&ChanGroup", cGroupAddress[cTestPulseGroupId]);
-            accept ( cWriter );
-            //accept( cReader );
+            this->SetTestGroup(pBoard,(uint8_t)cTestPulseGroupId);
 
             fBeBoardInterface->Start ( pBoard );
 
@@ -1086,7 +1104,7 @@ void HybridTester::Measure()
         fBeBoardInterface->Stop ( pBoard);
     }
 
-    for ( int i = 1 ; i < ( fNCbc / 2 * 254 ) ; i++ )
+    for ( int i = 1 ; i < (fNCbc * 254) / 2 ; i++ )
     {
         double cOccupancyTop = 100 * fHistTop->GetBinContent (i) / (double) (fTotalEvents);
         double cOccupancyBottom = 100 * fHistBottom->GetBinContent (i) / (double) (fTotalEvents);
@@ -1106,7 +1124,7 @@ void HybridTester::Measure()
 }
 void HybridTester::ClassifyChannels (double pNoiseLevel, double pDeadLevel )
 {
-    for ( int i = 1 ; i < ( fNCbc / 2 * 254 ) ; i++ )
+    for ( int i = 1 ; i < (fNCbc * 254) / 2 ; i++ )
     {
         if ( fHistBottom->GetBinContent (i) >= pNoiseLevel ) fNoisyChannelsBottom.push_back (i) ;
 

@@ -116,7 +116,7 @@ namespace Ph2_HwInterface {
                     {
 
                         //check the sync bit
-                        uint8_t cSyncBit = 1;
+			uint8_t cSyncBit = (0x00000008 & list.at(data_offset+10)) >> 3;
 
                         if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;
 

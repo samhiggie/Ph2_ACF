@@ -8,6 +8,7 @@
 #include "../Utils/argvparser.h"
 #include "../Utils/Timer.h"
 #include "../tools/Tool.h"
+#include "CtaFpgaConfig.h"
 #include "TROOT.h"
 #include "TApplication.h"
 
@@ -52,6 +53,7 @@ int main ( int argc, char** argv )
     cmd.defineOptionAlternative ( "evtsize", "w" );
     cmd.defineOption ( "dqm", "Print every i-th event.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "dqm", "d" );
+    cmd.defineOption ( "hard_reset", "Hard Reset the board", ArgvParser::NoOptionAttribute );
 
     int result = cmd.parse ( argc, argv );
 
@@ -60,6 +62,8 @@ int main ( int argc, char** argv )
         LOG (INFO) << cmd.parseErrorDescription ( result );
         exit ( 1 );
     }
+
+    bool cHardReset = ( cmd.foundOption ( "hard_reset" ) ) ? true : false;
 
     bool cSaveToFile = false;
     std::string cOutputFile;
@@ -80,7 +84,7 @@ int main ( int argc, char** argv )
         cOutputFile =  cmd.optionValue ( "save" );
         cTool.InitResultFile ( cOutputFile );
     }
-    cTool.ConfigureHw ();
+    if (!cHardReset) cTool.ConfigureHw ();
 
     BeBoard* pBoard = cTool.fBoardVector.at(0);
     cTool.fBeBoardInterface->getBoardInfo(pBoard);
@@ -89,101 +93,111 @@ int main ( int argc, char** argv )
     bool cRate = ( cmd.foundOption ( "rate" ) ) ? true : false;
     bool cIPB_Rate = ( cmd.foundOption ( "ipb_rate" ) ) ? true : false;
 
-    if ( cTestPulse )
-    {
-        uint32_t cNGroups = 8;
-        uint32_t cN = 0;
-        for (int i = 0; i < cNGroups; i++)
-        {
-            cTool.setSystemTestPulse(0x50,i,true,false);
-            cTool.ReadNEvents( pBoard, 1 );
-
-            const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
-            for ( auto& ev : events )
-            {
-                LOG (INFO) << ">>> Event #" << cN++ ;
-                outp.str ("");
-                outp << *ev;
-                LOG (INFO) << outp.str();
-            }
-        }
-
+    if ( cHardReset ) {
+        cTool.fBeBoardInterface->RebootBoard(pBoard);
     }
-
-    if ( cRate )
-    {
-        uint32_t cN = 0;
-        uint32_t count = 0;
-        double cAvgOccupancy = 0;
-
-        uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
-
-        // be careful works only for one hybrid
-        std::vector < Cbc* > cCbcVector = pBoard->getModule(0)->fCbcVector;
-        uint32_t cNCbc = cCbcVector.size();
-
-        Timer t;
-        t.start();
-
-        cTool.Start ( pBoard );
-        while ( cN < cNEventsToCollect )
+    else {
+        if ( cTestPulse )
         {
-            cTool.ReadData ( pBoard );
+            auto cSetting = cTool.fSettingsMap.find ( "TestPulsePotentiometer" );
+            uint8_t cTestPulseAmplitude = ( cSetting != std::end ( cTool.fSettingsMap ) ) ? cSetting->second : 0x7F;
 
-            const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
+            uint32_t cNGroups = 8;
+            uint32_t cN = 0;
+            cTool.setFWTestPulse();
 
-            for ( auto& ev : events )
+            for (int i = 0; i < cNGroups; i++)
             {
-                count++;
-                cN++;
+                cTool.setSystemTestPulse(cTestPulseAmplitude,i,true,false);
+                cTool.ReadNEvents( pBoard, 1 );
 
-                double cAvgOccupancyHyb0 = 0;
-                for(auto cCbc: cCbcVector) cAvgOccupancyHyb0 += ev->GetNHits(0,cCbc->getCbcId());
-                cAvgOccupancy += (cAvgOccupancyHyb0/cNCbc);
-
-                if ( cmd.foundOption ( "dqm" ) )
+                const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
+                for ( auto& ev : events )
                 {
-                    if ( count % atoi ( cmd.optionValue ( "dqm" ).c_str() ) == 0 )
-                    {
-                        LOG (INFO) << ">>> Event #" << count ;
-                        outp.str ("");
-                        outp << *ev << std::endl;
-                        LOG (INFO) << outp.str();
-                    }
+                    LOG (INFO) << ">>> Event #" << cN++ ;
+                    outp.str ("");
+                    outp << *ev;
+                    LOG (INFO) << outp.str();
                 }
-
-                if ( count % 10000  == 0 )
-                    LOG (INFO) << ">>> Recorded Event #" << count ;
             }
+
         }
-        cTool.Stop ( pBoard );
 
-        t.stop();
-        LOG (INFO) << "Average Occupancy for Hybrid#0: " << (double)cAvgOccupancy/cN << " hits/(event*CBC)";
-        LOG (INFO) << "Measured maximal readout rate: " << (double)(cN/t.getElapsedTime())/1000 << "kHz (based on " << +cN << " events)";
-    }
-
-    if ( cIPB_Rate )
-    {
-        uint32_t cN = 0;
-
-        uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
-        uint32_t cPackageSize = ( cmd.foundOption ( "pkgsize" ) ) ? convertAnyInt ( cmd.optionValue ( "pkgsize" ).c_str() ) : 100;
-        uint32_t cEvtSize = ( cmd.foundOption ( "evtsize" ) ) ? convertAnyInt ( cmd.optionValue ( "evtsize" ).c_str() ) : 94;
-
-
-        Timer t;
-        t.start();
-
-        while ( cN < cNEventsToCollect )
+        if ( cRate )
         {
-            cTool.fBeBoardInterface->ReadBlockBoardReg(pBoard, "fc7_daq_ctrl.readout_block.readout_fifo", cPackageSize*cEvtSize);
-            cN += cPackageSize;
-        }
-        cTool.Stop ( pBoard );
+            uint32_t cN = 0;
+            uint32_t count = 0;
+            double cAvgOccupancy = 0;
 
-        t.stop();
-        LOG (INFO) << "Measured maximal IPBus readout rate: " << (double)(cN/t.getElapsedTime())/1000 << "kHz (based on " << +cN << " events, avg package size: " << +cPackageSize << " events, avg event size: " << +cEvtSize << " words)";
+            uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
+
+            // be careful works only for one hybrid
+            std::vector < Cbc* > cCbcVector = pBoard->getModule(0)->fCbcVector;
+            uint32_t cNCbc = cCbcVector.size();
+
+            Timer t;
+            t.start();
+
+            cTool.Start ( pBoard );
+            while ( cN < cNEventsToCollect )
+            {
+                cTool.ReadData ( pBoard );
+
+                const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
+
+                for ( auto& ev : events )
+                {
+                    count++;
+                    cN++;
+
+                    double cAvgOccupancyHyb0 = 0;
+                    for(auto cCbc: cCbcVector) cAvgOccupancyHyb0 += ev->GetNHits(0,cCbc->getCbcId());
+                    cAvgOccupancy += (cAvgOccupancyHyb0/cNCbc);
+
+                    if ( cmd.foundOption ( "dqm" ) )
+                    {
+                        if ( count % atoi ( cmd.optionValue ( "dqm" ).c_str() ) == 0 )
+                        {
+                            LOG (INFO) << ">>> Event #" << count ;
+                            outp.str ("");
+                            outp << *ev << std::endl;
+                            LOG (INFO) << outp.str();
+                        }
+                    }
+
+                    if ( count % 10000  == 0 )
+                        LOG (INFO) << ">>> Recorded Event #" << count ;
+                }
+            }
+            cTool.Stop ( pBoard );
+
+            t.stop();
+            LOG (INFO) << "Average Occupancy for Hybrid#0: " << (double)cAvgOccupancy/cN << " hits/(event*CBC)";
+            LOG (INFO) << "Measured maximal readout rate: " << (double)(cN/t.getElapsedTime())/1000 << "kHz (based on " << +cN << " events)";
+        }
+
+        if ( cIPB_Rate )
+        {
+            uint32_t cN = 0;
+
+            uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
+            uint32_t cPackageSize = ( cmd.foundOption ( "pkgsize" ) ) ? convertAnyInt ( cmd.optionValue ( "pkgsize" ).c_str() ) : 100;
+            uint32_t cEvtSize = ( cmd.foundOption ( "evtsize" ) ) ? convertAnyInt ( cmd.optionValue ( "evtsize" ).c_str() ) : 94;
+
+
+            Timer t;
+            t.start();
+
+            while ( cN < cNEventsToCollect )
+            {
+                cTool.fBeBoardInterface->ReadBlockBoardReg(pBoard, "fc7_daq_ctrl.readout_block.readout_fifo", cPackageSize*cEvtSize);
+                cN += cPackageSize;
+            }
+            cTool.Stop ( pBoard );
+
+            t.stop();
+            LOG (INFO) << "Measured maximal IPBus readout rate: " << (double)(cN/t.getElapsedTime())/1000 << "kHz (based on " << +cN << " events, avg package size: " << +cPackageSize << " events, avg event size: " << +cEvtSize << " words)";
+        }
     }
 
     LOG (INFO) << "*** End of the DAQ test ***" ;

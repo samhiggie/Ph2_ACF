@@ -59,6 +59,7 @@ class LatencyScan : public Tool
     //uint32_t fInitialThreshold;
     uint32_t fHoleMode;
     uint32_t fNCbc;
+    uint8_t fTestPulseAmplitude;
 
     const uint32_t fTDCBins = 8;
 
