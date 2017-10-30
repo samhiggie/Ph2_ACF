@@ -60,7 +60,8 @@
 
         <node id="physical_interface_block"     address="0x3000">
 	    <node id="i2c"				address="0x001">
-		<node id="frequency"			    mask="0x0000ffff"/>
+                <node id="frequency"			    mask="0x0000000f"/>
+                <node id="master_en"                        mask="0x00000100"/>
 	    </node>
             <node id="phase_set"			address="0x002" mask="0x0000001f"/>
 	    <node id="slvs5_shift"			address="0x003" mask="0x00070000"/>
