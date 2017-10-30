@@ -52,6 +52,10 @@
 	    <node id="stub_trigger_latency"		address="0x007" mask="0x000001FF"/>
 	    <node id="ext_trigger_delay_value"		address="0x007" mask="0x0003FE00" description="sets the delay of the external trigger (dio5 ch 5)"/>
 	    <node id="antenna_trigger_delay_value"	address="0x007" mask="0x07FC0000" description="sets the delay after antenna trigger"/>
+            <node id="delay_between_two_consecutive"    address="0x008" mask="0x0000FFFF" description="sets the delay between two consecutive triggers"/>
+            <node id="misc"                             address="0x009">
+                <node id="backpressure_enable"              mask="0x00000001" description="enables treatment of the backpressure bit"/>
+            </node>
         </node>
 
         <node id="physical_interface_block"     address="0x3000">
@@ -235,6 +239,7 @@
                 <node id="fsm_state"                        mask="0x00000030"/>
                 <node id="configured"                       mask="0x00000040"/>
             </node>
+            <node id="trigger_in_counter"               address="0x001" mask="0xffffffff"/>
         </node>
 
         <node id="physical_interface_block"     address="0x3000">

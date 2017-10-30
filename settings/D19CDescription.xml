@@ -59,6 +59,11 @@
 			<Register name="delay_after_test_pulse"> 200 </Register>
 			<Register name="delay_before_next_pulse"> 400 </Register>
 		</Register>
+                <Register name="ext_trigger_delay_value"> 50 </Register>
+                <Register name="antenna_trigger_delay_value"> 200 </Register>
+                <Register name="misc">
+                        <Register name="backpressure_enable"> 1 </Register>
+                </Register>
         </Register>
 	<!-- I2C manager -->
         <Register name="command_processor_block">
