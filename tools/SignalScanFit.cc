@@ -24,7 +24,7 @@ void SignalScanFit::Initialize ()
 
             uint32_t cFeId = cFe->getFeId();
             fNCbc = cFe->getNCbc();
-            TCanvas* ctmpCanvas = new TCanvas ( Form ( "c_online_canvas_fe%d", cFeId ), Form ( "FE%d  Online Canvas", cFeId ) );
+            TCanvas* ctmpCanvas = new TCanvas ( Form ( "c_online_canvas_fe%d", cFeId ), Form ( "FE%d  Online Canvas", cFeId ) ); 
             //ctmpCanvas->Divide( 3, 2 );
             fCanvasMap[cFe] = ctmpCanvas;
 
@@ -34,6 +34,7 @@ void SignalScanFit::Initialize ()
 
             if ( cObj ) delete cObj;
 
+            // 2D-plot with all the channels on the x-axix, Vcth on the y-axis and #clusters on the z.
             TH2F* cSignalHist = new TH2F ( cName, Form ( "Signal threshold vs channel ; Channel # ; Threshold; # of Hits", cFeId ), fNCbc * NCHANNELS, -0.5, fNCbc * NCHANNELS - 0.5, fVCthRange, fVCthMin, fVCthMax );
             bookHistogram ( cFe, "module_signal", cSignalHist );
              
@@ -309,6 +310,7 @@ void SignalScanFit::processCurves ( BeBoard *pBoard, std::string pHistName )
 	          hits.ReplaceAll("Clusters", "Hits");
 	          TH1F* cHitsHist = dynamic_cast<TH1F*> ( getHist ( cCbc, hits.Data()) );
 
+            // Make the clusterSize histos
 	          TString size(clusters);
 	          size.ReplaceAll("Clusters", "ClusterSize"); 
 	          TH1F* cClusterSizeHist = dynamic_cast<TH1F*> ( getHist ( cCbc, size.Data()) );
@@ -320,10 +322,11 @@ void SignalScanFit::processCurves ( BeBoard *pBoard, std::string pHistName )
 		              cClusterSizeHist->SetBinContent(i, 0);
 	          }
 
+            // Make the differential histo
             // Do this with the histogram, not the profile
             this->differentiateHist (cCbc, clusters.Data());
 
-            // Only do this if requested? Yes, see SignalScan!
+            // Only do this if requested? Yes, see SignalScan and fFitted setting!
             if (fFitted) 
             this->fitHist (cCbc, pHistName);
         }
@@ -375,6 +378,8 @@ void SignalScanFit::differentiateHist ( Cbc* pCbc, std::string pHistName )
 
 void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
 {
+
+    // This works for CBC2, needs to be verified with CBC3!!! 
     TProfile* cHist = dynamic_cast<TProfile*> ( getHist ( pCbc, pHistName) );
     double cStart  = 0; 
     double cStop = 90; // Fit fails if it reaches the noise
@@ -428,7 +433,9 @@ void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
 	
 	      cFit = new TF1 ( "CurveFit", MyGammaSignal, cStart, cStop, 4 ); // MyGammaSignal is in Utils
     }
-          // Hole mode
+          
+
+// Hole mode not implemented!
 //        else
 //        {
 //            for ( Int_t cBin = cHist->GetNbinsX() - 1; cBin > 1; cBin-- )
@@ -451,9 +458,11 @@ void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
 
     // Get rough input parameters
     double cWidth = 10;
-    double cNoise = 1;
+    double cNoise = 1; // This is not only the noise of the s-curve!
     double cPlateau = cHist->GetBinContent ( cStop-1 );
     double cVsignal = cHist->GetBinCenter ( cStart+20 );
+
+    std::cout << "Fit parameters: width = " << cWidth << " , 'noise' = " << cNoise << " , plateau = " << " , VcthSignal = " << cVsignal << std::endl; 
     
     cFit->SetParameter ( 0, cPlateau );
     cFit->SetParameter ( 1, cWidth );
