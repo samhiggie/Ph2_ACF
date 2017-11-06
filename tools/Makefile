@@ -7,7 +7,7 @@ CC              = g++
 CXX             = g++
 CCFlags         = -g -O1 -w -Wall -pedantic -pthread -fPIC `root-config --cflags --evelibs` 
 
-Objs            = Tool.o Calibration.o Channel.o HybridTester.o CMTester.o LatencyScan.o SignalScan.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o StubSweep.o
+Objs            = Tool.o Calibration.o Channel.o HybridTester.o CMTester.o LatencyScan.o SignalScan.o SignalScanFit.o PulseShape.o PedeNoise.o RegisterTester.o ShortFinder.o AntennaTester.o StubSweep.o
 
 ROOTVERSION := $(shell root-config --has-http)
 RootLibraryDirs = $(ROOTLIB)
