@@ -61,11 +61,11 @@ void SignalScanFit::Initialize ()
 	              bookHistogram ( cCbc, "Cbc_Clusters_odd", cHist );
 	              
 	              cHistname = Form ( "Fe%dCBC%d_ClusterSize_even",cFeId, cCbcId );
-	              cHist = new TH1F ( cHistname, cHistname, 130, -0.5, 129.5 ); 
+	              cHist = new TH1F ( cHistname, cHistname, fVCthRange, fVCthMin, fVCthMax );
 	              bookHistogram ( cCbc, "Cbc_ClusterSize_even", cHist );
 	              
 	              cHistname = Form ( "Fe%dCBC%d_ClusterSize_odd",cFeId, cCbcId );
-	              cHist = new TH1F ( cHistname, cHistname, 130, -0.5, 129.5 ); 
+	              cHist = new TH1F ( cHistname, cHistname, fVCthRange, fVCthMin, fVCthMax );
 	              bookHistogram ( cCbc, "Cbc_ClusterSize_odd", cHist );
 	              
 	              cHistname = Form ( "Fe%dCBC%d_Hits_even",cFeId, cCbcId );
@@ -382,7 +382,8 @@ void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
     // This works for CBC2, needs to be verified with CBC3!!! 
     TProfile* cHist = dynamic_cast<TProfile*> ( getHist ( pCbc, pHistName) );
     double cStart  = 0; 
-    double cStop = 90; // Fit fails if it reaches the noise
+    double cStop = 110; // Fit fails if it reaches the noise, this is for low energies!
+
     // Draw fit parameters
     TStyle * cStyle = new TStyle();
     cStyle->SetOptFit(1011);
@@ -391,79 +392,104 @@ void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
     TF1* cFit = dynamic_cast<TF1*> (gROOT->FindObject (cFitname.c_str() ) );
     if (cFit) delete cFit;
     
-    double cPreviousBin = 0;
-    uint32_t cBinAboveZero = 0;
-    double cDifCurrent = -999;
-    double cDifPrevious = -999;
+    double cFirst = -999;             // First data point
+    double cCurrent = 0;              // Bin content
+    double cPrevious = 0;             // Content of previous bin
+    double cNext = 0;                 // Content of next bin
+    double cRatioFirst = -999;        // First Ratio
+    double cRatio = 0;                // Ratio between first data point and current data point
+    uint32_t cFirstOrderCounter = 0;  // Count for how long we are in first zone
+    uint32_t cSecondOrderCounter = 0; // Count for how long we are in second zone
+    uint32_t cThirdOrderCounter = 0;  // Count for how long we are in third zone
+    double cRunningAverage = 0;       // Running average for during the plateau
 
+    // Default values for the fit, these will be customized in the next for-loop.
+    double cPlateau = 0., cWidth = 0., cVsignal = 0., cNoise = 1;
+    if ( fType == ChipType::CBC2 ) cPlateau = 0.05, cWidth = 10, cVsignal = 74;
+    else if ( fType == ChipType::CBC3 ) cPlateau = 0.05, cWidth = 20, cVsignal = 120;  
+    
     // Not Hole Mode
     if ( !fHoleMode )
     {
       
-        for ( Int_t cBin = 1; cBin < cHist->GetNbinsX() - 1; cBin++ )
+        for ( Int_t cBin = 2; cBin < cHist->GetNbinsX() - 1; cBin++ )
 	      {
-	          double cContent = cHist->GetBinContent ( cBin );
-	          double cBinVcth = cHist->GetBinLowEdge ( cBin );
+            cCurrent = cHist->GetBinContent ( cBin );
+            cPrevious = cHist->GetBinContent ( cBin - 1 );
+            cNext = cHist->GetBinContent ( cBin + 1 );
+            cRunningAverage = (cCurrent + cPrevious + cNext) / 3;
 
-	          // Beginning of the fit range: find 5th filled bin, go back 20 bins
-	          if ( cContent > 0 && cStart == 0)
-	          {
-	              cBinAboveZero++;     
-		            cPreviousBin = cContent;              
-		            if ( cBinAboveZero > 5 ) 
-		            {
-		                cStart = cBin - 20;
-		            }
-	          }
-	          // End of the fit range: 10 bins after it has stopped growing
-	          // For lower energies we never reach the plateau, so set a maximum of 110 Vcth
-	          if ( cStart > 0 && cHist->GetBinCenter(cBin) < 95) 
-	          {
-	              if ( cDifCurrent != -999 )
-		            {
-		                cDifPrevious = cDifCurrent;
-		            } 
-		            cDifCurrent = cContent - cPreviousBin; 
-		            if ( cDifPrevious > cDifCurrent )
-		            {
-		                cStop = cBin + 10;
-		            }
-	          } 
-	      }
-	
-	      cFit = new TF1 ( "CurveFit", MyGammaSignal, cStart, cStop, 4 ); // MyGammaSignal is in Utils
+            if ( cRunningAverage != 0 && cFirst == -999 ) {
+                cFirst = cRunningAverage;
+                cStart = cBin;
+                std::cout << "This is cFirst " << cFirst << std::endl;
+            }
+
+            if ((cFirst / cRunningAverage) == 1) continue;
+
+            if ( cFirst > 0 ) {
+                cRatio = cFirst / cRunningAverage; // This is for the three zones
+            } 
+
+            if ( cRatioFirst == -999 && cRatio != 0 ) cRatioFirst = cRatio;
+
+            // Now we have all the Ratios, let's play
+            // We are in the beginning when the ratio is still bigger than 0.1, in the beginning there is a quick rise
+            if ( cRatio > cRatioFirst * 0.1 ) 
+            {
+                cFirstOrderCounter++;
+            } 
+            // At more or less half of the second order we can set the Vsignal
+            // Second order (times 2?) can be the width
+            else if ( (cRatio > cRatioFirst * 0.007) && (cRatio < cRatioFirst * 0.1) )      
+            {
+                cSecondOrderCounter++;
+            }
+            // This is the plateau, the points here should be close in value (take average)
+            //else if ( (cRatio < 0.007) && (cRatioCurrent > 0.8 && cRatioCurrent < 1.2) )
+            else if ( (cRatio < cRatioFirst * 0.007) )
+            {
+                if ( cVsignal == 0 && cWidth == 0 ) 
+                {          
+                    //cWidth is roughly the cSecondOrder width, cVsignal is roughly half of that            
+                    if ( cSecondOrderCounter < 10 ) 
+                    {
+                        cWidth = cSecondOrderCounter*2;
+                        cVsignal = cHist->GetBinCenter( cBin - (cSecondOrderCounter/2) );  
+                    } else {
+                        cWidth = cSecondOrderCounter;
+                        cVsignal = cHist->GetBinCenter( cBin - (cSecondOrderCounter) );  
+                    }
+                }
+                if ( cCurrent == 0 || cThirdOrderCounter == 10) break; // Either there is no more data (and of scan) or to much (we don't want to hit the noise regime)
+                cThirdOrderCounter++;
+                cPlateau = cHist->GetBinContent( cBin - (cThirdOrderCounter/2) );
+                cStop = cBin - (cThirdOrderCounter/2);
+            }
+	      }    
     }
           
 
-// Hole mode not implemented!
-//        else
-//        {
-//            for ( Int_t cBin = cHist->GetNbinsX() - 1; cBin > 1; cBin-- )
-//            {
-//                double cContent = cHist->GetBinContent ( cBin );
+    // Hole mode not implemented!
+    else
+    {
+        LOG (INFO) << "Hole mode is not implemented, the fitting procedure is terminated!" ;
+        return;
+    }
 
-//                if ( !cFirstNon0 )
-//                {
-//                    if ( cContent ) cFirstNon0 = cHist->GetBinCenter ( cBin );
-//                }
-//                else if ( cContent > 0.85 )
-//                {
-//                    cFirst1 = cHist->GetBinCenter ( cBin );
-//                    break;
-//                }
-//            }
-
-//            cFit = new TF1 (cFitname.c_str(), MyErf, cFirst1 - 10, cFirstNon0 + 10, 2 );
-//        }
-
-    // Get rough input parameters
-    double cWidth = 10;
-    double cNoise = 1; // This is not only the noise of the s-curve!
-    double cPlateau = cHist->GetBinContent ( cStop-1 );
-    double cVsignal = cHist->GetBinCenter ( cStart+20 );
-
-    std::cout << "Fit parameters: width = " << cWidth << " , 'noise' = " << cNoise << " , plateau = " << " , VcthSignal = " << cVsignal << std::endl; 
+    // Now we can make the fit function
+    double cXmin = cStart-5; // we take the first data_point-5 to 
+    double cXmax = 0;
+    if ( cHist->GetBinCenter( cStop + 10 ) < 90 ) cXmax = cHist->GetBinCenter( cStop + 10 );
+    else cXmax = 90; 
     
+    std::cout << "Fit parameters: width = " << cWidth << " , 'noise' = " << cNoise << " , plateau = " << cPlateau << " , VcthSignal = " << cVsignal << std::endl; 
+    std::cout << "Start point of fit: " << cXmin << ", end point of fit: " << cXmax << std::endl;
+
+    cFit = new TF1 ("CurveFit", MyGammaSignal, cXmin, cXmax, 4); // MyGammaSignal is in Utils
+
+    //cFit = new TF1 ( "CurveFit", MyGammaSignal, cStart, cStop, 4 ); // MyGammaSignal is in Utils
+
     cFit->SetParameter ( 0, cPlateau );
     cFit->SetParameter ( 1, cWidth );
     cFit->SetParameter ( 2, cVsignal );
