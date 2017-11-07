@@ -431,17 +431,21 @@ void Tool::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool p
                 //first, get the Amux Value
                 uint8_t cOriginalAmuxValue;
                 cOriginalAmuxValue = cCbc->getReg ("MiscTestPulseCtrl&AnalogMux" );
+                //uint8_t cOriginalHitDetectSLVSValue = cCbc->getReg ("HitDetectSLVS" );
 
                 std::vector<std::pair<std::string, uint8_t>> cRegVec;
                 uint8_t cRegValue =  to_reg ( 0, pTestGroup );
 
-                if (fType == ChipType::CBC3)
+                if (cCbc->getChipType() == ChipType::CBC3)
                 {
                     uint8_t cTPRegValue;
 
                     if (pTPState) cTPRegValue  = (cOriginalAmuxValue |  0x1 << 6);
                     else if (!pTPState) cTPRegValue = (cOriginalAmuxValue & ~ (0x1 << 6) );
 
+                    //uint8_t cHitDetectSLVSValue = (cOriginalHitDetectSLVSValue & ~(0x1 << 6));
+
+                    //cRegVec.push_back ( std::make_pair ( "HitDetectSLVS", cHitDetectSLVSValue ) );
                     cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux",  cTPRegValue ) );
                     cRegVec.push_back ( std::make_pair ( "TestPulseDel&ChanGroup",  cRegValue ) );
                     cRegVec.push_back ( std::make_pair ( "TestPulsePotNodeSel", pTPAmplitude ) );
@@ -457,6 +461,9 @@ void Tool::setSystemTestPulse ( uint8_t pTPAmplitude, uint8_t pTestGroup, bool p
                     if (pTPState) cTPRegValue  = (cOriginalAmuxValue |  0x1 << 6);
                     else if (!pTPState) cTPRegValue = (cOriginalAmuxValue & ~ (0x1 << 6) );
 
+                    //uint8_t cHitDetectSLVSValue = (cOriginalHitDetectSLVSValue & ~(0x1 << 6));
+
+                    //cRegVec.push_back ( std::make_pair ( "HitDetectSLVS", cHitDetectSLVSValue ) );
                     cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", cTPRegValue ) );
                     cRegVec.push_back ( std::make_pair ( "TestPulsePot", pTPAmplitude ) );
                 }
@@ -488,6 +495,11 @@ void Tool::setFWTestPulse()
         else if (cBoardType == BoardType::CBC3FC7)
         {
             cRegVec.push_back ({"cbc_system_cnfg.fast_signal_manager.fast_signal_generator.enable.test_pulse", 0x1});
+        }
+        else if(cBoardType == BoardType::D19C)
+        {
+            cRegVec.push_back ({"fc7_daq_cnfg.fast_command_block.trigger_source", 6});
+            cRegVec.push_back ({"fc7_daq_ctrl.fast_command_block.control.load_config", 0x1});
         }
 
         fBeBoardInterface->WriteBoardMultReg (cBoard, cRegVec);

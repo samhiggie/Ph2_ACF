@@ -5,6 +5,7 @@
 #include "../Utils/Utilities.h"
 #include "../Utils/Timer.h"
 #include "../tools/SignalScan.h"
+#include "../tools/SignalScanFit.h"
 #include "../tools/LatencyScan.h"
 #include "../tools/PedeNoise.h"
 
@@ -51,6 +52,9 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "signal", "Scan the threshold using physics triggers", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "signal", "S" );
 
+    cmd.defineOption ( "signalFit", "Scan the threshold and fit for signal Vcth", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "signalFit", "F" );
+
     cmd.defineOption ( "minimum", "minimum value for latency scan", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "minimum", "m" );
 
@@ -79,11 +83,16 @@ int main ( int argc, char* argv[] )
     bool cLatency = ( cmd.foundOption ( "latency" ) ) ? true : false;
     bool cStubLatency = ( cmd.foundOption ( "stublatency" ) ) ? true : false;
     bool cSignal = ( cmd.foundOption ( "signal" ) ) ? true : false;
+    bool cSignalFit = ( cmd.foundOption ( "signalFit" ) ) ? true : false;    
     bool cNoise = ( cmd.foundOption ( "noise" ) ) ? true : false;
     std::string cDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/";
 
-    if ( !cNoise ) cDirectory += "Commissioning";
-    else if ( cNoise ) cDirectory += "NoiseScan";
+    //if ( !cNoise ) cDirectory += "Commissioning";
+    //else if ( cNoise ) cDirectory += "NoiseScan";
+
+    if ( cNoise )          cDirectory += "NoiseScan";
+    else if ( cSignalFit ) cDirectory += "SignalFit";
+    else                   cDirectory += "Commissioning";
 
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cAllChan = ( cmd.foundOption ( "allChan" ) ) ? true : false;
@@ -91,18 +100,18 @@ int main ( int argc, char* argv[] )
     uint8_t cStartLatency = ( cmd.foundOption ( "minimum" ) ) ? convertAnyInt ( cmd.optionValue ( "minimum" ).c_str() ) :  0;
     uint8_t cLatencyRange = ( cmd.foundOption ( "range" ) )   ?  convertAnyInt ( cmd.optionValue ( "range" ).c_str() ) :  10;
     int     cSignalRange  = ( cmd.foundOption ( "signal" ) )  ?  convertAnyInt ( cmd.optionValue ( "signal" ).c_str() ) :  30;
-
+    int     cSignalFitRange = ( cmd.foundOption ( "signalFit" ) )  ?  convertAnyInt ( cmd.optionValue ( "signalFit" ).c_str() ) :  30;
 
     TApplication cApp ( "Root Application", &argc, argv );
 
     if ( batchMode ) gROOT->SetBatch ( true );
     else TQObject::Connect ( "TCanvas", "Closed()", "TApplication", &cApp, "Terminate()" );
 
-
     std::string cResultfile;
 
     if ( cLatency || cStubLatency ) cResultfile = "Latency";
     else if ( cSignal ) cResultfile = "SignalScan";
+    else if ( cSignalFit ) cResultfile = "SignalScanFit";
     else cResultfile = "Commissioning";
 
     std::stringstream outp;
@@ -133,6 +142,14 @@ int main ( int argc, char* argv[] )
         cSignalScan.Inherit (&cTool);
         cSignalScan.Initialize();
         cSignalScan.ScanSignal ( cSignalRange );
+    }
+
+    else if ( cSignalFit )
+    {
+        SignalScanFit cSignalScanFit;
+        cSignalScanFit.Inherit (&cTool);
+        cSignalScanFit.Initialize();
+        cSignalScanFit.ScanSignal ( cSignalFitRange ); 
     }
 
     else if ( cNoise )

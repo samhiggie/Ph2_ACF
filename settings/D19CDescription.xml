@@ -41,7 +41,12 @@
     </SLink>
 
     <!--CONFIG-->
+    <Register name="clock_source">3</Register> <!-- 3 - default (internal oscillator), 2 - backplane, 0 - AMC13 -->
     <Register name="fc7_daq_cnfg">
+        <!-- TTC -->
+        <Register name="ttc">
+            <Register name="ttc_enable"> 0 </Register>
+        </Register>
         <!-- Fast Command Block -->
         <Register name="fast_command_block">
 		<Register name="triggers_to_accept"> 0 </Register>
@@ -64,6 +69,8 @@
 		<Register name="i2c">
                 	<Register name="frequency"> 4 </Register>
 		</Register>
+ 		<Register name="phase_set"> 0 </Register>
+ 		<Register name="slvs5_shift"> 2 </Register>
 	</Register>
 	<!-- Readout Block -->
     	<Register name="readout_block">

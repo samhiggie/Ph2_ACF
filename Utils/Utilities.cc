@@ -83,6 +83,19 @@ double MyErf ( double* x, double* par )
     return fitval;
 }
 
+double MyGammaSignal ( double* x, double* par)
+{
+    double VCth = x[0];
+    double P0 = par[0]; // plateau
+    double P1 = par[1]; // width
+    double P2 = par[2]; // start
+    double P3 = par[3]/sqrt(2); // noise?
+
+    double fitval = P0 + (P0*P3/P1) * log ( (exp(VCth/P3) + exp(P2/P3)) / (exp(VCth/P3) + exp((P2+P1)/P3)) );
+    return fitval;
+
+}
+
 uint32_t convertAnyInt ( const char* pRegValue )
 {
     if ( std::string ( pRegValue ).find ( "0x" ) != std::string::npos ) return static_cast<uint32_t> ( strtoul ( pRegValue, 0, 16 ) );

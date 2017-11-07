@@ -1,13 +1,15 @@
 #include "ShortFinder.h"
 
 // fill the Histograms, count the hits and increment Vcth
-struct HistogramFiller  : public HwDescriptionVisitor
+struct HistogramFillerShort  : public HwDescriptionVisitor
 {
     TH1F* fBotHist;
     TH1F* fTopHist;
     const Event* fEvent;
+    // real index of cbc, otherwise if one cbc is disabled, all indeces will break
+    int fCbcIndex = 0;
 
-    HistogramFiller ( TH1F* pBotHist, TH1F* pTopHist, const Event* pEvent ) : fBotHist ( pBotHist ), fTopHist ( pTopHist ), fEvent ( pEvent ) {}
+    HistogramFillerShort ( TH1F* pBotHist, TH1F* pTopHist, const Event* pEvent ) : fBotHist ( pBotHist ), fTopHist ( pTopHist ), fEvent ( pEvent ) {}
 
     void visit ( Cbc& pCbc )
     {
@@ -17,7 +19,7 @@ struct HistogramFiller  : public HwDescriptionVisitor
         {
             if ( cDataBitVector.at ( cId ) )
             {
-                uint32_t globalChannel = ( pCbc.getCbcId() * 254 ) + cId;
+                uint32_t globalChannel = ( fCbcIndex * 254 ) + cId;
 
                 // find out why histograms are not filling!
                 if ( globalChannel % 2 == 0 )
@@ -27,6 +29,8 @@ struct HistogramFiller  : public HwDescriptionVisitor
 
             }
         }
+
+        fCbcIndex++;
     }
 };
 
@@ -118,7 +122,7 @@ void ShortFinder::InitialiseSettings()
 {
     // figure out whether the hybrid was configured to run in hole/electron mode
     auto cSetting = fSettingsMap.find ( "HoleMode" );
-    fHoleMode = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : true;
+    fHoleMode = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : false;
 
     // figure out how many CBCs you're working with
     Counter cCbcCounter;
@@ -128,6 +132,9 @@ void ShortFinder::InitialiseSettings()
     // figure out what the number of events to take it
     cSetting = fSettingsMap.find ( "Nevents" );
     fTotalEvents = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 999;
+
+    cSetting = fSettingsMap.find ( "TestPulsePotentiometer" );
+    fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x7F;
 
     // LOG (INFO) << "Read the following Settings: " ;
     // LOG (INFO) << "Hole Mode: " << fHoleMode << std::endl << "NEvents: " << fTotalEvents << std::endl << "NSigmas: " << fSigmas ;
@@ -147,12 +154,13 @@ void ShortFinder::Initialize()
 }
 void ShortFinder::InitializeHists()
 {
+    uint32_t cNBinsX = (fNCbc * 254) / 2;
     TString cFrontName ( "fHistTop" );
     fHistTop = ( TH1F* ) ( gROOT->FindObject ( cFrontName ) );
 
     if ( fHistTop ) delete fHistTop;
 
-    fHistTop = new TH1F ( cFrontName, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistTop = new TH1F ( cFrontName, "Front Pad Channels; Pad Number; Occupancy [%]", ( cNBinsX ), -0.5, ( cNBinsX ) - 0.5 );
     fHistTop->SetFillColor ( 4 );
     fHistTop->SetFillStyle ( 3001 );
 
@@ -161,7 +169,7 @@ void ShortFinder::InitializeHists()
 
     if ( fHistBottom ) delete fHistBottom;
 
-    fHistBottom = new TH1F ( cBackName, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistBottom = new TH1F ( cBackName, "Back Pad Channels; Pad Number; Occupancy [%]", ( cNBinsX ), -0.5, ( cNBinsX ) - 0.5 );
     fHistBottom->SetFillColor ( 4 );
     fHistBottom->SetFillStyle ( 3001 );
 
@@ -170,7 +178,7 @@ void ShortFinder::InitializeHists()
 
     if ( fHistTopMerged ) delete fHistTopMerged;
 
-    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistTopMerged = new TH1F ( cFrontNameMerged, "Front Pad Channels; Pad Number; Occupancy [%]", ( cNBinsX ) , -0.5, ( cNBinsX ) - 0.5 );
     fHistTopMerged->SetFillColor ( 4 );
     fHistTopMerged->SetFillStyle ( 3001 );
 
@@ -179,7 +187,7 @@ void ShortFinder::InitializeHists()
 
     if ( fHistBottomMerged ) delete fHistBottomMerged;
 
-    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistBottomMerged = new TH1F ( cBackNameMerged, "Back Pad Channels; Pad Number; Occupancy [%]", ( cNBinsX ) , -0.5, ( cNBinsX ) - 0.5 );
     fHistBottomMerged->SetFillColor ( 4 );
     fHistBottomMerged->SetFillStyle ( 3001 );
 
@@ -189,10 +197,10 @@ void ShortFinder::InitializeHists()
 
     if ( fHistShortBackground ) delete fHistShortBackground;
 
-    fHistShortBackground = new TH2F ( cShortBackground, "", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 1.5, 2, -0.5, 2.0 - 0.5 );
+    fHistShortBackground = new TH2F ( cShortBackground, "", ( cNBinsX ) , -0.5, ( cNBinsX ) - 1.5 , 2  , -0.5 , 2.0 - 0.5 );
     fHistShortBackground->SetFillColor ( 4 );
     fHistShortBackground->SetFillStyle ( 3001 );
-    //for( int i = 0 ; i < ( fNCbc / 2 * 254 ) ; i++ ) fHistShortsTop->Fill(i,0);
+    //for( int i = 0 ; i < ( cNBinsX ) ; i++ ) fHistShortsTop->Fill(i,0);
     fHistShortBackground->GetYaxis()->SetRangeUser (-0.5, 1.5);
     fHistShortBackground->GetYaxis()->SetTitle ("");
     fHistShortBackground->GetXaxis()->SetTitle ("Strip Number");
@@ -208,12 +216,12 @@ void ShortFinder::InitializeHists()
 
     if ( fHistShortsTop ) delete fHistShortsTop;
 
-    fHistShortsTop = new TH1F ( cShortsTopName, "Shorts on Front Pad Channels", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5  );
+    fHistShortsTop = new TH1F ( cShortsTopName, "Shorts on Front Pad Channels", ( cNBinsX ) , -0.5, ( cNBinsX ) - 0.5  );
     fHistShortsTop->SetLineColor ( 3 );
     fHistShortsTop->SetFillColor ( 3 );
     fHistShortsTop->SetFillStyle ( 3005 );
 
-    for ( int i = 0 ; i < ( fNCbc / 2 * 254 ) ; i++ ) fHistShortsTop->Fill (i, 0);
+    for ( int i = 0 ; i < ( cNBinsX ) ; i++ ) fHistShortsTop->Fill (i, 0);
 
     // fill histogram randomly to check if the ploting/saving works
     // TRandom *eventGenerator = new TRandom();
@@ -231,12 +239,12 @@ void ShortFinder::InitializeHists()
 
     if ( fHistShortsBottom ) delete fHistShortsBottom;
 
-    fHistShortsBottom = new TH1F ( cShortsBackName, "Shorts on Back Pad Channels", ( fNCbc / 2 * 254 ), -0.5, ( fNCbc / 2 * 254 ) - 0.5 );
+    fHistShortsBottom = new TH1F ( cShortsBackName, "Shorts on Back Pad Channels", ( cNBinsX ) , -0.5, ( cNBinsX ) - 0.5 );
     fHistShortsBottom->SetLineColor ( 4 );
     fHistShortsBottom->SetFillColor ( 4 );
     fHistShortsBottom->SetFillStyle ( 3005 );
 
-    for ( int i = 0 ; i < ( fNCbc / 2 * 254 ) ; i++ ) fHistShortsBottom->Fill (i, 0);
+    for ( int i = 0 ; i < ( cNBinsX) ; i++ ) fHistShortsBottom->Fill (i, 0);
 
     // fill histogram randomly to check if the ploting/saving works
     // for( int i = 0 ; i < 100 ; i++)
@@ -284,33 +292,30 @@ void ShortFinder::UpdateHistsMerged()
 
 void ShortFinder::SetBeBoard (BeBoard* pBoard)
 {
+    if (pBoard->getBoardType() == BoardType::GLIB || pBoard->getBoardType() == BoardType::CTA) fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", 2 );
+    else if(pBoard->getBoardType() == BoardType::D19C) fBeBoardInterface->WriteBoardReg(pBoard, "fc7_daq_cnfg.fast_command_block.test_pulse.delay_after_test_pulse", 1);
+    setFWTestPulse();
 
-    fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_RQ", 1 );
-    fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID", 1 );
-    fBeBoardInterface->WriteBoardReg (pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE", 2 );
-
-    LOG (INFO) << "COMMISSIONNING_MODE_RQ: " << fBeBoardInterface->ReadBoardReg ( pBoard, "COMMISSIONNING_MODE_RQ" );
-    LOG (INFO) << "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID: " << fBeBoardInterface->ReadBoardReg ( pBoard, "COMMISSIONNING_MODE_CBC_TEST_PULSE_VALID" ) ;
-    LOG (INFO) << "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE: " << fBeBoardInterface->ReadBoardReg ( pBoard, "COMMISSIONNING_MODE_DELAY_AFTER_TEST_PULSE" ) ;
-
-    std::vector<std::pair<std::string, uint8_t>> cRegVec;
-
-    if ( fHoleMode )
-        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0xE1 ) );
-    else
-        cRegVec.push_back ( std::make_pair ( "MiscTestPulseCtrl&AnalogMux", 0x61 ) );
-
-    cRegVec.push_back ( std::make_pair ( "TestPulsePot", 0xF0 ) );
-
-
-    CbcMultiRegWriter cMultiWriter ( fCbcInterface, cRegVec );
-    this->accept ( cMultiWriter );
+    // (potential, group, enable test pulse, hole mode)
+    setSystemTestPulse(fTestPulseAmplitude,0x00,true,fHoleMode);
 
     //edit G.A: in order to be compatible with CBC3 (9 bit trigger latency) the recommended method is this:
     LatencyVisitor cLatencyVisitor (fCbcInterface, 0x01);
     this->accept (cLatencyVisitor);
-    //same for Threshold
-    ThresholdVisitor cThresholdVisitor (fCbcInterface, 0x90);
+
+    // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
+    // ThresholdVisitor in read mode
+    ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    this->accept (cThresholdVisitor);
+    uint16_t cVcth = cThresholdVisitor.getThreshold();
+
+    int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
+    LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
+    cVcth += cVcthStep;
+
+    //  Set that VCth Value on all FEs
+    cThresholdVisitor.setOption ('w');
+    cThresholdVisitor.setThreshold (cVcth);
     this->accept (cThresholdVisitor);
 }
 bool ShortFinder::CheckChannel (Short pShort, ShortsList pShortsList)
@@ -322,6 +327,32 @@ bool ShortFinder::CheckChannel (Short pShort, ShortsList pShortsList)
 
     return false;
 }
+
+void ShortFinder::SetTestGroup(BeBoard* pBoard, uint8_t pTestGroup)
+{
+    for (auto cFe : pBoard->fModuleVector)
+    {
+        for (auto cCbc : cFe->fCbcVector)
+        {
+            std::vector<std::pair<std::string, uint8_t>> cRegVec;
+            uint8_t cRegValue = this->to_reg ( 0, pTestGroup );
+
+            if (cCbc->getChipType() == ChipType::CBC3)
+            {
+                //CBC3
+                cRegVec.push_back ( std::make_pair ( "TestPulseDel&ChanGroup",  cRegValue ) );
+            }
+            else
+            {
+                //CBC2
+                cRegVec.push_back ( std::make_pair ( "SelTestPulseDel&ChanGroup",  cRegValue ) );
+            }
+
+            this->fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);
+        }
+    }
+}
+
 //std::vector<std::array<int, 2>> HybridTester::MergeShorts(std::vector<std::array<int, 2>> pShortA, std::vector<std::array<int, 2>> pShortB)
 void ShortFinder::MergeShorts (ShortsList pShortsListA)
 {
@@ -331,15 +362,16 @@ void ShortFinder::MergeShorts (ShortsList pShortsListA)
             fShortsList.push_back (cChannel);
     }
 
+    std::stringstream outp;
     for (auto cMemberChannel : fShortsList)
     {
-        for (auto i : cMemberChannel) LOG (INFO) << i << ' ';
+        for (auto i : cMemberChannel) outp << i << ' ';
     }
+    LOG(INFO) << outp.str();
 }
 
 void ShortFinder::FindShorts (std::ostream& os )
 {
-    uint8_t cGroupAddress[8] = {0, 4, 2, 6, 1, 5, 3, 7};
     int cTestPulseGroupId = 0;
 
     ShortedChannel cShortedChannelInfo;
@@ -357,47 +389,33 @@ void ShortFinder::FindShorts (std::ostream& os )
     for ( BeBoard* pBoard : fBoardVector )
     {
         uint32_t cN = 1;
-        uint32_t cNthAcq = 0;
 
         SetBeBoard (pBoard);
 
-        CbcRegWriter cWriter ( fCbcInterface, "SelTestPulseDel&ChanGroup", cGroupAddress[cTestPulseGroupId]);
         os << "\nShorted channels searching procedure\nSides: Top - 0\tBottom - 1 (Channel numbering starts from 0)\n" << std::endl;
-        os << "      Side\t| Channel_ID\t| Group_ID\t| Shorted_With_Group_ID" << std::endl;
+        os << "      CBC\t| Side\t| Channel_ID\t| Group_ID\t| Shorted_With_Group_ID" << std::endl;
 
         for (cTestPulseGroupId = 0; cTestPulseGroupId < 8; cTestPulseGroupId++)
         {
             cN = 1;
-            cNthAcq = 0;
 
-            cWriter.setRegister ( "SelTestPulseDel&ChanGroup", cGroupAddress[cTestPulseGroupId]);
-            accept ( cWriter );
+            this->SetTestGroup(pBoard,(uint8_t)cTestPulseGroupId);
 
-            fBeBoardInterface->Start ( pBoard );
+            ReadNEvents ( pBoard, fTotalEvents );
+            const std::vector<Event*>& events = GetEvents ( pBoard );
 
-            while ( cN <=  fTotalEvents )
+            // Loop over Events from this Acquisition
+            for ( auto& cEvent : events )
             {
-                //Run( pBoard, cNthAcq );
-                ReadData ( pBoard );
-                ReadNEvents ( pBoard, cNthAcq );
-                const std::vector<Event*>& events = GetEvents ( pBoard );
+                HistogramFillerShort cFiller ( fHistBottom, fHistTop, cEvent );
+                pBoard->accept ( cFiller );
 
-                // Loop over Events from this Acquisition
-                for ( auto& cEvent : events )
-                {
-                    HistogramFiller cFiller ( fHistBottom, fHistTop, cEvent );
-                    pBoard->accept ( cFiller );
+                if ( cN % 50 == 0 )
+                    //LOG(INFO) << *cEvent;
+                    UpdateHists();
 
-                    if ( cN % 100 == 0 )
-                        UpdateHists();
-
-                    cN++;
-                }
-
-                cNthAcq++;
+                cN++;
             }
-
-            fBeBoardInterface->Stop ( pBoard);
 
             ShortedGroup cShortedChannelsGroup;
 
@@ -507,10 +525,12 @@ void ShortFinder::ReconstructShorts (ShortedGroupsList pShortedGroupsArray, std:
 
                 pShortedGroupsArray[cShortedChannelInfo[2]].erase (pShortedGroupsArray[cShortedChannelInfo[2]].begin() + best_candidate_index);
 
+                std::stringstream outp;
                 for (auto cMemberChannel : cShort)
                 {
-                    for (auto i : cMemberChannel) LOG (INFO) << i << ' ';
+                    for (auto i : cMemberChannel) outp << i << ' ';
                 }
+                LOG(INFO) << outp.str();
 
                 os << "smallest distance: " << smallest_distance << std::endl;
                 //DisplayGroupsContent(pShortedGroupsArray);
@@ -591,12 +611,13 @@ ShortsList ShortFinder::MergeShorts (ShortsList pShortA, ShortsList pShortB)
             pShortB.push_back (cChannel);
     }
 
+    std::stringstream outp;
     for (auto cMemberChannel : pShortB)
     {
-        for (auto i : cMemberChannel) LOG (INFO) << i << ' ';
+        for (auto i : cMemberChannel) outp << i << ' ';
     }
 
-    LOG (INFO) << std::endl;
+    LOG (INFO) << outp.str();
 
     return pShortB;
 }
