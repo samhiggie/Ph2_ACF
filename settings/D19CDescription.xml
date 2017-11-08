@@ -123,6 +123,14 @@
 		<Register name="handshake_mode"> 2 </Register>
 	</Register>
     </Register>
+    <!-- has to be moved to config -->
+    <Register name="fc7_daq_ctrl">
+	<Register name="global">
+		<Register name="clock_generator">
+			<Register name="clk40_mux"> 0 </Register>		
+		</Register>	
+	</Register>
+    </Register>
   </BeBoard>
 <Settings>
     <!--[>Calibration<]-->
