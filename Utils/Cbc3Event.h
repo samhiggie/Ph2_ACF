@@ -120,6 +120,13 @@ namespace Ph2_HwInterface {
          */
         uint32_t PipelineAddress ( uint8_t pFeId, uint8_t pCbcId ) const override;
         /*!
+         * \brief Function to get CBC L1A ID
+         * \param pFeId : FE Id
+         * \param pCbcId : Cbc Id
+         * \return L1ID address
+         */
+        uint32_t L1AID ( uint8_t pFeId, uint8_t pCbcId ) const;
+        /*!
          * \brief Function to get a CBC pixel bit data
          * \param pFeId : FE Id
          * \param pCbcId : Cbc Id

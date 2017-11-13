@@ -91,7 +91,8 @@ int main ( int argc, char* argv[] )
 
     if ( cmd.foundOption ( "save" ) )
         cSaveToFile = true ;
-    if( cmd.foundOption("read") )
+
+    if ( cmd.foundOption ("read") )
         cReadFromFile = true;
 
     if ( cSaveToFile )
@@ -102,7 +103,7 @@ int main ( int argc, char* argv[] )
     }
     else if (cReadFromFile)
     {
-        cInputFile = cmd.optionValue("read");    
+        cInputFile = cmd.optionValue ("read");
         cSystemController.addFileHandler ( cInputFile, 'r' );
         LOG (INFO) << "Reading Binary Rawdata file from:   " << cInputFile ;
     }
@@ -160,18 +161,17 @@ int main ( int argc, char* argv[] )
         cSystemController.fBeBoardInterface->Start ( pBoard );
     else
     {
-            FileHeader cHeader = cSystemController.fFileHandler->getHeader();
-            //the below ensures we have the right Event Object that is used when calling Data.set()
-            pBoard->setBoardType (cHeader.getBoardType());
-            pBoard->setEventType (cHeader.fEventType);
-            fPlaybackEventSize32 = cHeader.fEventSize32;
+        FileHeader cHeader = cSystemController.fFileHandler->getHeader();
+        //the below ensures we have the right Event Object that is used when calling Data.set()
+        pBoard->setBoardType (cHeader.getBoardType() );
+        pBoard->setEventType (cHeader.fEventType);
+        fPlaybackEventSize32 = cHeader.fEventSize32;
 
-            if (cHeader.fNCbc != cCbcCounter.getNCbc() )
-            {
-                LOG(ERROR) << "Error, wrong number of CBCs in config file w.r.t. File Header; config file: "<< +cCbcCounter.getNCbc() << " - header: " << cHeader.fNCbc << " - aborting!";
-                exit(1);
-            }
-            std::cout << "Get here open file and get header! " << std::endl;
+        if (cHeader.fNCbc != cCbcCounter.getNCbc() )
+        {
+            LOG (ERROR) << "Error, wrong number of CBCs in config file w.r.t. File Header; config file: " << +cCbcCounter.getNCbc() << " - header: " << cHeader.fNCbc << " - aborting!";
+            exit (1);
+        }
     }
 
     const std::vector<Event*>* pEvents ;
@@ -189,7 +189,6 @@ int main ( int argc, char* argv[] )
             cSystemController.setData (pBoard, cReadVec, cCalcEvents);
             //pEvents = &data.GetEvents ( pBoard);
             pEvents = &cSystemController.GetEvents ( pBoard );
-            std::cout << "Get here! iteration  second" << itCounter << std::endl;
         }
         else
         {
@@ -210,7 +209,7 @@ int main ( int argc, char* argv[] )
             {
                 SLinkEvent cSLev = ev->GetSLinkEvent (pBoard);
                 cDAQFileHandler->set (cSLev.getData<uint32_t>() );
-                cSLev.print(std::cout);
+                cSLev.print (std::cout);
             }
         }
 
