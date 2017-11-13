@@ -16,6 +16,7 @@
 #include "Antenna.h"
 #include "THttpServer.h"
 #include "TGraph.h"
+#include "TH1.h"
 
 #define CHIPSLAVE 4
 
@@ -69,6 +70,17 @@ void monitoring_workloop()
         cTGraph->SetPoint (cTGraph->GetN(), cNow, cTemp );
         cIGraph->SetPoint (cIGraph->GetN(), cNow, cTemp );
         gFile << cNow << "\t" << cTemp << "\t" << cCurrent << std::endl;
+        std::cout << cNow << "\t" << cTemp << "\t" << cCurrent << std::endl;
+        cTGraph->GetHistogram()->GetXaxis()->SetLimits (cNow - 60 * 30, cNow + 2 * 60);
+        cIGraph->GetHistogram()->GetXaxis()->SetLimits (cNow - 60 * 30, cNow + 2 * 60);
+        cTGraph->GetHistogram()->GetXaxis()->SetTitle ("Time [min]");
+        cIGraph->GetHistogram()->GetXaxis()->SetTitle ("Time [min]");
+        cTGraph->GetHistogram()->GetXaxis()->SetTimeDisplay (1);
+        cIGraph->GetHistogram()->GetXaxis()->SetTimeDisplay (1);
+        cTGraph->GetHistogram()->GetYaxis()->SetTitle ("Temperature [C]");
+        cIGraph->GetHistogram()->GetYaxis()->SetTitle ("Current [mA]");
+        cTGraph->GetHistogram()->GetXaxis()->SetTimeFormat ("%H:%M");
+        cIGraph->GetHistogram()->GetXaxis()->SetTimeFormat ("%H:%M");
         gmutex.unlock();
 
         if (!gMonitoringRun.load() ) break;
@@ -126,8 +138,8 @@ bool command_processor (std::string pInput)
     else if (pInput == "q")
     {
         StopMonitoring();
-        gQuit = true;
         LOG (INFO) << "Quitting application";
+        exit (0);
     }
     else
     {
@@ -149,12 +161,6 @@ void workloop_local ()
 
         std::stringstream ss;
         gQuit = command_processor (cInput);
-
-        if (gQuit.load() )
-        {
-            gFile.close();
-            exit (1);
-        }
     }
 }
 
@@ -204,6 +210,7 @@ int main ( int argc, char* argv[] )
     // now query the parsing results
     cOutputFile = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "T_log_";
     cOutputFile += currentDateTime();
+    cOutputFile += ".txt";
 
     gInterval = ( cmd.foundOption ( "interval" ) ) ? atoi (cmd.optionValue ( "interval" ).c_str() ) : 3;
 
@@ -241,7 +248,7 @@ int main ( int argc, char* argv[] )
         THttpServer* fHttpServer = new THttpServer ( Form ( "http:%d", cServerPort ) );
         fHttpServer->SetReadOnly ( true );
         //fHttpServer->SetTimer ( pRefreshTime, kTRUE );
-        fHttpServer->SetTimer (0, kTRUE);
+        fHttpServer->SetTimer (100, kFALSE);
         fHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
 
         //configure the server
