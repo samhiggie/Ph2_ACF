@@ -124,7 +124,8 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
             while (cTotalEvents < fNevents)
             {
                 try{
-	                  ReadData ( pBoard );
+	            //ReadData ( pBoard );
+		          ReadNEvents(2000);
                 } catch (uhal::exception::exception& e){
                     LOG(ERROR)<< e.what();
                     updateHists ( "module_signal", false );
@@ -270,10 +271,10 @@ void SignalScanFit::parseSettings ()
     if ( cSetting != std::end ( fSettingsMap ) )  fSignalScanStep = cSetting->second;
     else fSignalScanStep = 1;
 
-    cSetting = fSettingsMap.find ( "TargetVcth" );
+    cSetting = fSettingsMap.find ( "InitialVcth" );
 
     if ( cSetting != std::end ( fSettingsMap ) )  fInitialThreshold = cSetting->second;
-    else fInitialThreshold = 1;
+    else fInitialThreshold = 0x5A;
 
     cSetting = fSettingsMap.find ( "FitSCurves" ); // In this case we fit the signal which is an s curve with charge sharing (???)
 
