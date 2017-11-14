@@ -31,7 +31,7 @@ std::atomic<bool> gMonitoringRun;
 std::thread gThread;
 std::mutex gmutex;
 int gInterval = 3;
-Antenna gAntenna;
+Antenna* gAntenna;
 std::ofstream gFile;
 TGraph* cTGraph;
 TGraph* cIGraph;
@@ -64,8 +64,8 @@ void monitoring_workloop()
     while (gMonitoringRun.load() )
     {
         gmutex.lock();
-        float cTemp = gAntenna.GetHybridTemperature (CHIPSLAVE);
-        float cCurrent = gAntenna.GetHybridCurrent (CHIPSLAVE);
+        float cTemp = gAntenna->GetHybridTemperature (CHIPSLAVE);
+        float cCurrent = gAntenna->GetHybridCurrent (CHIPSLAVE);
         time_t cNow = std::time (nullptr);
         cTGraph->SetPoint (cTGraph->GetN(), cNow, cTemp );
         cIGraph->SetPoint (cIGraph->GetN(), cNow, cTemp );
@@ -119,13 +119,17 @@ bool command_processor (std::string pInput)
     //all options without arguments
     //print help dialog
     if (pInput == "h")
+    {
         print_choice();
+        return false;
+    }
 
     // start monitoring workloop
     else if (pInput == "s")
     {
         StartMonitoring ();
         LOG (INFO) << "Starting the monitoring";
+        return false;
     }
 
     //end monitoring
@@ -133,18 +137,20 @@ bool command_processor (std::string pInput)
     {
         StopMonitoring();
         LOG (INFO) << "Stopping the monitoring";
+        return false;
     }
     //quit application
     else if (pInput == "q")
     {
         StopMonitoring();
         LOG (INFO) << "Quitting application";
-        exit (0);
+        return true;
     }
     else
     {
         LOG (INFO) << "Unrecognized option";
         print_choice();
+        return false;
     }
 }
 
@@ -255,6 +261,9 @@ int main ( int argc, char* argv[] )
         // see: https://root.cern.ch/gitweb/?p=root.git;a=blob_plain;f=tutorials/http/httpcontrol.C;hb=HEAD
         fHttpServer->SetItemField ("/", "_monitoring", "5000");
         fHttpServer->SetItemField ("/", "_layout", "grid1x2");
+        fHttpServer->SetItemField ("/", "_drawitem", "[HybridTemperature,HybridCurrent]");
+
+
 
         gethostname (hostname, HOST_NAME_MAX);
 
@@ -294,10 +303,13 @@ int main ( int argc, char* argv[] )
 
     //THttpServer running, log file open, Graphs initialized, all ok - now just initialize the Antenna and get things ready
     //then start the workloop and keep the main thread listening for commands
-    gAntenna.initializeAntenna();
+    gAntenna = new Antanna();
+    gAntenna->initializeAntenna();
     StartMonitoring ();
 
     workloop_local();
+    delete gAntenna;
+
 #else
     LOG (ERROR) << "Error, this needs to be linked against the Antanna driver!";
 #endif
