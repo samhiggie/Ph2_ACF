@@ -25,6 +25,20 @@
         <ConditionData type="TDC" FeId="0xFF"/>
     </SLink>
 
+    <!--TDC and OR254 TRIGGER-->
+    <!--<Register name="ua9_tdc">-->
+        <!--[>0x8 to disable TDC, 0x28 to enable with external triggers<]-->
+        <!--[>bit 3 needs to be set always to invert the external trigger<]-->
+        <!--[>bit 7 and 8 enables or254 trigger from FE0 or FE1<]-->
+        <!--<Register name="config">0x28</Register>-->
+        <!--[>number of 320 MHz clocks to block another trigger after first one, 0xff disables<]-->
+        <!--<Register name="holdoff">0xff</Register>-->
+        <!--[>internal delay in 320 MHz clocks for external trigger<]-->
+        <!--<Register name="trig0_delay">0x0</Register>-->
+        <!--[>delay the or254 trigger in 40 MHz clock cycles<]-->
+        <!--<Register name="or254__delay">0x0</Register>-->
+        <!--<Register name="stretch">0x0</Register>-->
+    <!--</Register>-->
     <!--TRIGGER-->
     <Register name="cbc_system_cnfg">
         <!--CLOCKING - 0x0 EXTERNAL / 0x1 INTERNAL-->
