@@ -27,6 +27,9 @@ namespace Ph2_HwInterface {
     class Cbc3Event : public Event
     {
       public:
+
+        bool fOR254Trigger;
+
         /*!
          * \brief Constructor of the Event Class
          * \param pBoard : Board to work with

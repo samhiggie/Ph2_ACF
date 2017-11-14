@@ -51,10 +51,15 @@ namespace Ph2_HwInterface {
         fBunch = 0;
         fOrbit = 0;
         fLumi = 0;
-        fEventCount = 0x1FFFFFFF &  list.at (2);
-        //TODO: get the value from 1 CBC here?
-        fEventCountCBC = 0;
-        fTDC = (0xE0000000 & list.at (2) ) >> 29;
+        //normal version
+        fEventCount = 0xFFFFFFFF &  list.at (2);
+
+        //version with TDC
+        //if ( (list.at (2) & 0xF8) >> 3 != 0)
+        //fTDC = list.at (2) & 0xFF;
+        //else fTDC = 0;
+
+        //fOR254Trigger = (list.at (2) >> 8) & 0x1;
 
         //fBeId = ( (0x0FE00000 & list.at (0) ) >> 21) - 1;
         fBeId = ( (0x03E00000 & list.at (0) ) >> 21) - 1;
@@ -495,6 +500,7 @@ namespace Ph2_HwInterface {
         //os << "Orbit Counter: " << this->GetOrbit() << std::endl;
         //os << " Lumi Section: " << this->GetLumi() << std::endl;
         os << BOLDRED << "    TDC Counter: " << +this->GetTDC() << RESET << std::endl;
+        os << BOLDGREEN << "  OR254 Trigger: " << fOR254Trigger << RESET << std::endl;
 
         const int FIRST_LINE_WIDTH = 22;
         const int LINE_WIDTH = 32;
