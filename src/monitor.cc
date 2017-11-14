@@ -26,12 +26,11 @@ using namespace std;
 INITIALIZE_EASYLOGGINGPP
 
 //for threading
-std::atomic<bool> gQuit;
 std::atomic<bool> gMonitoringRun;
 std::thread gThread;
 std::mutex gmutex;
 int gInterval = 3;
-Antenna* gAntenna;
+Antenna gAntenna;
 std::ofstream gFile;
 TGraph* cTGraph;
 TGraph* cIGraph;
@@ -64,8 +63,8 @@ void monitoring_workloop()
     while (gMonitoringRun.load() )
     {
         gmutex.lock();
-        float cTemp = gAntenna->GetHybridTemperature (CHIPSLAVE);
-        float cCurrent = gAntenna->GetHybridCurrent (CHIPSLAVE);
+        float cTemp = gAntenna.GetHybridTemperature (CHIPSLAVE);
+        float cCurrent = gAntenna.GetHybridCurrent (CHIPSLAVE);
         time_t cNow = std::time (nullptr);
         cTGraph->SetPoint (cTGraph->GetN(), cNow, cTemp );
         cIGraph->SetPoint (cIGraph->GetN(), cNow, cTemp );
@@ -158,7 +157,9 @@ void workloop_local ()
 {
     print_choice();
 
-    while (!gQuit.load() )
+    bool cQuit = false;
+
+    while (!cQuit )
     {
         std::cout << ">";
         std::string cInput = "";
@@ -166,7 +167,7 @@ void workloop_local ()
         std::cout << std::endl << "\r";
 
         std::stringstream ss;
-        gQuit = command_processor (cInput);
+        cQuit = command_processor (cInput);
     }
 }
 
@@ -303,12 +304,11 @@ int main ( int argc, char* argv[] )
 
     //THttpServer running, log file open, Graphs initialized, all ok - now just initialize the Antenna and get things ready
     //then start the workloop and keep the main thread listening for commands
-    gAntenna = new Antanna();
-    gAntenna->initializeAntenna();
+    gAntenna.initializeAntenna();
     StartMonitoring ();
 
     workloop_local();
-    delete gAntenna;
+    //delete gAntenna;
 
 #else
     LOG (ERROR) << "Error, this needs to be linked against the Antanna driver!";
