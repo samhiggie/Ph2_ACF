@@ -176,13 +176,15 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
                                 {
                                     if ( ( int (cId) % 2 ) == 0 ) 
                                     {
-			                                  cHitsEven++;
+			                                  cHitsEvenHist->Fill( cVCth );
+                                        cHitsEven++;
 			                                  if (cId - lastEvenHit > 2)  cClustersEven++;
 			                                  //else clusterSize++;
 			                                  lastEvenHit = cId;
                                     }
 			                              else 
                                     {
+                                        cHitsOddHist->Fill( cVCth );
 			                                  cHitsOdd++;
 			                                  if (cId - lastOddHit > 2)  cClustersOdd++;
 			                                  lastOddHit = cId;
@@ -193,10 +195,10 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
                             }
                             
                             // Fill the histograms
-                            cHitsEvenHist->SetBinContent( cVCth, cHitsEven + cHitsEvenHist->GetBinContent(cVCth));
-		                        cHitsOddHist ->SetBinContent( cVCth, cHitsOdd  + cHitsOddHist ->GetBinContent(cVCth));
-		                        cClustersEvenHist->SetBinContent( cVCth, cClustersEven + cClustersEvenHist->GetBinContent(cVCth));
-		                        cClustersOddHist ->SetBinContent( cVCth, cClustersOdd  + cClustersOddHist ->GetBinContent(cVCth));
+                            //cHitsEvenHist->SetBinContent( cVCth, cHitsEven + cHitsEvenHist->GetBinContent(cVCth));
+		                        //cHitsOddHist ->SetBinContent( cVCth, cHitsOdd  + cHitsOddHist ->GetBinContent(cVCth));
+		                        //cClustersEvenHist->SetBinContent( cVCth, cClustersEven + cClustersEvenHist->GetBinContent(cVCth));
+		                        //cClustersOddHist ->SetBinContent( cVCth, cClustersOdd  + cClustersOddHist ->GetBinContent(cVCth));
                             
                             // Now fill the TProfile: how many clusters from this acquisition?
                             // This TProfile gives us the average number of clusters per event, per Vcth, because it also "fills" zeros.
@@ -206,12 +208,15 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
 
                             std::vector<Cluster> cClusters = cEvent->getClusters (cCbc->getFeId(), cCbc->getCbcId() ); 
                             cEventClusters += cClusters.size();
-                            
+
                             // Now fill the ClusterWidth per VCth plots:
                             for ( auto& cCluster : cClusters )
                             {
                                 //cVcthClusters->SetBinContent( +(cCluster.fClusterWidth), +cVCth, 1 ); 
                                 cVcthClusters->Fill( +(cCluster.fClusterWidth), cVCth );
+                                // Fill cluster per sensor
+                                if ( cCluster.fSensor == 0 ) cClustersEvenHist->Fill ( cVCth );
+                                else if ( cCluster.fSensor == 1 ) cClustersOddHist->Fill ( cVCth );
                                 //std::cout << cClusters.size() << " " << +(cCluster.fClusterWidth) << " " << +(cVCth) << std::endl;  
                             }
                         }
