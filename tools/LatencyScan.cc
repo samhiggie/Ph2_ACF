@@ -27,18 +27,25 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency,  pStartLatency + (pLatencyRange )  * fTDCBins );
-            //modify the axis labels
-            uint32_t pLabel = pStartLatency;
+            TH1F* cLatHist = nullptr;
 
-            for (uint32_t cLatency = pStartLatency; cLatency < pStartLatency + pLatencyRange; ++cLatency)
+            if (!pNoTdc)
             {
-                for (uint32_t cPhase = 0; cPhase < fTDCBins; ++cPhase)
+                cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency,  pStartLatency + (pLatencyRange )  * fTDCBins );
+                //modify the axis labels
+                uint32_t pLabel = pStartLatency;
+
+                for (uint32_t cLatency = pStartLatency; cLatency < pStartLatency + pLatencyRange; ++cLatency)
                 {
-                    int cBin = convertLatencyPhase (pStartLatency, cLatency, cPhase);
-                    cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
+                    for (uint32_t cPhase = 0; cPhase < fTDCBins; ++cPhase)
+                    {
+                        int cBin = convertLatencyPhase (pStartLatency, cLatency, cPhase);
+                        cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
+                    }
                 }
             }
+            else
+                cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ), pStartLatency,  pStartLatency + (pLatencyRange ) );
 
             cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency*%d+TDC]", fTDCBins) );
             cLatHist->SetFillColor ( 4 );
@@ -167,7 +174,8 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
         for ( BeBoard* pBoard : fBoardVector )
         {
             //here set the stub latency
-            fBeBoardInterface->WriteBoardReg (pBoard, getStubLatencyName (pBoard->getBoardType() ), cLat);
+            for (auto cReg : getStubLatencyName (pBoard->getBoardType() ) )
+                fBeBoardInterface->WriteBoardReg (pBoard, cReg, cLat);
 
             ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = GetEvents ( pBoard );
@@ -348,5 +356,5 @@ void LatencyScan::parseSettings()
     LOG (INFO) << "Parsed the following settings:" ;
     LOG (INFO) << "	Nevents = " << fNevents ;
     LOG (INFO) << "	HoleMode = " << int ( fHoleMode ) ;
-    //LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
+    //LOG (INFO) << "   TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
 }

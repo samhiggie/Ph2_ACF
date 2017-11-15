@@ -52,9 +52,10 @@ namespace Ph2_HwInterface {
         fOrbit = 0;
         fLumi = 0;
         //normal version
-        fEventCount = 0xFFFFFFFF &  list.at (2);
+        fEventCount = 0x1FFFFFFF &  list.at (2);
 
         //version with TDC
+        //fEventCount = 0xFFFFFFFF &  list.at (2);
         //if ( (list.at (2) & 0xF8) >> 3 != 0)
         //fTDC = list.at (2) & 0xFF;
         //else fTDC = 0;
@@ -525,7 +526,7 @@ namespace Ph2_HwInterface {
 
                 for (auto& cStub : this->StubVector (cFeId, cCbcId) )
                 {
-                    os << CYAN << "Stub: " << +cCounter << " Position: " << +cStub.getPosition() << " Bend: " << +cStub.getBend() << " Strip: " << cStub.getCenter() << RESET << std::endl;
+                    os << BOLDRED  << "Stub: " << +cCounter << CYAN << " Position: " << +cStub.getPosition() << " Bend: " << +cStub.getBend() << " Strip: " << cStub.getCenter() << RESET << std::endl;
                     cCounter++;
                 }
             }
