@@ -13,8 +13,12 @@
 #include "../Utils/ConsoleColor.h"
 #include "../Utils/easylogging++.h"
 
+#ifdef __ANTENNA__
 #include "Antenna.h"
+#endif
+#ifdef __HTTP__
 #include "THttpServer.h"
+#endif
 #include "TGraph.h"
 #include "TH1.h"
 
@@ -30,7 +34,11 @@ std::atomic<bool> gMonitoringRun;
 std::thread gThread;
 std::mutex gmutex;
 int gInterval = 3;
+
+#ifdef __ANTENNA__
 Antenna gAntenna;
+#endif
+
 std::ofstream gFile;
 TGraph* cTGraph;
 TGraph* cIGraph;
@@ -60,6 +68,7 @@ void print_choice()
 
 void monitoring_workloop()
 {
+#ifdef __ANTENNA__
     while (gMonitoringRun.load() )
     {
         gmutex.lock();
@@ -86,6 +95,7 @@ void monitoring_workloop()
         else
             std::this_thread::sleep_for (std::chrono::seconds (gInterval) );
     }
+#endif
 }
 
 void StartMonitoring ()
