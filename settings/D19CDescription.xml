@@ -121,6 +121,7 @@
 	<!-- TLU Block -->
 	<Register name="tlu_block">
 		<Register name="handshake_mode"> 2 </Register>
+		<Register name="tlu_enabled"> 0 </Register>
 	</Register>
     </Register>
     <!-- has to be moved to config -->
