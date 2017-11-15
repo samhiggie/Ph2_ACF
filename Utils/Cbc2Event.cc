@@ -282,6 +282,11 @@ namespace Ph2_HwInterface {
     std::vector<Stub> Cbc2Event::StubVector (uint8_t pFeId, uint8_t pCbcId) const
     {
         std::vector<Stub> cStubVec;
+
+        //dirty workaround to keep code compatible with CBC2
+        if (this->StubBit (pFeId, pCbcId) )
+            cStubVec.emplace_back (0, 0);
+
         return cStubVec;
     }
 
