@@ -48,7 +48,7 @@ class LatencyScan : public Tool
     std::map<Module*, uint8_t> ScanStubLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
 
   private:
-    int countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency, bool pNoTdc );
+    int countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint16_t pParameter, uint32_t pStartLatency, bool pNoTdc );
     int countHits ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
     int countStubs ( Module* pFe,  const Event* pEvent, std::string pHistName, uint8_t pParameter );
     void updateHists ( std::string pHistName, bool pFinal );
@@ -71,14 +71,22 @@ class LatencyScan : public Tool
         return result + 1;
     }
 
-    const std::string getStubLatencyName (const BoardType pBoardType)
+    const std::vector<std::string> getStubLatencyName (const BoardType pBoardType)
     {
-        if (pBoardType == BoardType::GLIB) return "cbc_stubdata_latency_adjust_fe1";
-        else if (pBoardType == BoardType::CTA) return "cbc.STUBDATA_LATENCY_MODE";
-        else if (pBoardType == BoardType::ICGLIB || pBoardType == BoardType::ICFC7) return "cbc_daq_ctrl.latencies.stub_latency";
-        else if (pBoardType == BoardType::CBC3FC7) return "cbc_system_cnfg.cbc_data_processor.cbc0.latencies.trig_data";
-        else if (pBoardType == BoardType::D19C) return "fc7_daq_cnfg.readout_block.global.common_stubdata_delay";
-        else return "not recognized";
+        std::vector<std::string> cRegVec;
+
+        if (pBoardType == BoardType::GLIB) cRegVec.push_back ("cbc_stubdata_latency_adjust_fe1");
+        else if (pBoardType == BoardType::CTA) cRegVec.push_back ( "cbc.STUBDATA_LATENCY_MODE");
+        else if (pBoardType == BoardType::ICGLIB || pBoardType == BoardType::ICFC7) cRegVec.push_back ( "cbc_daq_ctrl.latencies.stub_latency");
+        else if (pBoardType == BoardType::CBC3FC7)
+        {
+            cRegVec.push_back ( "cbc_system_cnfg.cbc_data_processors.cbc1.latencies.trig_data");
+            cRegVec.push_back ( "cbc_system_cnfg.cbc_data_processors.cbc2.latencies.trig_data");
+        }
+        else if (pBoardType == BoardType::D19C) cRegVec.push_back ( "fc7_daq_cnfg.readout_block.global.common_stubdata_delay");
+        else cRegVec.push_back ( "not recognized");
+
+        return cRegVec;
     }
 };
 

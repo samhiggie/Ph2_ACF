@@ -27,18 +27,25 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
 
             if ( cObj ) delete cObj;
 
-            TH1F* cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency,  pStartLatency + (pLatencyRange )  * fTDCBins );
-            //modify the axis labels
-            uint32_t pLabel = pStartLatency;
+            TH1F* cLatHist = nullptr;
 
-            for (uint32_t cLatency = pStartLatency; cLatency < pStartLatency + pLatencyRange; ++cLatency)
+            if (!pNoTdc)
             {
-                for (uint32_t cPhase = 0; cPhase < fTDCBins; ++cPhase)
+                cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency,  pStartLatency + (pLatencyRange )  * fTDCBins );
+                //modify the axis labels
+                uint32_t pLabel = pStartLatency;
+
+                for (uint32_t cLatency = pStartLatency; cLatency < pStartLatency + pLatencyRange; ++cLatency)
                 {
-                    int cBin = convertLatencyPhase (pStartLatency, cLatency, cPhase);
-                    cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
+                    for (uint32_t cPhase = 0; cPhase < fTDCBins; ++cPhase)
+                    {
+                        int cBin = convertLatencyPhase (pStartLatency, cLatency, cPhase);
+                        cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
+                    }
                 }
             }
+            else
+                cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ), pStartLatency,  pStartLatency + (pLatencyRange ) );
 
             cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency*%d+TDC]", fTDCBins) );
             cLatHist->SetFillColor ( 4 );
@@ -65,22 +72,18 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
     // ThresholdVisitor in read mode
-    ThresholdVisitor cThresholdVisitor (fCbcInterface);
-    this->accept (cThresholdVisitor);
-    uint16_t cVcth = cThresholdVisitor.getThreshold();
+    //ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    //this->accept (cThresholdVisitor);
+    //uint16_t cVcth = cThresholdVisitor.getThreshold();
 
-    int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
-    LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
-    cVcth += cVcthStep;
+    //int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
+    //LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
+    //cVcth += cVcthStep;
 
-    //  Set that VCth Value on all FEs
-    cThresholdVisitor.setOption ('w');
-    cThresholdVisitor.setThreshold (cVcth);
-    this->accept (cThresholdVisitor);
-
-    // set test pulse (if needed)
-    //setFWTestPulse();
-    //setSystemTestPulse ( fTestPulseAmplitude, 0, true, fHoleMode );
+    ////  Set that VCth Value on all FEs
+    //cThresholdVisitor.setOption ('w');
+    //cThresholdVisitor.setThreshold (cVcth);
+    //this->accept (cThresholdVisitor);
 
     // Now the actual scan
     LOG (INFO) << "Scanning Latency ... " ;
@@ -138,18 +141,18 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
     // ThresholdVisitor in read mode
-    ThresholdVisitor cThresholdVisitor (fCbcInterface);
-    this->accept (cThresholdVisitor);
-    uint16_t cVcth = cThresholdVisitor.getThreshold();
+    //ThresholdVisitor cThresholdVisitor (fCbcInterface);
+    //this->accept (cThresholdVisitor);
+    //uint16_t cVcth = cThresholdVisitor.getThreshold();
 
-    int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
-    LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
-    cVcth += cVcthStep;
+    //int cVcthStep = ( fHoleMode == 1 ) ? +10 : -10;
+    //LOG (INFO) << "VCth value from config file is: " << +cVcth << " ;  changing by " << cVcthStep << "  to " << + ( cVcth + cVcthStep ) << " supress noise hits for crude latency scan!" ;
+    //cVcth += cVcthStep;
 
-    //  Set that VCth Value on all FEs
-    cThresholdVisitor.setOption ('w');
-    cThresholdVisitor.setThreshold (cVcth);
-    this->accept (cThresholdVisitor);
+    ////  Set that VCth Value on all FEs
+    //cThresholdVisitor.setOption ('w');
+    //cThresholdVisitor.setThreshold (cVcth);
+    //this->accept (cThresholdVisitor);
 
     // set test pulse (if needed)
     //setFWTestPulse();
@@ -167,7 +170,8 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
         for ( BeBoard* pBoard : fBoardVector )
         {
             //here set the stub latency
-            fBeBoardInterface->WriteBoardReg (pBoard, getStubLatencyName (pBoard->getBoardType() ), cLat);
+            for (auto cReg : getStubLatencyName (pBoard->getBoardType() ) )
+                fBeBoardInterface->WriteBoardReg (pBoard, cReg, cLat);
 
             ReadNEvents ( pBoard, fNevents );
             const std::vector<Event*>& events = GetEvents ( pBoard );
@@ -219,7 +223,7 @@ std::map<Module*, uint8_t> LatencyScan::ScanStubLatency ( uint8_t pStartLatency,
 //////////////////////////////////////          PRIVATE METHODS             //////////////////////////////////////
 
 
-int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint8_t pParameter, uint32_t pStartLatency, bool pNoTdc)
+int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint16_t pParameter, uint32_t pStartLatency, bool pNoTdc)
 {
     BoardType cBoardType = pBoard->getBoardType();
     uint32_t cTotalHits = 0;
@@ -259,17 +263,23 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
                 {
                     //now loop the channels for this particular event and increment a counter
                     cHitCounter += cEvent->GetNHits (cCbc->getFeId(), cCbc->getCbcId() );
-
-                    //for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
-                    //{
-                    //if ( cEvent->DataBit ( cCbc->getFeId(), cCbc->getCbcId(), cId ) )
-                    //cHitCounter++;
-                    //}
                 }
 
                 //now I have the number of hits in this particular event for all CBCs and the TDC value
-                uint32_t cBin = convertLatencyPhase (pStartLatency, cFillVal, cTDCVal);
-                cTmpHist->Fill (pNoTdc ? pParameter : cBin, cHitCounter);
+                uint32_t cBin = 0;
+
+                if (pNoTdc) cBin = pParameter;
+                else cBin = convertLatencyPhase (pStartLatency, cFillVal, cTDCVal);
+
+                int cHistBin = cTmpHist->FindBin (cBin);
+                float cBinContent = cTmpHist->GetBinContent (cHistBin);
+                cBinContent += cHitCounter;
+                cTmpHist->SetBinContent (cHistBin, cBinContent);
+
+                //if (cHitCounter != 0 ) std::cout << "Found " << cHitCounter << " Hits in this event!" << std::endl;
+
+                //GA: old, potentially buggy code
+                //cTmpHist->Fill (cBin, cHitCounter);
                 cHitSum += cHitCounter;
             }
         }
@@ -292,12 +302,18 @@ int LatencyScan::countStubs ( Module* pFe,  const Event* pEvent, std::string pHi
     for ( auto cCbc : pFe->fCbcVector )
     {
         if ( pEvent->StubBit ( cCbc->getFeId(), cCbc->getCbcId() ) )
-
-        {
-            cTmpHist->Fill ( pParameter );
-            cStubCounter++;
-        }
+            cStubCounter += pEvent->StubVector ( cCbc->getFeId(), cCbc->getCbcId() ).size();
     }
+
+    int cBin = cTmpHist->FindBin (pParameter);
+    float cBinContent = cTmpHist->GetBinContent (cBin);
+    cBinContent += cStubCounter;
+    cTmpHist->SetBinContent (cBin, cBinContent);
+
+    //if (cStubCounter != 0) std::cout << "Found " << cStubCounter << " Stubs in this event" << std::endl;
+
+    //GA, old, potentially buggy code)
+    //cTmpHist->Fill ( pParameter );
 
     return cStubCounter;
 }
@@ -348,5 +364,5 @@ void LatencyScan::parseSettings()
     LOG (INFO) << "Parsed the following settings:" ;
     LOG (INFO) << "	Nevents = " << fNevents ;
     LOG (INFO) << "	HoleMode = " << int ( fHoleMode ) ;
-    //LOG (INFO) << "	TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
+    //LOG (INFO) << "   TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
 }
