@@ -24,6 +24,7 @@
 #include "TProfile.h"
 #include "TF1.h"
 #include "TH2F.h"
+#include "TH2D.h"
 #include "TGaxis.h"
 #include "TStyle.h"
 
@@ -47,7 +48,7 @@ class SignalScanFit : public Tool
     void ScanSignal ( int pSignalScanLength );
     double fVCthMin;
     double fVCthMax;
-    double fVCthRange;
+    double fVCthNbins;
 
   private:
     void updateHists ( std::string pHistName, bool pFinal );
