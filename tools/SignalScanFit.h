@@ -68,7 +68,7 @@ class SignalScanFit : public Tool
 
     const uint32_t fTDCBins = 8;
 
-    int convertLatencyPhase ( uint32_t pStartLatency, uint32_t cLatency, uint32_t cPhase )
+    /*int convertLatencyPhase ( uint32_t pStartLatency, uint32_t cLatency, uint32_t cPhase )
     {
         int result = int (cLatency) - int (pStartLatency);
         result *= fTDCBins;
@@ -82,7 +82,7 @@ class SignalScanFit : public Tool
         else if ( pBoardIdentifier == "CTA") return "cbc.STUBDATA_LATENCY_MODE";
         else if (pBoardIdentifier == "ICGLIB" || pBoardIdentifier == "ICFC7") return "cbc_daq_ctrl.latencies.stub_latency";
         else return "not recognized";
-    }
+    }*/
 };
 
 #endif

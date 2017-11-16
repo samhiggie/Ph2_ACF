@@ -44,7 +44,7 @@ void SignalScanFit::Initialize ()
             bookHistogram ( cFe, "module_signal", cSignalHist );
 
             // 2D-plot with cluster width on the x-axis, Vcth on y-axis, counts of certain clustersize on z-axis.
-            TH2D* cVCthClusterSizeHist = new TH2D ( Form ( "h_module_clusterSize_per_Vcth_Fe%d", cFeId ), Form ( "Cluster size vs Vcth ; Cluster size [strips] ; Threshold [VCth] ; # clusters", cFeId ), 10, -0.5, 14.5, fVCthNbins, fVCthMin, fVCthMax );
+            TH2D* cVCthClusterSizeHist = new TH2D ( Form ( "h_module_clusterSize_per_Vcth_Fe%d", cFeId ), Form ( "Cluster size vs Vcth ; Cluster size [strips] ; Threshold [VCth] ; # clusters", cFeId ), 15, -0.5, 14.5, fVCthNbins, fVCthMin, fVCthMax );
             bookHistogram ( cFe, "vcth_ClusterSize", cVCthClusterSizeHist );
              
             uint32_t cCbcCount = 0;
@@ -333,7 +333,7 @@ void SignalScanFit::processCurves ( BeBoard *pBoard, std::string pHistName )
             // Make the differential histo
             // Do this with the histogram, not the profile
             this->differentiateHist (cCbc, clusters.Data());
-
+            std::cout << "I got here!" << std::endl;
             // Only do this if requested? Yes, see SignalScan and fFit setting!
             if ( fFit ) this->fitHist (cCbc, pHistName);
         }
@@ -389,6 +389,7 @@ void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
     std::cout << BOLDRED << "WARNING: The fitting precedure is WORK IN PROGRESS and it might not work out of the box therefore the deault is set to disable the automatic fit!" << RESET << std::endl;    
 
     // This fitting procedure is very long-winded, there are better fititng procedures in the making!!!
+    // Fitting depends on variable / single mode for CBC2. We use a fitfunction here that can be used for both in most cases.
 
     TProfile* cHist = dynamic_cast<TProfile*> ( getHist ( pCbc, pHistName) );
     double cStart  = 0; 
@@ -401,8 +402,67 @@ void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
     std::string cFitname = "CurveFit";
     TF1* cFit = dynamic_cast<TF1*> (gROOT->FindObject (cFitname.c_str() ) );
     if (cFit) delete cFit;
-    
-    double cFirst = -999;             // First data point
+
+    double cMin = 0., cMax = 0., variable = 0., cPlateau = 0., cWidth = 0., cVsignal = 0., cNoise = 0.; 
+
+    // Not Hole Mode available yet!
+    if ( !fHoleMode )
+    {
+        if ( fType == ChipType::CBC2 ) 
+        {
+            cPlateau = 0.01;
+            cWidth = 10.;
+            cVsignal = 72.;
+            cNoise = 2.;
+            cMin = 0;
+            cMax = 95;
+            cFit = new TF1 ("MyGammaSignal", MyGammaSignal, cMin, cMax, 4);
+            cFit->SetParLimits(0, 0., 50.);
+            cFit->SetParLimits(1, 65., 85.);
+            cFit->SetParLimits(2, 0., 20.);
+            cFit->SetParLimits(3, 0., 10.);
+        } 
+        else if ( fType == ChipType::CBC3 )
+        {
+            cPlateau = 0.01;
+            cWidth = 15.;
+            cVsignal = 490.;
+            cNoise = 6.;
+            cMin = 0;
+            cMax = 530;
+            cFit = new TF1 ("MyGammaSignal", MyGammaSignal, cMin, cMax, 4);
+            cFit->SetParLimits(0, 0., 50.);
+            cFit->SetParLimits(1, 450., 530.);
+            cFit->SetParLimits(2, 0., 20.);
+            cFit->SetParLimits(3, 0., 20.);
+        }  
+            
+        cFit->SetParameter ( 0, cPlateau );
+        cFit->SetParameter ( 1, cWidth );
+        cFit->SetParameter ( 2, cVsignal );
+        cFit->SetParameter ( 3, cNoise );
+
+        cFit->SetParName(0, "plateau");
+        cFit->SetParName(1, "width");
+        cFit->SetParName(2, "signal");
+        cFit->SetParName(3, "noise???");
+    }
+    // Hole mode not implemented!
+    else
+    {
+        LOG (INFO) << BOLDRED << "Hole mode is not implemented, the fitting procedure is terminated!" << RESET;
+        return;
+    }
+
+    cHist->Fit(cFit, "R+", "", cMin, cMax);
+    cFit->Draw("same");
+
+    // Would be nice to catch failed fits
+    cHist->Write (cHist->GetName(), TObject::kOverwrite);
+
+}
+
+    /*double cFirst = -999;             // First data point
     double cCurrent = 0;              // Bin content
     double cPrevious = 0;             // Content of previous bin
     double cNext = 0;                 // Content of next bin
@@ -519,4 +579,4 @@ void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
 
     // Would be nice to catch failed fits
     cHist->Write (cHist->GetName(), TObject::kOverwrite);
-}
+}*/
