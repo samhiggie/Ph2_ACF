@@ -9,8 +9,6 @@
       <node id="rarp_en" address ="0x00" mask="0x00000001"/>
   </node>
 
-
-     
   <node id="ua9_tdc" address="0x40003000" permission="w" tags="noleaf">
     <node id="config"   address="0x000" permission="w" />
     <node id="holdoff" address="0x001" permission="w" />
@@ -25,8 +23,6 @@
     <node id="flags_1" address="0x003" permission="r" />
     <node id="or254_1" address="0x004" permission="r" />
     <node id="sof_1" address="0x005" permission="r" />
-
-
     <node id="ua9_count" address="0x006" permission="r" />
     <node id="time" address="0x007" permission="r" />
     <node id="debug" address="0x008" permission="r" />

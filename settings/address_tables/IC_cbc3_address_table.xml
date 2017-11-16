@@ -4,11 +4,30 @@
   <node id="sysreg" address="0x00000000" module="file://fc7_system_address_table.xml"/>
   <!-- GLIB user logic registers -->
   <!-- firmware configurations -->
-  <node id="user_stat" address ="0x40000000" permission="r" mode="block" size="0x0000000F">
+  <node id="user_stat" address ="0x40000000" permission="r" mode="block" size="0x0000000F"/>
+  <node id="user_ctrl" address ="0x40000040" permission="rw" tags="noleaf">
+      <node id="rarp_en" address ="0x00" mask="0x00000001"/>
   </node>
-    <!--------------------------------------------------------------------------------------------------------------------->
-    <!--CONFIG REGISTERS-->
-    <!--------------------------------------------------------------------------------------------------------------------->
+
+  <node id="ua9_tdc" address="0x40003000" permission="w" tags="noleaf">
+    <node id="config"   address="0x000" permission="w" />
+    <node id="holdoff" address="0x001" permission="w" />
+    <node id="stretch"  address="0x002" permission="w" />
+    <node id="trig0_delay" address="0x004" permission="w" />
+    <node id="trig1_delay" address="0x005" permission="w" />
+    <node id="or254_delay" address="0x006" permission="w" />
+
+    <node id="flags_0" address="0x000" permission="r" />
+    <node id="or254_0" address="0x001" permission="r" />
+    <node id="sof_0" address="0x002" permission="r" />
+    <node id="flags_1" address="0x003" permission="r" />
+    <node id="or254_1" address="0x004" permission="r" />
+    <node id="sof_1" address="0x005" permission="r" />
+    <node id="ua9_count" address="0x006" permission="r" />
+    <node id="time" address="0x007" permission="r" />
+    <node id="debug" address="0x008" permission="r" />
+  </node>
+  
   <node id="cbc_system_cnfg" address="0x40000100" permission="rw" tags="noleaf">
     <node id="global" tags="noleaf"> 
       <node id="be" address="0x00" tags="noleaf">
@@ -183,9 +202,6 @@
     </node>
     <node id="test"          address="0xFF" permission="rw"/>
   </node>
-    <!--------------------------------------------------------------------------------------------------------------------->
-    <!--CONTROL REGISTERS-->
-    <!--------------------------------------------------------------------------------------------------------------------->
   <node id="cbc_system_ctrl" address="0x40000200" permission="w" tags="noleaf">
     <node id="global"                   address="0x00" tags="noleaf">
       <node id="reset"                             mask="0x00000001" description="reset all the modules."/>
@@ -274,21 +290,27 @@
 	<node id="start"                             mask="0x00000002"/>
 	<node id="resume"                            mask="0x00000004"/>
     </node>
-    <node id="io"                        address="0x40" tags="noleaf">
-      <node id="fs_oserdes_reset"      mask="0x00000001"/>
-      <node id="cdctsb_reset"          mask="0x00000002"/>
-      <node id="data_clock_timing_reset"      mask="0x00000004"/>
-      <node id="data_clock_timing_tune"       mask="0x00000008"/>
-      <node id="data_clock_timing_scan_pulse" mask="0x00000010"/>
+    <node id="io"                        tags="noleaf">
+      <node id="fs_oserdes_reset"         address="0x40" mask="0x00000001"/>
+      <node id="cdctsb_reset"             address="0x40" mask="0x00000002"/>
+      <node id="data_clock_timing_reset"  address="0x40" mask="0x00000004"/>
+      <node id="data_clock_timing_tune"   address="0x40" mask="0x00000008"/>
+      <node id="dctt1"                address="0x41" tags="noleaf">
+	  <node id="reset"      mask="0x00000004"/>
+	  <node id="tune"       mask="0x00000008"/>
+	  <node id="scan_pulse" mask="0x00000010"/>
+      </node>
+      <node id="dctt2"                address="0x42" tags="noleaf">
+	  <node id="reset"      mask="0x00000004"/>
+	  <node id="tune"       mask="0x00000008"/>
+	  <node id="scan_pulse" mask="0x00000010"/>
+      </node>
     </node>
     <node id="mmcme2_drp" address="0x50" tags="noleaf">
       <node id="rst"        mask="0x00000001"/>
       <node id="sen"        mask="0x00000002"/>
     </node>
   </node>
-    <!--------------------------------------------------------------------------------------------------------------------->
-    <!--STATUS REGISTER-->
-    <!--------------------------------------------------------------------------------------------------------------------->
   <node id="cbc_system_stat" address="0x40000300" permission="r" tags="noleaf">
     <node id="system" tags="noleaf">
       <node id="id"                       address = "0x00"/> <!-- 'C' 'B' 'C' '3' --> 
@@ -332,11 +354,11 @@
       <node id="locked"                     mask="0x00000001"/>
     </node>
     <node id="cbc_system_clocks_1" tags="noleaf">
-	<node id="dctt1"            address="0x11">
+	<node id="dctt1"            address="0x11" tags="noleaf">
 	    <node id="locked" mask="0x00000001"/> 
 	    <node id="saddr"  mask="0x00000006"/>
 	</node>
-	<node id="dctt2"            address="0x12">
+	<node id="dctt2"            address="0x12" tags="noleaf">
 	    <node id="locked" mask="0x00000001"/> 
 	    <node id="saddr"  mask="0x00000006"/>
 	</node>
@@ -542,10 +564,8 @@
 	<node id="dout"      mask="0x0FFF0000"/>
     </node>
   </node>
-    <!--------------------------------------------------------------------------------------------------------------------->
-    <!--FIFOS-->
-    <!--------------------------------------------------------------------------------------------------------------------->
-  <node id="data"          address="0x40000400" permission="r" mode="non-incremental" size="65536"/>
+  <!--<node id="data"          address="0x40000400" permission="r" mode="non-incremental" size="65536"/>-->
+  <node id="data"          address="0x40000400" permission="r" mode="non-incremental" size="131072"/>
   <node id="cbc_i2c_regs"  address="0x40000800">
     <node id="command_fifos"  address="0x00" permission="w" mode="non-incremental" size="65536" /> 
     <node id="reply_fifos" >
@@ -553,14 +573,16 @@
       <node id="fe2"        address="0x02" permission="r" mode="non-incremental" size="65536"/>
     </node>
   </node>
-  <node id="cdctb"   address="0x40000804" permission="r"  mode="non-incremental" size="60"/>
+  <node id="cdctb"   address="0x40000804" permission="r"  mode="non-incremental" size="512"/>
   <node id="fscbram" address="0x40000808" permission="rw" mode="non-incremental" size="4096"/>
-  <node id="rdb"     address="0x40000810" permission="r"  mode="non-incremental" size="38912" description="512 data frames (on slvs6) can be stored. (1 frame = 38 x 8 bits, 950 ns)"/> 
+  <node id="rdb"     address="0x40000810" permission="r"  mode="non-incremental" size="38912" description="512 data frames (on slvs6) can be stored if data comes continuousely without break... (1 frame = 38 x 8 bits, 950 ns)"/> 
+
+
     <!--------------------------------------------------------------------------------------------------------------------->
     <!--FPGACONFIG REGISTERS-->
     <!--------------------------------------------------------------------------------------------------------------------->
     <!--Present in Glib or FC7 address table for fpgaconfig-->
-	  <node id="flash_async_read_cmd"	address="0x0800bddf"  mask="0xFFFFFFFF" description="FLASH memory asynchronous read mode"/>
+	<node id="flash_async_read_cmd"	address="0x0800bddf"  mask="0xFFFFFFFF" description="FLASH memory asynchronous read mode"/>
     <node id="flash_block" address="0x08000000"     mode="block" size="0x00800000" permission="rw" description="FLASH memory for FPGA configuration"/>
     <!-- ICAP MEMORY SPACE -->
     <node id="icap" address="0x00000200" mask="0xffffffff" permission="rw" />
@@ -571,5 +593,3 @@
       <node id="FIFO" address="0x2" mode="non-incremental" size="512" />
   	</node>
 </node>
-
-
