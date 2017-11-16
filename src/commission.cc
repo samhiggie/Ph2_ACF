@@ -43,6 +43,8 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "latency", "scan the trigger latency", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "latency", "l" );
 
+    cmd.defineOption ( "notdc", "don't split the latency histogram in TDC sub-bins", ArgvParser::NoOptionAttribute );
+
     cmd.defineOption ( "stublatency", "scan the stub latency", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "stublatency", "s" );
 
@@ -83,8 +85,9 @@ int main ( int argc, char* argv[] )
     bool cLatency = ( cmd.foundOption ( "latency" ) ) ? true : false;
     bool cStubLatency = ( cmd.foundOption ( "stublatency" ) ) ? true : false;
     bool cSignal = ( cmd.foundOption ( "signal" ) ) ? true : false;
-    bool cSignalFit = ( cmd.foundOption ( "signalFit" ) ) ? true : false;    
+    bool cSignalFit = ( cmd.foundOption ( "signalFit" ) ) ? true : false;
     bool cNoise = ( cmd.foundOption ( "noise" ) ) ? true : false;
+    bool cNoTDC = ( cmd.foundOption ( "notdc" ) ) ? true : false;
     std::string cDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/";
 
     //if ( !cNoise ) cDirectory += "Commissioning";
@@ -128,10 +131,10 @@ int main ( int argc, char* argv[] )
     {
         LatencyScan cLatencyScan;
         cLatencyScan.Inherit (&cTool);
-        cLatencyScan.Initialize (cStartLatency, cLatencyRange );
+        cLatencyScan.Initialize (cStartLatency, cLatencyRange, cNoTDC );
 
         // Here comes our Part:
-        if ( cLatency ) cLatencyScan.ScanLatency ( cStartLatency, cLatencyRange );
+        if ( cLatency ) cLatencyScan.ScanLatency ( cStartLatency, cLatencyRange, cNoTDC );
 
         if ( cStubLatency ) cLatencyScan.ScanStubLatency ( cStartLatency, cLatencyRange );
     }
@@ -141,7 +144,8 @@ int main ( int argc, char* argv[] )
         SignalScan cSignalScan;
         cSignalScan.Inherit (&cTool);
         cSignalScan.Initialize();
-        cSignalScan.ScanSignal ( cSignalRange );
+        cSignalScan.ScanSignal(600, 600 - cSignalRange );
+        cSignalScan.writeObjects();
     }
 
     else if ( cSignalFit )
@@ -149,7 +153,7 @@ int main ( int argc, char* argv[] )
         SignalScanFit cSignalScanFit;
         cSignalScanFit.Inherit (&cTool);
         cSignalScanFit.Initialize();
-        cSignalScanFit.ScanSignal ( cSignalFitRange ); 
+        cSignalScanFit.ScanSignal ( cSignalFitRange );
     }
 
     else if ( cNoise )
