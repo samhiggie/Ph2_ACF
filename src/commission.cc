@@ -144,7 +144,8 @@ int main ( int argc, char* argv[] )
         SignalScan cSignalScan;
         cSignalScan.Inherit (&cTool);
         cSignalScan.Initialize();
-        cSignalScan.ScanSignal ( cSignalRange );
+        cSignalScan.ScanSignal(600, 600 - cSignalRange );
+        cSignalScan.writeObjects();
     }
 
     else if ( cSignalFit )

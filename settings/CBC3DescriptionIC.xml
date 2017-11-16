@@ -15,7 +15,7 @@
             <!--<CBC_Files path="./Results/Calibration_Electron_15-11-17_10:57/" />-->
         <!--<CBC Id="0" configfile="FE0CBC0.txt"/>-->
         <!--<CBC Id="1" configfile="FE0CBC1.txt"/>-->
-            <CBC_Files path="./settings/Cbc_Files/" />
+        <CBC_Files path="./settings/CbcFiles/" />
         <CBC Id="0" configfile="CBC3_default.txt"/>
         <CBC Id="1" configfile="CBC3_default.txt"/>
     </Module>

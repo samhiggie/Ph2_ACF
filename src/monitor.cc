@@ -69,6 +69,7 @@ void print_choice()
 void monitoring_workloop()
 {
 #ifdef __ANTENNA__
+
     while (gMonitoringRun.load() )
     {
         gmutex.lock();
@@ -95,6 +96,7 @@ void monitoring_workloop()
         else
             std::this_thread::sleep_for (std::chrono::seconds (gInterval) );
     }
+
 #endif
 }
 
