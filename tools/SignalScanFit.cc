@@ -50,7 +50,7 @@ void SignalScanFit::Initialize ()
             uint32_t cCbcCount = 0;
             uint32_t cCbcIdMax = 0;
 
-	          for ( auto cCbc : cFe->fCbcVector )
+            for ( auto cCbc : cFe->fCbcVector )
             {
                 uint32_t cCbcId = cCbc->getCbcId();
                 cCbcCount++;
@@ -58,40 +58,40 @@ void SignalScanFit::Initialize ()
                 if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
 
                 TString cHistname;
-	              TH1D* cHist;
-	              TProfile * cProfile;
-	              
-	              cHistname = Form ( "Fe%dCBC%d_Clusters_even",cFeId, cCbcId );
-	              cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
-	              bookHistogram ( cCbc, "Cbc_Clusters_even", cHist );
+                TH1D* cHist;
+                TProfile * cProfile;
 
-	              cHistname = Form ( "Fe%dCBC%d_Clusters_odd",cFeId, cCbcId );
-	              cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
-	              bookHistogram ( cCbc, "Cbc_Clusters_odd", cHist );
-	              
-	              cHistname = Form ( "Fe%dCBC%d_ClusterSize_even",cFeId, cCbcId );
-	              cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
-	              bookHistogram ( cCbc, "Cbc_ClusterSize_even", cHist );
-	              
-	              cHistname = Form ( "Fe%dCBC%d_ClusterSize_odd",cFeId, cCbcId );
-	              cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
-	              bookHistogram ( cCbc, "Cbc_ClusterSize_odd", cHist );
-	              
-	              cHistname = Form ( "Fe%dCBC%d_Hits_even",cFeId, cCbcId );
-	              cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
-	              bookHistogram ( cCbc, "Cbc_Hits_even", cHist );
-	              
-	              cHistname = Form ( "Fe%dCBC%d_Hits_odd",cFeId, cCbcId );
-	              cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
-	              bookHistogram ( cCbc, "Cbc_Hits_odd", cHist );
-	              
-	              cHistname = Form ( "Fe%dCBC%d_ClusterOccupancy_even",cFeId, cCbcId );
-	              cProfile = new TProfile ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
-	              bookHistogram ( cCbc, "Cbc_ClusterOccupancy_even", cProfile );
+                cHistname = Form ( "Fe%dCBC%d_Clusters_even",cFeId, cCbcId );
+                cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
+                bookHistogram ( cCbc, "Cbc_Clusters_even", cHist );
 
-	              cHistname = Form ( "Fe%dCBC%d_ClusterOccupancy_odd",cFeId, cCbcId );
-	              cProfile = new TProfile ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
-	              bookHistogram ( cCbc, "Cbc_ClusterOccupancy_odd", cProfile );
+                cHistname = Form ( "Fe%dCBC%d_Clusters_odd",cFeId, cCbcId );
+                cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
+                bookHistogram ( cCbc, "Cbc_Clusters_odd", cHist );
+
+                cHistname = Form ( "Fe%dCBC%d_ClusterSize_even",cFeId, cCbcId );
+                cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
+                bookHistogram ( cCbc, "Cbc_ClusterSize_even", cHist );
+
+                cHistname = Form ( "Fe%dCBC%d_ClusterSize_odd",cFeId, cCbcId );
+                cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
+                bookHistogram ( cCbc, "Cbc_ClusterSize_odd", cHist );
+
+                cHistname = Form ( "Fe%dCBC%d_Hits_even",cFeId, cCbcId );
+                cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
+                bookHistogram ( cCbc, "Cbc_Hits_even", cHist );
+
+                cHistname = Form ( "Fe%dCBC%d_Hits_odd",cFeId, cCbcId );
+                cHist = new TH1D ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
+                bookHistogram ( cCbc, "Cbc_Hits_odd", cHist );
+
+                cHistname = Form ( "Fe%dCBC%d_ClusterOccupancy_even",cFeId, cCbcId );
+                cProfile = new TProfile ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
+                bookHistogram ( cCbc, "Cbc_ClusterOccupancy_even", cProfile );
+
+                cHistname = Form ( "Fe%dCBC%d_ClusterOccupancy_odd",cFeId, cCbcId );
+                cProfile = new TProfile ( cHistname, cHistname, fVCthNbins, fVCthMin, fVCthMax );
+                bookHistogram ( cCbc, "Cbc_ClusterOccupancy_odd", cProfile );
             }
         }
     }
@@ -131,8 +131,8 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
             while (cTotalEvents < fNevents)
             {
                 try{
-	                ReadData ( pBoard ); // ReadData() is preferred for high number of events per Vcth
-		              //ReadNEvents(1000);
+                    ReadData ( pBoard ); // ReadData() is preferred for high number of events per Vcth
+                    //ReadNEvents(1000);
                 } catch (uhal::exception::exception& e){
                     LOG(ERROR)<< e.what();
                     updateHists ( "module_signal", false );
@@ -144,24 +144,24 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
                 const std::vector<Event*>& cEvents = GetEvents ( pBoard );
                 
                 cTotalEvents += cEvents.size();
-	              int cEventHits = 0;
-	              int cEventClusters = 0;
+                int cEventHits = 0;
+                int cEventClusters = 0;
 
                 // Loop over the Modules                    
 	              for ( auto cFe : pBoard->fModuleVector )
 	              {
-	                  TH2D* cSignalHist = static_cast<TH2D*> (getHist ( cFe, "module_signal") );
+                    TH2D* cSignalHist = static_cast<TH2D*> (getHist ( cFe, "module_signal") );
                     TH2D* cVcthClusters = static_cast<TH2D*> (getHist ( cFe, "vcth_ClusterSize" ) );
 	                
                     // Loop over the CBCs
 	                  for ( auto cCbc : cFe->fCbcVector )
                     {
-	                      TH1D* cHitsEvenHist         = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Hits_even" ) );
-	                      TH1D* cHitsOddHist          = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Hits_odd" ) );
-	                      TH1D* cClustersEvenHist     = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Clusters_even" ) );
-	                      TH1D* cClustersOddHist      = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Clusters_odd" ) );
+                        TH1D* cHitsEvenHist         = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Hits_even" ) );
+                        TH1D* cHitsOddHist          = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Hits_odd" ) );
+                        TH1D* cClustersEvenHist     = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Clusters_even" ) );
+                        TH1D* cClustersOddHist      = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Clusters_odd" ) );
                         TProfile* cClustersEvenProf = dynamic_cast<TProfile*> ( getHist ( cCbc, "Cbc_ClusterOccupancy_even" ) );
-		                    TProfile* cClustersOddProf  = dynamic_cast<TProfile*> ( getHist ( cCbc, "Cbc_ClusterOccupancy_odd" ) );
+                        TProfile* cClustersOddProf  = dynamic_cast<TProfile*> ( getHist ( cCbc, "Cbc_ClusterOccupancy_odd" ) );
 
                         //uint32_t cHitsEven = 0, cHitsOdd = 0;	                      
 
