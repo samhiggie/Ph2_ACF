@@ -44,7 +44,7 @@ void SignalScanFit::Initialize ()
             bookHistogram ( cFe, "module_signal", cSignalHist );
 
             // 2D-plot with cluster width on the x-axis, Vcth on y-axis, counts of certain clustersize on z-axis.
-            TH2D* cVCthClusterSizeHist = new TH2D ( Form ( "h_module_clusterSize_per_Vcth_Fe%d", cFeId ), Form ( "Cluster size vs Vcth ; Cluster size [strips] ; Threshold [VCth] ; # clusters", cFeId ), 10, -0.5, 9.5, fVCthNbins, fVCthMin, fVCthMax );
+            TH2D* cVCthClusterSizeHist = new TH2D ( Form ( "h_module_clusterSize_per_Vcth_Fe%d", cFeId ), Form ( "Cluster size vs Vcth ; Cluster size [strips] ; Threshold [VCth] ; # clusters", cFeId ), 10, -0.5, 14.5, fVCthNbins, fVCthMin, fVCthMax );
             bookHistogram ( cFe, "vcth_ClusterSize", cVCthClusterSizeHist );
              
             uint32_t cCbcCount = 0;
@@ -131,8 +131,8 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
             while (cTotalEvents < fNevents)
             {
                 try{
-	                //ReadData ( pBoard );
-		              ReadNEvents(1000);
+	                ReadData ( pBoard );
+		              //ReadNEvents(1000);
                 } catch (uhal::exception::exception& e){
                     LOG(ERROR)<< e.what();
                     updateHists ( "module_signal", false );
@@ -154,20 +154,20 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
                     // Loop over the CBCs
 	                  for ( auto cCbc : cFe->fCbcVector )
                     {
-	                      TH1D* cHitsEvenHist      = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Hits_even" ) );
-	                      TH1D* cHitsOddHist       = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Hits_odd" ) );
-	                      TH1D* cClustersEvenHist  = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Clusters_even" ) );
-	                      TH1D* cClustersOddHist   = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Clusters_odd" ) );
+	                      TH1D* cHitsEvenHist         = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Hits_even" ) );
+	                      TH1D* cHitsOddHist          = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Hits_odd" ) );
+	                      TH1D* cClustersEvenHist     = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Clusters_even" ) );
+	                      TH1D* cClustersOddHist      = dynamic_cast<TH1D*> ( getHist ( cCbc, "Cbc_Clusters_odd" ) );
                         TProfile* cClustersEvenProf = dynamic_cast<TProfile*> ( getHist ( cCbc, "Cbc_ClusterOccupancy_even" ) );
 		                    TProfile* cClustersOddProf  = dynamic_cast<TProfile*> ( getHist ( cCbc, "Cbc_ClusterOccupancy_odd" ) );
 
-                        uint32_t cHitsEven = 0, cHitsOdd = 0, cClustersEven = 0, cClustersOdd = 0;	                      
+                        uint32_t cHitsEven = 0, cHitsOdd = 0; //, cClustersEven = 0, cClustersOdd = 0;	                      
 
                         // Loop over Events from this Acquisition
 	                      for ( auto& cEvent : cEvents )
 	                      {
-		                        uint32_t lastEvenHit = -9;
-		                        uint32_t lastOddHit = -9;
+		                        //uint32_t lastEvenHit = -9;
+		                        //uint32_t lastOddHit = -9;
 
                             // Loop over the Hits in the Event and do clustering
                             for ( uint32_t cId = 0; cId < NCHANNELS; cId++ )
@@ -177,48 +177,59 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
                                     if ( ( int (cId) % 2 ) == 0 ) 
                                     {
 			                                  cHitsEvenHist->Fill( cVCth );
-                                        cHitsEven++;
-			                                  if (cId - lastEvenHit > 2)  cClustersEven++;
-			                                  //else clusterSize++;
-			                                  lastEvenHit = cId;
+                                        //cHitsEven++;
+
+			                                  //if (cId - lastEvenHit > 2)  cClustersEven++;
+			                                  //lastEvenHit = cId;
                                     }
 			                              else 
                                     {
                                         cHitsOddHist->Fill( cVCth );
-			                                  cHitsOdd++;
-			                                  if (cId - lastOddHit > 2)  cClustersOdd++;
-			                                  lastOddHit = cId;
+			                                  //cHitsOdd++;
+
+			                                  //if (cId - lastOddHit > 2)  cClustersOdd++;
+			                                  //lastOddHit = cId;
                                     }
                                     cSignalHist->Fill (cCbc->getCbcId() * NCHANNELS + cId, cVCth );
                                     cEventHits++;
                                 }
                             }
                             
-                            // Fill the histograms
-                            //cHitsEvenHist->SetBinContent( cVCth, cHitsEven + cHitsEvenHist->GetBinContent(cVCth));
-		                        //cHitsOddHist ->SetBinContent( cVCth, cHitsOdd  + cHitsOddHist ->GetBinContent(cVCth));
-		                        //cClustersEvenHist->SetBinContent( cVCth, cClustersEven + cClustersEvenHist->GetBinContent(cVCth));
-		                        //cClustersOddHist ->SetBinContent( cVCth, cClustersOdd  + cClustersOddHist ->GetBinContent(cVCth));
-                            
                             // Now fill the TProfile: how many clusters from this acquisition?
                             // This TProfile gives us the average number of clusters per event, per Vcth, because it also "fills" zeros.
                             // Could easily make this a true occupancy by dividing by NChannels and NEventsPerAcquisition
-                            cClustersEvenProf->Fill (cVCth, cClustersEven);	
-                            cClustersOddProf ->Fill (cVCth, cClustersOdd);	                            
+                            //std::cout << cClustersEven << " " << cVCth << std::endl; 
+                            //cClustersEvenProf->Fill (cVCth, cClustersEven);	
+                            //cClustersOddProf ->Fill (cVCth, cClustersOdd);	                            
 
+                            // Fill the other cluster histos
                             std::vector<Cluster> cClusters = cEvent->getClusters (cCbc->getFeId(), cCbc->getCbcId() ); 
                             cEventClusters += cClusters.size();
+
+                            double cClustersEven = 0;
+                            double cClustersOdd = 0;
 
                             // Now fill the ClusterWidth per VCth plots:
                             for ( auto& cCluster : cClusters )
                             {
-                                //cVcthClusters->SetBinContent( +(cCluster.fClusterWidth), +cVCth, 1 ); 
-                                cVcthClusters->Fill( +(cCluster.fClusterWidth), cVCth );
+                                //cVcthClusters->Fill( +(cCluster.fClusterWidth), cVCth );
+                                cVcthClusters->Fill( cCluster.fClusterWidth, cVCth );
                                 // Fill cluster per sensor
-                                if ( cCluster.fSensor == 0 ) cClustersEvenHist->Fill ( cVCth );
-                                else if ( cCluster.fSensor == 1 ) cClustersOddHist->Fill ( cVCth );
-                                //std::cout << cClusters.size() << " " << +(cCluster.fClusterWidth) << " " << +(cVCth) << std::endl;  
+                                if ( cCluster.fSensor == 0 ) 
+                                { 
+                                
+                                    cClustersEvenHist->Fill ( cVCth );
+                                    cClustersEven++;
+                                } 
+                                else if ( cCluster.fSensor == 1 ) 
+                                {
+                                    cClustersOddHist->Fill ( cVCth );
+                                    cClustersOdd++;
+                                }
                             }
+                            //std::cout << cClusters.size() << " " << cClustersEven << " " << cClustersOdd << std::endl;
+                            cClustersEvenProf->Fill( cVCth, cClustersEven );
+                            cClustersOddProf->Fill( cVCth, cClustersOdd ); 
                         }
                     }
                 } 
@@ -239,14 +250,12 @@ void SignalScanFit::ScanSignal (int pSignalScanLength)
     }
 
     // Now do the fit if requested (see settings file, FitSCurves = 1 for fit) for all the boards, we're only interested in the clusters per CBC
-    //if ( fFitted ) {
-        for ( BeBoard* pBoard : fBoardVector )
-        {    
-            processCurves ( pBoard, "Cbc_ClusterOccupancy_even" );
-            processCurves ( pBoard, "Cbc_ClusterOccupancy_odd" ); 
-        }
-    //}
-  
+    for ( BeBoard* pBoard : fBoardVector )
+    {    
+        processCurves ( pBoard, "Cbc_ClusterOccupancy_even" );
+        processCurves ( pBoard, "Cbc_ClusterOccupancy_odd" ); 
+    }
+
     // Last but not least, save the results. This also happens in the commissioning.cc but when we only use that some plots do not get saved properly!!! To be checked!
     SaveResults();
 }
@@ -296,10 +305,10 @@ void SignalScanFit::parseSettings ()
     if ( cSetting != std::end ( fSettingsMap ) )  fInitialThreshold = cSetting->second;
     else fInitialThreshold = 0x5A;
 
-    cSetting = fSettingsMap.find ( "FitSCurves" ); // In this case we fit the signal which is an s curve with charge sharing (???)
+    cSetting = fSettingsMap.find ( "FitSignal" ); // In this case we fit the signal which is an s curve with charge sharing (???)
 
-    if ( cSetting != std::end ( fSettingsMap ) ) fFitted = cSetting->second;
-    else fFitted = 1;
+    if ( cSetting != std::end ( fSettingsMap ) ) fFit = cSetting->second;
+    else fFit = 0;
 
     // Write a log 
     LOG (INFO) << "Parsed the following settings:" ;
@@ -308,7 +317,7 @@ void SignalScanFit::parseSettings ()
     LOG (INFO) << "	HoleMode = " << int ( fHoleMode ) ;
     LOG (INFO) << "	Step back from Pedestal = " << fStepback ;
     LOG (INFO) << "	SignalScanStep = " << fSignalScanStep ;
-    LOG (INFO) << "	Fit the scan = " << int ( fFitted ) ;
+    LOG (INFO) << "	Fit the scan = " << int ( fFit ) ;
 }
 
 void SignalScanFit::processCurves ( BeBoard *pBoard, std::string pHistName )
@@ -347,9 +356,8 @@ void SignalScanFit::processCurves ( BeBoard *pBoard, std::string pHistName )
             // Do this with the histogram, not the profile
             this->differentiateHist (cCbc, clusters.Data());
 
-            // Only do this if requested? Yes, see SignalScan and fFitted setting!
-            if (fFitted) 
-            this->fitHist (cCbc, pHistName);
+            // Only do this if requested? Yes, see SignalScan and fFit setting!
+            if ( fFit ) this->fitHist (cCbc, pHistName);
         }
     }
 }
@@ -399,6 +407,8 @@ void SignalScanFit::differentiateHist ( Cbc* pCbc, std::string pHistName )
 
 void SignalScanFit::fitHist ( Cbc* pCbc, std::string pHistName )
 {
+
+    std::cout << BOLDRED << "WARNING: The fitting precedure is WORK IN PROGRESS and it might not work out of the box therefore the deault is set to disable the automatic fit!" << RESET << std::endl;    
 
     // This works for CBC2, needs to be verified with CBC3!!! 
     TProfile* cHist = dynamic_cast<TProfile*> ( getHist ( pCbc, pHistName) );

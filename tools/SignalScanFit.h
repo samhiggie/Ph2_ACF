@@ -64,7 +64,7 @@ class SignalScanFit : public Tool
     uint32_t fStepback;
     uint32_t fNCbc;
     uint32_t fSignalScanStep;
-    bool fFitted;
+    bool     fFit;
 
     const uint32_t fTDCBins = 8;
 
