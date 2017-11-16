@@ -2,10 +2,10 @@
 
         \file                   SignalScanFit.h
         \brief                  class threshold scans
-        \author                 Stefano Mersi, Georg Auzinger, Giovanni Zevi Della Porta, Nikkie Deelen
+        \author                 Giovanni Zevi Della Porta, Nikkie Deelen
         \version                2.0
         \date                   27/09/17
-        Support :               mail to : georg.auzinger@cern.ch
+        Support :               mail to : giovanni.zevidellaporta@gmail.com / nikkie.deelen@cern.ch
 
 */
 
@@ -61,7 +61,7 @@ class SignalScanFit : public Tool
     uint32_t fNevents;
     uint32_t fInitialThreshold;
     uint32_t fHoleMode;
-    uint32_t fStepback;
+    //uint32_t fStepback;
     uint32_t fNCbc;
     uint32_t fSignalScanStep;
     bool     fFit;
