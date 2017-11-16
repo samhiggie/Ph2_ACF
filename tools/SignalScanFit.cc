@@ -269,7 +269,7 @@ void SignalScanFit::parseSettings ()
     cSetting = fSettingsMap.find ( "HoleMode" );
 
     if ( cSetting != std::end ( fSettingsMap ) )  fHoleMode = cSetting->second;
-    else fHoleMode = 1;
+    else fHoleMode = 0;
 
     //cSetting = fSettingsMap.find ( "PedestalStepBack" );
 
