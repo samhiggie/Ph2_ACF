@@ -186,7 +186,10 @@ int main ( int argc, char* argv[] )
         //finished  processing the events from this acquisition
         //thus now fill the histograms for the DQM
         if (cDQM)
+        {
             dqmH->fillHistograms (cDQMEvents);
+            cDQMEvents.clear();
+        }
 
         cNthAcq++;
     }
