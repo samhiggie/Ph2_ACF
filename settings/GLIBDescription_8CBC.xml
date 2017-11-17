@@ -79,6 +79,7 @@
   </BeBoard>
 
 <Settings>
+
     <Setting name="TargetVcth">0x78</Setting>
     <Setting name="TargetOffset">0x50</Setting>
     <Setting name="Nevents">10</Setting>
@@ -86,6 +87,11 @@
     <Setting name="HoleMode">1</Setting>
     <Setting name="VerificationLoop">1</Setting>
     <Setting name="NoiseToSignalVCTH"> 2 </Setting>
-    <Setting name="SignalScanStep"> 2 </Setting>
+
+    <!--Signal Scan Fit-->
+	  <Setting name="InitialVcth">0x78</Setting>
+	  <Setting name="SignalScanStep">2</Setting>
+    <Setting name="FitSignal">0</Setting>
+
 </Settings>
 </HwDescription>
