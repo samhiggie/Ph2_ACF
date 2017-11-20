@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HwDescription>
   <BeBoard Id="0" boardType="D19C" eventType="VR">
-      <connection id="board" uri="ipbusudp-2.0://192.168.1.80:50001" address_table="file://settings/address_tables/d19c_address_table.xml" />
+      <connection id="board" uri="chtcp-2.0://cmsuptracker008.cern.ch:10203?target=192.168.0.82:50001" address_table="file://settings/address_tables/d19c_address_table.xml" />
 
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         <Global>
@@ -18,7 +18,7 @@
 
     <SLink>
         <DebugMode type="FULL"/>
-        <ConditionData type="I2C" Register="VCth" FeId="0" CbcId="0"/>
+        <ConditionData type="I2C" Register="VCth1" FeId="0" CbcId="0"/>
         <ConditionData type="User" UID="0x80" FeId="0" CbcId="0"> 0x22 </ConditionData>
         <ConditionData type="HV" FeId="0" Sensor="2"> 250 </ConditionData>
         <ConditionData type="TDC" FeId="0xFF"/>
@@ -34,7 +34,7 @@
         <!-- Fast Command Block -->
         <Register name="fast_command_block">
 		<Register name="triggers_to_accept"> 0 </Register>
-		<Register name="trigger_source"> 6 </Register>
+		<Register name="trigger_source"> 3 </Register>
 		<Register name="user_trigger_frequency"> 1 </Register>
 		<Register name="stubs_mask"> 1 </Register>
 		<Register name="stub_trigger_latency"> 194 </Register>
@@ -47,7 +47,7 @@
                 <Register name="antenna_trigger_delay_value"> 200 </Register>
                 <Register name="misc">
                         <Register name="backpressure_enable"> 1 </Register>
-                        <Register name="stubOR"> 1 </Register>
+                        <Register name="stubOR"> 0 </Register>
                 </Register>
         </Register>
 	<!-- I2C manager -->
