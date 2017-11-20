@@ -55,6 +55,7 @@
             <node id="delay_between_two_consecutive"    address="0x008" mask="0x0000FFFF" description="sets the delay between two consecutive triggers"/>
             <node id="misc"                             address="0x009">
                 <node id="backpressure_enable"              mask="0x00000001" description="enables treatment of the backpressure bit"/>
+                <node id="stubOR"                           mask="0x00000002" description="enables stubOR triggering, when trigger source is 2, otherwise or254 is used"/>
             </node>
         </node>
 
@@ -187,6 +188,12 @@
 
 	<node id="tlu_block"			address="0x7000">
 	</node>
+    <node id="stub_counter_block"           address="0xF000">
+        <node id="general"                          address="0x000">
+           <node id="shutter_open"                     mask="0x00000001"/>
+           <node id="shutter_close"                    mask="0x00000002"/>
+        </node>
+    </node>
 
     </node>
 
@@ -294,10 +301,13 @@
 		<node id="trigger_id_fifo"	address="0x001" mask="0x00007fff"/>		
 	</node> 
 
-        <node id="test_clock"                   address="0xf000">
-            <node id="ipb_clk_rate"                     address="0x000"/>
-            <node id="40mhz_clk_rate"                   address="0x001"/>
-            <node id="trigger_rate"                     address="0x002"/>
+        <node id="stub_counter_block"           address="0xF000">
+            <node id="bx_counter_ls"                    address="0x000" mask="0xffffffff"/>
+            <node id="bx_counter_ms"                    address="0x001" mask="0xffffffff"/>
+            <node id="counters_hyb0_chip0"              address="0x002">
+                <node id="stub_counter"                     mask="0x0000ffff"/>
+                <node id="error_counter"                    mask="0xffff0000"/>
+            </node>
         </node>
     </node>
 
