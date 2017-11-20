@@ -155,7 +155,10 @@ int main ( int argc, char* argv[] )
 
                 //if DQM histos are enabled and we are treating the first event, book the histograms
                 if (cDQM && cN == 1)
-                    dqmH->bookHistograms (DQMEvent (&cSLev).trkPayload().feReadoutMapping() );
+                {
+                    DQMEvent* cDQMEv = new DQMEvent (&cSLev);
+                    dqmH->bookHistograms (cDQMEv->trkPayload().feReadoutMapping() );
+                }
 
                 if (cDQM)
                 {
