@@ -12,6 +12,7 @@ logs/*
 *.bin
 *.raw
 Results/
+Results/**
 Results
 tags
 # just for G. Auzingers sanity
