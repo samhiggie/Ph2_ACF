@@ -61,8 +61,10 @@
 		</Register>
                 <Register name="ext_trigger_delay_value"> 50 </Register>
                 <Register name="antenna_trigger_delay_value"> 200 </Register>
+                <Register name="delay_between_two_consecutive"> 10 </Register>
                 <Register name="misc">
                         <Register name="backpressure_enable"> 1 </Register>
+                        <Register name="stubOR"> 1 </Register>
                 </Register>
         </Register>
 	<!-- I2C manager -->
