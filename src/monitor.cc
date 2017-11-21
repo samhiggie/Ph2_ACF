@@ -39,6 +39,10 @@ int gInterval = 3;
 Antenna gAntenna;
 #endif
 
+#ifdef __HTTP__
+THttpServer* gHttpServer;
+#endif
+
 std::ofstream gFile;
 TGraph* cTGraph;
 TGraph* cIGraph;
@@ -77,7 +81,7 @@ void monitoring_workloop()
         float cCurrent = gAntenna.GetHybridCurrent (CHIPSLAVE);
         time_t cNow = std::time (nullptr);
         cTGraph->SetPoint (cTGraph->GetN(), cNow, cTemp );
-        cIGraph->SetPoint (cIGraph->GetN(), cNow, cTemp );
+        cIGraph->SetPoint (cIGraph->GetN(), cNow, cCurrent );
         gFile << cNow << "\t" << cTemp << "\t" << cCurrent << std::endl;
         std::cout << cNow << "\t" << cTemp << "\t" << cCurrent << std::endl;
         cTGraph->GetHistogram()->GetXaxis()->SetLimits (cNow - 60 * 30, cNow + 2 * 60);
@@ -90,6 +94,10 @@ void monitoring_workloop()
         cIGraph->GetHistogram()->GetYaxis()->SetTitle ("Current [mA]");
         cTGraph->GetHistogram()->GetXaxis()->SetTimeFormat ("%H:%M");
         cIGraph->GetHistogram()->GetXaxis()->SetTimeFormat ("%H:%M");
+#ifdef __HTTP__
+        gSystem->ProcessEvents();
+        //gHttpServer->ProcessRequests();
+#endif
         gmutex.unlock();
 
         if (!gMonitoringRun.load() ) break;
@@ -257,34 +265,36 @@ int main ( int argc, char* argv[] )
     cIGraph->SetLineColor (kGreen);
     cIGraph->SetLineWidth (3);
 
-    //now, initialize the THttpServer
+    ////now, initialize the THttpServer
 #ifdef __HTTP__
-
     char hostname[HOST_NAME_MAX];
 
     try
     {
-        THttpServer* fHttpServer = new THttpServer ( Form ( "http:%d", cServerPort ) );
-        fHttpServer->SetReadOnly ( true );
+        gHttpServer = new THttpServer ( Form ( "http:%d", cServerPort ) );
+        gHttpServer->SetReadOnly ( true );
         //fHttpServer->SetTimer ( pRefreshTime, kTRUE );
-        fHttpServer->SetTimer (100, kFALSE);
-        fHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
+        gHttpServer->SetTimer (100, kTRUE);
+        gHttpServer->SetJSROOT ("https://root.cern.ch/js/latest/");
 
         //configure the server
         // see: https://root.cern.ch/gitweb/?p=root.git;a=blob_plain;f=tutorials/http/httpcontrol.C;hb=HEAD
-        fHttpServer->SetItemField ("/", "_monitoring", "5000");
-        fHttpServer->SetItemField ("/", "_layout", "grid1x2");
-        fHttpServer->SetItemField ("/", "_drawitem", "[HybridTemperature,HybridCurrent]");
+        gHttpServer->SetItemField ("/", "_monitoring", "5000");
+        gHttpServer->SetItemField ("/", "_layout", "grid1x2");
+        gHttpServer->SetItemField ("/", "_drawitem", "[HybridTemperature,HybridCurrent]");
 
 
 
         gethostname (hostname, HOST_NAME_MAX);
 
-        if (fHttpServer != nullptr)
+        if (gHttpServer != nullptr)
         {
-            fHttpServer->Register ("/", cTGraph);
-            fHttpServer->Register ("/", cIGraph);
+            gHttpServer->Register ("/", cTGraph);
+            gHttpServer->Register ("/", cIGraph);
         }
+
+        gSystem->ProcessEvents();
+        //gHttpServer->ProcessRequests();
     }
     catch (std::exception& e)
     {
@@ -297,7 +307,8 @@ int main ( int argc, char* argv[] )
     LOG (INFO) << "ROOT must be built with '--enable-http' flag to use this feature." ;
 #endif
 
-    //open the file for dump of the values
+    ////open the file for dump of the values
+    gmutex.lock();
     bool cFileOpen = false;
     gFile.open (cOutputFile.c_str(), std::fstream::app |  std::fstream::out);
 
@@ -314,13 +325,14 @@ int main ( int argc, char* argv[] )
         gFile << "Logfile opened " << cTimestamp << " which is " << formatDateTime() << std::endl;
     }
 
+    gmutex.unlock();
+
     //THttpServer running, log file open, Graphs initialized, all ok - now just initialize the Antenna and get things ready
     //then start the workloop and keep the main thread listening for commands
     gAntenna.initializeAntenna();
     StartMonitoring ();
 
     workloop_local();
-    //delete gAntenna;
 
 #else
     LOG (ERROR) << "Error, this needs to be linked against the Antanna driver!";
