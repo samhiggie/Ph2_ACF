@@ -258,15 +258,6 @@ namespace Ph2_HwInterface {
         else LOG (INFO) << "I2C Replies Available: " << BOLDGREEN << "No" << RESET;
 
         LOG (INFO) << YELLOW << "============================" << RESET;
-        LOG (INFO) << BOLDYELLOW << "Frequency Checker:" << RESET;
-        float ipb_clk_rate = ReadReg ("fc7_daq_stat.test_clock.ipb_clk_rate") / 10000.0;
-        float forty_mhz_clk_rate = ReadReg ("fc7_daq_stat.test_clock.40mhz_clk_rate") / 10000.0;
-        float user_clk_rate = ReadReg ("fc7_daq_stat.test_clock.trigger_rate") / 10.0;
-        LOG (INFO) << "IPBus Clock: " << ipb_clk_rate << "MHz";
-        LOG (INFO) << "40MHz Clock: " << forty_mhz_clk_rate << "MHz";
-        LOG (INFO) << "Trigger Clock: " << user_clk_rate << "kHz";
-
-        LOG (INFO) << YELLOW << "============================" << RESET;
 
         uint32_t cVersionWord = 0;
         return cVersionWord;
