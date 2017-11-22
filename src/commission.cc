@@ -137,6 +137,8 @@ int main ( int argc, char* argv[] )
         if ( cLatency ) cLatencyScan.ScanLatency ( cStartLatency, cLatencyRange, cNoTDC );
 
         if ( cStubLatency ) cLatencyScan.ScanStubLatency ( cStartLatency, cLatencyRange );
+
+        cLatencyScan.writeObjects();
     }
 
     else if ( cSignal )
