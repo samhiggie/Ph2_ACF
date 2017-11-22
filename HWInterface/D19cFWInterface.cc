@@ -529,14 +529,14 @@ namespace Ph2_HwInterface {
         this->CbcFastReset();
         this->ResetReadout();
         //here open the shutter for the stub counter block
-        WriteReg ("fc7_daq_cnfg.stub_counter_block.general.shutter_open", 0x1);
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_open", 0x1);
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
 
     void D19cFWInterface::Stop()
     {
         //here close the shutter for the stub counter block
-        WriteReg ("fc7_daq_cnfg.stub_counter_block.general.shutter_close", 0x1);
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x1);
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
         //here read the stub counters
         uint32_t cBXCounter1s = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ls");
@@ -549,10 +549,10 @@ namespace Ph2_HwInterface {
         LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms;
         LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:";
         LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF);
-        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << (cStubCounter0 & 0xFFFF0000) >> 16;
+        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 );
         LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:";
         LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF);
-        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << (cStubCounter1 & 0xFFFF0000) >> 16;
+        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ((cStubCounter1 & 0xFFFF0000) >> 16);
         LOG (INFO) << RESET;
     }
 
