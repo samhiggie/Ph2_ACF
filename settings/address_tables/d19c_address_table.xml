@@ -310,6 +310,10 @@
                 <node id="stub_counter"                     mask="0x0000ffff"/>
                 <node id="error_counter"                    mask="0xffff0000"/>
             </node>
+            <node id="counters_hyb0_chip1"              address="0x004">
+                <node id="stub_counter"                     mask="0x0000ffff"/>
+                <node id="error_counter"                    mask="0xffff0000"/>
+            </node>
         </node>
     </node>
 
