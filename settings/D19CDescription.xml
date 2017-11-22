@@ -53,7 +53,8 @@
 		<Register name="trigger_source"> 6 </Register>
 		<Register name="user_trigger_frequency"> 1 </Register>
 		<Register name="stubs_mask"> 1 </Register>
-		<Register name="stub_trigger_latency"> 194 </Register>
+                <Register name="stub_trigger_delay_value"> 194 </Register>
+                <Register name="stub_trigger_veto_length"> 0 </Register>
 		<Register name="test_pulse">
 			<Register name="delay_after_fast_reset"> 50 </Register>
 			<Register name="delay_after_test_pulse"> 200 </Register>
