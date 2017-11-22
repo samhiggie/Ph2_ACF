@@ -28,7 +28,6 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
             if ( cObj ) delete cObj;
 
             TH1F* cLatHist = nullptr;
-
             if (!pNoTdc)
             {
                 cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) * fTDCBins, pStartLatency,  pStartLatency + (pLatencyRange )  * fTDCBins );
@@ -39,7 +38,9 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
                 {
                     for (uint32_t cPhase = 0; cPhase < fTDCBins; ++cPhase)
                     {
-                        int cBin = convertLatencyPhase (pStartLatency, cLatency, cPhase);
+                        int cBin = 1 + cLatHist->GetXaxis()->FindBin( convertLatencyPhase (pStartLatency, cLatency, cPhase) );
+                        if( cBin == 0 )
+                            LOG(INFO) << BOLDRED << "!!!! " << +cLatency << " [latency], " << pStartLatency << " [start latency] " << +cPhase << " [TDC phase] : converted latency " << convertLatencyPhase (pStartLatency, cLatency, cPhase) <<  RESET ; 
                         cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
                     }
                 }
@@ -60,6 +61,11 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
             TH1F* cStubHist = new TH1F ( cName, Form ( "Stub Lateny FE%d; Stub Lateny; # of Stubs", cFeId ), pLatencyRange, pStartLatency, pStartLatency + pLatencyRange);
             cStubHist->SetMarkerStyle ( 2 );
             bookHistogram ( cFe, "module_stub_latency", cStubHist );
+
+            cName =  Form ( "h_module_latency_tdc_2D_Fe%d", cFeId );
+            TH2I* cLatHist2D =  new TH2I ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), pLatencyRange  , pStartLatency - 0.5 ,  pStartLatency + (pLatencyRange ) - 0.5 , fTDCBins , 0 , fTDCBins );
+            bookHistogram ( cFe, "module_latency_tdc_2D", cLatHist2D );
+            
         }
     }
 
@@ -90,7 +96,8 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
     uint32_t cIterationCount = 0;
 
     LatencyVisitor cVisitor (fCbcInterface, 0);
-
+    //fBeBoardInterface->Start(pBoard);
+    //fBeBoardInterface->Pause(pBoard);
     for ( uint16_t cLat = pStartLatency; cLat < pStartLatency + pLatencyRange; cLat++ )
     {
         //  Set a Latency Value on all FEs
@@ -233,14 +240,14 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
         uint32_t cHitSum = 0;
         //  get histogram to fill
         TH1F* cTmpHist = dynamic_cast<TH1F*> ( getHist ( cFe, pHistName ) );
-
+        TString cName =  Form ( "h_module_latency_tdc_2D_Fe%d", cFe->getFeId() );
+        TH2I* cTmpHist2D = dynamic_cast<TH2I*> ( getHist ( cFe, "module_latency_tdc_2D" ) );
         for (auto& cEvent : pEventVec)
         {
             //first, reset the hit counter - I need separate counters for each event
             int cHitCounter = 0;
             //get TDC value for this particular event
             uint8_t cTDCVal = cEvent->GetTDC();
-
             //if the TDC value for the GLIB is 4 it belongs to the next clock cycle bin 12
             //this should ensure that TDC value of 4 never happens
             uint8_t cFillVal = pParameter;
@@ -254,6 +261,17 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
             //for Strasbourg FW normalize to sane 3 bit values
             if (cTDCVal != 0 && cBoardType == BoardType::GLIB) cTDCVal -= 5;
             else if (cTDCVal != 0 && cBoardType == BoardType::CTA) cTDCVal -= 3;
+            
+            if ( !pNoTdc && cBoardType == BoardType::D19C) 
+                // this is the case for additional delay of 15 ns on external trigger 
+                // expect to change for other values 
+                // final fix to be implemented 
+                if( cTDCVal == 6 || cTDCVal == 7 ) 
+                {
+                    cFillVal -= 1;
+                }
+                // Mykyta's equivalent fix (I'm thick so the one above is easier to understand....)
+                //cTDCVal = ( cTDCVal < 6) ? (cTDCVal+2) : (cTDCVal-6);
 
             if (!pNoTdc && cTDCVal > 8 ) LOG (INFO) << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
 
@@ -270,8 +288,8 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
 
                 if (pNoTdc) cBin = pParameter;
                 else cBin = convertLatencyPhase (pStartLatency, cFillVal, cTDCVal);
-
-                int cHistBin = cTmpHist->FindBin (cBin);
+                
+                int cHistBin = 1 + cTmpHist->FindBin (cBin);
                 float cBinContent = cTmpHist->GetBinContent (cHistBin);
                 cBinContent += cHitCounter;
                 cTmpHist->SetBinContent (cHistBin, cBinContent);
@@ -280,6 +298,11 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
 
                 //GA: old, potentially buggy code
                 //cTmpHist->Fill (cBin, cHitCounter);
+
+                if( cHitCounter )
+                    LOG (DEBUG) << BOLDBLUE << "TDC value of " << +cTDCVal << RESET ; 
+                cTmpHist2D->Fill( pParameter , cTDCVal , cHitCounter );
+
                 cHitSum += cHitCounter;
             }
         }
@@ -365,4 +388,17 @@ void LatencyScan::parseSettings()
     LOG (INFO) << "	Nevents = " << fNevents ;
     LOG (INFO) << "	HoleMode = " << int ( fHoleMode ) ;
     //LOG (INFO) << "   TestPulseAmplitude = " << int ( fTestPulseAmplitude ) ;
+}
+void LatencyScan::writeObjects()
+{
+    this->SaveResults();
+    // just use auto iterators to write everything to disk
+    // this is the old method before Tool class was cool
+    fResultFile->cd();
+
+    // Save canvasses too
+    //fNoiseCanvas->Write ( fNoiseCanvas->GetName(), TObject::kOverwrite );
+    //fPedestalCanvas->Write ( fPedestalCanvas->GetName(), TObject::kOverwrite );
+    //fFeSummaryCanvas->Write ( fFeSummaryCanvas->GetName(), TObject::kOverwrite );
+    fResultFile->Flush();
 }
