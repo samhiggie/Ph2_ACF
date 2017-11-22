@@ -27,7 +27,7 @@ build_Ph2_ACF:
   - make
   - cd ..
  only:
-  - Dev
+  - master
 
 after_script:
  - source setup.sh
