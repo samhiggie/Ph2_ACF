@@ -515,6 +515,7 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::Start()
     {
+        this->CbcFastReset();
         this->ResetReadout();
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
     }
