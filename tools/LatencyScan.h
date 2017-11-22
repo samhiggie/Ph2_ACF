@@ -46,6 +46,8 @@ class LatencyScan : public Tool
     void Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool pNoTdc = false);
     std::map<Module*, uint8_t> ScanLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20, bool pNoTdc = false );
     std::map<Module*, uint8_t> ScanStubLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
+    void writeObjects();
+    
 
   private:
     int countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEventVec, std::string pHistName, uint16_t pParameter, uint32_t pStartLatency, bool pNoTdc );
@@ -65,10 +67,14 @@ class LatencyScan : public Tool
 
     int convertLatencyPhase (uint32_t pStartLatency, uint32_t cLatency, uint32_t cPhase)
     {
-        int result = int (cLatency) - int (pStartLatency);
-        result *= fTDCBins;
-        result += fTDCBins - 1 - cPhase;
-        return result + 1;
+        int result = (int (cLatency) - int (pStartLatency) + 1 )*fTDCBins + (int)cPhase;
+        return result;
+        
+        // original 
+        //int result = (int (cLatency) - int (pStartLatency));
+        //result *= fTDCBins;
+        //result += fTDCBins - 1 - cPhase;
+        //return result + 1;
     }
 
     const std::vector<std::string> getStubLatencyName (const BoardType pBoardType)
@@ -88,6 +94,10 @@ class LatencyScan : public Tool
 
         return cRegVec;
     }
+
+
+
+
 };
 
 #endif

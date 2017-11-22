@@ -190,3 +190,8 @@
 - 21.07.2017
     - merged changes required for OTSDAQ
     - migrated project to CMAKE: instructions: cd build/ cmake .. make
+- 17.11.2017 major cleanup of project repository and many added features related to CBC3
+    - dropped normal makefiles - project builds only with cmake
+    - signal scans added
+    - some minor bug fixes
+    - new DQM code based on SLink Data format to avoid having to read HWDescription files

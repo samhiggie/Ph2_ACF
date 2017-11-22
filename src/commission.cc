@@ -137,6 +137,8 @@ int main ( int argc, char* argv[] )
         if ( cLatency ) cLatencyScan.ScanLatency ( cStartLatency, cLatencyRange, cNoTDC );
 
         if ( cStubLatency ) cLatencyScan.ScanStubLatency ( cStartLatency, cLatencyRange );
+
+        cLatencyScan.writeObjects();
     }
 
     else if ( cSignal )
@@ -144,7 +146,8 @@ int main ( int argc, char* argv[] )
         SignalScan cSignalScan;
         cSignalScan.Inherit (&cTool);
         cSignalScan.Initialize();
-        cSignalScan.ScanSignal ( cSignalRange );
+        cSignalScan.ScanSignal (600, 600 - cSignalRange );
+        cSignalScan.writeObjects();
     }
 
     else if ( cSignalFit )

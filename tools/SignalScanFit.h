@@ -2,10 +2,10 @@
 
         \file                   SignalScanFit.h
         \brief                  class threshold scans
-        \author                 Stefano Mersi, Georg Auzinger, Giovanni Zevi Della Porta, Nikkie Deelen
+        \author                 Giovanni Zevi Della Porta, Nikkie Deelen
         \version                2.0
         \date                   27/09/17
-        Support :               mail to : georg.auzinger@cern.ch
+        Support :               mail to : giovanni.zevidellaporta@gmail.com / nikkie.deelen@cern.ch
 
 */
 
@@ -24,6 +24,7 @@
 #include "TProfile.h"
 #include "TF1.h"
 #include "TH2F.h"
+#include "TH2D.h"
 #include "TGaxis.h"
 #include "TStyle.h"
 
@@ -47,7 +48,7 @@ class SignalScanFit : public Tool
     void ScanSignal ( int pSignalScanLength );
     double fVCthMin;
     double fVCthMax;
-    double fVCthRange;
+    double fVCthNbins;
 
   private:
     void updateHists ( std::string pHistName, bool pFinal );
@@ -60,14 +61,14 @@ class SignalScanFit : public Tool
     uint32_t fNevents;
     uint32_t fInitialThreshold;
     uint32_t fHoleMode;
-    uint32_t fStepback;
+    //uint32_t fStepback;
     uint32_t fNCbc;
     uint32_t fSignalScanStep;
-    bool fFitted;
+    bool     fFit;
 
     const uint32_t fTDCBins = 8;
 
-    int convertLatencyPhase ( uint32_t pStartLatency, uint32_t cLatency, uint32_t cPhase )
+    /*int convertLatencyPhase ( uint32_t pStartLatency, uint32_t cLatency, uint32_t cPhase )
     {
         int result = int (cLatency) - int (pStartLatency);
         result *= fTDCBins;
@@ -81,7 +82,7 @@ class SignalScanFit : public Tool
         else if ( pBoardIdentifier == "CTA") return "cbc.STUBDATA_LATENCY_MODE";
         else if (pBoardIdentifier == "ICGLIB" || pBoardIdentifier == "ICFC7") return "cbc_daq_ctrl.latencies.stub_latency";
         else return "not recognized";
-    }
+    }*/
 };
 
 #endif

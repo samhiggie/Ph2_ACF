@@ -44,8 +44,10 @@ class SignalScan : public Tool
     SignalScan();
     ~SignalScan();
     void Initialize ();
-    void ScanSignal (int pSignalScanLength);
-
+    void ScanSignal(uint16_t cVcthStart, uint16_t cVcthStop );
+    //void ScanSignal (int pSignalScanLength);
+    void writeObjects();
+    
   private:
     void updateHists ( std::string pHistName, bool pFinal );
     void parseSettings();

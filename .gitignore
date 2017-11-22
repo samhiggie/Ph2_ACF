@@ -9,10 +9,10 @@ html/
 latex/
 logs/
 logs/*
-build/*
 *.bin
 *.raw
 Results/
+Results/**
 Results
 tags
 # just for G. Auzingers sanity
