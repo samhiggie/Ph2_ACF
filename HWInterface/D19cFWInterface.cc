@@ -605,8 +605,9 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::ResetReadout()
     {
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_done", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        // legacy in address table ... not needed 
+        //WriteReg ("fc7_daq_ctrl.readout_block.control.readout_done", 0x1);
+        //std::this_thread::sleep_for (std::chrono::microseconds (500) );
         
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (500) );
@@ -716,6 +717,7 @@ namespace Ph2_HwInterface {
 
     uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait)
     {
+        uint32_t cEventSize = computeEventSize (pBoard);
         uint32_t cBoardHeader1Size = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
         uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
@@ -785,16 +787,21 @@ namespace Ph2_HwInterface {
                 cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
                 state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter");
+                uint cNumEvents = (uint32_t) cNWords / cEventSize; 
+                // if I've already got all the events I want ... then stop 
+                if( cNumEvents >= cPackageSize )
+                    break;
 
+                cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter");
                 if( state_id == 0 || ( cNWords == cNWords_prev && cCounter > 0 && cNtriggers != cNtriggers_prev) )
                 {
+
                     pFailed = true; 
                     //LOG (INFO) << BOLDRED << "Warning!!...... Reading readout_req  .... FSM state @ " <<  +state_id << " - nWords = " << +cNWords << RESET ; 
                     if( state_id == 0 )
-                        LOG (INFO) << BOLDRED << "Warning!! FSM has stopped after receiving " << +cNtriggers << " triggers!!" << RESET ; 
+                        LOG (INFO) << BOLDRED << "Warning!! FSM has stopped after receiving " << +cNtriggers << " triggers!! Read back " << +cNWords << " from FC7." << RESET ; 
                     else 
-                        LOG (INFO) << BOLDRED << "Warning!! Read-out has stopped responding after receiving " << +cNtriggers << " triggers!!" << RESET ; 
+                        LOG (INFO) << BOLDRED << "Warning!! Read-out has stopped responding after receiving " << +cNtriggers << " triggers!! Read back " << +cNWords << " from FC7." << RESET ; 
                 
                 }
                 else if( cNtriggers == cNtriggers_prev && cCounter > 0 )
@@ -839,8 +846,7 @@ namespace Ph2_HwInterface {
         else if(!pFailed)
         {
             uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
-            uint32_t cEventSize = computeEventSize (pBoard);
-
+            
             if (pBoard->getEventType() == EventType::ZS)
             {
                 LOG (ERROR) << "ZS Event only with handshake!!! Exiting...";
