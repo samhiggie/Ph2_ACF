@@ -21,6 +21,7 @@
 #endif
 #include "TGraph.h"
 #include "TH1.h"
+#include "TSystem.h"
 
 #define CHIPSLAVE 4
 

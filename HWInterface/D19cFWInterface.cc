@@ -562,19 +562,17 @@ namespace Ph2_HwInterface {
         uint32_t cBXCounterms = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ms");
         uint32_t cStubCounter0 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip0");
         uint32_t cStubCounter1 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip1");
-        
-        LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: ";
-        LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s;
-        LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms;
-        LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:";
-        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF);
-        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 );
-        LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:";
-        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF);
-        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ((cStubCounter1 & 0xFFFF0000) >> 16);
-        LOG (INFO) << RESET;
 
         this->ResetReadout();
+        LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: " << RESET;
+        LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s << RESET;
+        LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms << RESET;
+        LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:" << RESET;
+        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF) << RESET;
+        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 ) << RESET;
+        LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:" << RESET;
+        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF) << RESET;
+        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter1 & 0xFFFF0000) >> 16) << RESET;
     }
 
 
