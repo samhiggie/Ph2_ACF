@@ -46,7 +46,7 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
                 }
             }
             else
-                cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ), pStartLatency,  pStartLatency + (pLatencyRange ) );
+                cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) , pStartLatency - 0.5,  pStartLatency + (pLatencyRange ) - 0.5 );
 
             cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency*%d+TDC]", fTDCBins) );
             cLatHist->SetFillColor ( 4 );
@@ -109,11 +109,30 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
         for ( BeBoard* pBoard : fBoardVector )
         {
             // I need this to normalize the TDC values I get from the Strasbourg FW
-            ReadNEvents ( pBoard, fNevents );
-            const std::vector<Event*>& events = GetEvents ( pBoard );
+            int cNevents; 
+            fBeBoardInterface->Start(pBoard);
+            do
+            {
+                uint32_t cNeventsReadBack = ReadData( pBoard );
+                if( cNeventsReadBack == 0 )
+                {
+                    LOG (INFO) << BOLDRED << "..... Read back " << +cNeventsReadBack << " events!! Why?!" << RESET ;
+                    continue;
+                }
 
-            // Loop over Events from this Acquisition
-            countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency, pNoTdc );
+                const std::vector<Event*>& events = GetEvents ( pBoard );
+                cNevents += events.size(); 
+                // Loop over Events from this Acquisition
+                countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency, pNoTdc );
+                // done counting hits for all FE's, now update the Histograms
+                updateHists ( "module_latency", false );
+            }while( cNevents < fNevents );
+            fBeBoardInterface->Stop(pBoard);
+
+            //ReadNEvents ( pBoard, fNevents );
+            //const std::vector<Event*>& events = GetEvents ( pBoard );
+            //Loop over Events from this Acquisition
+            //countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency, pNoTdc );
         }
 
         // done counting hits for all FE's, now update the Histograms
@@ -266,12 +285,19 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
                 // this is the case for additional delay of 15 ns on external trigger 
                 // expect to change for other values 
                 // final fix to be implemented 
-                if( cTDCVal == 6 || cTDCVal == 7 ) 
-                {
-                    cFillVal -= 1;
-                }
+                //if( cTDCVal == 6 || cTDCVal == 7 ) 
+                //{
+                //   cFillVal -= 1;
+                //}
                 // Mykyta's equivalent fix (I'm thick so the one above is easier to understand....)
                 //cTDCVal = ( cTDCVal < 6) ? (cTDCVal+2) : (cTDCVal-6);
+
+                // w.fix implemented for external triggers weird tdc phase only affects one bin 
+                // now seems to only affect one bin 
+                if( cTDCVal == 7 ) 
+                {
+                   cFillVal -= 1;
+                }
 
             if (!pNoTdc && cTDCVal > 8 ) LOG (INFO) << "ERROR, TDC value not within expected range - normalized value is " << +cTDCVal << " - original Value was " << +cEvent->GetTDC() << "; not considering this Event!" <<  std::endl;
 
@@ -286,14 +312,19 @@ int LatencyScan::countHitsLat ( BeBoard* pBoard,  const std::vector<Event*> pEve
                 //now I have the number of hits in this particular event for all CBCs and the TDC value
                 uint32_t cBin = 0;
 
-                if (pNoTdc) cBin = pParameter;
-                else cBin = convertLatencyPhase (pStartLatency, cFillVal, cTDCVal);
+                if (pNoTdc)
+                { 
+                    cTmpHist->Fill (pParameter, cHitCounter);
+                }
+                else 
+                {    
+                    cBin = convertLatencyPhase (pStartLatency, cFillVal, cTDCVal);
                 
-                int cHistBin = 1 + cTmpHist->FindBin (cBin);
-                float cBinContent = cTmpHist->GetBinContent (cHistBin);
-                cBinContent += cHitCounter;
-                cTmpHist->SetBinContent (cHistBin, cBinContent);
-
+                    int cHistBin = 1 + cTmpHist->FindBin (cBin);
+                    float cBinContent = cTmpHist->GetBinContent (cHistBin);
+                    cBinContent += cHitCounter;
+                    cTmpHist->SetBinContent (cHistBin, cBinContent);
+                }
                 //if (cHitCounter != 0 ) std::cout << "Found " << cHitCounter << " Hits in this event!" << std::endl;
 
                 //GA: old, potentially buggy code
