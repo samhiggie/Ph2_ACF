@@ -56,6 +56,8 @@ namespace Ph2_HwInterface {
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
+        // some useful stuff 
+        int fResetAttempts; 
       public:
         /*!
          *
