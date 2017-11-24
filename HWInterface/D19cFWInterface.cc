@@ -540,6 +540,10 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (500) );
         
+        //here close the shutter for the stub counter block
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x1);
+        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        
         //here open the shutter for the stub counter block
         WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_open", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (500) );
@@ -723,6 +727,7 @@ namespace Ph2_HwInterface {
         uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
         uint32_t state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
         uint32_t cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter"); 
+        uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
             
         uint32_t cNWords_prev = cNWords;
         uint32_t cNtriggers_prev = cNtriggers;
@@ -730,6 +735,7 @@ namespace Ph2_HwInterface {
         bool pFailed = false; 
         int cCounter = 0 ; 
         double cTimeWithoutTriggers = 0 ; 
+        uint cNumEvents;
         while (cNWords == 0 && !pFailed )
         {
             cNWords_prev = cNWords;
@@ -739,16 +745,17 @@ namespace Ph2_HwInterface {
             cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter"); 
             state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
 
-            if (!pWait) return 0;
-            else
-                std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+            cNumEvents = (uint32_t) cNWords / cEventSize; 
+            // if I've already got all the events I want ... then stop 
+            if( cNumEvents >= cPackageSize )
+                    break;
 
             if( state_id == 0 || ( cNWords == cNWords_prev && cCounter > 0 && cNtriggers != cNtriggers_prev ) )
             {    
                 pFailed = true ; 
                 //LOG (INFO) << BOLDRED << "Warning!! Reading nwords in FIFO ....  FSM state @ " <<  +state_id << " - nWords = " << +cNWords << " - on attempt # " << cCounter << RESET ; 
                 if( state_id == 0 )
-                    LOG (INFO) << BOLDRED << "Warning!! FSM has stopped!!" << RESET ; 
+                    LOG (INFO) << BOLDRED << "Warning!! FSM has stopped!!" << +cNumEvents << " events in FIFO." << RESET ; 
                 else 
                     LOG (INFO) << BOLDRED << "Warning!! Read-out has stopped responding!!" << RESET ; 
             }
@@ -757,7 +764,7 @@ namespace Ph2_HwInterface {
             {
                 cTimeWithoutTriggers += 0.10 ; 
                 if( cCounter % 10 == 0 )
-                    LOG (INFO) << BOLDRED << " ..... waiting for more triggers .... got " << +cNtriggers << " so far - been waiting for " << cTimeWithoutTriggers << " s." << RESET ;
+                    LOG (INFO) << BOLDRED << " after reading " << +cNumEvents << " events ..... waiting for more triggers .... got " << +cNtriggers << " so far - been waiting for " << cTimeWithoutTriggers << " s." << RESET ;
 
                 if( cTimeWithoutTriggers > 60.0 )
                 {    
@@ -766,20 +773,27 @@ namespace Ph2_HwInterface {
                 }
             }
             cCounter++; 
-        }
 
+            if (!pWait) 
+                return 0;
+            else
+                std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+
+        }
+        
         uint32_t cNEvents = 0;
         cTimeWithoutTriggers = 0 ; 
-        if (data_handshake == 1 && !pFailed)
+        if (data_handshake == 1 && !pFailed )
         {
+            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
             cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter"); 
             cNtriggers_prev = cNtriggers;
 
-            uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
             uint32_t cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
             
             cCounter = 0 ; 
-            while (cReadoutReq == 0 && !pFailed )
+            cNumEvents = (uint32_t) cNWords / cEventSize; 
+            while (cReadoutReq == 0 && !pFailed && cNumEvents < cPackageSize )
             {
                 cNWords_prev = cNWords;
                 cNtriggers_prev = cNtriggers;
@@ -845,8 +859,6 @@ namespace Ph2_HwInterface {
         }
         else if(!pFailed)
         {
-            uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
-            
             if (pBoard->getEventType() == EventType::ZS)
             {
                 LOG (ERROR) << "ZS Event only with handshake!!! Exiting...";
