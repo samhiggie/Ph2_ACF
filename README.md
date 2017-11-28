@@ -26,7 +26,7 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
 
 #### Setup on SLC6
 
-1. Install the latest gcc compiler:
+1. Install a gcc compiler version > 4.8 - on scientific linux you can obtain this by installing devtoolset-2 or devtoolset-2.1:
 
         $> sudo wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
         $> sudo yum install devtoolset-2
@@ -38,9 +38,9 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
 
         $> gcc --version
 
-    Alternatively you can use a gcc version > 4.7 from AFS
+2. Alternatively you can use a gcc version > 4.8 from AFS
 
-1. Install uHAL  version 2.3:
+3. Install uHAL (latest version, instructions below for v2.3):
 
         $> wget http://svnweb.cern.ch/trac/cactus/export/28265/tags/ipbus_sw/uhal_2_3_0/scripts/release/cactus.slc6.x86_64.repo 
 
@@ -53,52 +53,48 @@ You'll need Xilinx Impact and a [Xilinx Platform Cable USB II] (http://uk.farnel
         $> sudo yum clean all
         $> sudo yum groupinstall uhal
 
-1. Install CERN ROOT version 5.34.32: [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation" when building yourself. If root is installed on a CERN computer of virtual machine you can use:
+4. Install CERN ROOT version 5.34.32(SLC6) or 6.10(CC7): [Instructions](http://root.cern.ch/drupal/content/installing-root-source) - make sure to use "fixed location installation" when building yourself. If root is installed on a CERN computer of virtual machine you can use:
        
         $> sudo yum install root
-        $> sudo yum install root-net-http root-graf3d-gl root-physics libusb-devel root-montecarlo-eg root-graf3d-eve root-geom
+        $> sudo yum install root-net-http root-graf3d-gl root-physics root-montecarlo-eg root-graf3d-eve root-geom libusb-devel xorg-x11-xauth.x86_64
 
-1. If you are working on a remote machine, you need these packages for the Canvases to show
+5. Install CMAKE > 2.8. On SLC6 the default is cmake 2.8
 
-        $> sudo yum install xorg-x11-xauth.x86_64
+        $> sudo yum install cmake
 
-    Note: You may also need to set the environment variables (or source setup.sh):
+6. On CC7 you also need to install boost v1.53 headers (default on this system) as they don't ship with uHAL any more:
 
-        $> export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
-        $> export PATH=/opt/cactus/bin:$PATH
+        $> sudo yum install boost-devel
 
 ### The Ph2_ACF Software : 
 
 Follow these instructions to install and compile the libraries:
-(provided you installed the latest version of gcc, µHal, boost as mentioned above).
+(provided you installed the latest version of gcc, µHal,  mentioned above).
 
-1. Clone the GitHub repo and run setup.sh
+1. Clone the GitHub repo and run cmake
   
         $> git clone https://:@gitlab.cern.ch:8443/cms_tk_ph2/Ph2_ACF.git
-        $> source setup.sh
-
-1. Do a `make` in the root of the repo (make sure you have all µHal, root libraries on your computer).
-
-1. Alternatively you can use CMAKE (you will still need to source setup.sh to put the binaries in the path):
-
-        $> cd build/
+        $> cd Ph2_ACF/build 
         $> cmake ..
-        $> make -jN
-        $> cd .. & source setup.sh
 
-1. Launch 
+2. Do a `make -jN` in the build/ directory or alternatively do `make -C build/ -jN` in the Ph2_ACF root directory.
+
+3. Don't forget to `source setup.sh` to set all the environment variables correctly.
+
+
+4. Launch 
 
         $> systemtest --help
 
     command if you want to test the parsing of the HWDescription.xml file.
 
-1. Launch
+5. Launch
 
         $> datatest --help
 
     command if you want to test if you can correctly read data
 
-1. Launch
+6. Launch
 
         $> calibrate --help
 
@@ -120,25 +116,25 @@ Follow these instructions to install and compile the libraries:
 
     to apply a configuration to the CBCs
 
-1. Launch
+7. Launch
 
           $> commission --help
 
     to do latency & threshold scans
 
-1. Launch 
+8. Launch 
 
           $> fpgaconfig --help
 
     to upload a new FW image to the GLIB
 
-1. Launch
+9. Launch
 
           $> miniDAQ --help
 
     to save binary data from the GLIB to file
 
-1. Launch
+10. Launch
 
           $> miniDQM --help
 
@@ -293,9 +289,6 @@ In order to use external Clock and Trigger functionality, a DIO5 mezzanine is re
 
 ### Known Issues:
 
-Several bugs / problematic behavior has been reported by various users that is not direclty linked to the Ph2_ACF libraries, however, some workarounds are provided:
-
-- When configuring a CBC object (writing all registers at once), the MSB of the Register "FrontEncControl" is read back incorrectly. This only manifests in electron mode (0xC3 instead of 0x43). The cause of this problem is identified as a FW artefact and the error itself can be safely ignored until the problem is solved. The chips will still properly configure and data quality should not be affected.
 
 - uHAL exceptions and UDP timeouts when reading larger packet sizes from the GLIB board: 
 this can happen for some users (cause not yet identified) but can be circumvented by changing the line
@@ -311,12 +304,6 @@ in the connections.xml file to
 /opt/cactus/bin/controlhub_start
 
 This uses TCP protocol instead of UDP which accounts for packet loss but decreases the performance.
-
-- SegmentationViolations on lines that contain
-
-gStyle->Set ... ;
-
-statements. This has been observed by several users on the VM and can be fixed by re-compiling ROOT using GCC 4.8
 
 
 ### Support, Suggestions ?

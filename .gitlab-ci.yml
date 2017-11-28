@@ -18,13 +18,16 @@ before_script:
  - yum -y -q install root
  - yum -y -q install root-net-http root-montecarlo-eg root-graf3d-eve root-geom root-physics root-graf3d-gl
  - yum -y -q install zeromq
+ - yum -y -q install cmake
 
 build_Ph2_ACF:
  script:
-  - source setup.sh
+  - cd build/
+  - cmake ..
   - make
+  - cd ..
  only:
-  - Dev
+  - master
 
 after_script:
  - source setup.sh

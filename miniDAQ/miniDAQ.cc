@@ -1,21 +1,29 @@
 #include <cstring>
-#include "../Utils/Utilities.h"
+#include "TString.h"
+#include <fstream>
+#include <inttypes.h>
+#include <sys/stat.h>
+
 #include "pugixml/pugixml.hpp"
+#include <boost/filesystem.hpp>
+
 #include "../HWDescription/Cbc.h"
 #include "../HWDescription/Module.h"
 #include "../HWDescription/BeBoard.h"
 #include "../HWInterface/CbcInterface.h"
 #include "../HWInterface/BeBoardInterface.h"
 #include "../HWDescription/Definition.h"
+#include "../Utils/Utilities.h"
 #include "../Utils/Timer.h"
-#include <fstream>
-#include <inttypes.h>
-#include <boost/filesystem.hpp>
 #include "../Utils/argvparser.h"
 #include "../Utils/ConsoleColor.h"
+
 #include "../System/SystemController.h"
-#include "TString.h"
-#include <sys/stat.h>
+
+#include "TROOT.h"
+#include "publisher.h"
+#include "DQMEvent.h"
+#include "SLinkDQMHistogrammer.h"
 
 
 using namespace Ph2_HwDescription;
@@ -51,11 +59,17 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "events", "Number of Events . Default value: 10", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "events", "e" );
 
-    cmd.defineOption ( "dqm", "Print every i-th event.  ", ArgvParser::OptionRequiresValue );
-    cmd.defineOptionAlternative ( "dqm", "d" );
+    cmd.defineOption ( "dqm", "Create DQM histograms");
+    cmd.defineOptionAlternative ( "dqm", "q" );
+
+    cmd.defineOption ( "postscale", "Print only every i-th event (only send every i-th event to DQM Histogramer)", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "postscale", "p" );
 
     cmd.defineOption ( "daq", "Save the data into a .daq file using the phase-2 Tracker data format.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "daq", "d" );
+
+    cmd.defineOption ( "output", "Output Directory for DQM plots & page. Default value: Results", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
+    cmd.defineOptionAlternative ( "output", "o" );
 
     int result = cmd.parse ( argc, argv );
 
@@ -90,7 +104,20 @@ int main ( int argc, char* argv[] )
         LOG (INFO) << "Writing DAQ File to:   " << cDAQFileName << " - ConditionData, if present, parsed from " << cHWFile ;
     }
 
+    bool cDQM = cmd.foundOption ("dqm");
+    std::unique_ptr<SLinkDQMHistogrammer> dqmH = nullptr;
+
+    if (cDQM)
+        dqmH = std::unique_ptr<SLinkDQMHistogrammer> (new SLinkDQMHistogrammer (0) );
+
+    bool cPostscale = cmd.foundOption ("postscale");
+    int cScaleFactor = 1;
+
+    if (cPostscale)
+        cScaleFactor = atoi ( cmd.optionValue ( "postscale" ).c_str() );
+
     std::stringstream outp;
+
     cSystemController.InitializeHw ( cHWFile, outp );
     LOG (INFO) << outp.str();
     outp.str ("");
@@ -98,20 +125,6 @@ int main ( int argc, char* argv[] )
 
     BeBoard* pBoard = cSystemController.fBoardVector.at ( 0 );
 
-    //if ( cmd.foundOption ( "parallel" ) )
-    //{
-    //uint32_t nbPacket = pBoard->getReg ( "pc_commands.CBC_DATA_PACKET_NUMBER" ), nbAcq = pEventsperVcth / ( nbPacket + 1 ) + ( pEventsperVcth % ( nbPacket + 1 ) != 0 ? 1 : 0 );
-    //std::cout << "Packet number=" << nbPacket << ", Nb events=" << pEventsperVcth << " -> Nb acquisition iterations=" << nbAcq << std::endl;
-
-    //AcqVisitor visitor;
-    //std::cout << "Press Enter to start the acquisition, press Enter again to stop i" << std::endl;
-    //std::cin.ignore();
-    //cSystemController.fBeBoardInterface->StartThread ( pBoard, nbAcq, &visitor );
-    //std::cin.ignore();
-    //cSystemController.fBeBoardInterface->StopThread ( pBoard );
-    //}
-    //else
-    //{
     // make event counter start at 1 as does the L1A counter
     uint32_t cN = 1;
     uint32_t cNthAcq = 0;
@@ -127,21 +140,36 @@ int main ( int argc, char* argv[] )
             cSystemController.fBeBoardInterface->Stop ( pBoard );
 
         const std::vector<Event*>& events = cSystemController.GetEvents ( pBoard );
+        std::vector<DQMEvent*> cDQMEvents;
 
         for ( auto& ev : events )
         {
-            count++;
-            cN++;
 
-            if (cDAQFile)
+            //if we write a DAQ file or want to run the DQM, get the SLink format
+            if (cDAQFile || cDQM)
             {
                 SLinkEvent cSLev = ev->GetSLinkEvent (pBoard);
-                cDAQFileHandler->set (cSLev.getData<uint32_t>() );
+
+                if (cDAQFile)
+                    cDAQFileHandler->set (cSLev.getData<uint32_t>() );
+
+                //if DQM histos are enabled and we are treating the first event, book the histograms
+                if (cDQM && cN == 1)
+                {
+                    DQMEvent* cDQMEv = new DQMEvent (&cSLev);
+                    dqmH->bookHistograms (cDQMEv->trkPayload().feReadoutMapping() );
+                }
+
+                if (cDQM)
+                {
+                    if (count % cScaleFactor == 0)
+                        cDQMEvents.emplace_back (new DQMEvent (&cSLev) );
+                }
             }
 
-            if ( cmd.foundOption ( "dqm" ) )
+            if (cPostscale)
             {
-                if ( count % atoi ( cmd.optionValue ( "dqm" ).c_str() ) == 0 )
+                if ( count % cScaleFactor == 0 )
                 {
                     LOG (INFO) << ">>> Event #" << count ;
                     outp.str ("");
@@ -152,14 +180,61 @@ int main ( int argc, char* argv[] )
 
             if ( count % 100  == 0 )
                 LOG (INFO) << ">>> Recorded Event #" << count ;
+
+            //increment event counter
+            count++;
+            cN++;
+        }
+
+        //finished  processing the events from this acquisition
+        //thus now fill the histograms for the DQM
+        if (cDQM)
+        {
+            dqmH->fillHistograms (cDQMEvents);
+            cDQMEvents.clear();
         }
 
         cNthAcq++;
     }
 
+    //done with the acquistion, now clean up
     if (cDAQFile)
+        //this closes the DAQ file
         delete cDAQFileHandler;
 
-    //}
+    if (cDQM)
+    {
+        // save and publish
+        // Create the DQM plots and generate the root file
+        // first of all, strip the folder name
+        std::vector<std::string> tokens;
+
+        tokenize ( cOutputFile, tokens, "/" );
+        std::string fname = tokens.back();
+
+        // now form the output Root filename
+        tokens.clear();
+        tokenize ( fname, tokens, "." );
+        std::string runLabel = tokens[0];
+        std::string dqmFilename =  runLabel + "_dqm.root";
+        dqmH->saveHistograms (dqmFilename);
+
+        // find the folder (i.e DQM page) where the histograms will be published
+        std::string cDirBasePath;
+
+        if ( cmd.foundOption ( "output" ) )
+        {
+            cDirBasePath = cmd.optionValue ( "output" );
+            cDirBasePath += "/";
+
+        }
+        else cDirBasePath = "Results/";
+
+        // now read back the Root file and publish the histograms on the DQM page
+        RootWeb::makeDQMmonitor ( dqmFilename, cDirBasePath, runLabel );
+        LOG (INFO) << "Saving root file to " << dqmFilename << " and webpage to " << cDirBasePath ;
+    }
+
     cSystemController.Destroy();
+    return 0;
 }

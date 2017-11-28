@@ -65,6 +65,20 @@ const std::string currentDateTime();
  */
 double MyErf ( double* x, double* par );
 /*!
+ * \brief Gamma peak with charge sharing
+ * \param x: array of values
+ * \param p: parameter array
+ * \return function value
+ */
+double MyGammaSignal ( double* x, double* par );
+/*!
+ * \brief Exponentially Modified Gaussian
+ * \param x: array of values
+ * \param p: parameter array
+ * \return function value
+ */
+//double MyExGauss( double *x, double *par );
+/*!
  * \brief converts any char array to int by automatically detecting if it is hex or dec
  * \param pRegValue: parsed xml parmaeter char*
  * \return converted integer

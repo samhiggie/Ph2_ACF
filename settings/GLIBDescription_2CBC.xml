@@ -72,11 +72,17 @@
   </BeBoard>
 
 <Settings>
+
     <Setting name="Nevents">1000</Setting>
     <Setting name="RunNumber">1</Setting>
     <Setting name="HoleMode">0</Setting>
     <Setting name="NoiseToSignalVCTH"> 2 </Setting>
-    <Setting name="SignalScanStep"> 2 </Setting>
+
+    <!--Signal Scan Fit-->
+	  <Setting name="InitialVcth">0x78</Setting>
+	  <Setting name="SignalScanStep">2</Setting>
+    <Setting name="FitSignal">0</Setting>
+
 </Settings>
 </HwDescription>
 

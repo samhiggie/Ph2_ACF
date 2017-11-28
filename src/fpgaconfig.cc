@@ -132,7 +132,8 @@ int main ( int argc, char* argv[] )
     }
 
     std::string cHWFile = ( cmd.foundOption ( "config" ) ) ? cmd.optionValue ( "config" ) : "settings/HWDescription_2CBC.xml";
-    cSystemController.InitializeHw ( cHWFile );
+    std::ostringstream cStr;
+    cSystemController.InitializeHw ( cHWFile, cStr );
     BeBoard* pBoard = cSystemController.fBoardVector.at (0);
     vector<string> lstNames = cSystemController.fBeBoardInterface->getFpgaConfigList (pBoard);
     std::string cFWFile;

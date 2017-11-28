@@ -51,10 +51,24 @@ namespace Ph2_HwInterface {
         fBunch = 0;
         fOrbit = 0;
         fLumi = 0;
-        fEventCount = 0x1FFFFFFF &  list.at (2);
-        //TODO: get the value from 1 CBC here?
-        fEventCountCBC = 0;
-        fTDC = (0xE0000000 & list.at (2) ) >> 29;
+
+        //normal version
+        //{
+        //fEventCount = 0x1FFFFFFF &  list.at (2);
+        //}
+
+        //version with TDC
+        {
+            fEventCount = 0xFFFFFFFF &  list.at (2);
+
+            if ( (list.at (2) & 0xF8) >> 3 != 0)
+                fTDC = list.at (2) & 0xFF;
+            else fTDC = 0;
+
+            fOR254Trigger = (list.at (2) >> 8) & 0x1;
+        }
+
+        // standard code
 
         //fBeId = ( (0x0FE00000 & list.at (0) ) >> 21) - 1;
         fBeId = ( (0x03E00000 & list.at (0) ) >> 21) - 1;
@@ -199,6 +213,22 @@ namespace Ph2_HwInterface {
         {
             uint32_t cPipeAddress = ( reverse_bits (cData->second.at (2) & 0x0007FC00) >> 13 );
             return cPipeAddress;
+        }
+        else
+        {
+            LOG (INFO) << "Event: FE " << +pFeId << " CBC " << +pCbcId << " is not found." ;
+            return 0;
+        }
+    }
+    uint32_t Cbc3Event::L1AID ( uint8_t pFeId, uint8_t pCbcId ) const
+    {
+        uint16_t cKey = encodeId (pFeId, pCbcId);
+        EventDataMap::const_iterator cData = fEventDataMap.find (cKey);
+
+        if (cData != std::end (fEventDataMap) )
+        {
+            uint32_t cL1AID = ( reverse_bits (cData->second.at (2) & 0x0FF80000) >> 4 );
+            return cL1AID;
         }
         else
         {
@@ -479,6 +509,8 @@ namespace Ph2_HwInterface {
         //os << "Orbit Counter: " << this->GetOrbit() << std::endl;
         //os << " Lumi Section: " << this->GetLumi() << std::endl;
         os << BOLDRED << "    TDC Counter: " << +this->GetTDC() << RESET << std::endl;
+        os << std::hex << fEventCount << std::dec << std::endl;
+        os << BOLDGREEN << "  OR254 Trigger: " << fOR254Trigger << RESET << std::endl;
 
         const int FIRST_LINE_WIDTH = 22;
         const int LINE_WIDTH = 32;
@@ -503,7 +535,7 @@ namespace Ph2_HwInterface {
 
                 for (auto& cStub : this->StubVector (cFeId, cCbcId) )
                 {
-                    os << CYAN << "Stub: " << +cCounter << " Position: " << +cStub.getPosition() << " Bend: " << +cStub.getBend() << " Strip: " << cStub.getCenter() << RESET << std::endl;
+                    os << BOLDRED  << "Stub: " << +cCounter << CYAN << " Position: " << +cStub.getPosition() << " Bend: " << +cStub.getBend() << " Strip: " << cStub.getCenter() << RESET << std::endl;
                     cCounter++;
                 }
             }
@@ -513,6 +545,7 @@ namespace Ph2_HwInterface {
             std::string data ( this->DataBitString ( cFeId, cCbcId ) );
             os << GREEN << "FEId = " << +cFeId << " CBCId = " << +cCbcId << RESET << " len(data) = " << data.size() << std::endl;
             os << YELLOW << "PipelineAddress: " << this->PipelineAddress (cFeId, cCbcId) << RESET << std::endl;
+            os << YELLOW << "CBC L1A ID: " << this->L1AID (cFeId, cCbcId) << RESET << std::endl;
             os << RED << "Error: " << static_cast<std::bitset<2>> ( this->Error ( cFeId, cCbcId ) ) << RESET << std::endl;
             os << CYAN << "Total number of hits: " << this->GetNHits ( cFeId, cCbcId ) << RESET << std::endl;
             os << BLUE << "List of hits: " << RESET << std::endl;
@@ -704,19 +737,19 @@ namespace Ph2_HwInterface {
 
                     if (pos1 != 0)
                     {
-                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos1 << 4 | (bend1 & 0xF)) );
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos1 << 4 | (bend1 & 0xF) ) );
                         cFeStubCounter++;
                     }
 
                     if (pos2 != 0)
                     {
-                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos2 << 4 | (bend2 & 0xF)) );
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos2 << 4 | (bend2 & 0xF) ) );
                         cFeStubCounter++;
                     }
 
                     if (pos3 != 0)
                     {
-                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos3 << 4 | (bend3 & 0xF)) );
+                        cStubPayload.append ( uint16_t ( (cCbcId & 0x0F) << 12 | pos3 << 4 | (bend3 & 0xF) ) );
                         cFeStubCounter++;
                     }
                 }

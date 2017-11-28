@@ -134,8 +134,7 @@ void SLinkEvent::generateDAQTrailer()
     fSize += 1;
     uint64_t cWord = 0;
     //EOE_1 | EvtLength | CRC | Event Stat | TTS
-    cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 12  | (TTS_VALUE & 0xF) << 4);
-    //cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 12 | ( (uint64_t) fCRCVal & 0xFFFF) << 16 | (TTS_VALUE & 0xF) << 4);
+    cWord |= ( ( (uint64_t) EOE_1 & 0xFF) << 56 | ( (uint64_t) fSize & 0x00FFFFFF) << 32  | (TTS_VALUE & 0xF) << 4);
     fData.push_back (cWord);
     this->calculateCRC();
     fData.back() |= ( (uint64_t) fCRCVal & 0xFFFF) << 16;

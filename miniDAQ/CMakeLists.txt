@@ -77,9 +77,14 @@ endif()
 ####################################
 
 #miniDAQ
-add_executable(miniDAQ miniDAQ.cc)
-target_link_libraries(miniDAQ ${LIBS})
+add_executable(miniDAQ miniDAQ.cc publisher.cc publisher.h DQMEvent.h DQMEvent.cc SLinkDQMHistogrammer.cc SLinkDQMHistogrammer.cc)
+target_link_libraries(miniDAQ ${LIBS} RootWeb)
 
 #miniDQM
 add_executable(miniDQM miniDQM.cc publisher.cc publisher.h DQMHistogrammer.cc DQMHistogrammer.h)
 target_link_libraries(miniDQM ${LIBS} Ph2_Tools RootWeb)
+
+#miniSLinkDQM
+add_executable(miniSLinkDQM miniSLinkDQM.cc publisher.cc publisher.h DQMEvent.h DQMEvent.cc SLinkDQMHistogrammer.cc SLinkDQMHistogrammer.h)
+target_link_libraries(miniSLinkDQM ${LIBS} RootWeb)
+

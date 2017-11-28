@@ -51,9 +51,13 @@ namespace Ph2_HwInterface {
         // number of chips and hybrids defined in firmware (compiled for)
         int fFWNHybrids;
         int fFWNChips;
+        ChipType fFirwmareChipType;
+        bool fCBC3Emulator;
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
+        // some useful stuff 
+        int fResetAttempts; 
       public:
         /*!
          *
@@ -139,6 +143,11 @@ namespace Ph2_HwInterface {
         void ResetReadout();
 
         /*!
+          * \brief Tune the 320MHz buses phase shift
+          */
+        void PhaseTuning(const BeBoard *pBoard);
+
+        /*!
          * \brief Read data from DAQ
          * \param pBreakTrigger : if true, enable the break trigger
          * \return fNpackets: the number of packets read
@@ -165,6 +174,10 @@ namespace Ph2_HwInterface {
         void PowerOnDIO5();
         // get fmc card name
         std::string getFMCCardName (uint32_t id);
+        // convert code of the chip from firmware
+        std::string getChipName(uint32_t pChipCode);
+        ChipType getChipType(uint32_t pChipCode);
+
 
         //template to copy every nth element out of a vector to another vector
         template<class in_it, class out_it>
@@ -262,7 +275,7 @@ namespace Ph2_HwInterface {
         /*! \brief Delete one Fpga configuration (or firmware image)*/
         void DeleteFpgaConfig ( const std::string& strId);
         /*! \brief Reboot the board */
-        void RebootBoard() {}
+        void RebootBoard();
         /*! \brief Set or reset the start signal */
         void SetForceStart ( bool bStart) {}
 
