@@ -147,7 +147,7 @@ namespace Ph2_HwInterface {
             if (!cFailed)
                 pCbc->setReg ( cName, cRegItem.fValue );
 
-            LOG (INFO) << "CBC " << +pCbc->getCbcId() << " " << cName << ": 0x" << std::hex << +cRegItem.fValue << std::dec ;
+            //LOG (INFO) << "CBC " << +pCbc->getCbcId() << " " << cName << ": 0x" << std::hex << +cRegItem.fValue << std::dec ;
         }
 
     }
