@@ -260,15 +260,6 @@ namespace Ph2_HwInterface {
         else LOG (INFO) << "I2C Replies Available: " << BOLDGREEN << "No" << RESET;
 
         LOG (INFO) << YELLOW << "============================" << RESET;
-        LOG (INFO) << BOLDYELLOW << "Frequency Checker:" << RESET;
-        float ipb_clk_rate = ReadReg ("fc7_daq_stat.test_clock.ipb_clk_rate") / 10000.0;
-        float forty_mhz_clk_rate = ReadReg ("fc7_daq_stat.test_clock.40mhz_clk_rate") / 10000.0;
-        float user_clk_rate = ReadReg ("fc7_daq_stat.test_clock.trigger_rate") / 10.0;
-        LOG (INFO) << "IPBus Clock: " << ipb_clk_rate << "MHz";
-        LOG (INFO) << "40MHz Clock: " << forty_mhz_clk_rate << "MHz";
-        LOG (INFO) << "Trigger Clock: " << user_clk_rate << "kHz";
-
-        LOG (INFO) << YELLOW << "============================" << RESET;
 
         uint32_t cVersionWord = 0;
         return cVersionWord;
@@ -529,20 +520,21 @@ namespace Ph2_HwInterface {
     void D19cFWInterface::Start()
     {
         this->CbcFastReset();
+        this->ResetReadout();
 
-        this->Stop();
+        //this->Stop();
         
         // reset fast command block 
-        WriteReg ("fc7_daq_ctrl.fast_command_block.control.reset", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        //WriteReg ("fc7_daq_ctrl.fast_command_block.control.reset", 0x1);
+        //std::this_thread::sleep_for (std::chrono::microseconds (500) );
 
         //load config of fast command block
-        WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        //WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
+        //std::this_thread::sleep_for (std::chrono::microseconds (500) );
         
         //here close the shutter for the stub counter block
-        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        //WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x1);
+        //std::this_thread::sleep_for (std::chrono::microseconds (500) );
         
         //here open the shutter for the stub counter block
         WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_open", 0x1);
@@ -568,23 +560,23 @@ namespace Ph2_HwInterface {
         uint32_t cStubCounter1 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip1");
 
         this->ResetReadout();
-        LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: " << RESET;
-        LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s << RESET;
-        LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms << RESET;
-        LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:" << RESET;
-        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF) << RESET;
-        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 ) << RESET;
-        LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:" << RESET;
-        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF) << RESET;
-        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter1 & 0xFFFF0000) >> 16) << RESET;
+        //LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: " << RESET;
+        //LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s << RESET;
+        //LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms << RESET;
+        //LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:" << RESET;
+        //LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF) << RESET;
+        //LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 ) << RESET;
+        //LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:" << RESET;
+        //LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF) << RESET;
+        //LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter1 & 0xFFFF0000) >> 16) << RESET;
     }
 
 
     void D19cFWInterface::Pause()
     {
-        LOG (INFO) << BOLDBLUE << "................................ Pausing run ... " << RESET ; 
-        WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x0);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        //LOG (INFO) << BOLDBLUE << "................................ Pausing run ... " << RESET ; 
+        //WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x0);
+        //std::this_thread::sleep_for (std::chrono::microseconds (500) );
     
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (500) );
@@ -593,14 +585,14 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::Resume()
     {
-        LOG (INFO) << BOLDBLUE << "Reseting readout before resuming run ... " << RESET ; 
+        //LOG (INFO) << BOLDBLUE << "Reseting readout before resuming run ... " << RESET ; 
         this->ResetReadout();
         std::this_thread::sleep_for (std::chrono::microseconds (500) );
         
-         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x0);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+         //WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x0);
+        //std::this_thread::sleep_for (std::chrono::microseconds (500) );
     
-        LOG (INFO) << BOLDBLUE << "................................ Resuming run ... " << RESET ; 
+        //LOG (INFO) << BOLDBLUE << "................................ Resuming run ... " << RESET ; 
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (500) );
         

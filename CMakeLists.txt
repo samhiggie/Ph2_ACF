@@ -120,5 +120,6 @@ add_subdirectory(Utils)
 add_subdirectory(HWDescription)
 add_subdirectory(HWInterface)
 add_subdirectory(System)
+add_subdirectory(tools)
 endif()
 
