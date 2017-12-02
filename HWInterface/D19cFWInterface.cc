@@ -736,7 +736,7 @@ namespace Ph2_HwInterface {
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
                 cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter");
 
-                /*if( cNWords == cNWords_prev && cCounter > 1000 && cNtriggers != cNtriggers_prev )
+                /*if( cNWords == cNWords_prev && cCounter > 100 && cNtriggers != cNtriggers_prev )
                 {
                     pFailed = true; 
                     LOG (INFO) << BOLDRED << "Warning!! Read-out has stopped responding after receiving " << +cNtriggers << " triggers!! Read back " << +cNWords << " from FC7." << RESET ; 
@@ -819,7 +819,7 @@ namespace Ph2_HwInterface {
 	    LOG(INFO) << BOLDGREEN << " ... Run Started, current trigger FSM state: " << +ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state") << RESET;
 
             LOG (INFO) << BOLDRED << " ... trying to read data again .... " << RESET ; 
-            this->ReadData(pBoard,  pBreakTrigger,  pData, pWait);
+            cNEvents = this->ReadData(pBoard,  pBreakTrigger,  pData, pWait);
         }
         if (fSaveToFile)
             fFileHandler->set (pData);

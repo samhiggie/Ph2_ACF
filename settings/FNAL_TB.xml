@@ -44,7 +44,7 @@
         <!-- Fast Command Block -->
         <Register name="fast_command_block">
 		<Register name="triggers_to_accept"> 0 </Register>
-		<Register name="trigger_source"> 3 </Register>
+		<Register name="trigger_source"> 5 </Register>
 		<Register name="user_trigger_frequency"> 1 </Register>
 		<Register name="stubs_mask"> 1 </Register>
         <!--this is the delay for the stub trigger-->
@@ -127,7 +127,7 @@
     <Register name="fc7_daq_ctrl">
 	<Register name="global">
 		<Register name="clock_generator">
-			<Register name="clk40_mux"> 0 </Register>		
+			<Register name="clk40_mux"> 1 </Register>		
 		</Register>	
 	</Register>
     </Register>
