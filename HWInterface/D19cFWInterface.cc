@@ -652,11 +652,11 @@ namespace Ph2_HwInterface {
                 }
 
                 //re-enable the stub logic
+                cVecReq.clear();
                 for (auto cFe : pBoard->fModuleVector)
                 {
                     for (auto cCbc : cFe->fCbcVector)
                     {
-                        cVecReq.clear();
 
                         CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
                         cRegItem.fValue = cStubLogictInputMap[cCbc];
@@ -673,6 +673,24 @@ namespace Ph2_HwInterface {
                 this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
 
                 LOG (INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
+
+		/*LOG (INFO) << GREEN << "Starting manual shift procedure if needed" << RESET;
+		BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
+
+		uint32_t cCbc1Stub1Delay = 0;
+		for ( auto const& it : cGlibRegMap )
+		{
+		    if (it.first == "fc7_daq_cnfg.physical_interface_block.manual_delay_cbc1_stub1") {
+			cCbc1Stub1Delay = it.second;
+		    }
+		}
+		if (cCbc1Stub1Delay > 0) {
+		    LOG (INFO) << BOLDGREEN << "Loading delay " << cCbc1Stub1Delay << " for CBC1 Stub1 line" << RESET;
+		    WriteReg ("fc7_daq_ctrl.physical_interface_block.control.load_manual_delays", 0x1);
+                    std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+		} else {
+		    LOG (INFO) << GREEN << "Additional manual delay is not assigned" << RESET;
+		}*/
             }
         }
         else if (fFirwmareChipType == ChipType::CBC2)
@@ -780,9 +798,9 @@ namespace Ph2_HwInterface {
                 LOG (ERROR) << "ZS Event only with handshake!!! Exiting...";
                 exit (1);
             }
-
-            while (cNEvents < cPackageSize)
-            {
+	    cNEvents = 0;
+            //while (cNEvents < cPackageSize)
+            //{
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
                 uint32_t cNEventsAvailable = (uint32_t) cNWords / cEventSize;
 
@@ -794,14 +812,14 @@ namespace Ph2_HwInterface {
                     std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                     cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
                     cNEventsAvailable = (uint32_t) cNWords / cEventSize;
+
                 }
 
                 std::vector<uint32_t> event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable * cEventSize);
                 pData.insert (pData.end(), event_data.begin(), event_data.end() );
                 cNEvents += cNEventsAvailable;
 
-                if (pBreakTrigger) break;
-            }
+            //}
         }
 
         if( pFailed )

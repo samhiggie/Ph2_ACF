@@ -5,13 +5,14 @@
 
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         <Global>
-            <Settings threshold="540" latency="22"/>
+            <Settings threshold="540" latency="35"/>
             <TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>
             <ClusterStub clusterwidth="4" ptwidth="14" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
-            <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="1" tpgclock="1" testclock="1" dll="4"/>
+            <Misc analogmux="0b00000" pipelogic="1" stublogic="1" or254="0" tpgclock="1" testclock="1" dll="4"/>
             <ChannelMask disable=""/>
         </Global>
-        <CBC_Files path="./settings/CbcFiles/" />
+        <!--<CBC_Files path="./settings/CbcFiles/" />-->
+        <CBC_Files path="./settings/GoldeOffsets/" />
         <CBC Id="0" configfile="FE0CBC0.txt" />
         <CBC Id="1" configfile="FE0CBC1.txt" />
     </Module>
@@ -55,10 +56,10 @@
 			<Register name="delay_after_test_pulse"> 200 </Register>
 			<Register name="delay_before_next_pulse"> 400 </Register>
 		</Register>
-                <Register name="ext_trigger_delay_value"> 50 </Register>
+                <Register name="ext_trigger_delay_value"> 0 </Register>
                 <Register name="antenna_trigger_delay_value"> 200 </Register>
                 <Register name="misc">
-                        <Register name="backpressure_enable"> 1 </Register>
+                        <Register name="backpressure_enable"> 0 </Register>
                         <Register name="stubOR"> 0 </Register>
                         <Register name="initial_fast_reset_enable"> 0 </Register>
                 </Register>
@@ -85,7 +86,7 @@
                     <Register name="trigger_type"> 0 </Register>
                     <Register name="data_type"> 0 </Register>
                     <!--this is what is commonly known as stub latency-->
-                    <Register name="common_stubdata_delay"> 9 </Register>
+                    <Register name="common_stubdata_delay"> 22 </Register>
             </Register>
     	</Register>
 	<!-- DIO5 Block -->
@@ -127,7 +128,7 @@
     <Register name="fc7_daq_ctrl">
 	<Register name="global">
 		<Register name="clock_generator">
-			<Register name="clk40_mux"> 1 </Register>		
+			<Register name="clk40_mux"> 1 </Register>
 		</Register>	
 	</Register>
     </Register>
