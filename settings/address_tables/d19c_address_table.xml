@@ -67,7 +67,36 @@
                 <node id="master_en"                        mask="0x00000100"/>
 	    </node>
             <node id="phase_set"			address="0x002" mask="0x0000001f"/>
-	    <node id="slvs5_shift"			address="0x003" mask="0x00070000"/>
+	    <node id="manual_delays_cbc0"		address="0x004">
+		<node id="stub1"			    mask="0x0000001f"/>
+		<node id="stub2"			    mask="0x000003e0"/>
+		<node id="stub3"			    mask="0x00007c00"/>
+		<node id="stub4"			    mask="0x000f8000"/>
+		<node id="stub5"			    mask="0x01f00000"/>
+		<node id="l1data"			    mask="0x3e000000"/>
+	    </node>
+	    <node id="manual_delays_cbc1"		address="0x005">
+		<node id="stub1"			    mask="0x0000001f"/>
+		<node id="stub2"			    mask="0x000003e0"/>
+		<node id="stub3"			    mask="0x00007c00"/>
+		<node id="stub4"			    mask="0x000f8000"/>
+		<node id="stub5"			    mask="0x01f00000"/>
+		<node id="l1data"			    mask="0x3e000000"/>
+	    </node>
+	    <node id="manual_bitslips_cbc0"		address="0x006">
+		<node id="stub1"			    mask="0x00000007"/>
+		<node id="stub2"			    mask="0x00000038"/>
+		<node id="stub3"			    mask="0x000001c0"/>
+		<node id="stub4"			    mask="0x00000e00"/>
+		<node id="l1data"			    mask="0x00007000"/>
+	    </node>
+	   <node id="manual_bitslips_cbc1"		address="0x007">
+		<node id="stub1"			    mask="0x00000007"/>
+		<node id="stub2"			    mask="0x00000038"/>
+		<node id="stub3"			    mask="0x000001c0"/>
+		<node id="stub4"			    mask="0x00000e00"/>
+		<node id="l1data"			    mask="0x00007000"/>
+	    </node>
         </node>
 
         <node id="readout_block"                address="0x5000">

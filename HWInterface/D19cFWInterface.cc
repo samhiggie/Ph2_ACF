@@ -673,23 +673,10 @@ namespace Ph2_HwInterface {
                 this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
 
                 LOG (INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
-
-		/*LOG (INFO) << GREEN << "Starting manual shift procedure if needed" << RESET;
-		BeBoardRegMap cGlibRegMap = pBoard->getBeBoardRegMap();
-
-		uint32_t cCbc1Stub1Delay = 0;
-		for ( auto const& it : cGlibRegMap )
-		{
-		    if (it.first == "fc7_daq_cnfg.physical_interface_block.manual_delay_cbc1_stub1") {
-			cCbc1Stub1Delay = it.second;
-		    }
-		}
-		if (cCbc1Stub1Delay > 0) {
-		    LOG (INFO) << BOLDGREEN << "Loading delay " << cCbc1Stub1Delay << " for CBC1 Stub1 line" << RESET;
-		    WriteReg ("fc7_daq_ctrl.physical_interface_block.control.load_manual_delays", 0x1);
-                    std::this_thread::sleep_for (std::chrono::milliseconds (100) );
-		} else {
-		    LOG (INFO) << GREEN << "Additional manual delay is not assigned" << RESET;
+		
+		/*for (int i = 0; i < 7; i++) {
+            		WriteReg ("fc7_daq_ctrl.physical_interface_block.control.cbc3_bitslip_stub1", 0x1);
+			usleep(10);
 		}*/
             }
         }
