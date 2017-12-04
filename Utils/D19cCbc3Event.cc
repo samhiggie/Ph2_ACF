@@ -640,7 +640,7 @@ namespace Ph2_HwInterface {
 
         return result;
     }
-    SLinkEvent D19cCbc3Event::GetSLinkEvent ( const BeBoard* pBoard) const
+    SLinkEvent D19cCbc3Event::GetSLinkEvent (  BeBoard* pBoard) const
     {
         uint16_t cCbcCounter = 0;
         std::set<uint8_t> cEnabledFe;
