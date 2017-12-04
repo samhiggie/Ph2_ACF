@@ -198,7 +198,7 @@ namespace Ph2_HwInterface {
 
         std::vector<Cluster> getClusters ( uint8_t pFeId, uint8_t pCbcId) const override;
 
-        SLinkEvent GetSLinkEvent (const BeBoard* pBoard) const override;
+        SLinkEvent GetSLinkEvent ( BeBoard* pBoard) const override;
 
         void print (std::ostream& out) const override;
 

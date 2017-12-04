@@ -473,7 +473,7 @@ namespace Ph2_HwInterface {
         return result;
     }
 
-    SLinkEvent Cbc2Event::GetSLinkEvent ( const BeBoard* pBoard) const
+    SLinkEvent Cbc2Event::GetSLinkEvent (  BeBoard* pBoard) const
     {
         uint16_t cCbcCounter = 0;
 

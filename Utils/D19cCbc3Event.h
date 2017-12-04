@@ -238,7 +238,7 @@ namespace Ph2_HwInterface {
 
         void printCbcHeader (std::ostream& os, uint8_t pFeId, uint8_t pCbcId) const;
 
-        SLinkEvent GetSLinkEvent (const BeBoard* pBoard) const override;
+        SLinkEvent GetSLinkEvent ( BeBoard* pBoard) const override;
     };
 }
 #endif
