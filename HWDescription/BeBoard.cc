@@ -102,7 +102,7 @@ namespace Ph2_HwDescription {
         return nullptr;
     }
 
-    void BeBoard::updateCondData (uint32_t& pTDCVal) const
+    void BeBoard::updateCondData (uint32_t& pTDCVal)
     {
         if (fCondDataSet == nullptr) return;
         else if (fCondDataSet->fCondDataVector.size() == 0 ) return;
