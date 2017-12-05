@@ -396,6 +396,8 @@ namespace Ph2_HwInterface {
         this->PhaseTuning (pBoard);
 
         this->ResetReadout();
+        //adding an Orbit reset to align CBC L1A counters
+        this->WriteReg("fc7_daq_ctrl.fast_command_block.control.fast_orbit_reset",0x1);
     }
 
     void D19cFWInterface::PowerOnDIO5()
@@ -520,65 +522,49 @@ namespace Ph2_HwInterface {
     void D19cFWInterface::Start()
     {
         this->CbcFastReset();
+        this->ResetReadout();
 
-        this->Stop();
-        
-        // reset fast command block 
-        WriteReg ("fc7_daq_ctrl.fast_command_block.control.reset", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
-
-        //load config of fast command block
-        WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
-        
-        //here close the shutter for the stub counter block
-        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
-        
         //here open the shutter for the stub counter block
         WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_open", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
         
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
     }
 
     void D19cFWInterface::Stop()
     {
         //here close the shutter for the stub counter block
         WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
         
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
 
         //here read the stub counters
-        uint32_t cBXCounter1s = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ls");
-        uint32_t cBXCounterms = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ms");
-        uint32_t cStubCounter0 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip0");
-        uint32_t cStubCounter1 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip1");
+        //uint32_t cBXCounter1s = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ls");
+        //uint32_t cBXCounterms = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ms");
+        //uint32_t cStubCounter0 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip0");
+        //uint32_t cStubCounter1 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip1");
 
-        this->ResetReadout();
-        LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: " << RESET;
-        LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s << RESET;
-        LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms << RESET;
-        LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:" << RESET;
-        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF) << RESET;
-        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 ) << RESET;
-        LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:" << RESET;
-        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF) << RESET;
-        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter1 & 0xFFFF0000) >> 16) << RESET;
+        //this->ResetReadout();
+       // LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: " << RESET;
+       // LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s << RESET;
+       // LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms << RESET;
+       // LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:" << RESET;
+       // LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF) << RESET;
+       // LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 ) << RESET;
+       // LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:" << RESET;
+       // LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF) << RESET;
+       // LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter1 & 0xFFFF0000) >> 16) << RESET;
     }
 
 
     void D19cFWInterface::Pause()
     {
         LOG (INFO) << BOLDBLUE << "................................ Pausing run ... " << RESET ; 
-        WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x0);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
-    
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
     }
 
 
@@ -586,29 +572,19 @@ namespace Ph2_HwInterface {
     {
         LOG (INFO) << BOLDBLUE << "Reseting readout before resuming run ... " << RESET ; 
         this->ResetReadout();
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
-        
-         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x0);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
     
         LOG (INFO) << BOLDBLUE << "................................ Resuming run ... " << RESET ; 
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
-        
-        // uint32_t state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
     }
 
     void D19cFWInterface::ResetReadout()
     {
-        // legacy in address table ... not needed 
-        //WriteReg ("fc7_daq_ctrl.readout_block.control.readout_done", 0x1);
-        //std::this_thread::sleep_for (std::chrono::microseconds (500) );
-        
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
 
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-        std::this_thread::sleep_for (std::chrono::microseconds (500) );
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
     }
 
     void D19cFWInterface::PhaseTuning (const BeBoard* pBoard)
@@ -676,11 +652,11 @@ namespace Ph2_HwInterface {
                 }
 
                 //re-enable the stub logic
+                cVecReq.clear();
                 for (auto cFe : pBoard->fModuleVector)
                 {
                     for (auto cCbc : cFe->fCbcVector)
                     {
-                        cVecReq.clear();
 
                         CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
                         cRegItem.fValue = cStubLogictInputMap[cCbc];
@@ -697,6 +673,11 @@ namespace Ph2_HwInterface {
                 this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
 
                 LOG (INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
+		
+		/*for (int i = 0; i < 7; i++) {
+            		WriteReg ("fc7_daq_ctrl.physical_interface_block.control.cbc3_bitslip_stub1", 0x1);
+			usleep(10);
+		}*/
             }
         }
         else if (fFirwmareChipType == ChipType::CBC2)
@@ -716,122 +697,75 @@ namespace Ph2_HwInterface {
         uint32_t cBoardHeader1Size = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
         uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
-        uint32_t state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
-        uint32_t cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter"); 
-        uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
+	uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
             
-        uint32_t cNWords_prev = cNWords;
-        uint32_t cNtriggers_prev = cNtriggers;
-
         bool pFailed = false; 
         int cCounter = 0 ; 
-        double cTimeWithoutTriggers = 0 ; 
-        uint cNumEvents;
         while (cNWords == 0 && !pFailed )
         {
-            cNWords_prev = cNWords;
-            cNtriggers_prev = cNtriggers;
-
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter"); 
-            state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
-
-            cNumEvents = (uint32_t) cNWords / cEventSize; 
-            // if I've already got all the events I want ... then stop 
-            if( cNumEvents >= cPackageSize )
-                    break;
-
-            if( state_id == 0 || ( cNWords == cNWords_prev && cCounter > 0 && cNtriggers != cNtriggers_prev ) )
-            {    
-                pFailed = true ; 
-                //LOG (INFO) << BOLDRED << "Warning!! Reading nwords in FIFO ....  FSM state @ " <<  +state_id << " - nWords = " << +cNWords << " - on attempt # " << cCounter << RESET ; 
-                if( state_id == 0 )
-                    LOG (INFO) << BOLDRED << "Warning!! FSM has stopped!!" << +cNumEvents << " events in FIFO." << RESET ; 
-                else 
-                    LOG (INFO) << BOLDRED << "Warning!! Read-out has stopped responding!!" << RESET ; 
+	    if(cCounter % 100 == 0 && cCounter > 0) {
+	    	LOG(INFO) << BOLDRED << "Zero events in FIFO, waiting for the triggers" << RESET;
             }
-            // dd wait 
-            else if( cNtriggers == cNtriggers_prev && cCounter > 0 )
-            {
-                cTimeWithoutTriggers += 0.10 ; 
-                if( cCounter % 10 == 0 )
-                    LOG (INFO) << BOLDRED << " after reading " << +cNumEvents << " events ..... waiting for more triggers .... got " << +cNtriggers << " so far - been waiting for " << cTimeWithoutTriggers << " s." << RESET ;
-
-                if( cTimeWithoutTriggers > 60.0 )
-                {    
-                    pFailed = true; 
-                    LOG (INFO) << BOLDRED << "Warning!! Triggers have stopping coming in after " << +cNtriggers << " triggers!!" << RESET ;
-                }
-            }
-            cCounter++; 
+	    cCounter++;
 
             if (!pWait) 
                 return 0;
             else
-                std::this_thread::sleep_for (std::chrono::milliseconds (100) );
-
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
         }
         
         uint32_t cNEvents = 0;
-        cTimeWithoutTriggers = 0 ; 
-        if (data_handshake == 1 && !pFailed )
+	uint32_t cNtriggers = 0; 
+        uint32_t cNtriggers_prev = cNtriggers;
+        
+	if (data_handshake == 1 && !pFailed )
         {
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
             cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter"); 
             cNtriggers_prev = cNtriggers;
-
+	    uint32_t cNWords_prev = cNWords;
             uint32_t cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
             
             cCounter = 0 ; 
-            cNumEvents = (uint32_t) cNWords / cEventSize; 
-            while (cReadoutReq == 0 && !pFailed && cNumEvents < cPackageSize )
+            while (cReadoutReq == 0 && !pFailed )
             {
+		if (!pWait) {
+			return 0;
+		}
+
                 cNWords_prev = cNWords;
                 cNtriggers_prev = cNtriggers;
 
                 cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
-                state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                uint cNumEvents = (uint32_t) cNWords / cEventSize; 
-                // if I've already got all the events I want ... then stop 
-                if( cNumEvents >= cPackageSize )
-                    break;
-
                 cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter");
-                if( state_id == 0 || ( cNWords == cNWords_prev && cCounter > 0 && cNtriggers != cNtriggers_prev) )
-                {
 
+                /*if( cNWords == cNWords_prev && cCounter > 100 && cNtriggers != cNtriggers_prev )
+                {
                     pFailed = true; 
-                    //LOG (INFO) << BOLDRED << "Warning!!...... Reading readout_req  .... FSM state @ " <<  +state_id << " - nWords = " << +cNWords << RESET ; 
-                    if( state_id == 0 )
-                        LOG (INFO) << BOLDRED << "Warning!! FSM has stopped after receiving " << +cNtriggers << " triggers!! Read back " << +cNWords << " from FC7." << RESET ; 
-                    else 
-                        LOG (INFO) << BOLDRED << "Warning!! Read-out has stopped responding after receiving " << +cNtriggers << " triggers!! Read back " << +cNWords << " from FC7." << RESET ; 
-                
+                    LOG (INFO) << BOLDRED << "Warning!! Read-out has stopped responding after receiving " << +cNtriggers << " triggers!! Read back " << +cNWords << " from FC7." << RESET ; 
+               
                 }
-                else if( cNtriggers == cNtriggers_prev && cCounter > 0 )
+                else*/
+		if( cNtriggers == cNtriggers_prev && cCounter > 0 )
                 {
-                    cTimeWithoutTriggers += 0.1 ;
-                    if( cCounter % 10 == 0 )
-                        LOG (INFO) << BOLDRED << " ..... waiting for more triggers .... got " << +cNtriggers << " so far - been waiting for " << cTimeWithoutTriggers << " s." << RESET ;
+                    if( cCounter % 100 == 0 )
+                        LOG (INFO) << BOLDRED << " ..... waiting for more triggers .... got " << +cNtriggers << " so far." << RESET ;
 
-                    // if everything is quiet for one minute .. then try and re-start
-                    if( cTimeWithoutTriggers > 60 )
-                    {
-                        pFailed = true; 
-                        LOG (INFO) << BOLDRED << "Warning!! Triggers have stopping coming in after " << +cNtriggers << " triggers!!" << RESET ;
-                    }
                 }
                 cCounter++;
-                std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
             }
             
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
             if (pBoard->getEventType() == EventType::VR)
             {
-                if ( (cNWords % computeEventSize (pBoard) ) == 0) cNEvents = cNWords / computeEventSize (pBoard);
-                else
-                    LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
+                cNEvents = cNWords / computeEventSize (pBoard);
+                if ( (cNWords % computeEventSize (pBoard) ) != 0) {
+			pFailed = true;
+                	LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
+		}
             }
             else
             {
@@ -839,14 +773,10 @@ namespace Ph2_HwInterface {
                 cNEvents = cPackageSize;
             }
 
-            //LOG(INFO) << "NWords available this time: " << +cNWords;
-            if( fResetAttempts > 0 )
-                LOG (DEBUG) << BOLDBLUE << "Reading back data from FC7 " << RESET ; 
 
             // read all the words
             pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
-            if( fResetAttempts > 0 )
-                LOG (DEBUG) << BOLDBLUE << "Completed reading back data from FC7 .... read " <<  +cNWords << " words." <<  RESET ; 
+
         }
         else if(!pFailed)
         {
@@ -855,43 +785,46 @@ namespace Ph2_HwInterface {
                 LOG (ERROR) << "ZS Event only with handshake!!! Exiting...";
                 exit (1);
             }
-
-            while (cNEvents < cPackageSize)
-            {
+	    cNEvents = 0;
+            //while (cNEvents < cPackageSize)
+            //{
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
                 uint32_t cNEventsAvailable = (uint32_t) cNWords / cEventSize;
 
                 while (cNEventsAvailable < 1)
                 {
+		    if(!pWait) {
+			return 0;
+		    }
                     std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                     cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
                     cNEventsAvailable = (uint32_t) cNWords / cEventSize;
+
                 }
 
                 std::vector<uint32_t> event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable * cEventSize);
                 pData.insert (pData.end(), event_data.begin(), event_data.end() );
                 cNEvents += cNEventsAvailable;
 
-                if (pBreakTrigger) break;
-            }
+            //}
         }
 
         if( pFailed )
         {
             pData.clear();
+
+	    LOG(INFO) << BOLDRED << "Re-starting the run and resetting the readout" << RESET; 
             
-            LOG (INFO) << BOLDRED << " ... Reading data failed! Will try and restart the run ... [reset attempt # " << fResetAttempts << " ]" << RESET ; 
-            fResetAttempts++;
-        
             this->Stop();
             std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+	    LOG(INFO) << BOLDGREEN << " ... Run Stopped, current trigger FSM state: " << +ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state") << RESET;
             
             this->Start();
             std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+	    LOG(INFO) << BOLDGREEN << " ... Run Started, current trigger FSM state: " << +ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state") << RESET;
 
-            //if( pData.size() > 0 ) 
             LOG (INFO) << BOLDRED << " ... trying to read data again .... " << RESET ; 
-            this->ReadData(pBoard,  pBreakTrigger,  pData, pWait);
+            cNEvents = this->ReadData(pBoard,  pBreakTrigger,  pData, pWait);
         }
         if (fSaveToFile)
             fFileHandler->set (pData);

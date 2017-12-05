@@ -229,15 +229,15 @@ private:
 
 public:
 
-    bool WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback) {};
+    bool WriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, uint8_t& pWriteAttempts , bool pReadback) {return false;};
 
 
-    bool BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback) {};
+    bool BCWriteCbcBlockReg ( std::vector<uint32_t>& pVecReg, bool pReadback) {return false;};
  
 
     void ReadCbcBlockReg (  std::vector<uint32_t>& pVecReg ) {};
 
-    BoardType getBoardType() const {};
+    BoardType getBoardType() const {return BoardType::GLIB;};
 
 
     void RebootBoard() {};

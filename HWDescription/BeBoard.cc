@@ -102,14 +102,14 @@ namespace Ph2_HwDescription {
         return nullptr;
     }
 
-    void BeBoard::updateCondData (uint32_t& pTDCVal) const
+    void BeBoard::updateCondData (uint32_t& pTDCVal)
     {
         if (fCondDataSet == nullptr) return;
         else if (fCondDataSet->fCondDataVector.size() == 0 ) return;
         else if (!fCondDataSet->testEffort() ) return;
         else
         {
-            for (auto cCondItem : this->fCondDataSet->fCondDataVector)
+            for (auto& cCondItem : this->fCondDataSet->fCondDataVector)
             {
                 // if it is the TDC item, save it in fValue
                 if (cCondItem.fUID == 3 ) cCondItem.fValue = pTDCVal;

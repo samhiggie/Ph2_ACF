@@ -31,7 +31,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # compiler flags
-set (CMAKE_CXX_FLAGS "-std=c++11 -O3 -Wcpp -pthread -pedantic -Wall -w -g -fPIC ${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS "-std=c++14 -O3 -Wcpp -pthread -pedantic -Wall -w -g -fPIC ${CMAKE_CXX_FLAGS}")
 
 #check for external dependences
 message("#### Checking for external Dependencies ####")
@@ -120,5 +120,6 @@ add_subdirectory(Utils)
 add_subdirectory(HWDescription)
 add_subdirectory(HWInterface)
 add_subdirectory(System)
+add_subdirectory(tools)
 endif()
 

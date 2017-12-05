@@ -714,6 +714,7 @@ bool CMTester::isMasked ( int pGlobalChannel )
         }
         else return false;
     }
+    return false;
 }
 
 void CMTester::SetTotalNoise ( std::vector<double> pTotalNoise ) {

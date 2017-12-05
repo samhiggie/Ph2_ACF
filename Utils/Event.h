@@ -382,7 +382,7 @@ namespace Ph2_HwInterface {
         * \param pSet : set of condition data parsed from config file
         * \return SlinkEvent object
         */
-        virtual SLinkEvent GetSLinkEvent ( const BeBoard* pBoard) const = 0;
+        virtual SLinkEvent GetSLinkEvent (  BeBoard* pBoard) const = 0;
 
         friend std::ostream& operator<< ( std::ostream& out, const Event& ev )
         {

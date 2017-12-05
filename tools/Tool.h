@@ -398,7 +398,7 @@ class Tool : public SystemController
         std::string cMaskRegName = (cChipType == ChipType::CBC2) ? fChannelMaskMapCBC2[cRegisterIndex] : fChannelMaskMapCBC3[cRegisterIndex];
         cMaskedList.insert ( std::pair<std::string , MaskedChannels>(cMaskRegName.c_str()  , cMaskedChannels ) );
 
-        for( int cIndex = 1 ; cIndex < pList.size(); cIndex ++ )
+        for( unsigned int cIndex = 1 ; cIndex < pList.size(); cIndex ++ )
         {
             cChan = pList[cIndex];
             cRegisterIndex = cChan/8;

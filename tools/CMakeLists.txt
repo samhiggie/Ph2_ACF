@@ -1,4 +1,4 @@
-
+if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
 #includes
 include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -65,3 +65,25 @@ endif()
 
 set(LIBS ${LIBS} Ph2_Description Ph2_Interface Ph2_Utils Ph2_System)
 TARGET_LINK_LIBRARIES(Ph2_Tools ${LIBS})
+else()
+    include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/uhal/include)
+    include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/log/include)
+    include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/grammars/include)
+    include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/otsdaq-cmsoutertracker/Ph2_ACF)
+    include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/extern/pugixml/RPMBUILD/SOURCES/include/)
+    
+
+    cet_set_compiler_flags(
+     EXTRA_FLAGS -Wno-reorder -Wl,--undefined
+     )
+    
+    cet_make(LIBRARY_NAME Ph2_Tools
+            LIBRARIES
+    	pthread
+    	${Boost_SYSTEM_LIBRARY}
+    	#EXCLUDE UsbUtilities.h UsbUtilities.cc
+            )
+    
+    install_headers()
+    install_source()
+endif()

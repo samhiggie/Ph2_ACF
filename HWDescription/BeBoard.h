@@ -211,7 +211,7 @@ namespace Ph2_HwDescription {
         {
             return fCondDataSet;
         }
-        void updateCondData (uint32_t& pTDCVal) const;
+        void updateCondData (uint32_t& pTDCVal);
 
         // Vector of FEModules, each module is supposed to know which FMC slot it is connected to...
         std::vector< Module* > fModuleVector;
