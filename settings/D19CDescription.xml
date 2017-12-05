@@ -64,7 +64,36 @@
                 	<Register name="frequency"> 4 </Register>
 		</Register>
  		<Register name="phase_set"> 0 </Register>
- 		<Register name="slvs5_shift"> 2 </Register>
+		<Register name="manual_delays_cbc0">
+			<Register name="stub1">	23 </Register>
+			<Register name="stub2"> 23 </Register>
+			<Register name="stub3"> 23 </Register>
+			<Register name="stub4"> 23 </Register>
+			<Register name="stub5"> 0 </Register>
+			<Register name="l1data"> 18 </Register>
+	    	</Register>
+		<Register name="manual_delays_cbc1">
+			<Register name="stub1"> 23 </Register>
+			<Register name="stub2"> 23 </Register>
+			<Register name="stub3"> 23 </Register>
+			<Register name="stub4"> 23 </Register>
+			<Register name="stub5"> 0 </Register>
+			<Register name="l1data"> 18 </Register>
+	    	</Register>
+		<Register name="manual_bitslips_cbc0">
+			<Register name="stub1">	3 </Register>
+			<Register name="stub2"> 3 </Register>
+			<Register name="stub3"> 3 </Register>
+			<Register name="stub4"> 3 </Register>
+			<Register name="l1data"> 3 </Register>
+	    	</Register>
+		<Register name="manual_bitslips_cbc1">
+			<Register name="stub1"> 3 </Register>
+			<Register name="stub2"> 3 </Register>
+			<Register name="stub3"> 3 </Register>
+			<Register name="stub4"> 3 </Register>
+			<Register name="l1data"> 3 </Register>
+	    	</Register>
 	</Register>
 	<!-- Readout Block -->
     	<Register name="readout_block">
