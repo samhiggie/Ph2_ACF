@@ -634,12 +634,20 @@ namespace Ph2_HwInterface {
                 {
                     if (cCounter++ > cMaxAttempts)
                     {
-                        uint32_t delay5_done = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done");
-                        uint32_t serializer_done = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done");
-                        uint32_t bitslip_done = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done");
-                        LOG (INFO) << "Clock Data Timing tuning failed after " << cMaxAttempts << " attempts with value - aborting!";
-                        LOG (INFO) << "Debug Info: delay5 done: " << delay5_done << ", serializer_done: " << serializer_done << ", bitslip_done: " << bitslip_done;
-                        exit (1);
+                        uint32_t delay5_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done_cbc0");
+                        uint32_t serializer_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done_cbc0");
+                        uint32_t bitslip_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done_cbc0");
+                        
+			uint32_t delay5_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done_cbc1");
+                        uint32_t serializer_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done_cbc1");
+                        uint32_t bitslip_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done_cbc1");
+			LOG (INFO) << "Clock Data Timing tuning failed after " << cMaxAttempts << " attempts with value - aborting!";
+                        LOG (INFO) << "Debug Info CBC0: delay5 done: " << delay5_done_cbc0 << ", serializer_done: " << serializer_done_cbc0 << ", bitslip_done: " << bitslip_done_cbc0;
+                        LOG (INFO) << "Debug Info CBC1: delay5 done: " << delay5_done_cbc1 << ", serializer_done: " << serializer_done_cbc1 << ", bitslip_done: " << bitslip_done_cbc1;
+			uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
+			uint32_t tuning_state_cbc1 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc1");
+			LOG(INFO) << "tuning state cbc0: " << tuning_state_cbc0 << ", cbc1: " << tuning_state_cbc1;
+			exit (1);
                     }
 
                     this->CbcFastReset();

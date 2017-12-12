@@ -66,8 +66,7 @@
                 <node id="frequency"			    mask="0x0000000f"/>
                 <node id="master_en"                        mask="0x00000100"/>
 	    </node>
-            <node id="phase_set"			address="0x002" mask="0x0000001f"/>
-	    <node id="manual_delays_cbc0"		address="0x004">
+	    <node id="manual_delays_cbc0"		address="0x008">
 		<node id="stub1"			    mask="0x0000001f"/>
 		<node id="stub2"			    mask="0x000003e0"/>
 		<node id="stub3"			    mask="0x00007c00"/>
@@ -75,7 +74,7 @@
 		<node id="stub5"			    mask="0x01f00000"/>
 		<node id="l1data"			    mask="0x3e000000"/>
 	    </node>
-	    <node id="manual_delays_cbc1"		address="0x005">
+	    <node id="manual_delays_cbc1"		address="0x00A">
 		<node id="stub1"			    mask="0x0000001f"/>
 		<node id="stub2"			    mask="0x000003e0"/>
 		<node id="stub3"			    mask="0x00007c00"/>
@@ -83,14 +82,14 @@
 		<node id="stub5"			    mask="0x01f00000"/>
 		<node id="l1data"			    mask="0x3e000000"/>
 	    </node>
-	    <node id="manual_bitslips_cbc0"		address="0x006">
+	    <node id="manual_bitslips_cbc0"		address="0x009">
 		<node id="stub1"			    mask="0x00000007"/>
 		<node id="stub2"			    mask="0x00000038"/>
 		<node id="stub3"			    mask="0x000001c0"/>
 		<node id="stub4"			    mask="0x00000e00"/>
 		<node id="l1data"			    mask="0x00007000"/>
 	    </node>
-	   <node id="manual_bitslips_cbc1"		address="0x007">
+	   <node id="manual_bitslips_cbc1"		address="0x00B">
 		<node id="stub1"			    mask="0x00000007"/>
 		<node id="stub2"			    mask="0x00000038"/>
 		<node id="stub3"			    mask="0x000001c0"/>
@@ -291,9 +290,14 @@
 
         <node id="physical_interface_block"     address="0x3000">
             <node id="hardware_ready"           address="0x002" mask="0x00010000"/>
-            <node id="delay5_done"              address="0x002" mask="0x00000020"/>
-            <node id="serializer_done"          address="0x002" mask="0x00000040"/>
-            <node id="bitslip_done"             address="0x002" mask="0x00000080"/>
+            <node id="delay5_done_cbc0"         address="0x002" mask="0x00000001"/>
+            <node id="serializer_done_cbc0"     address="0x002" mask="0x00000002"/>
+            <node id="bitslip_done_cbc0"        address="0x002" mask="0x00000004"/>
+            <node id="delay5_done_cbc1"         address="0x002" mask="0x00000010"/>
+            <node id="serializer_done_cbc1"     address="0x002" mask="0x00000020"/>
+            <node id="bitslip_done_cbc1"        address="0x002" mask="0x00000040"/>
+            <node id="state_tuning_cbc0"        address="0x002" mask="0x00F00000"/>
+            <node id="state_tuning_cbc1"        address="0x002" mask="0x0F000000"/>
         </node>       
 
         <node id="be_proc"                      address="0x4000">
