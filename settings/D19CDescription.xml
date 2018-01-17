@@ -56,7 +56,6 @@
         </Register>
 	<!-- I2C manager -->
         <Register name="command_processor_block">
-                <Register name="i2c_write_mask"> 0xFF </Register>
 	</Register>
 	<!-- Phy Block -->
 	<Register name="physical_interface_block">
@@ -87,11 +86,11 @@
 			<Register name="l1data"> 3 </Register>
 	    	</Register>
 		<Register name="manual_bitslips_cbc1">
-			<Register name="stub1"> 4 </Register>
-			<Register name="stub2"> 4 </Register>
-			<Register name="stub3"> 4 </Register>
-			<Register name="stub4"> 4 </Register>
-			<Register name="l1data"> 4 </Register>
+			<Register name="stub1"> 3 </Register>
+			<Register name="stub2"> 3 </Register>
+			<Register name="stub3"> 3 </Register>
+			<Register name="stub4"> 3 </Register>
+			<Register name="l1data"> 3 </Register>
 	    	</Register>
 	</Register>
 	<!-- Readout Block -->

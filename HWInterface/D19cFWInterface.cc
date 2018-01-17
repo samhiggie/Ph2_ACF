@@ -379,7 +379,7 @@ namespace Ph2_HwInterface {
                 for ( Cbc* cCbc : cFe->fCbcVector)
                 {
                     uint32_t cWord = pReplies.at (k);
-                    cWordCorrect = ( ( ( (cWord & 0x00f00000) >> 20) == cCbc->getCbcId() ) & ( ( (cWord & 0x0f000000) >> 24) == cFe->getFeId() ) ) ? true : false;
+                    cWordCorrect = ( ( ( (cWord & 0x007C0000) >> 18) == cCbc->getCbcId() ) & ( ( (cWord & 0x07800000) >> 23) == cFe->getFeId() ) ) ? true : false;
                     k++;
 
                     if (!cWordCorrect) break;
@@ -977,7 +977,11 @@ namespace Ph2_HwInterface {
     {
         //use fBroadcastCBCId for broadcast commands
         bool pUseMask = false;
-        pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+	// new command consists of one word if its read command, and of two words if its write. first word is always the same
+	pVecReq.push_back( (0 << 28) | (0 << 27) | (pFeId << 23) | (pCbcId << 18) | (pReadBack << 17) | ((!pWrite) << 16) | (pRegItem.fPage << 8) | (pRegItem.fAddress << 0) );
+	// only for write commands
+	if (pWrite) pVecReq.push_back( (0 << 28) | (1 << 27) | (pRegItem.fValue << 0) );
+        //pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
     }
 
     void D19cFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
@@ -998,11 +1002,11 @@ namespace Ph2_HwInterface {
                                       bool& pRead,
                                       bool& pFailed )
     {
-        //pFeId    =  ( ( pWord & 0x0f000000 ) >> 24) ;
-        pCbcId   =  ( ( pWord & 0x00f00000 ) >> 20) ;
+        //pFeId    =  ( ( pWord & 0x07800000 ) >> 24) ;
+        pCbcId   =  ( ( pWord & 0x007c0000 ) >> 20) ;
         pFailed  =  0 ;
-        pRegItem.fPage    =  ( (pWord & 0x00020000  ) >> 17) ;
-        pRead    =  ( pWord & 0x00010000 ) >> 16;
+        pRegItem.fPage    =  0 ;
+        pRead    =  true ;
         pRegItem.fAddress =  ( pWord & 0x0000FF00 ) >> 8;
         pRegItem.fValue   =  ( pWord & 0x000000FF );
     }
@@ -1026,7 +1030,7 @@ namespace Ph2_HwInterface {
                 LOG (INFO) << "Error: Read " << cNReplies << " I2C replies whereas " << pNReplies << " are expected!" ;
                 ReadErrors();
                 cFailed = true;
-                break;
+            	break;
             }
 
             usleep (single_WaitingTime);
@@ -1037,7 +1041,7 @@ namespace Ph2_HwInterface {
         try
         {
             pReplies = ReadBlockRegValue ( "fc7_daq_ctrl.command_processor_block.i2c.reply_fifo", cNReplies );
-        }
+	}
         catch ( Exception& except )
         {
             throw except;
@@ -1053,8 +1057,8 @@ namespace Ph2_HwInterface {
         //reset the I2C controller
         WriteReg ("fc7_daq_ctrl.command_processor_block.i2c.control.reset_fifos", 0x1);
         usleep (10);
-
-        try
+	
+	try
         {
             WriteBlockReg ( "fc7_daq_ctrl.command_processor_block.i2c.command_fifo", pVecSend );
         }
@@ -1068,9 +1072,9 @@ namespace Ph2_HwInterface {
         for (auto word : pVecSend)
         {
             // if read or readback for write == 1, then count
-            if ( ( ( (word & 0x00010000) >> 16) == 1) or ( ( (word & 0x00080000) >> 19) == 1) )
+            if ( (((word & 0x08000000) >> 27) == 0) && (( ( (word & 0x00010000) >> 16) == 1) or ( ( (word & 0x00020000) >> 17) == 1)) )
             {
-                if (pBroadcast) cNReplies += fNCbc;
+		if (pBroadcast) cNReplies += fNCbc;
                 else cNReplies += 1;
             }
         }
@@ -1292,8 +1296,8 @@ namespace Ph2_HwInterface {
         //if ( ( (cWord1 >> 16) & 0x1) == 0 && ( (cWord1 >> 8 ) & 0xFF) == 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
         //else return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
 
-        return ( (cWord1 & 0x00F2FFFF) == (cWord2 & 0x00F2FFFF) );
-
+        //return ( (cWord1 & 0x00F2FFFF) == (cWord2 & 0x00F2FFFF) );
+	return true;
     }
 
     bool D19cFWInterface::cmd_reply_ack (const uint32_t& cWord1, const
