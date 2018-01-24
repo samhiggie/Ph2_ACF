@@ -1,5 +1,10 @@
 #include "PulseShape.h"
 
+PulseShape::PulseShape() : Tool()
+{}
+
+PulseShape::~PulseShape()
+{}
 
 void PulseShape::Initialize()
 {
@@ -338,6 +343,7 @@ uint32_t PulseShape::fillVcthHist ( BeBoard* pBoard, Event* pEvent, uint32_t pVc
 
         return cHits;
     }
+    return cHits;
 }
 
 void PulseShape::parseSettings()

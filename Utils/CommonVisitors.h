@@ -148,9 +148,10 @@ struct CbcRegReader : public HwDescriptionVisitor
     uint8_t fRegValue;
     uint8_t fReadRegValue;
     CbcInterface* fInterface;
+    bool fOutput;
 
-    CbcRegReader ( CbcInterface* pInterface, std::string pRegName ) : fInterface ( pInterface ), fRegName ( pRegName ) {}
-    CbcRegReader ( const CbcRegReader& reader ) : fInterface ( reader.fInterface ), fRegName ( reader.fRegName ) {}
+    CbcRegReader ( CbcInterface* pInterface, std::string pRegName ) : fInterface ( pInterface ), fRegName ( pRegName ), fOutput (true) {}
+    CbcRegReader ( const CbcRegReader& reader ) : fInterface ( reader.fInterface ), fRegName ( reader.fRegName ), fOutput (reader.fOutput) {}
 
     void setRegister ( std::string pRegName )
     {
@@ -162,7 +163,48 @@ struct CbcRegReader : public HwDescriptionVisitor
         fInterface->ReadCbcReg ( &pCbc, fRegName );
         fReadRegValue = pCbc.getReg ( fRegName );
 
-        LOG (INFO) << "Reading Reg " << RED << fRegName << RESET << " on CBC " << +pCbc.getCbcId() << " memory value: " << std::hex << +fRegValue << " read value: " << +fReadRegValue << std::dec ;
+        if (fOutput) LOG (INFO) << "Reading Reg " << RED << fRegName << RESET << " on CBC " << +pCbc.getCbcId() << " memory value: " << std::hex << +fRegValue << " read value: " << +fReadRegValue << std::dec ;
+    }
+    uint8_t getMemoryValue()
+    {
+        return fRegValue;
+    }
+    uint8_t getHWValue()
+    {
+        return fReadRegValue;
+    }
+    void setOutput (bool pOutput)
+    {
+        fOutput = pOutput;
+    }
+};
+
+struct CbcIdReader : public HwDescriptionVisitor
+{
+    CbcInterface* fCbcInterface;
+    uint32_t fChipId;
+    CbcIdReader (CbcInterface* pCbcInterface) : fCbcInterface (pCbcInterface), fChipId (0) {}
+
+    void visit (Cbc& pCbc)
+    {
+        if (pCbc.getChipType() != ChipType::CBC3)
+            LOG (ERROR) << RED << "The current chip type is not CBC3 and thus no Id can be read!" << RESET;
+        else
+        {
+            fCbcInterface->WriteCbcReg (&pCbc, "ChipIDFuse3", 0x08, false);
+            std::vector<std::string> cRegVec{"ChipIDFuse1", "ChipIDFuse2", "ChipIDFuse3"};
+            fChipId = 0;
+            fCbcInterface->ReadCbcMultReg ( &pCbc, cRegVec );
+            int cCounter = 0;
+
+            for (auto cReg : cRegVec)
+            {
+                fChipId |= pCbc.getReg (cReg) << cCounter * 8;
+                cCounter++;
+            }
+
+            LOG (INFO) << BOLDBLUE << "Chip Id for Fe " << +pCbc.getFeId() << " Cbc " << +pCbc.getCbcId() << " read to be " << fChipId << " (0x" << std::hex << fChipId << std::dec << ")" << RESET;
+        }
     }
 };
 

@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="LATIN1"?>
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
 <node id="FPGA1" address="0x00000000" >
 	<!-- FC7 system register address table -->
         <node id="sysreg" address="0x00000000" module="file://fc7_system_address_table.xml"/>
@@ -43,22 +44,58 @@
             <node id="user_trigger_frequency"           address="0x001" description="User-defined frequency in kHz"/>
             <node id="trigger_source"                   address="0x002" mask="0x0000000F" description="1 - L1, 2 - Stubs, 3 - User-Defined Frequency"/>
             <node id="stubs_mask"                       address="0x003" mask="0x0000FFFF" description="if mode is stubs, then coincidence mask can be set here: 0x0000000f requires presence of stubs from hybrids 0,1,2,3"/>	    
+            <node id="stub_trigger_veto_length"         address="0x003" mask="0x01FF0000" description="if mode is stubs, then following triggers can be vetoed (to control the rate)"/>
             <node id="test_pulse" description="configuration of the test pulse delays.">
                 <node id="delay_after_fast_reset"       address="0x004" description="delay between fast reset and following test pulse command"/>
                 <node id="delay_after_test_pulse"       address="0x005" description="delay after test pulse command before l1a signal sent to readout the data"/>
 		<node id="delay_before_next_pulse"      address="0x006" description="delay before next pulse"/>
             </node>
-	    <node id="stub_trigger_latency"		address="0x007" mask="0x000001FF"/>
+	    <node id="stub_trigger_delay_value"		address="0x007" mask="0x000001FF" description="stub trigger delay before sending to CBCs"/>
 	    <node id="ext_trigger_delay_value"		address="0x007" mask="0x0003FE00" description="sets the delay of the external trigger (dio5 ch 5)"/>
 	    <node id="antenna_trigger_delay_value"	address="0x007" mask="0x07FC0000" description="sets the delay after antenna trigger"/>
+            <node id="delay_between_two_consecutive"    address="0x008" mask="0x0000FFFF" description="sets the delay between two consecutive triggers"/>
+            <node id="misc"                             address="0x009">
+                <node id="backpressure_enable"              mask="0x00000001" description="enables treatment of the backpressure bit"/>
+                <node id="stubOR"                           mask="0x00000002" description="enables stubOR triggering, when trigger source is 2, otherwise or254 is used"/>
+                <node id="initial_fast_reset_enable"        mask="0x00000004" description="enables fast reset signal on the beginning of every run"/>
+            </node>
         </node>
 
         <node id="physical_interface_block"     address="0x3000">
 	    <node id="i2c"				address="0x001">
-		<node id="frequency"			    mask="0x0000ffff"/>
+                <node id="frequency"			    mask="0x0000000f"/>
+                <node id="master_en"                        mask="0x00000100"/>
 	    </node>
-            <node id="phase_set"			address="0x002" mask="0x0000001f"/>
-	    <node id="slvs5_shift"			address="0x003" mask="0x00070000"/>
+	    <node id="manual_delays_cbc0"		address="0x008">
+		<node id="stub1"			    mask="0x0000001f"/>
+		<node id="stub2"			    mask="0x000003e0"/>
+		<node id="stub3"			    mask="0x00007c00"/>
+		<node id="stub4"			    mask="0x000f8000"/>
+		<node id="stub5"			    mask="0x01f00000"/>
+		<node id="l1data"			    mask="0x3e000000"/>
+	    </node>
+	    <node id="manual_delays_cbc1"		address="0x00A">
+		<node id="stub1"			    mask="0x0000001f"/>
+		<node id="stub2"			    mask="0x000003e0"/>
+		<node id="stub3"			    mask="0x00007c00"/>
+		<node id="stub4"			    mask="0x000f8000"/>
+		<node id="stub5"			    mask="0x01f00000"/>
+		<node id="l1data"			    mask="0x3e000000"/>
+	    </node>
+	    <node id="manual_bitslips_cbc0"		address="0x009">
+		<node id="stub1"			    mask="0x00000007"/>
+		<node id="stub2"			    mask="0x00000038"/>
+		<node id="stub3"			    mask="0x000001c0"/>
+		<node id="stub4"			    mask="0x00000e00"/>
+		<node id="l1data"			    mask="0x00007000"/>
+	    </node>
+	   <node id="manual_bitslips_cbc1"		address="0x00B">
+		<node id="stub1"			    mask="0x00000007"/>
+		<node id="stub2"			    mask="0x00000038"/>
+		<node id="stub3"			    mask="0x000001c0"/>
+		<node id="stub4"			    mask="0x00000e00"/>
+		<node id="l1data"			    mask="0x00007000"/>
+	    </node>
         </node>
 
         <node id="readout_block"                address="0x5000">
@@ -105,6 +142,7 @@
 
 	<node id="tlu_block"			address="0x7000">
 		<node id="handshake_mode"		address="0x000" mask="0x00000003"/>
+                <node id="tlu_enabled"                  address="0x000" mask="0x00000010"/>
 	</node>
     </node>
 
@@ -180,6 +218,19 @@
 
 	<node id="tlu_block"			address="0x7000">
 	</node>
+    <node id="stub_counter_block"           address="0xF000">
+        <node id="general"                          address="0x000">
+           <node id="shutter_open"                     mask="0x00000001"/>
+           <node id="shutter_close"                    mask="0x00000002"/>
+        </node>
+    </node>
+
+        <node id="stub_counter_block"           address="0xF000">
+            <node id="general"                          address="0x000">
+                <node id="shutter_open"                     mask="0x00000001"/>
+                <node id="shutter_close"                    mask="0x00000002"/>
+            </node>
+        </node>
 
     </node>
 
@@ -234,13 +285,19 @@
                 <node id="fsm_state"                        mask="0x00000030"/>
                 <node id="configured"                       mask="0x00000040"/>
             </node>
+            <node id="trigger_in_counter"               address="0x001" mask="0xffffffff"/>
         </node>
 
         <node id="physical_interface_block"     address="0x3000">
             <node id="hardware_ready"           address="0x002" mask="0x00010000"/>
-            <node id="delay5_done"              address="0x002" mask="0x00000020"/>
-            <node id="serializer_done"          address="0x002" mask="0x00000040"/>
-            <node id="bitslip_done"             address="0x002" mask="0x00000080"/>
+            <node id="delay5_done_cbc0"         address="0x002" mask="0x00000001"/>
+            <node id="serializer_done_cbc0"     address="0x002" mask="0x00000002"/>
+            <node id="bitslip_done_cbc0"        address="0x002" mask="0x00000004"/>
+            <node id="delay5_done_cbc1"         address="0x002" mask="0x00000010"/>
+            <node id="serializer_done_cbc1"     address="0x002" mask="0x00000020"/>
+            <node id="bitslip_done_cbc1"        address="0x002" mask="0x00000040"/>
+            <node id="state_tuning_cbc0"        address="0x002" mask="0x00F00000"/>
+            <node id="state_tuning_cbc1"        address="0x002" mask="0x0F000000"/>
         </node>       
 
         <node id="be_proc"                      address="0x4000">
@@ -291,10 +348,17 @@
                 <node id="init_calib_done"      address="0x000" mask="0x00000002"/>
         </node>
 
-        <node id="test_clock"                   address="0xf000">
-            <node id="ipb_clk_rate"                     address="0x000"/>
-            <node id="40mhz_clk_rate"                   address="0x001"/>
-            <node id="trigger_rate"                     address="0x002"/>
+        <node id="stub_counter_block"           address="0xF000">
+            <node id="bx_counter_ls"                    address="0x000" mask="0xffffffff"/>
+            <node id="bx_counter_ms"                    address="0x001" mask="0xffffffff"/>
+            <node id="counters_hyb0_chip0"              address="0x002">
+                <node id="stub_counter"                     mask="0x0000ffff"/>
+                <node id="error_counter"                    mask="0xffff0000"/>
+            </node>
+            <node id="counters_hyb0_chip1"              address="0x003">
+                <node id="stub_counter"                     mask="0x0000ffff"/>
+                <node id="error_counter"                    mask="0xffff0000"/>
+            </node>
         </node>
     </node>
 

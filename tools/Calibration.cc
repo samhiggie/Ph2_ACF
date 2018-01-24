@@ -1,9 +1,30 @@
 #include "Calibration.h"
 
-void Calibration::Initialise ( bool pAllChan )
+//initialize the static member
+//std::map<Cbc*, uint16_t> Calibration::fVplusMap;
+
+Calibration::Calibration() :
+    Tool(),
+    fVplusMap(),
+    fVplusCanvas (nullptr),
+    fOffsetCanvas (nullptr),
+    fOccupancyCanvas (nullptr),
+    fNCbc (0),
+    fNFe (0)
 {
+}
+
+Calibration::~Calibration()
+{
+
+}
+
+void Calibration::Initialise ( bool pAllChan, bool pDisableStubLogic )
+{
+    fDisableStubLogic = pDisableStubLogic;
     // Initialize the TestGroups
     this->MakeTestGroups ( pAllChan );
+    this->fAllChan = pAllChan;
 
     // now read the settings from the map
     auto cSetting = fSettingsMap.find ( "HoleMode" );
@@ -22,7 +43,6 @@ void Calibration::Initialise ( bool pAllChan )
     if ( fTestPulseAmplitude == 0 ) fTestPulse = 0;
     else fTestPulse = 1;
 
-
     // Canvases
     //fVplusCanvas = new TCanvas ( "VPlus", "VPlus", 515, 0, 500, 500 );
     fOffsetCanvas = new TCanvas ( "Offset", "Offset", 10, 0, 500, 500 );
@@ -32,6 +52,7 @@ void Calibration::Initialise ( bool pAllChan )
     uint32_t cCbcCount = 0;
     uint32_t cCbcIdMax = 0;
     uint32_t cFeCount = 0;
+
 
     for ( auto cBoard : fBoardVector )
     {
@@ -45,12 +66,22 @@ void Calibration::Initialise ( bool pAllChan )
 
             for ( auto cCbc : cFe->fCbcVector )
             {
+                //if it is a CBC3, disable the stub logic for this procedure
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - thus disabling Stub logic for offset tuning" << RESET ;
+                    fStubLogicValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth");
+                    fHIPCountValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "HIP&TestMode");
+                    fCbcInterface->WriteCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth", 0x23);
+                    fCbcInterface->WriteCbcReg (cCbc, "HIP&TestMode", 0x08);
+                }
+
                 uint32_t cCbcId = cCbc->getCbcId();
                 cCbcCount++;
 
                 if ( cCbcId > cCbcIdMax ) cCbcIdMax = cCbcId;
 
-                fVplusMap[cCbc] = 0;
+                fVplusMap.insert ({cCbc, 0});
 
                 TString cName = Form ( "h_VplusValues_Fe%dCbc%d", cFeId, cCbcId );
                 TObject* cObj = gROOT->FindObject ( cName );
@@ -173,6 +204,7 @@ void Calibration::FindVplus()
             }
 
             //updateHists ( "Vplus" );
+            this->HttpServerProcess();
             //
         }
     }
@@ -392,6 +424,28 @@ void Calibration::FindOffsets()
             setOffset ( cOffset, cTGroup.first );
             LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
         }
+        else if (cTGroup.first == -1 && fAllChan)
+        {
+            LOG (INFO) << GREEN << "Enabling all channels ... Test Group Id " << cTGroup.first << RESET ;
+
+            bitwiseOffset ( cTGroup.first );
+
+            if ( fCheckLoop )
+            {
+                // now all the bits are toggled or not, I still want to verify that the occupancy is ok
+                int cMultiple = 3;
+                LOG (INFO) << "Verifying Occupancy with final offsets by taking " << fEventsPerPoint* cMultiple << " Triggers!" ;
+                measureOccupancy ( fEventsPerPoint  * cMultiple, cTGroup.first );
+                // now find the occupancy for each channel and update the TProfile
+            }
+
+            updateHists ( "Occupancy" );
+            uint8_t cOffset = ( fHoleMode ) ? 0x00 : 0xFF;
+            setOffset ( cOffset, cTGroup.first );
+            LOG (INFO) << RED << "Disabling Test Group...." << cTGroup.first << RESET  ;
+        }
+
+        this->HttpServerProcess();
     }
 
     setRegValues();
@@ -544,7 +598,7 @@ void Calibration::setOffset ( uint8_t pOffset, int  pGroup, bool pVPlus )
     }
 }
 
-void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
+void Calibration::toggleOffset ( int pTGroup, uint8_t pBit, bool pBegin )
 {
     for ( auto cBoard : fBoardVector )
     {
@@ -564,7 +618,7 @@ void Calibration::toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin )
                 RegisterVector cRegVec;   // vector of pairs for the write operation
 
                 // loop the channels of the current group and toggle bit i in the global map
-                for ( auto& cChannel : fTestGroupChannelMap[pGroup] )
+                for ( auto& cChannel : fTestGroupChannelMap[pTGroup] )
                 {
                     TString cRegName = Form ( "Channel%03d", cChannel + 1 );
 
@@ -701,6 +755,13 @@ void Calibration::setRegValues()
                     TString cRegName = Form ( "Channel%03d", iChan + 1 );
                     cRegVec.push_back ( {cRegName.Data(), cOffset} );
                     //LOG (INFO) << GREEN << "Offset for CBC " << cCbc->getCbcId() << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << " -applying to chip" << RESET ;
+                }
+
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - re-enabling stub logic to original value!" << RESET;
+                    cRegVec.push_back ({"Pipe&StubInpSel&Ptwidth", fStubLogicValue[cCbc]});
+                    cRegVec.push_back ({"HIP&TestMode", fHIPCountValue[cCbc]});
                 }
 
                 fCbcInterface->WriteCbcMultReg ( cCbc, cRegVec );

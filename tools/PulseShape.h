@@ -40,6 +40,8 @@ typedef std::map<Cbc*, std::vector<Channel*> > ChannelMap;
 class PulseShape : public Tool
 {
   public:
+    PulseShape();
+    ~PulseShape();
     /*!
     * \Initialize the istogram
     */

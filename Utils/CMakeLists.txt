@@ -1,8 +1,12 @@
-if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
-
+if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     #includes
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
+    #include_directories(${EXTERN_PUGIXML_INCLUDE_PREFIX})
     
+    #library directories
+    link_directories(${UHAL_UHAL_LIB_PREFIX})
+
     #find source files
     file(GLOB HEADERS *.h)
     file(GLOB SOURCES *.cc)
@@ -13,6 +17,8 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     
     #add the library
     add_library(Ph2_Utils SHARED ${SOURCES} ${HEADERS})
+    set(LIBS ${LIBS} cactus_extern_pugixml)
+    TARGET_LINK_LIBRARIES(Ph2_Utils ${LIBS})
     
     #check for ZMQ installed
     if(ZMQ_FOUND)
@@ -40,8 +46,9 @@ else()
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/log/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/grammars/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/otsdaq-cmsoutertracker/Ph2_ACF)
-    #include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/extern/pugixml/RPMBUILD/SOURCES/include/)
+    include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/extern/pugixml/RPMBUILD/SOURCES/include/)
     
+
     cet_set_compiler_flags(
      EXTRA_FLAGS -Wno-reorder -Wl,--undefined
      )
@@ -50,6 +57,7 @@ else()
             LIBRARIES
     	pthread
     	${Boost_SYSTEM_LIBRARY}
+    	EXCLUDE UsbUtilities.h UsbUtilities.cc
             )
     
     install_headers()

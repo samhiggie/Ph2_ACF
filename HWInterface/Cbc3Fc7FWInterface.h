@@ -47,6 +47,7 @@ namespace Ph2_HwInterface {
         uint32_t fBroadcastCbcId;
         uint32_t fNCbc;
         uint32_t fFMCId;
+        uint32_t fTriggerSourceWord;
         std::map<uint16_t, uint8_t> fIDMap;
         std::map<uint8_t, uint16_t> fIDMapReverse;
 
@@ -252,6 +253,8 @@ namespace Ph2_HwInterface {
         void RebootBoard() {}
         /*! \brief Set or reset the start signal */
         void SetForceStart ( bool bStart) {}
+
+
     };
 }
 

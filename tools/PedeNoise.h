@@ -34,24 +34,18 @@ using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
 
-typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
-typedef std::map< int, std::vector<uint8_t> >  TestGroupChannelMap;
-
 
 class PedeNoise : public Tool
 {
 
+    using RegisterVector =  std::vector<std::pair< std::string, uint8_t> >;
+    //using TestGroupChannelMap std::map< int, std::vector<uint8_t> >;
+
   public:
-    PedeNoise()
-    {
-        this->MakeTestGroups ( false );
-    }
+    PedeNoise();
+    ~PedeNoise();
 
-    ~PedeNoise()
-    {
-    }
-
-    void Initialise();
+    void Initialise (bool pAllChan = false, bool pDisableStubLogic = true);
     void measureNoise (uint8_t pTPAmplitude = 0); //method based on the one below that actually analyzes the scurves and extracts the noise
     std::string sweepSCurves (uint8_t pTPAmplitude); // actual methods to measure SCurves
     void Validate (uint32_t pNoiseStripThreshold = 1, uint32_t pMultiple = 100);
@@ -78,11 +72,17 @@ class PedeNoise : public Tool
     uint32_t fNFe;
 
     // Settings
+    bool fAllChan;
     bool fHoleMode;
     bool fTestPulse;
     bool fFitted;
     uint8_t fTestPulseAmplitude;
     uint32_t fEventsPerPoint;
+    bool fDisableStubLogic;
+
+    //to hold the original register values
+    std::map<Cbc*, uint8_t> fStubLogicValue;
+    std::map<Cbc*, uint8_t> fHIPCountValue;
 
   protected:
     //handling offsets

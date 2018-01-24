@@ -33,19 +33,20 @@ using namespace Ph2_System;
 
 
 // Typedefs for Containers
-typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
+//typedef std::map<Cbc*, std::vector<Channel> > CbcChannelMap;
 // typedef std::map<Cbc*, TF1*> FitMap;
 // typedef std::map<Cbc*, TH1F*> HistMap;
-typedef std::vector<std::pair< std::string, uint8_t> > RegisterVector;
-typedef std::map< int, std::vector<uint8_t> >  TestGroupChannelMap;
 
 class Calibration : public Tool
 {
-  public:
-    Calibration() {};
-    ~Calibration() {};
+    using RegisterVector =  std::vector<std::pair< std::string, uint8_t> >;
+    using TestGroupChannelMap =  std::map< int, std::vector<uint8_t> >;
 
-    void Initialise ( bool pAllChan = false );
+  public:
+    Calibration();
+    ~Calibration();
+
+    void Initialise ( bool pAllChan = false, bool pDisableStubLogic = true );
     void FindVplus();
     // offsets are found by taking pMultiple*fEvents triggers
     void FindOffsets();
@@ -61,7 +62,7 @@ class Calibration : public Tool
 
     void setOffset ( uint8_t pOffset, int  pTGroupId, bool pVPlus = false );
 
-    void toggleOffset ( uint8_t pGroup, uint8_t pBit, bool pBegin );
+    void toggleOffset ( int pTGroup, uint8_t pBit, bool pBegin );
 
     void measureOccupancy ( uint32_t pNEvents, int pTGroup );
 
@@ -80,13 +81,14 @@ class Calibration : public Tool
 
 
   private:
+    // Containers
+    //static std::map<Cbc*, uint16_t> fVplusMap;
+    std::map<Cbc*, uint16_t> fVplusMap;
+
     // Canvases
     TCanvas* fVplusCanvas;
     TCanvas* fOffsetCanvas;
     TCanvas* fOccupancyCanvas;
-
-    // Containers
-    std::map<Cbc*, uint16_t> fVplusMap;
 
     // Counters
     uint32_t fNCbc;
@@ -100,7 +102,12 @@ class Calibration : public Tool
     uint16_t fTargetVcth;
     uint8_t fTargetOffset;
     bool fCheckLoop;
+    bool fAllChan;
+    bool fDisableStubLogic;
 
+    //to hold the original register values
+    std::map<Cbc*, uint8_t> fStubLogicValue;
+    std::map<Cbc*, uint8_t> fHIPCountValue;
 };
 
 

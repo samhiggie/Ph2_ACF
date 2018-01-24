@@ -1,4 +1,4 @@
-if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
+if(NOT DEFINED ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     #includes
     include_directories(${UHAL_UHAL_INCLUDE_PREFIX})
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -14,16 +14,16 @@ if(NOT ENV{OTSDAQ_CMSOUTERTRACKER_DIR})
     
     #add the library
     add_library(Ph2_Interface SHARED ${SOURCES} ${HEADERS})
-    set(LIBS ${LIBS} Ph2_Description cactus_uhal_log cactus_uhal_uhal cactus_uhal_grammars boost_date_time)
+    set(LIBS ${LIBS} Ph2_Description cactus_uhal_uhal )
     TARGET_LINK_LIBRARIES(Ph2_Interface ${LIBS})
     
-elseif()
+else()
 
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/uhal/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/log/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/uhal/grammars/include)
     include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/otsdaq-cmsoutertracker/Ph2_ACF)
-    #include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/extern/pugixml/RPMBUILD/SOURCES/include/)
+    include_directories($ENV{OTSDAQ_CMSOUTERTRACKER_DIR}/uhal/uhal_2_4_2/cactuscore/extern/pugixml/RPMBUILD/SOURCES/include/)
     
     cet_set_compiler_flags(
      EXTRA_FLAGS -Wno-reorder -Wl,--undefined
@@ -32,9 +32,7 @@ elseif()
     cet_make(LIBRARY_NAME Ph2_Interface
             LIBRARIES
             Ph2_Description
-            pthread
-            cactus_uhal_grammars
-            cactus_uhal_log
+            #pthread
             cactus_uhal_uhal
             )
     

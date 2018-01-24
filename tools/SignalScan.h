@@ -16,6 +16,7 @@
 #include "../Utils/Visitor.h"
 #include "../Utils/Utilities.h"
 #include "../Utils/CommonVisitors.h"
+#include "../Utils/Timer.h"
 
 
 #include "TString.h"
@@ -41,9 +42,13 @@ class SignalScan : public Tool
 {
 
   public:
+    SignalScan();
+    ~SignalScan();
     void Initialize ();
-    void ScanSignal (int pSignalScanLength);
-
+    void ScanSignal(uint16_t cVcthStart, uint16_t cVcthStop );
+    //void ScanSignal (int pSignalScanLength);
+    void writeObjects();
+    
   private:
     void updateHists ( std::string pHistName, bool pFinal );
     void parseSettings();
@@ -57,7 +62,7 @@ class SignalScan : public Tool
     uint32_t fSignalScanStep;
 
     const uint32_t fTDCBins = 8;
-
+    const double fTimeToWait = 1.0 ; 
     int convertLatencyPhase (uint32_t pStartLatency, uint32_t cLatency, uint32_t cPhase)
     {
         int result = int (cLatency) - int (pStartLatency);

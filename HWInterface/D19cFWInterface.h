@@ -58,6 +58,8 @@ namespace Ph2_HwInterface {
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
+        // some useful stuff 
+        int fResetAttempts; 
       public:
         /*!
          *
@@ -286,6 +288,8 @@ namespace Ph2_HwInterface {
         void RebootBoard();
         /*! \brief Set or reset the start signal */
         void SetForceStart ( bool bStart) {}
+
+
     };
 }
 

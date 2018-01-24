@@ -34,6 +34,18 @@ struct HistogramFillerShort  : public HwDescriptionVisitor
     }
 };
 
+ShortFinder::ShortFinder() : Tool()
+{
+    fNShorts = 0;
+    fNShortsTop = 0 ;
+    fNShortsBottom = 0;
+    fTotalEvents = 0;
+    fNCbc = 2;
+}
+
+// D'tor
+ShortFinder::~ShortFinder() {}
+
 //Reload CBC registers from file found in results (fDirectoryName) directory .
 //If no directory is found use the default files for the different operational modes found in Ph2_ACF/settings
 void ShortFinder::ReconfigureRegisters()
@@ -73,7 +85,7 @@ void ShortFinder::ReconfigureRegisters()
                 else
                 {
                     char buffer[120];
-                    sprintf (buffer, "%s/FE%dCBC%d.txt" , fDirectoryName.c_str() , cCbc->getFeId(), cCbc->getCbcId() );
+                    sprintf (buffer, "%s/FE%dCBC%d.txt", fDirectoryName.c_str(), cCbc->getFeId(), cCbc->getCbcId() );
                     pRegFile = buffer;
                 }
 
@@ -96,7 +108,7 @@ void ShortFinder::ConfigureVcth (uint16_t pVcth)
 void ShortFinder::writeGraphs()
 {
     fResultFile->cd();
-    fShortsCanvas->Write ( fShortsCanvas->GetName() , TObject::kOverwrite );
+    fShortsCanvas->Write ( fShortsCanvas->GetName(), TObject::kOverwrite );
     //fDataCanvas->Write ( fDataCanvas->GetName(), TObject::kOverwrite );
 }
 void ShortFinder::SaveResults()
@@ -134,7 +146,7 @@ void ShortFinder::Initialize()
     fDataCanvas = new TCanvas ( "fDataCanvas", "SingleStripEfficiency", 1200, 800 );
     fDataCanvas->Divide ( 2 );
 
-    fShortsCanvas = new TCanvas ("fShortsCanvas", "Shorts", 1200 , 800 );
+    fShortsCanvas = new TCanvas ("fShortsCanvas", "Shorts", 1200, 800 );
     fShortsCanvas->Divide (2 );
 
     InitialiseSettings();
@@ -265,8 +277,7 @@ void ShortFinder::UpdateHists()
     fHistShortsBottom->Draw ("HistoSAME");
     fShortsCanvas->Update();
 
-
-
+    this->HttpServerProcess();
 }
 void ShortFinder::UpdateHistsMerged()
 {
@@ -276,7 +287,7 @@ void ShortFinder::UpdateHistsMerged()
     fHistBottomMerged->Draw();
     fDataCanvas->Update();
 
-
+    this->HttpServerProcess();
 }
 
 void ShortFinder::SetBeBoard (BeBoard* pBoard)
@@ -307,7 +318,7 @@ void ShortFinder::SetBeBoard (BeBoard* pBoard)
     cThresholdVisitor.setThreshold (cVcth);
     this->accept (cThresholdVisitor);
 }
-bool ShortFinder::CheckChannel (Short pShort , ShortsList pShortsList)
+bool ShortFinder::CheckChannel (Short pShort, ShortsList pShortsList)
 {
     for (auto cChannel : pShortsList)
     {
@@ -566,12 +577,12 @@ void ShortFinder::ReconstructShorts (ShortedGroupsList pShortedGroupsArray, std:
         {
             if ( cMemberChannel[0] == 0 )
             {
-                fHistShortsTop->Fill ( cMemberChannel[1] , 1 );
+                fHistShortsTop->Fill ( cMemberChannel[1], 1 );
                 fNShortsTop++;
             }
             else if ( cMemberChannel[0] == 1 )
             {
-                fHistShortsBottom->Fill ( cMemberChannel[1] , 1 );
+                fHistShortsBottom->Fill ( cMemberChannel[1], 1 );
                 fNShortsBottom++;
             }
 

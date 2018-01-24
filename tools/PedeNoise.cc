@@ -1,9 +1,35 @@
 #include "PedeNoise.h"
 
 
-void PedeNoise::Initialise()
+PedeNoise::PedeNoise() :
+    Tool(),
+    fNoiseCanvas (nullptr),
+    fPedestalCanvas (nullptr),
+    fFeSummaryCanvas (nullptr),
+    fNormHist (nullptr),
+    fThresholdMap(),
+    fHitCountMap(),
+    fNCbc (0),
+    fNFe (0),
+    fHoleMode (false),
+    fTestPulse (false),
+    fFitted (false),
+    fTestPulseAmplitude (0),
+    fEventsPerPoint (0)
 {
-    //is to be called after system controller::ReadHW, ReadSettings
+}
+
+PedeNoise::~PedeNoise()
+{
+}
+
+void PedeNoise::Initialise (bool pAllChan, bool pDisableStubLogic)
+{
+    fDisableStubLogic = pDisableStubLogic;
+    this->MakeTestGroups ( pAllChan );
+    fAllChan = pAllChan;
+
+    //is to be called after system controller::InitialiseHW, InitialiseSettings
     // populates all the maps
     // create the canvases
 
@@ -31,6 +57,16 @@ void PedeNoise::Initialise()
 
             for ( auto cCbc : cFe->fCbcVector )
             {
+                //if it is a CBC3, disable the stub logic for this procedure
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - thus disabling Stub logic for offset tuning" << RESET ;
+                    fStubLogicValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth");
+                    fHIPCountValue[cCbc] = fCbcInterface->ReadCbcReg (cCbc, "HIP&TestMode");
+                    fCbcInterface->WriteCbcReg (cCbc, "Pipe&StubInpSel&Ptwidth", 0x23);
+                    fCbcInterface->WriteCbcReg (cCbc, "HIP&TestMode", 0x08);
+                }
+
                 uint32_t cCbcId = cCbc->getCbcId();
                 cCbcCount++;
 
@@ -141,8 +177,10 @@ void PedeNoise::Initialise()
     for ( BeBoard* pBoard : fBoardVector )
         this->measureOccupancy (pBoard, -1);
 
-    cSetting = fSettingsMap.find("HoleMode");
-    if( cSetting!= std::end(fSettingsMap)) {
+    cSetting = fSettingsMap.find ("HoleMode");
+
+    if ( cSetting != std::end (fSettingsMap) )
+    {
         bool cHoleModeFromSettings = cSetting->second;
         bool cHoleModeFromOccupancy = true;
 
@@ -154,16 +192,17 @@ void PedeNoise::Initialise()
             std::stringstream ss;
             float cOccupancy = fHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
             cHoleModeFromOccupancy = (cOccupancy == 0) ? false :  true;
-            if (cHoleModeFromOccupancy != cHoleModeFromSettings) {
+
+            if (cHoleModeFromOccupancy != cHoleModeFromSettings)
                 ss << BOLDRED << "Be careful: " << RESET << "operation mode from settings does not correspond to the one found by measuring occupancy. Using the one from settings (" << BOLDYELLOW << cMode << RESET << ")";
-            }
-            else {
+            else
                 ss << BOLDBLUE << "Measuring Occupancy @ Threshold " << BOLDRED << cCbc.second << BOLDBLUE << ": " << BOLDRED << cOccupancy << BOLDBLUE << ", thus assuming " << BOLDYELLOW << cMode << RESET << " (consistent with the settings file)";
-            }
+
             LOG (INFO) << ss.str();
         }
     }
-    else {
+    else
+    {
         for (auto& cCbc : fThresholdMap)
         {
             float cOccupancy = fHitCountMap[cCbc.first] / float (fEventsPerPoint * NCHANNELS);
@@ -217,15 +256,21 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
     // now measure some SCurves
     for ( auto& cTGrpM : fTestGroupChannelMap )
     {
-        if (cTGrpM.first != -1)
+        // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
+        if (fTestPulse && cTGrpM.first != -1)
         {
-            // if we want to run with test pulses, we'll have to enable commissioning mode and enable the TP for each test group
-            if (fTestPulse)
-            {
-                LOG (INFO) << GREEN <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
-                setFWTestPulse();
-                setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true, fHoleMode );
-            }
+            LOG (INFO) << GREEN <<  "Enabling Test Pulse for Test Group " << cTGrpM.first << " with amplitude " << +pTPAmplitude << RESET ;
+            setFWTestPulse();
+            setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true, fHoleMode );
+        }
+        else if (fTestPulse && cTGrpM.first == -1)
+        {
+            fTestPulse = false;
+            LOG (INFO) << RED <<  "Test groups disabled. Can't enable Test Pulse for Test Group " << cTGrpM.first << RESET ;
+        }
+
+        if (cTGrpM.first != -1 || fAllChan)
+        {
 
             LOG (INFO) << GREEN << "Measuring Test Group...." << cTGrpM.first << RESET ;
             // this leaves the offset values at the tuned values for cTGrp and disables all other groups
@@ -248,12 +293,13 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
             fNoiseCanvas->Modified();
             fNoiseCanvas->Update();
 
-            if (fTestPulse)
-            {
-                LOG (INFO) << RED <<  "Disabling Test Pulse for Test Group " << cTGrpM.first << RESET ;
-                setSystemTestPulse ( 0, cTGrpM.first, false, fHoleMode );
+        }
 
-            }
+        if (fTestPulse)
+        {
+            LOG (INFO) << RED <<  "Disabling Test Pulse for Test Group " << cTGrpM.first << RESET ;
+            setSystemTestPulse ( 0, cTGrpM.first, false, fHoleMode );
+
         }
     }
 
@@ -291,6 +337,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
             const std::vector<Event*>& events = GetEvents ( cBoard );
 
             fillOccupancyHist (cBoard, events);
+
         }
 
         //now I've filled the histogram with the occupancy
@@ -334,6 +381,7 @@ void PedeNoise::Validate ( uint32_t pNoiseStripThreshold, uint32_t pMultiple )
         }
 
         setThresholdtoNSigma (cBoard, 0);
+        this->HttpServerProcess();
     }
 }
 
@@ -533,25 +581,31 @@ void PedeNoise::measureSCurves (int pTGrpId, std::string pHistName, uint16_t pSt
             cIncrement++;
 
             // following checks if we're not going out of bounds
-            if (cSign == 1 && (pStartValue + (cIncrement * cSign) > cMaxValue)) {
+            if (cSign == 1 && (pStartValue + (cIncrement * cSign) > cMaxValue) )
+            {
                 if (fHoleMode) cAllZero = true;
                 else cAllOne = true;
+
                 cIncrement = 0;
-                cSign = -1*cSign;
+                cSign = -1 * cSign;
             }
-            if (cSign == -1 && (pStartValue + (cIncrement * cSign) < 0)) {
+
+            if (cSign == -1 && (pStartValue + (cIncrement * cSign) < 0) )
+            {
                 if (fHoleMode) cAllOne = true;
                 else cAllZero = true;
+
                 cIncrement = 0;
-                cSign = -1*cSign;
+                cSign = -1 * cSign;
             }
 
 
             LOG (DEBUG) << "All 0: " << cAllZero << " | All 1: " << cAllOne << " current value: " << cValue << " | next value: " << pStartValue + (cIncrement * cSign) << " | Sign: " << cSign << " | Increment: " << cIncrement << " Hitcounter: " << cHitCounter << " Max hits: " << cMaxHits;
-            cValue = pStartValue + (cIncrement * cSign);            
+            cValue = pStartValue + (cIncrement * cSign);
         }
     }
 
+    this->HttpServerProcess();
     LOG (INFO) << YELLOW << "Found minimal and maximal occupancy " << cMinBreakCount << " times, SCurves finished! " << RESET ;
 }
 
@@ -876,6 +930,7 @@ void PedeNoise::extractPedeNoise (std::string pHistName)
         }
 
         //end of Fe loop
+        this->HttpServerProcess();
     }
 
     //end of board loop
@@ -945,6 +1000,13 @@ void PedeNoise::setInitialOffsets()
                     cCbc->setReg ( Form ( "Channel%03d", iChan + 1 ), cOffset );
                     cRegVec.push_back ({ Form ( "Channel%03d", iChan + 1 ), cOffset } );
                     //LOG(INFO) << GREEN << "Offset for CBC " << cCbcId << " Channel " << iChan << " : 0x" << std::hex << +cOffset << std::dec << RESET ;
+                }
+
+                if (cCbc->getChipType() == ChipType::CBC3 && fDisableStubLogic)
+                {
+                    LOG (INFO) << BOLDBLUE << "Chip Type = CBC3 - re-enabling stub logic to original value!" << RESET;
+                    cRegVec.push_back ({"Pipe&StubInpSel&Ptwidth", fStubLogicValue[cCbc]});
+                    cRegVec.push_back ({"HIP&TestMode", fHIPCountValue[cCbc]});
                 }
 
                 fCbcInterface->WriteCbcMultReg (cCbc, cRegVec);

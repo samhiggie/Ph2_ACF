@@ -29,7 +29,7 @@ namespace Ph2_HwInterface {
         fBroadcastCbcId (0),
         fNCbc (0),
         fFMCId (1)
-    {}
+    {fResetAttempts = 0 ; }
 
 
     D19cFWInterface::D19cFWInterface ( const char* puHalConfigFileName,
@@ -44,6 +44,7 @@ namespace Ph2_HwInterface {
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
+        fResetAttempts = 0 ; 
     }
 
     D19cFWInterface::D19cFWInterface ( const char* pId,
@@ -54,7 +55,7 @@ namespace Ph2_HwInterface {
         fBroadcastCbcId (0),
         fNCbc (0),
         fFMCId (1)
-    {}
+    {fResetAttempts = 0 ; }
 
 
     D19cFWInterface::D19cFWInterface ( const char* pId,
@@ -70,6 +71,7 @@ namespace Ph2_HwInterface {
     {
         if ( fFileHandler == nullptr ) fSaveToFile = false;
         else fSaveToFile = true;
+        fResetAttempts = 0 ; 
     }
 
     void D19cFWInterface::setFileHandler (FileHandler* pHandler)
@@ -143,7 +145,7 @@ namespace Ph2_HwInterface {
         return name;
     }
 
-    std::string D19cFWInterface::getChipName(uint32_t pChipCode)
+    std::string D19cFWInterface::getChipName (uint32_t pChipCode)
     {
         std::string name = "UNKNOWN";
 
@@ -165,7 +167,7 @@ namespace Ph2_HwInterface {
         return name;
     }
 
-    ChipType D19cFWInterface::getChipType(uint32_t pChipCode)
+    ChipType D19cFWInterface::getChipType (uint32_t pChipCode)
     {
         ChipType chip_type = ChipType::UNDEFINED;
 
@@ -212,7 +214,7 @@ namespace Ph2_HwInterface {
         LOG (INFO) << BOLDYELLOW << "FMC1 Card: " << RESET << getFMCCardName (fmc1_card_type);
         LOG (INFO) << BOLDYELLOW << "FMC2 Card: " << RESET << getFMCCardName (fmc2_card_type);
 
-        LOG (INFO) << "Chip Type: " << BOLDGREEN << getChipName(chip_code) << RESET;
+        LOG (INFO) << "Chip Type: " << BOLDGREEN << getChipName (chip_code) << RESET;
         LOG (INFO) << "Number of Hybrids: " << BOLDGREEN << num_hybrids << RESET;
         LOG (INFO) << "Number of Chips per Hybrid: " << BOLDGREEN << num_chips << RESET;
 
@@ -258,15 +260,6 @@ namespace Ph2_HwInterface {
         else LOG (INFO) << "I2C Replies Available: " << BOLDGREEN << "No" << RESET;
 
         LOG (INFO) << YELLOW << "============================" << RESET;
-        LOG (INFO) << BOLDYELLOW << "Frequency Checker:" << RESET;
-        float ipb_clk_rate = ReadReg ("fc7_daq_stat.test_clock.ipb_clk_rate") / 10000.0;
-        float forty_mhz_clk_rate = ReadReg ("fc7_daq_stat.test_clock.40mhz_clk_rate") / 10000.0;
-        float user_clk_rate = ReadReg ("fc7_daq_stat.test_clock.trigger_rate") / 10.0;
-        LOG (INFO) << "IPBus Clock: " << ipb_clk_rate << "MHz";
-        LOG (INFO) << "40MHz Clock: " << forty_mhz_clk_rate << "MHz";
-        LOG (INFO) << "Trigger Clock: " << user_clk_rate << "kHz";
-
-        LOG (INFO) << YELLOW << "============================" << RESET;
 
         uint32_t cVersionWord = 0;
         return cVersionWord;
@@ -278,7 +271,7 @@ namespace Ph2_HwInterface {
         // and it needs fast reset after, so let's be secure and do also the hard one..
         this->CbcHardReset();
         this->CbcFastReset();
-        usleep(1);
+        usleep (1);
 
         WriteReg ("fc7_daq_ctrl.command_processor_block.global.reset", 0x1);
 
@@ -286,8 +279,8 @@ namespace Ph2_HwInterface {
 
         // read info about current firmware
         uint32_t cChipTypeCode = ReadReg ("fc7_daq_stat.general.info.chip_type");
-        std::string cChipName = getChipName(cChipTypeCode);
-        fFirwmareChipType = getChipType(cChipTypeCode);
+        std::string cChipName = getChipName (cChipTypeCode);
+        fFirwmareChipType = getChipType (cChipTypeCode);
         fFWNHybrids = ReadReg ("fc7_daq_stat.general.info.num_hybrids");
         fFWNChips = ReadReg ("fc7_daq_stat.general.info.num_chips");
         fCBC3Emulator = (ReadReg ("fc7_daq_stat.general.info.implementation") == 2);
@@ -378,16 +371,18 @@ namespace Ph2_HwInterface {
         bool cWordCorrect = true;
 
         if (cReadSuccess)
-        {            
+        {
             // all the replies will be sorted by hybrid id/chip id: hybrid0: chips(0,2,3,4..), hybrid2: chips(...) - so we can use index k.
             uint8_t k = 0;
+
             for (Module* cFe : pBoard->fModuleVector)
             {
                 for ( Cbc* cCbc : cFe->fCbcVector)
                 {
                     uint32_t cWord = pReplies.at (k);
-                    cWordCorrect = ( (((cWord & 0x00f00000) >> 20) == cCbc->getCbcId()) & (((cWord & 0x0f000000) >> 24) == cFe->getFeId()) ) ? true : false;
+                    cWordCorrect = ( ( ( (cWord & 0x00f00000) >> 20) == cCbc->getCbcId() ) & ( ( (cWord & 0x0f000000) >> 24) == cFe->getFeId() ) ) ? true : false;
                     k++;
+
                     if (!cWordCorrect) break;
                 }
             }
@@ -399,10 +394,12 @@ namespace Ph2_HwInterface {
 
         if (!cWordCorrect) LOG (ERROR) << RED << "FE/CBC ids are not correct!" << RESET;
 
-        this->PhaseTuning(pBoard);
+        this->PhaseTuning (pBoard);
 
         this->ResetReadout();
-
+        
+	//adding an Orbit reset to align CBC L1A counters
+        this->WriteReg("fc7_daq_ctrl.fast_command_block.control.fast_orbit_reset",0x1);
     }
 
     void D19cFWInterface::PowerOnDIO5()
@@ -526,36 +523,76 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::Start()
     {
+        this->CbcFastReset();
         this->ResetReadout();
+
+        //here open the shutter for the stub counter block (for some reason self clear doesn't work, that why we have to clear the register manually)
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_open", 0x1);
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_open", 0x0);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
+        
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
     }
 
     void D19cFWInterface::Stop()
     {
+        //here close the shutter for the stub counter block
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x1);
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x0);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
+        
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
-        this->ResetReadout();
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
+
+        //here read the stub counters
+        /*
+  	uint32_t cBXCounter1s = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ls");
+        uint32_t cBXCounterms = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ms");
+        uint32_t cStubCounter0 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip0");
+        uint32_t cStubCounter1 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip1");
+	*/
+        /*
+  	LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: " << RESET;
+        LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s << RESET;
+        LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms << RESET;
+        LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:" << RESET;
+        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF) << RESET;
+        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 ) << RESET;
+        LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:" << RESET;
+        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF) << RESET;
+        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter1 & 0xFFFF0000) >> 16) << RESET;
+    	*/
     }
 
 
     void D19cFWInterface::Pause()
     {
+        LOG (INFO) << BOLDBLUE << "................................ Pausing run ... " << RESET ; 
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
     }
 
 
     void D19cFWInterface::Resume()
     {
+        LOG (INFO) << BOLDBLUE << "Reseting readout before resuming run ... " << RESET ; 
+        this->ResetReadout();
+    
+        LOG (INFO) << BOLDBLUE << "................................ Resuming run ... " << RESET ; 
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
     }
 
     void D19cFWInterface::ResetReadout()
     {
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x1);
-        usleep (10);
-        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
-        usleep (10);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
 
-        if (fIsDDR3Readout) {
+        WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
+        std::this_thread::sleep_for (std::chrono::microseconds (10) );
+        
+	if (fIsDDR3Readout) {
             fDDR3Offset = 0;
             bool cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
             int i=0;
@@ -568,16 +605,18 @@ namespace Ph2_HwInterface {
         }
     }
 
-    void D19cFWInterface::PhaseTuning(const BeBoard* pBoard)
+    void D19cFWInterface::PhaseTuning (const BeBoard* pBoard)
     {
-        if(fFirwmareChipType == ChipType::CBC3)
+        if (fFirwmareChipType == ChipType::CBC3)
         {
-            if(!fCBC3Emulator) {
+            if (!fCBC3Emulator)
+            {
                 std::map<Cbc*, uint8_t> cStubLogictInputMap;
                 std::map<Cbc*, uint8_t> cHipRegMap;
                 std::vector<uint32_t> cVecReq;
 
                 cVecReq.clear();
+
                 for (auto cFe : pBoard->fModuleVector)
                 {
                     for (auto cCbc : cFe->fCbcVector)
@@ -594,11 +633,12 @@ namespace Ph2_HwInterface {
                         this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
 
                         cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
-                        cRegItem.fValue = (cOriginalHipReg & ~ (0x1 << 4));
+                        cRegItem.fValue = (cOriginalHipReg & ~ (0x1 << 4) );
                         this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
 
                     }
                 }
+
                 uint8_t cWriteAttempts = 0;
                 this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
@@ -607,33 +647,42 @@ namespace Ph2_HwInterface {
                 int cMaxAttempts = 10;
 
                 uint32_t hardware_ready = 0;
-                while(hardware_ready < 1)
+
+                while (hardware_ready < 1)
                 {
                     if (cCounter++ > cMaxAttempts)
                     {
-                        uint32_t delay5_done = ReadReg("fc7_daq_stat.physical_interface_block.delay5_done");
-                        uint32_t serializer_done = ReadReg("fc7_daq_stat.physical_interface_block.serializer_done");
-                        uint32_t bitslip_done = ReadReg("fc7_daq_stat.physical_interface_block.bitslip_done");
-                        LOG (INFO) << "Clock Data Timing tuning failed after " << cMaxAttempts << " attempts with value - aborting!";
-                        LOG(INFO) << "Debug Info: delay5 done: " << delay5_done << ", serializer_done: " << serializer_done << ", bitslip_done: " << bitslip_done;
-                        exit (1);
+                        uint32_t delay5_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done_cbc0");
+                        uint32_t serializer_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done_cbc0");
+                        uint32_t bitslip_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done_cbc0");
+                        
+			uint32_t delay5_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done_cbc1");
+                        uint32_t serializer_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done_cbc1");
+                        uint32_t bitslip_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done_cbc1");
+			LOG (INFO) << "Clock Data Timing tuning failed after " << cMaxAttempts << " attempts with value - aborting!";
+                        LOG (INFO) << "Debug Info CBC0: delay5 done: " << delay5_done_cbc0 << ", serializer_done: " << serializer_done_cbc0 << ", bitslip_done: " << bitslip_done_cbc0;
+                        LOG (INFO) << "Debug Info CBC1: delay5 done: " << delay5_done_cbc1 << ", serializer_done: " << serializer_done_cbc1 << ", bitslip_done: " << bitslip_done_cbc1;
+			uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
+			uint32_t tuning_state_cbc1 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc1");
+			LOG(INFO) << "tuning state cbc0: " << tuning_state_cbc0 << ", cbc1: " << tuning_state_cbc1;
+			exit (1);
                     }
 
                     this->CbcFastReset();
-                    usleep(10);
+                    usleep (10);
                     // reset  the timing tuning
-                    WriteReg("fc7_daq_ctrl.physical_interface_block.control.cbc3_tune_again",0x1);
+                    WriteReg ("fc7_daq_ctrl.physical_interface_block.control.cbc3_tune_again", 0x1);
 
                     std::this_thread::sleep_for (std::chrono::milliseconds (100) );
-                    hardware_ready = ReadReg("fc7_daq_stat.physical_interface_block.hardware_ready");
+                    hardware_ready = ReadReg ("fc7_daq_stat.physical_interface_block.hardware_ready");
                 }
 
                 //re-enable the stub logic
+                cVecReq.clear();
                 for (auto cFe : pBoard->fModuleVector)
                 {
                     for (auto cCbc : cFe->fCbcVector)
                     {
-                        cVecReq.clear();
 
                         CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
                         cRegItem.fValue = cStubLogictInputMap[cCbc];
@@ -645,78 +694,110 @@ namespace Ph2_HwInterface {
 
                     }
                 }
+
                 cWriteAttempts = 0;
                 this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
 
-                LOG(INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
+                LOG (INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
+		
+		/*for (int i = 0; i < 7; i++) {
+            		WriteReg ("fc7_daq_ctrl.physical_interface_block.control.cbc3_bitslip_stub1", 0x1);
+			usleep(10);
+		}*/
             }
         }
-        else if (fFirwmareChipType == ChipType::CBC2) {
+        else if (fFirwmareChipType == ChipType::CBC2)
+        {
             // no timing tuning needed
         }
-        else {
-            LOG(INFO) << "No tuning procedure implemented for this chip type.";
-            exit(1);
+        else
+        {
+            LOG (INFO) << "No tuning procedure implemented for this chip type.";
+            exit (1);
         }
     }
 
     uint32_t D19cFWInterface::ReadData ( BeBoard* pBoard, bool pBreakTrigger, std::vector<uint32_t>& pData, bool pWait)
     {
+        uint32_t cEventSize = computeEventSize (pBoard);
         uint32_t cBoardHeader1Size = D19C_EVENT_HEADER1_SIZE_32_CBC3;
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
         uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
-
-        while (cNWords == 0)
+	uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
+            
+        bool pFailed = false; 
+        int cCounter = 0 ; 
+        while (cNWords == 0 && !pFailed )
         {
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-
-            if (!pWait) return 0;
-            else
-                usleep (0.1);
-        }
-
-        uint32_t cNEvents = 0;
-
-        if (data_handshake == 1)
-        {
-            uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
-            uint32_t cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
-
-            while (cReadoutReq == 0)
-            {
-                usleep (0.1);
-                cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
+	    if(cCounter % 100 == 0 && cCounter > 0) {
+	    	LOG(INFO) << BOLDRED << "Zero events in FIFO, waiting for the triggers" << RESET;
             }
+	    cCounter++;
 
+            if (!pWait) 
+                return 0;
+            else
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+        }
+        
+        uint32_t cNEvents = 0;
+	uint32_t cNtriggers = 0; 
+        uint32_t cNtriggers_prev = cNtriggers;
+        
+	if (data_handshake == 1 && !pFailed )
+        {
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+            cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter"); 
+            cNtriggers_prev = cNtriggers;
+	    uint32_t cNWords_prev = cNWords;
+            uint32_t cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
+            
+            cCounter = 0 ; 
+            while (cReadoutReq == 0 && !pFailed )
+            {
+		if (!pWait) {
+			return 0;
+		}
 
+                cNWords_prev = cNWords;
+                cNtriggers_prev = cNtriggers;
+
+                cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
+                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+                cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter");
+
+                /*if( cNWords == cNWords_prev && cCounter > 100 && cNtriggers != cNtriggers_prev )
+                {
+                    pFailed = true; 
+                    LOG (INFO) << BOLDRED << "Warning!! Read-out has stopped responding after receiving " << +cNtriggers << " triggers!! Read back " << +cNWords << " from FC7." << RESET ; 
+               
+                }
+                else*/
+		if( cNtriggers == cNtriggers_prev && cCounter > 0 )
+                {
+                    if( cCounter % 100 == 0 )
+                        LOG (INFO) << BOLDRED << " ..... waiting for more triggers .... got " << +cNtriggers << " so far." << RESET ;
+
+                }
+                cCounter++;
+                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+            }
+            
+            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
             if (pBoard->getEventType() == EventType::VR)
             {
-                if ( (cNWords % computeEventSize (pBoard) ) != 0)
-                {
-                    uint32_t cNTries = 0;
-                    while( (cNWords % computeEventSize (pBoard) ) == 0 ) {
-                        if (cNTries < 50) {
-                            usleep (0.1);
-                            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                            cNTries++;
-                        }
-                        else {
-                            LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
-                            LOG(ERROR) << "nwords: " << cNWords << ", eventsize: " << computeEventSize(pBoard);
-                            break;
-                        }
-                    }
-                }
                 cNEvents = cNWords / computeEventSize (pBoard);
+                if ( (cNWords % computeEventSize (pBoard) ) != 0) {
+			pFailed = true;
+                	LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
+		}
             }
             else
             {
                 // for zs it's impossible to check, so it'll count later during event assignment
                 cNEvents = cPackageSize;
             }
-
-            //LOG(INFO) << "NWords before readout: " << +cNWords;
 
             // read all the words
             if (fIsDDR3Readout) {
@@ -727,27 +808,29 @@ namespace Ph2_HwInterface {
             else
                 pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
 
-            //LOG(INFO) << "NWords after readout: " << +(ReadReg ("fc7_daq_stat.readout_block.general.words_cnt"));
-
         }
-        else
+        else if(!pFailed)
         {
-            uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
-            uint32_t cEventSize = computeEventSize(pBoard);
             if (pBoard->getEventType() == EventType::ZS)
             {
-                LOG(ERROR) << "ZS Event only with handshake!!! Exiting...";
-                exit(1);
+                LOG (ERROR) << "ZS Event only with handshake!!! Exiting...";
+                exit (1);
             }
-            while (cNEvents < cPackageSize)
-            {
+	    cNEvents = 0;
+            //while (cNEvents < cPackageSize)
+            //{
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                uint32_t cNEventsAvailable = (uint32_t)cNWords/cEventSize;
+                uint32_t cNEventsAvailable = (uint32_t) cNWords / cEventSize;
+
                 while (cNEventsAvailable < 1)
                 {
+		    if(!pWait) {
+			return 0;
+		    }
                     std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                     cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                    cNEventsAvailable = (uint32_t)cNWords/cEventSize;
+                    cNEventsAvailable = (uint32_t) cNWords / cEventSize;
+
                 }
 
                 std::vector<uint32_t> event_data;
@@ -755,13 +838,30 @@ namespace Ph2_HwInterface {
                     event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);                
                 else
                     event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
-                pData.insert (pData.end(), event_data.begin(), event_data.end() );
-                cNEvents+=cNEventsAvailable;
+                
+		pData.insert (pData.end(), event_data.begin(), event_data.end() );
+                cNEvents += cNEventsAvailable;
 
-                if (pBreakTrigger) break;
-            }
+            //}
         }
 
+        if( pFailed )
+        {
+            pData.clear();
+
+	    LOG(INFO) << BOLDRED << "Re-starting the run and resetting the readout" << RESET; 
+            
+            this->Stop();
+            std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+	    LOG(INFO) << BOLDGREEN << " ... Run Stopped, current trigger FSM state: " << +ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state") << RESET;
+            
+            this->Start();
+            std::this_thread::sleep_for (std::chrono::milliseconds (500) );
+	    LOG(INFO) << BOLDGREEN << " ... Run Started, current trigger FSM state: " << +ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state") << RESET;
+
+            LOG (INFO) << BOLDRED << " ... trying to read data again .... " << RESET ; 
+            cNEvents = this->ReadData(pBoard,  pBreakTrigger,  pData, pWait);
+        }
         if (fSaveToFile)
             fFileHandler->set (pData);
 
@@ -1166,8 +1266,8 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::CbcHardReset()
     {
-        WriteReg( "fc7_daq_ctrl.physical_interface_block.control.chip_hard_reset", 0x1 );
-        usleep(10);
+        WriteReg ( "fc7_daq_ctrl.physical_interface_block.control.chip_hard_reset", 0x1 );
+        usleep (10);
     }
 
     void D19cFWInterface::CbcTestPulse()
@@ -1225,6 +1325,7 @@ namespace Ph2_HwInterface {
     {
         if ( !fpgaConfig )
             fpgaConfig = new CtaFpgaConfig ( this );
+
         fpgaConfig->resetBoard();
     }
 
@@ -1256,6 +1357,7 @@ namespace Ph2_HwInterface {
         else
             return false;
     }
+
 
 
 }

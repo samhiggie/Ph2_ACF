@@ -1,4 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
+<!--<?xml-stylesheet type="text/xsl" href="misc/HWDescription.xsl"?>-->
 <HwDescription>
   <BeBoard Id="0" boardType="GLIB" eventType="VR">
       <connection id="board" uri="chtcp-2.0://cmsuptracker008:10203?target=192.168.0.175:50001" address_table="file://settings/address_tables/address_table_2CBC.xml" />
@@ -69,12 +70,19 @@
     <Register name="dio5.fmcdio5_trig_in_50ohms">1</Register>
     <Register name="dio5.fmcdio5_trig_out_50ohms">0</Register>
   </BeBoard>
-</HwDescription>
 
 <Settings>
+
     <Setting name="Nevents">1000</Setting>
     <Setting name="RunNumber">1</Setting>
     <Setting name="HoleMode">0</Setting>
     <Setting name="NoiseToSignalVCTH"> 2 </Setting>
-    <Setting name="SignalScanStep"> 2 </Setting>
+
+    <!--Signal Scan Fit-->
+	  <Setting name="InitialVcth">0x78</Setting>
+	  <Setting name="SignalScanStep">2</Setting>
+    <Setting name="FitSignal">0</Setting>
+
 </Settings>
+</HwDescription>
+

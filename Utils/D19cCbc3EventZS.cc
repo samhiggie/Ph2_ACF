@@ -25,7 +25,7 @@ namespace Ph2_HwInterface {
     void D19cCbc3EventZS::SetEvent ( const BeBoard* pBoard, uint32_t pZSEventSize, const std::vector<uint32_t>& list)
     {
         //LOG(INFO) << "event size: " << +pZSEventSize;
-
+ 
         // these two values come from width of the hybrid/cbc enabled mask
         uint8_t fMaxHybrids = 8;
 
@@ -103,6 +103,12 @@ namespace Ph2_HwInterface {
 			uint8_t cSyncBit = (0x00000008 & list.at(word_id)) >> 3;
                         if (!cSyncBit) LOG (INFO) << BOLDRED << "Warning, sync bit not 1, data frame probably misaligned!" << RESET;	
 	 	    }
+		
+		    // check cluster overflow
+		    if (cDataType == 2) {
+		    	uint8_t cClusterOverflow = (0x04000000 & list.at(word_id)) >> 26;
+			if (cClusterOverflow) LOG(INFO) << BOLDRED << "Warning, cluster overflow happened!" << RESET;
+		    }
 
                     // checks the last word
                     if (word_id == (address_offset + fe_data_size - 2)) cLastWord = true;
@@ -682,7 +688,7 @@ namespace Ph2_HwInterface {
         return cClusterVec;
     }
 
-    SLinkEvent D19cCbc3EventZS::GetSLinkEvent ( const BeBoard* pBoard) const
+    SLinkEvent D19cCbc3EventZS::GetSLinkEvent (  BeBoard* pBoard) const
     {
         uint16_t cCbcCounter = 0;
         std::set<uint8_t> cEnabledFe;

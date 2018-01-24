@@ -33,7 +33,8 @@ class FileHandler
 
     std::string fBinaryFileName;
     std::thread fThread;/*!< a thread for the multitrading */
-    mutable std::mutex fMutex;/*!< Mutex */
+    mutable std::mutex fMutex;/*!< Mutex for the queue */
+    mutable std::mutex fMemberMutex;/*!< Mutex for members */
     std::queue<std::vector<uint32_t>> fQueue; /*!<Queue to populate from set() and depopulate in writeFile() */
     std::atomic<bool> fFileIsOpened ;/*!< to check if the file is opened */
     std::condition_variable fSet;/*!< condition variable to notify writer thread of new data*/
@@ -117,13 +118,13 @@ class FileHandler
     */
     bool file_open()
     {
-        std::lock_guard<std::mutex> cLock (fMutex);
-        return fFileIsOpened;
+        std::lock_guard<std::mutex> cLock (fMemberMutex);
+        return fFileIsOpened.load();
     }
 
     void rewind()
     {
-        std::lock_guard<std::mutex> cLock (fMutex);
+        std::lock_guard<std::mutex> cLock (fMemberMutex);
 
         if (fOption == 'r' && file_open() )
         {
@@ -150,7 +151,7 @@ class FileHandler
     void writeFile() ;
 
   private:
-    void dequeue (std::vector<uint32_t>& pData);
+    bool dequeue (std::vector<uint32_t>& pData);
 };
 
 #endif

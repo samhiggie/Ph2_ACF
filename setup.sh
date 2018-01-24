@@ -1,14 +1,22 @@
 #!/bin/bash
 export CBCDAQ=$HOME/CBCDAQ
+export KERNELRELEASE=$(uname -r)
 
 #CACTUS
 export CACTUSBIN=/opt/cactus/bin
 export CACTUSLIB=/opt/cactus/lib
 export CACTUSINCLUDE=/opt/cactus/include
 
+
 # BOOST
-export BOOST_LIB=/opt/cactus/lib
-export BOOST_INCLUDE=/opt/cactus/include
+if [[ $KERNELRELEASE == *"el6"* ]]; then
+    export BOOST_LIB=/opt/cactus/lib
+    export BOOST_INCLUDE=/opt/cactus/include
+else
+    export BOOST_INCLUDE=/usr/include
+    export BOOST_LIB=/usr/lib64
+fi
+
 
 #ROOT
 source /usr/local/bin/thisroot.sh

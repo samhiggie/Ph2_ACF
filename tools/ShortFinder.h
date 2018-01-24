@@ -48,17 +48,9 @@ typedef std::array<ShortedGroup, 8> ShortedGroupsList ;
 class ShortFinder : public Tool
 {
   public:
-    ShortFinder()
-    {
-        fNShorts = 0;
-        fNShortsTop = 0 ;
-        fNShortsBottom = 0;
-        fTotalEvents = 0;
-        fNCbc = 2;
-    };
-
+    ShortFinder();
     // D'tor
-    ~ShortFinder() {};
+    ~ShortFinder();
 
     ///Reload CBC registers from file found in results (fDirectoryName) directory .
     //If no directory is found use the default files for the different operational modes found in Ph2_ACF/settings
@@ -122,9 +114,9 @@ class ShortFinder : public Tool
     // functions/methods
     void SetBeBoard (BeBoard* pBoard);
     void SetTestGroup(BeBoard* pBoard, uint8_t pTestGroup);
-    bool CheckChannel (Short pShort , ShortsList pShortsList);
+    bool CheckChannel (Short pShort, ShortsList pShortsList);
     void MergeShorts (ShortsList pShortA);
-    void ReconstructShorts (ShortedGroupsList pShortedGroupsArray , std::ostream& os = std::cout );
+    void ReconstructShorts (ShortedGroupsList pShortedGroupsArray, std::ostream& os = std::cout );
 
     ShortsList MergeShorts (ShortsList pShortA, ShortsList pShortB);
     bool CheckChannelInShortPresence ( Short pShortedChannel, ShortsList pShort);

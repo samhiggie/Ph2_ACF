@@ -40,10 +40,10 @@ using namespace Ph2_System;
 class AntennaTester : public Tool
 {
   public:
-    AntennaTester() {};
+    AntennaTester();
 
     // D'tor
-    ~AntennaTester() {};
+    ~AntennaTester();
 
     void Initialize();
 
