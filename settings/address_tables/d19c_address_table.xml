@@ -342,6 +342,11 @@
 		<node id="trigger_id_fifo"	address="0x001" mask="0x00007fff"/>		
 	</node> 
 
+        <node id="ddr3_block"			address="0x8000">
+                <node id="is_ddr3_type"		address="0x000" mask="0x00000001"/>
+                <node id="init_calib_done"      address="0x000" mask="0x00000002"/>
+        </node>
+
         <node id="stub_counter_block"           address="0xF000">
             <node id="bx_counter_ls"                    address="0x000" mask="0xffffffff"/>
             <node id="bx_counter_ms"                    address="0x001" mask="0xffffffff"/>
@@ -355,6 +360,8 @@
             </node>
         </node>
     </node>
+
+    <node id="fc7_daq_ddr3" address="0xC0000000" permission="r" mode="incremental" size="134217728"/>
 
     <!--Present in Glib or FC7 address table for fpgaconfig-->
 	<node id="flash_async_read_cmd"	address="0x0800bddf"  mask="0xFFFFFFFF" description="FLASH memory asynchronous read mode"/>

@@ -284,6 +284,7 @@ namespace Ph2_HwInterface {
         fFWNHybrids = ReadReg ("fc7_daq_stat.general.info.num_hybrids");
         fFWNChips = ReadReg ("fc7_daq_stat.general.info.num_chips");
         fCBC3Emulator = (ReadReg ("fc7_daq_stat.general.info.implementation") == 2);
+        fIsDDR3Readout = (ReadReg("fc7_daq_stat.ddr3_block.is_ddr3_type") == 1);
 
         fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
@@ -396,7 +397,8 @@ namespace Ph2_HwInterface {
         this->PhaseTuning (pBoard);
 
         this->ResetReadout();
-        //adding an Orbit reset to align CBC L1A counters
+        
+	//adding an Orbit reset to align CBC L1A counters
         this->WriteReg("fc7_daq_ctrl.fast_command_block.control.fast_orbit_reset",0x1);
     }
 
@@ -524,8 +526,9 @@ namespace Ph2_HwInterface {
         this->CbcFastReset();
         this->ResetReadout();
 
-        //here open the shutter for the stub counter block
+        //here open the shutter for the stub counter block (for some reason self clear doesn't work, that why we have to clear the register manually)
         WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_open", 0x1);
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_open", 0x0);
         std::this_thread::sleep_for (std::chrono::microseconds (10) );
         
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.start_trigger", 0x1);
@@ -536,27 +539,30 @@ namespace Ph2_HwInterface {
     {
         //here close the shutter for the stub counter block
         WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x1);
+        WriteReg ("fc7_daq_ctrl.stub_counter_block.general.shutter_close", 0x0);
         std::this_thread::sleep_for (std::chrono::microseconds (10) );
         
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.stop_trigger", 0x1);
         std::this_thread::sleep_for (std::chrono::microseconds (10) );
 
         //here read the stub counters
-        //uint32_t cBXCounter1s = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ls");
-        //uint32_t cBXCounterms = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ms");
-        //uint32_t cStubCounter0 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip0");
-        //uint32_t cStubCounter1 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip1");
-
-        //this->ResetReadout();
-       // LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: " << RESET;
-       // LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s << RESET;
-       // LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms << RESET;
-       // LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:" << RESET;
-       // LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF) << RESET;
-       // LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 ) << RESET;
-       // LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:" << RESET;
-       // LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF) << RESET;
-       // LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter1 & 0xFFFF0000) >> 16) << RESET;
+        /*
+  	uint32_t cBXCounter1s = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ls");
+        uint32_t cBXCounterms = ReadReg ("fc7_daq_stat.stub_counter_block.bx_counter_ms");
+        uint32_t cStubCounter0 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip0");
+        uint32_t cStubCounter1 = ReadReg ("fc7_daq_stat.stub_counter_block.counters_hyb0_chip1");
+	*/
+        /*
+  	LOG (INFO) << BOLDGREEN << "Reading FW Stub and Error counters at the end of the run: " << RESET;
+        LOG (INFO) << BOLDBLUE << "BX Counter 1s: " << RED << cBXCounter1s << RESET;
+        LOG (INFO) << BOLDBLUE << "BX Counter ms: " << RED << cBXCounterms << RESET;
+        LOG (INFO) << BOLDGREEN << "FE 0 CBC 0:" << RESET;
+        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter0 & 0x0000FFFF) << RESET;
+        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter0 & 0xFFFF0000) >> 16 ) << RESET;
+        LOG (INFO) << BOLDGREEN << "FE 0 CBC 1:" << RESET;
+        LOG (INFO) << BOLDBLUE << " Stub Counter: " << RED << (cStubCounter1 & 0x0000FFFF) << RESET;
+        LOG (INFO) << BOLDBLUE << "Error Counter: " << RED << ( (cStubCounter1 & 0xFFFF0000) >> 16) << RESET;
+    	*/
     }
 
 
@@ -585,6 +591,18 @@ namespace Ph2_HwInterface {
 
         WriteReg ("fc7_daq_ctrl.readout_block.control.readout_reset", 0x0);
         std::this_thread::sleep_for (std::chrono::microseconds (10) );
+        
+	if (fIsDDR3Readout) {
+            fDDR3Offset = 0;
+            bool cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
+            int i=0;
+            while(!cDDR3Calibrated) {
+                if(i==0) LOG(INFO) << "Waiting for DDR3 to finish initial calibration";
+                i++;
+                std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+                cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
+            }
+        }
     }
 
     void D19cFWInterface::PhaseTuning (const BeBoard* pBoard)
@@ -781,9 +799,14 @@ namespace Ph2_HwInterface {
                 cNEvents = cPackageSize;
             }
 
-
             // read all the words
-            pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
+            if (fIsDDR3Readout) {
+                pData = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNWords, fDDR3Offset);
+                //in the handshake mode offset is cleared after each handshake
+                fDDR3Offset = 0;
+            }
+            else
+                pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
 
         }
         else if(!pFailed)
@@ -810,8 +833,13 @@ namespace Ph2_HwInterface {
 
                 }
 
-                std::vector<uint32_t> event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable * cEventSize);
-                pData.insert (pData.end(), event_data.begin(), event_data.end() );
+                std::vector<uint32_t> event_data;
+                if (fIsDDR3Readout)
+                    event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);                
+                else
+                    event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
+                
+		pData.insert (pData.end(), event_data.begin(), event_data.end() );
                 cNEvents += cNEventsAvailable;
 
             //}
@@ -853,9 +881,6 @@ namespace Ph2_HwInterface {
         WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
         usleep (1);
 
-        // reset readout
-        this->ResetReadout();
-
         // start triggering machine which will collect N events
         this->Start();
 
@@ -881,8 +906,7 @@ namespace Ph2_HwInterface {
                         break;
                     }
                     else cNTries = 0;
-                }
-
+                }                
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
                 cNTries++;
@@ -891,17 +915,27 @@ namespace Ph2_HwInterface {
             if (failed) break;
 
             // reading header 1
-            uint32_t header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
+            uint32_t header1 = 0;
+            if (fIsDDR3Readout)
+                header1 = ReadBlockRegOffsetValue ("fc7_daq_ddr3", 1, fDDR3Offset).at(0);
+            else
+                header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
             uint32_t cEventSize = (0x0000FFFF & header1);
 
             while (cNWords < cEventSize - 1)
             {
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            }
+            }         
 
             pData.push_back (header1);
-            std::vector<uint32_t> rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
+            std::vector<uint32_t> rest_of_data;
+            if (fIsDDR3Readout) {
+                rest_of_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cEventSize - 1, fDDR3Offset);
+            }
+            else {
+                rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
+            }
             pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
 
         }
@@ -915,7 +949,7 @@ namespace Ph2_HwInterface {
             this->ResetReadout();
 
             this->ReadNEvents (pBoard, pNEvents, pData);
-        }
+        }        
 
         if (fSaveToFile)
             fFileHandler->set (pData);
@@ -934,6 +968,13 @@ namespace Ph2_HwInterface {
 
         cNEventSize32 = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cNFe * D19C_EVENT_HEADER2_SIZE_32_CBC3 + cNCbc * CBC_EVENT_SIZE_32_CBC3;
 
+        if (fIsDDR3Readout) {
+            uint32_t cNEventSize32_divided_by_8 = ((cNEventSize32 >> 3) << 3);
+            if (!(cNEventSize32_divided_by_8 == cNEventSize32)) {
+                cNEventSize32 = cNEventSize32_divided_by_8 + 8;
+            }
+        }
+
         return cNEventSize32;
     }
 
@@ -941,6 +982,16 @@ namespace Ph2_HwInterface {
     {
         uhal::ValVector<uint32_t> valBlock = ReadBlockReg ( pRegNode, pBlocksize );
         std::vector<uint32_t> vBlock = valBlock.value();
+        return vBlock;
+    }
+
+    std::vector<uint32_t> D19cFWInterface::ReadBlockRegOffsetValue ( const std::string& pRegNode, const uint32_t& pBlocksize, const uint32_t& pBlockOffset )
+    {
+        uhal::ValVector<uint32_t> valBlock = ReadBlockRegOffset( pRegNode, pBlocksize, pBlockOffset );
+        std::vector<uint32_t> vBlock = valBlock.value();
+        if (fIsDDR3Readout) {
+            fDDR3Offset += pBlocksize;
+        }
         return vBlock;
     }
 
