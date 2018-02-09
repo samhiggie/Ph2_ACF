@@ -36,7 +36,6 @@
         </node>
 
         <node id="command_processor_block"      address="0x1000">
-            <node id="i2c_write_mask"                   address="0x001" mask="0x000000FF"/>
         </node>
 
         <node id="fast_command_block"           address="0x2000" description="internal fast signal is generated in the fast_signal_generator module and the settings are here.">
@@ -267,6 +266,7 @@
         <node id="command_processor_block"      address="0x1000">
             <node id="i2c">
                 <node id="master_status_fsm"            address="0x001" mask="0x0000000f"/>
+                <node id="master_version"               address="0x001" mask="0x000000f0"/>
                 <node id="command_fifo"                 address="0x002">
                         <node id="empty"                    mask="0x00000001"/>
                         <node id="full"                     mask="0x00000002"/>

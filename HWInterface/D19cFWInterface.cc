@@ -130,10 +130,26 @@ namespace Ph2_HwInterface {
                 break;
 
             case 0x5:
-                name = "8xCBC3";
+                name = "8xCBC3_FMC1";
+                break;
+	    
+	    case 0x6:
+                name = "8xCBC3_FMC2";
+                break;
+	    
+	    case 0x7:
+                name = "FMC_1CBC3";
+                break;
+	    
+            case 0x8:
+                name = "FMC_MPA_SSA_BOARD";
+                break;
+  	    
+            case 0x9:
+                name = "FMC_FERMI_TRIGGER_BOARD";
                 break;
 
-            case 0x6:
+            case 0xe:
                 name = "OPTO_QUAD";
                 break;
 
@@ -162,6 +178,10 @@ namespace Ph2_HwInterface {
             case 0x2:
                 name = "MPA";
                 break;
+
+	    case 0x3:
+		name = "SSA";
+		break;
         }
 
         return name;
@@ -184,6 +204,10 @@ namespace Ph2_HwInterface {
             case 0x2:
                 chip_type = ChipType::UNDEFINED;
                 break;
+
+	    case 0x3:
+		chip_type = ChipType::UNDEFINED;
+		break;
         }
 
         return chip_type;
@@ -285,8 +309,10 @@ namespace Ph2_HwInterface {
         fFWNChips = ReadReg ("fc7_daq_stat.general.info.num_chips");
         fCBC3Emulator = (ReadReg ("fc7_daq_stat.general.info.implementation") == 2);
         fIsDDR3Readout = (ReadReg("fc7_daq_stat.ddr3_block.is_ddr3_type") == 1);
-
-        fNCbc = 0;
+	fI2CVersion = (ReadReg("fc7_daq_stat.command_processor_block.i2c.master_version"));
+	if(fI2CVersion >= 1) this->SetI2CAddressTable();
+        
+	fNCbc = 0;
         std::vector< std::pair<std::string, uint32_t> > cVecReg;
 
         LOG (INFO) << BOLDGREEN << "According to the Firmware status registers, it was compiled for: " << fFWNHybrids << " hybrid(s), " << fFWNChips << " " << cChipName << " chip(s) per hybrid" << RESET;
@@ -380,8 +406,10 @@ namespace Ph2_HwInterface {
                 for ( Cbc* cCbc : cFe->fCbcVector)
                 {
                     uint32_t cWord = pReplies.at (k);
-                    cWordCorrect = ( ( ( (cWord & 0x00f00000) >> 20) == cCbc->getCbcId() ) & ( ( (cWord & 0x0f000000) >> 24) == cFe->getFeId() ) ) ? true : false;
-                    k++;
+                    if(fI2CVersion >= 1) cWordCorrect = ( ( ( (cWord & 0x007C0000) >> 18) == cCbc->getCbcId() ) & ( ( (cWord & 0x07800000) >> 23) == cFe->getFeId() ) ) ? true : false;
+                    else cWordCorrect = ( ( ( (cWord & 0x00f00000) >> 20) == cCbc->getCbcId() ) & ( ( (cWord & 0x0f000000) >> 24) == cFe->getFeId() ) ) ? true : false;
+
+		    k++;
 
                     if (!cWordCorrect) break;
                 }
@@ -519,6 +547,12 @@ namespace Ph2_HwInterface {
 
         if (fmc1_card_type != 0x1 && fmc2_card_type != 0x1)
             LOG (ERROR) << "No DIO5 found, you should disable it in the config file..";
+    }
+
+    // set i2c address table depending on the hybrid
+    void D19cFWInterface::SetI2CAddressTable() 
+    {
+        LOG (INFO) << BOLDGREEN << "Setting the I2C address table" << RESET;
     }
 
     void D19cFWInterface::Start()
@@ -1028,7 +1062,14 @@ namespace Ph2_HwInterface {
     {
         //use fBroadcastCBCId for broadcast commands
         bool pUseMask = false;
-        pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+	if (fI2CVersion >= 1) {
+		// new command consists of one word if its read command, and of two words if its write. first word is always the same
+		pVecReq.push_back( (0 << 28) | (0 << 27) | (pFeId << 23) | (pCbcId << 18) | (pReadBack << 17) | ((!pWrite) << 16) | (pRegItem.fPage << 8) | (pRegItem.fAddress << 0) );
+		// only for write commands
+		if (pWrite) pVecReq.push_back( (0 << 28) | (1 << 27) | (pRegItem.fValue << 0) );
+	} else {
+		pVecReq.push_back ( ( 0 << 28 ) | ( pFeId << 24 ) | ( pCbcId << 20 ) | ( pReadBack << 19 ) | (  pUseMask << 18 )  | ( (pRegItem.fPage ) << 17 ) | ( ( !pWrite ) << 16 ) | ( pRegItem.fAddress << 8 ) | pRegItem.fValue );
+    	}
     }
 
     void D19cFWInterface::BCEncodeReg ( const CbcRegItem& pRegItem,
@@ -1049,13 +1090,24 @@ namespace Ph2_HwInterface {
                                       bool& pRead,
                                       bool& pFailed )
     {
-        //pFeId    =  ( ( pWord & 0x0f000000 ) >> 24) ;
-        pCbcId   =  ( ( pWord & 0x00f00000 ) >> 20) ;
-        pFailed  =  0 ;
-        pRegItem.fPage    =  ( (pWord & 0x00020000  ) >> 17) ;
-        pRead    =  ( pWord & 0x00010000 ) >> 16;
-        pRegItem.fAddress =  ( pWord & 0x0000FF00 ) >> 8;
-        pRegItem.fValue   =  ( pWord & 0x000000FF );
+	if (fI2CVersion >= 1) {
+		//pFeId    =  ( ( pWord & 0x07800000 ) >> 27) ;
+		pCbcId   =  ( ( pWord & 0x007c0000 ) >> 22) ;
+		pFailed  =  0 ;
+		pRegItem.fPage    =  0 ;
+		pRead    =  true ;
+		pRegItem.fAddress =  ( pWord & 0x0000FF00 ) >> 8;
+		pRegItem.fValue   =  ( pWord & 0x000000FF );
+    	} else {
+		//pFeId    =  ( ( pWord & 0x00f00000 ) >> 24) ;
+		pCbcId   =  ( ( pWord & 0x00f00000 ) >> 20) ;
+		pFailed  =  0 ;
+		pRegItem.fPage    =  ( (pWord & 0x00020000 ) >> 17);
+		pRead    =  (pWord & 0x00010000) >> 16;
+		pRegItem.fAddress =  ( pWord & 0x0000FF00 ) >> 8;
+		pRegItem.fValue   =  ( pWord & 0x000000FF );
+	}
+
     }
 
     bool D19cFWInterface::ReadI2C (  uint32_t pNReplies, std::vector<uint32_t>& pReplies)
@@ -1077,7 +1129,7 @@ namespace Ph2_HwInterface {
                 LOG (INFO) << "Error: Read " << cNReplies << " I2C replies whereas " << pNReplies << " are expected!" ;
                 ReadErrors();
                 cFailed = true;
-                break;
+            	break;
             }
 
             usleep (single_WaitingTime);
@@ -1088,7 +1140,7 @@ namespace Ph2_HwInterface {
         try
         {
             pReplies = ReadBlockRegValue ( "fc7_daq_ctrl.command_processor_block.i2c.reply_fifo", cNReplies );
-        }
+	}
         catch ( Exception& except )
         {
             throw except;
@@ -1104,8 +1156,8 @@ namespace Ph2_HwInterface {
         //reset the I2C controller
         WriteReg ("fc7_daq_ctrl.command_processor_block.i2c.control.reset_fifos", 0x1);
         usleep (10);
-
-        try
+	
+	try
         {
             WriteBlockReg ( "fc7_daq_ctrl.command_processor_block.i2c.command_fifo", pVecSend );
         }
@@ -1119,11 +1171,19 @@ namespace Ph2_HwInterface {
         for (auto word : pVecSend)
         {
             // if read or readback for write == 1, then count
-            if ( ( ( (word & 0x00010000) >> 16) == 1) or ( ( (word & 0x00080000) >> 19) == 1) )
-            {
-                if (pBroadcast) cNReplies += fNCbc;
-                else cNReplies += 1;
-            }
+            if (fI2CVersion >= 1) {
+		if ( (((word & 0x08000000) >> 27) == 0) && (( ( (word & 0x00010000) >> 16) == 1) or ( ( (word & 0x00020000) >> 17) == 1)) )
+            	{
+			if (pBroadcast) cNReplies += fNCbc;
+                	else cNReplies += 1;
+            	}
+	    } else {
+		if ( ( ( (word & 0x00010000) >> 16) == 1) or ( ( (word & 0x00080000) >> 19) == 1) )
+            	{
+			if (pBroadcast) cNReplies += fNCbc;
+                	else cNReplies += 1;
+            	}
+	    }
         }
 
         cFailed = ReadI2C (  cNReplies, pReplies) ;
@@ -1343,8 +1403,12 @@ namespace Ph2_HwInterface {
         //if ( ( (cWord1 >> 16) & 0x1) == 0 && ( (cWord1 >> 8 ) & 0xFF) == 0) return ( (cWord1 & 0x0F00FFFF) == (cWord2 & 0x0F00FFFF) );
         //else return ( (cWord1 & 0x0F01FFFF) == (cWord2 & 0x0F01FFFF) );
 
-        return ( (cWord1 & 0x00F2FFFF) == (cWord2 & 0x00F2FFFF) );
-
+	//TODO: cleanup here the version
+	//if (fI2CVersion >= 1) {
+		return true;
+	//} else {
+	//	return ( (cWord1 & 0x00F2FFFF) == (cWord2 & 0x00F2FFFF) );
+	//}
     }
 
     bool D19cFWInterface::cmd_reply_ack (const uint32_t& cWord1, const
