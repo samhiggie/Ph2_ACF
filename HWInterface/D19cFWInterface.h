@@ -55,6 +55,8 @@ namespace Ph2_HwInterface {
         bool fCBC3Emulator;
         bool fIsDDR3Readout;
         uint32_t fDDR3Offset;
+	// i2c version of master
+	uint32_t fI2CVersion;	
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
@@ -187,6 +189,8 @@ namespace Ph2_HwInterface {
         // convert code of the chip from firmware
         std::string getChipName(uint32_t pChipCode);
         ChipType getChipType(uint32_t pChipCode);
+	// set i2c address table depending on the hybrid
+	void SetI2CAddressTable();
 
 
         //template to copy every nth element out of a vector to another vector
