@@ -27,6 +27,10 @@
     <!--CONFIG-->
     <Register name="clock_source">3</Register> <!-- 3 - default (internal oscillator), 2 - backplane, 0 - AMC13 -->
     <Register name="fc7_daq_cnfg">
+	<!-- Clock control -->
+	<Register name="clock">
+	    <Register name="ext_clk_en"> 0 </Register>
+	</Register>
         <!-- TTC -->
         <Register name="ttc">
             <Register name="ttc_enable"> 0 </Register>
@@ -139,14 +143,6 @@
 	<Register name="tlu_block">
 		<Register name="handshake_mode"> 2 </Register>
 		<Register name="tlu_enabled"> 0 </Register>
-	</Register>
-    </Register>
-    <!-- has to be moved to config -->
-    <Register name="fc7_daq_ctrl">
-	<Register name="global">
-		<Register name="clock_generator">
-			<Register name="clk40_mux"> 0 </Register>		
-		</Register>	
 	</Register>
     </Register>
   </BeBoard>

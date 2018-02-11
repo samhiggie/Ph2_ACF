@@ -11,28 +11,37 @@
 
     <node id="fc7_daq_cnfg" address="0x40010000" permission="rw" >
 
-	<node id="global"                       address="0x0000">
-            <node id="hybrid_enable"			address="0x001" mask="0x0000FFFF"/>
-	    <node id="chips_enable_hyb_00"		address="0x002" mask="0x000000FF"/>
-	    <node id="chips_enable_hyb_01"		address="0x002" mask="0x0000FF00"/>
-	    <node id="chips_enable_hyb_02"		address="0x002" mask="0x00FF0000"/>
-            <node id="chips_enable_hyb_03"		address="0x002" mask="0xFF000000"/>
-            <node id="chips_enable_hyb_04"		address="0x003" mask="0x000000FF"/>
-            <node id="chips_enable_hyb_05"		address="0x003" mask="0x0000FF00"/>
-            <node id="chips_enable_hyb_06"		address="0x003" mask="0x00FF0000"/>
-            <node id="chips_enable_hyb_07"		address="0x003" mask="0xFF000000"/>
-	    <node id="chips_enable_hyb_08"		address="0x004" mask="0x000000FF"/>
-	    <node id="chips_enable_hyb_09"		address="0x004" mask="0x0000FF00"/>
-	    <node id="chips_enable_hyb_10"		address="0x004" mask="0x00FF0000"/>
-            <node id="chips_enable_hyb_11"		address="0x004" mask="0xFF000000"/>
-            <node id="chips_enable_hyb_12"		address="0x005" mask="0x000000FF"/>
-            <node id="chips_enable_hyb_13"		address="0x005" mask="0x0000FF00"/>
-            <node id="chips_enable_hyb_14"		address="0x005" mask="0x00FF0000"/>
-            <node id="chips_enable_hyb_15"		address="0x005" mask="0xFF000000"/>	
+	<node id="clock"			address="0x0001">
+	    <node id="ext_clk_en"			mask="0x00000001"/>
+	</node>
+
+        <node id="ttc"                          address="0x0002">
+            <node id="ttc_enable"			mask="0x00000001"/>
         </node>
 
-        <node id="ttc"                          address="0x0006">
-            <node id="ttc_enable"			mask="0x00000001"/>
+	<node id="amc13"                        address="0x0003">
+            <node id="sw_tts_state_valid"               mask="0x00000002"/>
+            <node id="sw_tts_state"                     mask="0x000000f0"/>
+        </node>
+
+	<node id="global"                       address="0x0000">
+            <node id="hybrid_enable"			address="0x005" mask="0x0000FFFF"/>
+	    <node id="chips_enable_hyb_00"		address="0x006" mask="0x000000FF"/>
+	    <node id="chips_enable_hyb_01"		address="0x006" mask="0x0000FF00"/>
+	    <node id="chips_enable_hyb_02"		address="0x006" mask="0x00FF0000"/>
+            <node id="chips_enable_hyb_03"		address="0x006" mask="0xFF000000"/>
+            <node id="chips_enable_hyb_04"		address="0x007" mask="0x000000FF"/>
+            <node id="chips_enable_hyb_05"		address="0x007" mask="0x0000FF00"/>
+            <node id="chips_enable_hyb_06"		address="0x007" mask="0x00FF0000"/>
+            <node id="chips_enable_hyb_07"		address="0x007" mask="0xFF000000"/>
+	    <node id="chips_enable_hyb_08"		address="0x008" mask="0x000000FF"/>
+	    <node id="chips_enable_hyb_09"		address="0x008" mask="0x0000FF00"/>
+	    <node id="chips_enable_hyb_10"		address="0x008" mask="0x00FF0000"/>
+            <node id="chips_enable_hyb_11"		address="0x008" mask="0xFF000000"/>
+            <node id="chips_enable_hyb_12"		address="0x009" mask="0x000000FF"/>
+            <node id="chips_enable_hyb_13"		address="0x009" mask="0x0000FF00"/>
+            <node id="chips_enable_hyb_14"		address="0x009" mask="0x00FF0000"/>
+            <node id="chips_enable_hyb_15"		address="0x009" mask="0xFF000000"/>	
         </node>
 
         <node id="command_processor_block"      address="0x1000">
@@ -150,7 +159,6 @@
         <node id="global"                       address="0x0000">
             <node id="clock_generator"                  address="0x001">
                 <node id="clk40_reset"                      mask="0x00000001"/>
-                <node id="clk40_mux"                        mask="0x00000002"/>
                 <node id="refclk_reset"                     mask="0x00000004"/>
             </node>
 
@@ -160,8 +168,6 @@
 
             <node id="amc13"                            address="0x003">
                 <node id="link_reset"                       mask="0x00000001"/>
-                <node id="sw_tts_state_valid"               mask="0x00000002"/>
-                <node id="sw_tts_state"                     mask="0x000000f0"/>
             </node>
         </node>
 
