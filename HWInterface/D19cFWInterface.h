@@ -53,6 +53,10 @@ namespace Ph2_HwInterface {
         int fFWNChips;
         ChipType fFirwmareChipType;
         bool fCBC3Emulator;
+        bool fIsDDR3Readout;
+        uint32_t fDDR3Offset;
+	// i2c version of master
+	uint32_t fI2CVersion;	
 
         const uint32_t SINGLE_I2C_WAIT = 200; //used for 1MHz I2C
 
@@ -100,6 +104,14 @@ namespace Ph2_HwInterface {
          * \return Vector of validated 32-bit values
          */
         std::vector<uint32_t> ReadBlockRegValue ( const std::string& pRegNode, const uint32_t& pBlocksize ) override;
+
+        /*! \brief Read a block of a given size
+         * \param pRegNode Param Node name
+         * \param pBlocksize Number of 32-bit words to read
+         * \param pBlockOffset Offset of the block
+         * \return Vector of validated 32-bit values
+         */
+        std::vector<uint32_t> ReadBlockRegOffsetValue ( const std::string& pRegNode, const uint32_t& pBlocksize, const uint32_t& pBlockOffset );
 
         bool WriteBlockReg ( const std::string& pRegNode, const std::vector< uint32_t >& pValues ) override;
         /*!
@@ -177,6 +189,8 @@ namespace Ph2_HwInterface {
         // convert code of the chip from firmware
         std::string getChipName(uint32_t pChipCode);
         ChipType getChipType(uint32_t pChipCode);
+	// set i2c address table depending on the hybrid
+	void SetI2CAddressTable();
 
 
         //template to copy every nth element out of a vector to another vector

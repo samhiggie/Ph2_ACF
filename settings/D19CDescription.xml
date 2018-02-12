@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HwDescription>
   <BeBoard Id="0" boardType="D19C" eventType="VR">
-      <connection id="board" uri="chtcp-2.0://cmsuptracker008.cern.ch:10203?target=192.168.0.82:50001" address_table="file://settings/address_tables/d19c_address_table.xml" />
+      <connection id="board" uri="chtcp-2.0://cmsuptracker008.cern.ch:10203?target=icfc72:50001" address_table="file://settings/address_tables/d19c_address_table.xml" />
 
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         <Global>
@@ -27,6 +27,10 @@
     <!--CONFIG-->
     <Register name="clock_source">3</Register> <!-- 3 - default (internal oscillator), 2 - backplane, 0 - AMC13 -->
     <Register name="fc7_daq_cnfg">
+	<!-- Clock control -->
+	<Register name="clock">
+	    <Register name="ext_clk_en"> 0 </Register>
+	</Register>
         <!-- TTC -->
         <Register name="ttc">
             <Register name="ttc_enable"> 0 </Register>
@@ -37,9 +41,9 @@
 		<Register name="trigger_source"> 3 </Register>
 		<Register name="user_trigger_frequency"> 1 </Register>
 		<Register name="stubs_mask"> 1 </Register>
-        <!--this is the delay for the stub trigger-->
+                <!--this is the delay for the stub trigger-->
 		<Register name="stub_trigger_delay_value"> 0 </Register>
-        <Register name="stub_trigger_veto_length"> 0 </Register>
+                <Register name="stub_trigger_veto_length"> 0 </Register>
 		<Register name="test_pulse">
 			<Register name="delay_after_fast_reset"> 50 </Register>
 			<Register name="delay_after_test_pulse"> 200 </Register>
@@ -47,23 +51,51 @@
 		</Register>
                 <Register name="ext_trigger_delay_value"> 50 </Register>
                 <Register name="antenna_trigger_delay_value"> 200 </Register>
+                <Register name="delay_between_two_consecutive"> 10 </Register>
                 <Register name="misc">
                         <Register name="backpressure_enable"> 1 </Register>
-                        <Register name="stubOR"> 0 </Register>
+                        <Register name="stubOR"> 1 </Register>
                         <Register name="initial_fast_reset_enable"> 0 </Register>
                 </Register>
         </Register>
 	<!-- I2C manager -->
         <Register name="command_processor_block">
-                <Register name="i2c_write_mask"> 0xFF </Register>
 	</Register>
 	<!-- Phy Block -->
 	<Register name="physical_interface_block">
 		<Register name="i2c">
                 	<Register name="frequency"> 4 </Register>
 		</Register>
- 		<Register name="phase_set"> 0 </Register>
- 		<Register name="slvs5_shift"> 2 </Register>
+		<Register name="manual_delays_cbc0">
+			<Register name="stub1">	0 </Register>
+			<Register name="stub2"> 0 </Register>
+			<Register name="stub3"> 0 </Register>
+			<Register name="stub4"> 0 </Register>
+			<Register name="stub5"> 0 </Register>
+			<Register name="l1data"> 0 </Register>
+	    	</Register>
+		<Register name="manual_delays_cbc1">
+			<Register name="stub1"> 0 </Register>
+			<Register name="stub2"> 0 </Register>
+			<Register name="stub3"> 0 </Register>
+			<Register name="stub4"> 0 </Register>
+			<Register name="stub5"> 0 </Register>
+			<Register name="l1data"> 0 </Register>
+	    	</Register>
+		<Register name="manual_bitslips_cbc0">
+			<Register name="stub1">	3 </Register>
+			<Register name="stub2"> 3 </Register>
+			<Register name="stub3"> 3 </Register>
+			<Register name="stub4"> 3 </Register>
+			<Register name="l1data"> 3 </Register>
+	    	</Register>
+		<Register name="manual_bitslips_cbc1">
+			<Register name="stub1"> 3 </Register>
+			<Register name="stub2"> 3 </Register>
+			<Register name="stub3"> 3 </Register>
+			<Register name="stub4"> 3 </Register>
+			<Register name="l1data"> 3 </Register>
+	    	</Register>
 	</Register>
 	<!-- Readout Block -->
     	<Register name="readout_block">
@@ -111,14 +143,6 @@
 	<Register name="tlu_block">
 		<Register name="handshake_mode"> 2 </Register>
 		<Register name="tlu_enabled"> 0 </Register>
-	</Register>
-    </Register>
-    <!-- has to be moved to config -->
-    <Register name="fc7_daq_ctrl">
-	<Register name="global">
-		<Register name="clock_generator">
-			<Register name="clk40_mux"> 0 </Register>		
-		</Register>	
 	</Register>
     </Register>
   </BeBoard>
