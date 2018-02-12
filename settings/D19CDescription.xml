@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <HwDescription>
   <BeBoard Id="0" boardType="D19C" eventType="VR">
-      <connection id="board" uri="chtcp-2.0://cmsuptracker008.cern.ch:10203?target=icfc72:50001" address_table="file://settings/address_tables/d19c_address_table.xml" />
+      <connection id="board" uri="chtcp-2.0://localhost:10203?target=192.168.1.81:50001" address_table="file://settings/address_tables/d19c_address_table.xml" />
 
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         <Global>
@@ -48,6 +48,9 @@
 			<Register name="delay_after_fast_reset"> 50 </Register>
 			<Register name="delay_after_test_pulse"> 200 </Register>
 			<Register name="delay_before_next_pulse"> 400 </Register>
+			<Register name="en_fast_reset"> 1 </Register>
+			<Register name="en_test_pulse"> 1 </Register>
+			<Register name="en_l1a"> 1 </Register>
 		</Register>
                 <Register name="ext_trigger_delay_value"> 50 </Register>
                 <Register name="antenna_trigger_delay_value"> 200 </Register>
@@ -66,36 +69,6 @@
 		<Register name="i2c">
                 	<Register name="frequency"> 4 </Register>
 		</Register>
-		<Register name="manual_delays_cbc0">
-			<Register name="stub1">	0 </Register>
-			<Register name="stub2"> 0 </Register>
-			<Register name="stub3"> 0 </Register>
-			<Register name="stub4"> 0 </Register>
-			<Register name="stub5"> 0 </Register>
-			<Register name="l1data"> 0 </Register>
-	    	</Register>
-		<Register name="manual_delays_cbc1">
-			<Register name="stub1"> 0 </Register>
-			<Register name="stub2"> 0 </Register>
-			<Register name="stub3"> 0 </Register>
-			<Register name="stub4"> 0 </Register>
-			<Register name="stub5"> 0 </Register>
-			<Register name="l1data"> 0 </Register>
-	    	</Register>
-		<Register name="manual_bitslips_cbc0">
-			<Register name="stub1">	3 </Register>
-			<Register name="stub2"> 3 </Register>
-			<Register name="stub3"> 3 </Register>
-			<Register name="stub4"> 3 </Register>
-			<Register name="l1data"> 3 </Register>
-	    	</Register>
-		<Register name="manual_bitslips_cbc1">
-			<Register name="stub1"> 3 </Register>
-			<Register name="stub2"> 3 </Register>
-			<Register name="stub3"> 3 </Register>
-			<Register name="stub4"> 3 </Register>
-			<Register name="l1data"> 3 </Register>
-	    	</Register>
 	</Register>
 	<!-- Readout Block -->
     	<Register name="readout_block">
