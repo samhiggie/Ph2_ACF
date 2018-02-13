@@ -57,6 +57,9 @@
                 <node id="delay_after_fast_reset"       address="0x004" description="delay between fast reset and following test pulse command"/>
                 <node id="delay_after_test_pulse"       address="0x005" description="delay after test pulse command before l1a signal sent to readout the data"/>
 		<node id="delay_before_next_pulse"      address="0x006" description="delay before next pulse"/>
+		<node id="en_fast_reset"		address="0x009" mask="0x00000010" description="enable fast reset in the test pulse sequence"/>
+		<node id="en_test_pulse"		address="0x009" mask="0x00000020" description="enable test pulse in the test pulse sequence"/>
+		<node id="en_l1a"			address="0x009" mask="0x00000040" description="enable l1a in the test pulse sequence"/>
             </node>
 	    <node id="stub_trigger_delay_value"		address="0x007" mask="0x000001FF" description="stub trigger delay before sending to CBCs"/>
 	    <node id="ext_trigger_delay_value"		address="0x007" mask="0x0003FE00" description="sets the delay of the external trigger (dio5 ch 5)"/>
@@ -74,37 +77,7 @@
                 <node id="frequency"			    mask="0x0000000f"/>
                 <node id="master_en"                        mask="0x00000100"/>
 	    </node>
-	    <node id="manual_delays_cbc0"		address="0x008">
-		<node id="stub1"			    mask="0x0000001f"/>
-		<node id="stub2"			    mask="0x000003e0"/>
-		<node id="stub3"			    mask="0x00007c00"/>
-		<node id="stub4"			    mask="0x000f8000"/>
-		<node id="stub5"			    mask="0x01f00000"/>
-		<node id="l1data"			    mask="0x3e000000"/>
-	    </node>
-	    <node id="manual_delays_cbc1"		address="0x00A">
-		<node id="stub1"			    mask="0x0000001f"/>
-		<node id="stub2"			    mask="0x000003e0"/>
-		<node id="stub3"			    mask="0x00007c00"/>
-		<node id="stub4"			    mask="0x000f8000"/>
-		<node id="stub5"			    mask="0x01f00000"/>
-		<node id="l1data"			    mask="0x3e000000"/>
-	    </node>
-	    <node id="manual_bitslips_cbc0"		address="0x009">
-		<node id="stub1"			    mask="0x00000007"/>
-		<node id="stub2"			    mask="0x00000038"/>
-		<node id="stub3"			    mask="0x000001c0"/>
-		<node id="stub4"			    mask="0x00000e00"/>
-		<node id="l1data"			    mask="0x00007000"/>
-	    </node>
-	   <node id="manual_bitslips_cbc1"		address="0x00B">
-		<node id="stub1"			    mask="0x00000007"/>
-		<node id="stub2"			    mask="0x00000038"/>
-		<node id="stub3"			    mask="0x000001c0"/>
-		<node id="stub4"			    mask="0x00000e00"/>
-		<node id="l1data"			    mask="0x00007000"/>
-	    </node>
-        </node>
+       </node>
 
         <node id="readout_block"                address="0x5000">
             <node id="packet_nbr"                       address="0x000" mask="0x0000ffff"/>	    
@@ -197,6 +170,7 @@
                 <node id="fast_trigger"		            mask="0x00040000"/>
                 <node id="fast_orbit_reset"		    mask="0x00080000"/>
                 <node id="fast_i2c_refresh"                 mask="0x00100000"/>
+		<node id="fast_duration"		    mask="0xf0000000"/>
             </node>
         </node>
 
