@@ -54,6 +54,7 @@ namespace Ph2_HwInterface {
         ChipType fFirwmareChipType;
         bool fCBC3Emulator;
         bool fIsDDR3Readout;
+        bool fDDR3Calibrated;
         uint32_t fDDR3Offset;
 	// i2c version of master
 	uint32_t fI2CVersion;	
@@ -153,6 +154,11 @@ namespace Ph2_HwInterface {
          * \brief Reset Readout
          */
         void ResetReadout();
+
+        /*!
+         * \brief DDR3 Self-test
+         */
+        void DDR3SelfTest();
 
         /*!
           * \brief Tune the 320MHz buses phase shift

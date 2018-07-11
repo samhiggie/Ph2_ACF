@@ -425,6 +425,8 @@ namespace Ph2_HwInterface {
         this->PhaseTuning (pBoard);
 
         this->ResetReadout();
+
+        this->DDR3SelfTest();
         
 	//adding an Orbit reset to align CBC L1A counters
         this->WriteReg("fc7_daq_ctrl.fast_command_block.control.fast_orbit_reset",0x1);
@@ -628,15 +630,50 @@ namespace Ph2_HwInterface {
         
 	if (fIsDDR3Readout) {
             fDDR3Offset = 0;
-            bool cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
-            int i=0;
-            while(!cDDR3Calibrated) {
-                if(i==0) LOG(INFO) << "Waiting for DDR3 to finish initial calibration";
-                i++;
+            fDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
+            bool i=false;
+            while(!fDDR3Calibrated) {
+                if(i==false) LOG(INFO) << "Waiting for DDR3 to finish initial calibration";
+                i=true;
                 std::this_thread::sleep_for (std::chrono::milliseconds (100) );
-                cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
+                fDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
             }
         }
+    }
+
+    void D19cFWInterface::DDR3SelfTest()
+    {
+	//opened issue: without this time delay the self-test doesn't examine entire 4Gb address space of the chip(reason not obvious) 
+        std::this_thread::sleep_for (std::chrono::seconds (1) );
+	if (fIsDDR3Readout && fDDR3Calibrated) {
+        	WriteReg ("fc7_daq_ctrl.ddr3_block.control.traffic_str", 0x1);
+		std::this_thread::sleep_for (std::chrono::microseconds (10) );
+
+       		WriteReg ("fc7_daq_ctrl.ddr3_block.control.traffic_str", 0x0);
+        	std::this_thread::sleep_for (std::chrono::microseconds (10) );
+
+		bool cDDR3Checked = (ReadReg("fc7_daq_stat.ddr3_block.self_check_done") == 1);
+		bool j=false;
+	        LOG (INFO) << GREEN << "============================" << RESET;
+        	LOG (INFO) << BOLDGREEN << "DDR3 Self-Test" << RESET;
+        	while(!cDDR3Checked) {
+               		if(j==false) LOG(INFO) << "Waiting for DDR3 to finish self-test";
+               		j=true;
+        		std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+               		cDDR3Checked = (ReadReg("fc7_daq_stat.ddr3_block.self_check_done") == 1);
+        	}
+		if(cDDR3Checked) {
+			int num_errors = ReadReg("fc7_daq_stat.ddr3_block.num_errors");
+			int num_words = ReadReg("fc7_daq_stat.ddr3_block.num_words");
+			LOG(DEBUG) << "Number of checked words " << num_words;
+			LOG(DEBUG) << "Number of errors " << num_errors;
+			if(num_errors == 0){
+				LOG(INFO) << "DDR3 self-test ->" << BOLDGREEN << " PASSED" << RESET;
+			}
+				else LOG(ERROR) << "DDR3 self-test ->" << BOLDRED << " FAILED" << RESET;
+		}
+                LOG (INFO) << GREEN << "============================" << RESET;
+	}
     }
 
     void D19cFWInterface::PhaseTuning (const BeBoard* pBoard)
