@@ -772,7 +772,7 @@ namespace Ph2_HwInterface {
             if (!pWait) 
                 return 0;
             else
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                std::this_thread::sleep_for (std::chrono::microseconds (10) );
         }
         
         uint32_t cNEvents = 0;
@@ -815,7 +815,7 @@ namespace Ph2_HwInterface {
 
                 }
                 cCounter++;
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                std::this_thread::sleep_for (std::chrono::microseconds (10) );
             }
             
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
@@ -863,15 +863,19 @@ namespace Ph2_HwInterface {
 		    }
                     std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                     cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                    cNEventsAvailable = (uint32_t) cNWords / cEventSize;
-
-                }
+                    cNEventsAvailable = (uint32_t) cNWords / cEventSize;                    
+                }                
 
                 std::vector<uint32_t> event_data;
-                if (fIsDDR3Readout)
-                    event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);                
-                else
+                if (fIsDDR3Readout) {
+                    // in the no handshake mode the, wr counter is reset when it reaches the maximal value
+                    // therefore offset here also has to be reset
+                    if(fDDR3Offset+cNEventsAvailable*cEventSize > 134217727) fDDR3Offset = 0;
+                    // read
+                    event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);
+                } else {
                     event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
+                }
                 
 		pData.insert (pData.end(), event_data.begin(), event_data.end() );
                 cNEvents += cNEventsAvailable;
