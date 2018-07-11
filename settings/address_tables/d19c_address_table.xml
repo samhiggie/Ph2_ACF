@@ -195,25 +195,19 @@
             </node>
         </node>
 
+        <node id="tlu_block"			address="0x7000">
+        </node>
+
         <node id="ddr3_block"                   address="0x8000">
             <node id="control"                          address="0x000">
                 <node id="traffic_str"                      mask="0x00000001"/>
             </node>
         </node>
 
-	<node id="tlu_block"			address="0x7000">
-	</node>
-    <node id="stub_counter_block"           address="0xF000">
-        <node id="general"                          address="0x000">
-           <node id="shutter_open"                     mask="0x00000001"/>
-           <node id="shutter_close"                    mask="0x00000002"/>
-        </node>
-    </node>
-
         <node id="stub_counter_block"           address="0xF000">
             <node id="general"                          address="0x000">
-                <node id="shutter_open"                     mask="0x00000001"/>
-                <node id="shutter_close"                    mask="0x00000002"/>
+               <node id="shutter_open"                     mask="0x00000001"/>
+               <node id="shutter_close"                    mask="0x00000002"/>
             </node>
         </node>
 
