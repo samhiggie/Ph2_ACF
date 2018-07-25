@@ -675,7 +675,26 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::PhaseTuning (const BeBoard* pBoard)
     {
-        if (fFirwmareChipType == ChipType::CBC3)
+        // map of the phase tuning statuses
+        std::map<int, std::string> cErrorMap = {{0, "Idle or ResetIDELAYE or WaitResetIDELAYE"},
+                                        {1, "ApplyInitialDelay or CheckInitialDelay"},
+                                        {2, "InitialSampling or ProcessInitialSampling"},
+                                        {3, "ApplyDelay or CheckDelay"},
+                                        {4, "Sampling or ProcessSampling"},
+                                        {5, "WaitGoodDelay"},
+                                        {6, "CheckPattern"},
+                                        {7, "ApplyBitslip or WaitBitslip"},
+                                        {8, "PatternVerification"},
+                                        {9, "FailedInitial"},
+                                        {10, "FailedToApplyDelay"},
+                                        {11, "FailedBitslip"},
+                                        {12, "FailedVerification"},
+                                        {13, "Not Defined"},
+                                        {14, "Tuned"},
+                                        {15, "Unknown"}
+                                       };
+
+        if (true)
         {
             if (!fCBC3Emulator)
             {
@@ -720,19 +739,9 @@ namespace Ph2_HwInterface {
                 {
                     if (cCounter++ > cMaxAttempts)
                     {
-                        uint32_t delay5_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done_cbc0");
-                        uint32_t serializer_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done_cbc0");
-                        uint32_t bitslip_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done_cbc0");
-                        
-			uint32_t delay5_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done_cbc1");
-                        uint32_t serializer_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done_cbc1");
-                        uint32_t bitslip_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done_cbc1");
-			LOG (INFO) << "Clock Data Timing tuning failed after " << cMaxAttempts << " attempts with value - aborting!";
-                        LOG (INFO) << "Debug Info CBC0: delay5 done: " << delay5_done_cbc0 << ", serializer_done: " << serializer_done_cbc0 << ", bitslip_done: " << bitslip_done_cbc0;
-                        LOG (INFO) << "Debug Info CBC1: delay5 done: " << delay5_done_cbc1 << ", serializer_done: " << serializer_done_cbc1 << ", bitslip_done: " << bitslip_done_cbc1;
-			uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
+                        uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
 			uint32_t tuning_state_cbc1 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc1");
-			LOG(INFO) << "tuning state cbc0: " << tuning_state_cbc0 << ", cbc1: " << tuning_state_cbc1;
+                        LOG(INFO) << "tuning state cbc0: " << cErrorMap[tuning_state_cbc0] << ", cbc1: " << cErrorMap[tuning_state_cbc1];
 			exit (1);
                     }
 
