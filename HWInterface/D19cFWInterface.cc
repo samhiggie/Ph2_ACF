@@ -628,19 +628,72 @@ namespace Ph2_HwInterface {
         
 	if (fIsDDR3Readout) {
             fDDR3Offset = 0;
-            bool cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
-            int i=0;
-            while(!cDDR3Calibrated) {
-                if(i==0) LOG(INFO) << "Waiting for DDR3 to finish initial calibration";
-                i++;
+            fDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
+            bool i=false;
+            while(!fDDR3Calibrated) {
+                if(i==false) LOG(INFO) << "Waiting for DDR3 to finish initial calibration";
+                i=true;
                 std::this_thread::sleep_for (std::chrono::milliseconds (100) );
-                cDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
+                fDDR3Calibrated = (ReadReg("fc7_daq_stat.ddr3_block.init_calib_done") == 1);
             }
         }
     }
 
+    void D19cFWInterface::DDR3SelfTest()
+    {
+	//opened issue: without this time delay the self-test doesn't examine entire 4Gb address space of the chip(reason not obvious) 
+        std::this_thread::sleep_for (std::chrono::seconds (1) );
+	if (fIsDDR3Readout && fDDR3Calibrated) {
+                // trigger the self check
+        	WriteReg ("fc7_daq_ctrl.ddr3_block.control.traffic_str", 0x1);
+
+		bool cDDR3Checked = (ReadReg("fc7_daq_stat.ddr3_block.self_check_done") == 1);
+		bool j=false;
+	        LOG (INFO) << GREEN << "============================" << RESET;
+        	LOG (INFO) << BOLDGREEN << "DDR3 Self-Test" << RESET;
+
+        	while(!cDDR3Checked) {
+               		if(j==false) LOG(INFO) << "Waiting for DDR3 to finish self-test";
+               		j=true;
+        		std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+               		cDDR3Checked = (ReadReg("fc7_daq_stat.ddr3_block.self_check_done") == 1);
+        	}
+
+		if(cDDR3Checked) {
+			int num_errors = ReadReg("fc7_daq_stat.ddr3_block.num_errors");
+			int num_words = ReadReg("fc7_daq_stat.ddr3_block.num_words");
+			LOG(DEBUG) << "Number of checked words " << num_words;
+			LOG(DEBUG) << "Number of errors " << num_errors;
+			if(num_errors == 0){
+				LOG(INFO) << "DDR3 self-test ->" << BOLDGREEN << " PASSED" << RESET;
+			}
+				else LOG(ERROR) << "DDR3 self-test ->" << BOLDRED << " FAILED" << RESET;
+		}
+                LOG (INFO) << GREEN << "============================" << RESET;
+	}
+    }
+
     void D19cFWInterface::PhaseTuning (const BeBoard* pBoard)
     {
+        // map of the phase tuning statuses
+        std::map<int, std::string> cErrorMap = {{0, "Idle or ResetIDELAYE or WaitResetIDELAYE"},
+                                        {1, "ApplyInitialDelay or CheckInitialDelay"},
+                                        {2, "InitialSampling or ProcessInitialSampling"},
+                                        {3, "ApplyDelay or CheckDelay"},
+                                        {4, "Sampling or ProcessSampling"},
+                                        {5, "WaitGoodDelay"},
+                                        {6, "CheckPattern"},
+                                        {7, "ApplyBitslip or WaitBitslip"},
+                                        {8, "PatternVerification"},
+                                        {9, "FailedInitial"},
+                                        {10, "FailedToApplyDelay"},
+                                        {11, "FailedBitslip"},
+                                        {12, "FailedVerification"},
+                                        {13, "Not Defined"},
+                                        {14, "Tuned"},
+                                        {15, "Unknown"}
+                                       };
+
         if (fFirwmareChipType == ChipType::CBC3)
         {
             if (!fCBC3Emulator)
@@ -686,19 +739,9 @@ namespace Ph2_HwInterface {
                 {
                     if (cCounter++ > cMaxAttempts)
                     {
-                        uint32_t delay5_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done_cbc0");
-                        uint32_t serializer_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done_cbc0");
-                        uint32_t bitslip_done_cbc0 = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done_cbc0");
-                        
-			uint32_t delay5_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.delay5_done_cbc1");
-                        uint32_t serializer_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.serializer_done_cbc1");
-                        uint32_t bitslip_done_cbc1 = ReadReg ("fc7_daq_stat.physical_interface_block.bitslip_done_cbc1");
-			LOG (INFO) << "Clock Data Timing tuning failed after " << cMaxAttempts << " attempts with value - aborting!";
-                        LOG (INFO) << "Debug Info CBC0: delay5 done: " << delay5_done_cbc0 << ", serializer_done: " << serializer_done_cbc0 << ", bitslip_done: " << bitslip_done_cbc0;
-                        LOG (INFO) << "Debug Info CBC1: delay5 done: " << delay5_done_cbc1 << ", serializer_done: " << serializer_done_cbc1 << ", bitslip_done: " << bitslip_done_cbc1;
-			uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
+                        uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
 			uint32_t tuning_state_cbc1 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc1");
-			LOG(INFO) << "tuning state cbc0: " << tuning_state_cbc0 << ", cbc1: " << tuning_state_cbc1;
+                        LOG(INFO) << "tuning state cbc0: " << cErrorMap[tuning_state_cbc0] << ", cbc1: " << cErrorMap[tuning_state_cbc1];
 			exit (1);
                     }
 
@@ -772,7 +815,7 @@ namespace Ph2_HwInterface {
             if (!pWait) 
                 return 0;
             else
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                std::this_thread::sleep_for (std::chrono::microseconds (10) );
         }
         
         uint32_t cNEvents = 0;
@@ -815,7 +858,7 @@ namespace Ph2_HwInterface {
 
                 }
                 cCounter++;
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+                std::this_thread::sleep_for (std::chrono::microseconds (10) );
             }
             
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
@@ -863,15 +906,19 @@ namespace Ph2_HwInterface {
 		    }
                     std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                     cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                    cNEventsAvailable = (uint32_t) cNWords / cEventSize;
-
-                }
+                    cNEventsAvailable = (uint32_t) cNWords / cEventSize;                    
+                }                
 
                 std::vector<uint32_t> event_data;
-                if (fIsDDR3Readout)
-                    event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);                
-                else
+                if (fIsDDR3Readout) {
+                    // in the no handshake mode the, wr counter is reset when it reaches the maximal value
+                    // therefore offset here also has to be reset
+                    if(fDDR3Offset+cNEventsAvailable*cEventSize > 134217727) fDDR3Offset = 0;
+                    // read
+                    event_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNEventsAvailable*cEventSize, fDDR3Offset);
+                } else {
                     event_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNEventsAvailable*cEventSize);
+                }
                 
 		pData.insert (pData.end(), event_data.begin(), event_data.end() );
                 cNEvents += cNEventsAvailable;
