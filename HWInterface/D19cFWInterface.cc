@@ -694,7 +694,7 @@ namespace Ph2_HwInterface {
                                         {15, "Unknown"}
                                        };
 
-        if (true)
+        if (fFirwmareChipType == ChipType::CBC3)
         {
             if (!fCBC3Emulator)
             {
