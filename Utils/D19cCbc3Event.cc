@@ -705,8 +705,8 @@ namespace Ph2_HwInterface {
 
                     for (size_t i = 3; i > 0; i--)
                     {
-                        uint32_t cEvenWord = reverse_bits (cData->second.at (i - 1) );
-                        uint32_t cOddWord = reverse_bits (cData->second.at (i + 3) );
+                        uint32_t cEvenWord = reverse_bits (cData->second.at (i) );
+                        uint32_t cOddWord = reverse_bits (cData->second.at (i + 4) );
                         cPayload.appendD19CData (cEvenWord, cOddWord);
                     }
 
