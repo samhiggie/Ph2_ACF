@@ -409,7 +409,7 @@ namespace Ph2_System {
             Cbc* cCbc = new Cbc ( pModule->getBeId(), pModuleNode.attribute ( "FMCId" ).as_int(), pModuleNode.attribute ( "FeId" ).as_int(), cCbcNode.attribute ( "Id" ).as_int(), cFileName );
 
             // parse the specific CBC settings so that Registers take precedence
-            this->parseCbcSettings (pModuleNode.child ("CBC"), cCbc, os);
+            this->parseCbcSettings (cCbcNode, cCbc, os);
 
             for ( pugi::xml_node cCbcRegisterNode = cCbcNode.child ( "Register" ); cCbcRegisterNode; cCbcRegisterNode = cCbcRegisterNode.next_sibling() )
             {
