@@ -225,6 +225,9 @@ namespace Ph2_HwInterface {
         int num_chips = ReadReg ("fc7_daq_stat.general.info.num_chips");
         uint32_t fmc1_card_type = ReadReg ("fc7_daq_stat.general.info.fmc1_card_type");
         uint32_t fmc2_card_type = ReadReg ("fc7_daq_stat.general.info.fmc2_card_type");
+        int firmware_timestamp = ReadReg("fc7_daq_stat.general.firmware_timestamp");
+
+        LOG(INFO) << "Compiled on: " << BOLDGREEN << ((firmware_timestamp >> 27) & 0x1F) << "." << ((firmware_timestamp >> 23) & 0xF) << "." << ((firmware_timestamp >> 17) & 0x3F) << " " << ((firmware_timestamp >> 12) & 0x1F) << ":" << ((firmware_timestamp >> 6) & 0x3F) << ":" << ((firmware_timestamp >> 0) & 0x3F) << " (dd.mm.yy hh:mm:ss)" << RESET;
 
         if (implementation == 0)
             LOG (INFO) << "Implementation: " << BOLDGREEN << "Optical" << RESET;
@@ -742,7 +745,7 @@ namespace Ph2_HwInterface {
                         uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
 			uint32_t tuning_state_cbc1 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc1");
                         LOG(INFO) << "tuning state cbc0: " << cErrorMap[tuning_state_cbc0] << ", cbc1: " << cErrorMap[tuning_state_cbc1];
-			exit (1);
+                        exit (1);
                     }
 
                     this->CbcFastReset();
@@ -968,7 +971,7 @@ namespace Ph2_HwInterface {
         bool failed = false;
 
         for (uint32_t event = 0; event < pNEvents; event++)
-        {
+        {            
             uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
 
             int cNTries = 0;
@@ -1002,6 +1005,7 @@ namespace Ph2_HwInterface {
             else
                 header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
             uint32_t cEventSize = (0x0000FFFF & header1);
+            cEventSize *= 4;
 
             while (cNWords < cEventSize - 1)
             {
@@ -1047,7 +1051,7 @@ namespace Ph2_HwInterface {
         for (const auto& cFe : pBoard->fModuleVector)
             cNCbc += cFe->getNCbc();
 
-        cNEventSize32 = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cNFe * D19C_EVENT_HEADER2_SIZE_32_CBC3 + cNCbc * CBC_EVENT_SIZE_32_CBC3;
+        cNEventSize32 = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cNFe * cNCbc * D19C_EVENT_SIZE_32_CBC3;
 
         if (fIsDDR3Readout) {
             uint32_t cNEventSize32_divided_by_8 = ((cNEventSize32 >> 3) << 3);
@@ -1111,7 +1115,7 @@ namespace Ph2_HwInterface {
         bool pUseMask = false;
 	if (fI2CVersion >= 1) {
 		// new command consists of one word if its read command, and of two words if its write. first word is always the same
-		pVecReq.push_back( (0 << 28) | (0 << 27) | (pFeId << 23) | (pCbcId << 18) | (pReadBack << 17) | ((!pWrite) << 16) | (pRegItem.fPage << 8) | (pRegItem.fAddress << 0) );
+                pVecReq.push_back( (0 << 28) | (0 << 27) | (pFeId << 23) | (pCbcId << 18) | (pReadBack << 17) | ((!pWrite) << 16) | (pRegItem.fPage << 8) | (pRegItem.fAddress << 0) );
 		// only for write commands
 		if (pWrite) pVecReq.push_back( (0 << 28) | (1 << 27) | (pRegItem.fValue << 0) );
 	} else {
