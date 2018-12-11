@@ -42,6 +42,11 @@ namespace Ph2_HwInterface {
         fEventSize = 0x0000FFFF & list.at (0);
         fEventSize *= 4; // block size is in 128 bit words
 
+        // check header
+        if (((list.at(0) >> 16) & 0xFFFF) != 0xFFFF) {
+            LOG (ERROR) << "Event header does not contain 0xFFFF start sequence - please, check the firmware";
+        }
+
         if (fEventSize != list.size() )
             LOG (ERROR) << "Vector size doesnt match the BLOCK_SIZE in Header1";
 
