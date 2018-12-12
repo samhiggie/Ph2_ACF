@@ -737,7 +737,6 @@ namespace Ph2_HwInterface {
                 int cMaxAttempts = 10;
 
                 uint32_t hardware_ready = 0;
-
                 while (hardware_ready < 1)
                 {
                     if (cCounter++ > cMaxAttempts)
@@ -804,7 +803,7 @@ namespace Ph2_HwInterface {
         uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
         uint32_t data_handshake = ReadReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable");
 	uint32_t cPackageSize = ReadReg ("fc7_daq_cnfg.readout_block.packet_nbr") + 1;
-            
+
         bool pFailed = false; 
         int cCounter = 0 ; 
         while (cNWords == 0 && !pFailed )
@@ -863,15 +862,15 @@ namespace Ph2_HwInterface {
                 cCounter++;
                 std::this_thread::sleep_for (std::chrono::microseconds (10) );
             }
-            
+
             cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
             if (pBoard->getEventType() == EventType::VR)
             {
                 cNEvents = cNWords / computeEventSize (pBoard);
                 if ( (cNWords % computeEventSize (pBoard) ) != 0) {
-			pFailed = true;
-                	LOG (ERROR) << "Data amount (in words) is not multiple to EventSize!";
-		}
+                    pFailed = true;
+                    LOG (ERROR) << "Data amount (in words) is not multiple to EventSize! (" << cNWords << ")";
+                }
             }
             else
             {
@@ -1004,14 +1003,32 @@ namespace Ph2_HwInterface {
                 header1 = ReadBlockRegOffsetValue ("fc7_daq_ddr3", 1, fDDR3Offset).at(0);
             else
                 header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
+
+            // check header
+            if (((header1 >> 16) & 0xFFFF) != 0xFFFF) {
+                LOG(ERROR) << "Event header is corrupted - please verify the firmware";
+                exit(1);
+            }
+
+            // get event size
             uint32_t cEventSize = (0x0000FFFF & header1);
             cEventSize *= 4;
 
+            cNTries = 0;
             while (cNWords < cEventSize - 1)
             {
+                if (cNTries >= cNTriesMax) {
+                    LOG(ERROR) << "Some failure when waiting for the full event. Lets restart";
+                    failed = true;
+                    break;
+                }
+
                 std::this_thread::sleep_for (std::chrono::milliseconds (10) );
                 cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            }         
+                cNTries++;
+            }
+
+            if (failed) break;
 
             pData.push_back (header1);
             std::vector<uint32_t> rest_of_data;
@@ -1389,6 +1406,131 @@ namespace Ph2_HwInterface {
     void D19cFWInterface::CbcTrigger()
     {
         WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_trigger", 0x1 );
+    }
+
+    // measures the occupancy of the 2S chips
+    bool D19cFWInterface::Measure2SOccupancy(uint32_t pNEvents, uint8_t **&pErrorCounters, uint8_t ***&pChannelCounters ) {
+        // this will anyway be constant
+        const int NCHIPS_PER_HYBRID_COUNTERS = 8; // data from one CIC
+        const int COUNTER_WIDTH_BITS = 8; // we have 8bit counters currently
+        const int HYBRIDS_TOTAL = fFWNHybrids; // for allocation
+        const int BIT_MASK = 0xFF; // for counter widht 8
+
+        // check the amount of events
+        if (pNEvents > pow(2,COUNTER_WIDTH_BITS)-1) {
+            LOG(ERROR) << "Requested more events, that counters could fit";
+            return false;
+        }
+
+        // allocating the array
+        if (pChannelCounters == nullptr && pErrorCounters == nullptr) {
+            pChannelCounters = new uint8_t**[HYBRIDS_TOTAL];
+            pErrorCounters = new uint8_t*[HYBRIDS_TOTAL];
+            for(uint32_t h = 0; h < HYBRIDS_TOTAL; h++) {
+                pChannelCounters[h] = new uint8_t*[NCHIPS_PER_HYBRID_COUNTERS];
+                pErrorCounters[h] = new uint8_t[NCHIPS_PER_HYBRID_COUNTERS];
+                for(uint32_t c = 0; c < NCHIPS_PER_HYBRID_COUNTERS; c++) {
+                    pChannelCounters[h][c] = new uint8_t[NCHANNELS];
+                }
+            }
+        }
+
+        // set the configuration of the fast command (number of events)
+        WriteReg ("fc7_daq_cnfg.fast_command_block.triggers_to_accept", pNEvents);
+        WriteReg ("fc7_daq_ctrl.fast_command_block.control.load_config", 0x1);
+
+        // disable the readout backpressure (no one cares about readout)
+        uint32_t cBackpressureOldValue = ReadReg("fc7_daq_cnfg.fast_command_block.misc.backpressure_enable");
+        WriteReg ("fc7_daq_cnfg.fast_command_block.misc.backpressure_enable", 0x0);
+
+        // reset the counters fsm
+        //WriteReg ("fc7_daq_ctrl.calibration_2s_block.control.reset_fsm", 0x1); // self reset
+        //usleep (1);
+
+        // finally start the loop
+        WriteReg ("fc7_daq_ctrl.calibration_2s_block.control.start", 0x1);
+
+        // now loop till the machine is not done
+        bool cLastPackage = false;
+        while (!cLastPackage) {
+
+            // loop waiting for the counters
+            while (ReadReg ("fc7_daq_stat.calibration_2s_block.general.counters_ready") == 0) {
+                // just wait
+                //uint32_t cFIFOEmpty = ReadReg ("fc7_daq_stat.calibration_2s_block.general.fifo_empty");
+                //LOG(INFO) << "FIFO Empty: " << cFIFOEmpty;
+                usleep (1);
+            }
+            cLastPackage = ((ReadReg ("fc7_daq_stat.calibration_2s_block.general.fsm_done") == 1) && (ReadReg ("fc7_daq_stat.calibration_2s_block.general.counters_ready") == 1));
+
+            // so the counters are ready let's read the fifo
+            uint32_t header = ReadReg("fc7_daq_ctrl.calibration_2s_block.counter_fifo");
+            if (((header >> 16) & 0xFFFF) != 0xFFFF) {
+                LOG(ERROR) << "Something bad with counters header";
+                return false;
+            }
+            uint32_t cEventSize = (header & 0x0000FFFF);
+            //LOG(INFO) << "Stub Counters Event size is: " << cEventSize;
+
+            std::vector<uint32_t> counters_data = ReadBlockRegValue ("fc7_daq_ctrl.calibration_2s_block.counter_fifo", cEventSize - 1);
+            //for(auto word : counters_data) std::cout << std::hex << word << std::dec << std::endl;
+
+            uint32_t cParserOffset = 0;
+            while(cParserOffset < counters_data.size()) {
+                // get chip header
+                uint32_t chipHeader = counters_data.at(cParserOffset);
+                // check it
+                if (((chipHeader >> 28) & 0xF) != 0xA) {
+                    LOG(ERROR) << "Something bad with chip header";
+                    return false;
+                }
+                // get hybrid chip id
+                uint8_t cHybridId = (chipHeader >> 20) & 0xFF;
+                uint8_t cChipId = (chipHeader >> 16) & 0xF;
+                uint8_t cErrorCounter = (chipHeader >> 8) & 0xFF;
+                uint8_t cTriggerCounter = (chipHeader >> 0) & 0xFF;
+                //LOG(INFO) << "\tHybrid: " << +cHybridId << ", Chip: " << +cChipId << ", Error Counter: " << +cErrorCounter << ", Trigger Counter: " << +cTriggerCounter;
+                if (cTriggerCounter != pNEvents) {
+                    LOG(ERROR) << "Number of triggers does not match the requested amount";
+                    return false;
+                }
+
+                // now parse the counters
+                pErrorCounters[cHybridId][cChipId] = cErrorCounter;
+                for(uint8_t ch = 0; ch < NCHANNELS; ch++) {
+                    uint8_t cWordId = cParserOffset + 1 + (uint8_t)ch/(32/COUNTER_WIDTH_BITS); // 1 for header, ch/4 because we have 4 counters per word
+                    uint8_t cBitOffset = ch%(32/COUNTER_WIDTH_BITS) * COUNTER_WIDTH_BITS;
+                    pChannelCounters[cHybridId][cChipId][ch] = (counters_data.at(cWordId) >> cBitOffset) & BIT_MASK;
+                }
+
+                // increment the offset
+                cParserOffset += (1 + (NCHANNELS + (4-NCHANNELS%4))/4);
+            }
+        }
+
+        // debug out
+        //for(uint8_t ch = 0; ch < NCHANNELS; ch++) std::cout << "Ch: " << +ch << ", Counter: " << +pChannelCounters[0][0][ch] << std::endl;
+
+        // just in case write back the old backrepssure valie
+        WriteReg ("fc7_daq_cnfg.fast_command_block.misc.backpressure_enable", cBackpressureOldValue);
+
+        // return
+        return true;
+    }
+
+    // method to remove the arrays
+    void D19cFWInterface::Release2SCountersMemory(uint8_t **&pErrorCounters, uint8_t ***&pChannelCounters) {
+        // this will anyway be constant
+        const int NCHIPS_PER_HYBRID_COUNTERS = 8; // data from one CIC
+
+        // deleting all the array
+        for(uint32_t h = 0; h < fFWNHybrids; h++) {
+            for(uint32_t c = 0; c < NCHIPS_PER_HYBRID_COUNTERS; c++) delete pChannelCounters[h][c];
+            delete pChannelCounters[h];
+            delete pErrorCounters[h];
+        }
+        delete pChannelCounters;
+        delete pErrorCounters;
     }
 
     void D19cFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )

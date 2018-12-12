@@ -1,4 +1,4 @@
-#include <fstream>
+﻿#include <fstream>
 #include <ios>
 #include <cstring>
 
@@ -39,6 +39,8 @@ int main ( int argc, char** argv )
     cmd.defineOptionAlternative ( "rate", "r" );
     cmd.defineOption ( "ipb_rate", "Measure maximal IPBus readout rate", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "ipb_rate", "i" );
+    cmd.defineOption ( "occupancy", "Measure 2S Occupancy", ArgvParser::NoOptionAttribute );
+    cmd.defineOptionAlternative ( "occupancy", "m" );
     cmd.defineOption ( "output", "Output Directory . Default value: Results", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOptionAlternative ( "output", "o" );
     cmd.defineOption ( "configure", "Configure HW", ArgvParser::NoOptionAttribute );
@@ -95,6 +97,7 @@ int main ( int argc, char** argv )
     bool cTestPulse = ( cmd.foundOption ( "testpulse" ) ) ? true : false;
     bool cRate = ( cmd.foundOption ( "rate" ) ) ? true : false;
     bool cIPB_Rate = ( cmd.foundOption ( "ipb_rate" ) ) ? true : false;
+    bool cOccupancy = ( cmd.foundOption ( "occupancy" ) ) ? true : false;
 
     if ( cHardReset ) {
         cTool.fBeBoardInterface->RebootBoard(pBoard);
@@ -203,6 +206,71 @@ int main ( int argc, char** argv )
 
             t.stop();
             LOG (INFO) << "Measured maximal IPBus readout rate: " << (double)(cN/t.getElapsedTime())/1000 << "kHz (based on " << +cN << " events, avg package size: " << +cPackageSize << " events, avg event size: " << +cEvtSize << " words)";
+        }
+
+        // measures the 2s occupancy
+        if (cOccupancy) {
+            // init
+            LOG(INFO) << "Initating occupancy meauserement";
+            uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
+
+            // create counters
+            uint8_t ***cChannelCounters = nullptr;
+            uint8_t **cErrorCounters = nullptr;
+
+            // get fw interface
+            D19cFWInterface* d19cfw = (D19cFWInterface*)cTool.fBeBoardInterface->getFirmwareInterface();
+
+            // init threshold visitior
+            ThresholdVisitor cThresholdVisitor (cTool.fCbcInterface, 0);
+            cTool.accept (cThresholdVisitor);
+            auto cFe = pBoard->fModuleVector.at(0);
+
+            //
+            uint32_t cThresholdMin = 400;
+            uint32_t cThresholdMax = 800;
+
+            Timer t;
+            t.start();
+
+            bool doScan = true;
+            if (!doScan) {
+                // measure
+                d19cfw->Measure2SOccupancy(cNEventsToCollect, cErrorCounters, cChannelCounters);
+
+                // debug test
+                //for(uint8_t ch = 0; ch < NCHANNELS; ch++) std::cout << "Ch: " << +ch << ", Counter: " << +cChannelCounters[0][0][ch] << std::endl;
+
+                // release memory
+                d19cfw->Release2SCountersMemory(cErrorCounters, cChannelCounters);
+            } else {
+
+                // do threshokd scan
+                for (uint32_t cThreshold = cThresholdMin; cThreshold < cThresholdMax; cThreshold++) {
+
+                    // set threshold
+                    for(auto& cCbc : cFe->fCbcVector) {
+                        cThresholdVisitor.setThreshold(cThreshold);
+                        cCbc->accept(cThresholdVisitor);
+                    }
+
+                    // measure
+                    d19cfw->Measure2SOccupancy(cNEventsToCollect, cErrorCounters, cChannelCounters);
+
+                    // debug output
+                    //for(uint8_t ch = 0; ch < 16; ch++) std::cout << +cChannelCounters[0][0][ch] << "\t";
+                    //std::cout << std::endl;
+
+                }
+
+                t.stop();
+
+                // release memory
+                d19cfw->Release2SCountersMemory(cErrorCounters, cChannelCounters);
+
+                // print
+                LOG(INFO) << "Time spent for SCurves: " << t.getElapsedTime() << " seconds (" << cThresholdMax-cThresholdMin << " points)";
+            }
         }
     }
 

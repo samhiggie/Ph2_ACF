@@ -270,6 +270,10 @@ namespace Ph2_HwInterface {
 
         void CbcTrigger();
 
+        // measures the occupancy of the 2S chips
+        bool Measure2SOccupancy(uint32_t pNEvents, uint8_t **&pErrorCounters, uint8_t ***&pChannelCounters);
+        void Release2SCountersMemory(uint8_t **&pErrorCounters, uint8_t ***&pChannelCounters);
+
         ///////////////////////////////////////////////////////
         //      FPGA CONFIG                                 //
         /////////////////////////////////////////////////////

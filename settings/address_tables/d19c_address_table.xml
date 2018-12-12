@@ -125,6 +125,9 @@
 		<node id="handshake_mode"		address="0x000" mask="0x00000003"/>
                 <node id="tlu_enabled"                  address="0x000" mask="0x00000010"/>
 	</node>
+
+        <node id="calibration_2s_block"         address="0xE000">
+        </node>
     </node>
 
     <node id="fc7_daq_ctrl" address="0x40020000" permission="rw" >
@@ -202,6 +205,14 @@
             <node id="control"                          address="0x000">
                 <node id="traffic_str"                      mask="0x00000001"/>
             </node>
+        </node>
+
+        <node id="calibration_2s_block"         address="0xE000">
+            <node id="control"                          address="0x000">
+                <node id="reset_fsm"                        mask="0x00000001"/>
+                <node id="start"                            mask="0x00000002"/>
+            </node>
+            <node id="counter_fifo"                     address="0x001" permission="r" mode="non-incremental" description="counters fifo"/>
         </node>
 
         <node id="stub_counter_block"           address="0xF000">
@@ -329,6 +340,14 @@
                 <node id="self_check_done"      address="0x000" mask="0x00000004"/>
                 <node id="num_errors"     	address="0x001" mask="0xffffffff"/>
                 <node id="num_words"      	address="0x002" mask="0xffffffff"/>
+        </node>
+
+        <node id="calibration_2s_block"         address="0xE000">
+            <node id="general"                          address="0x000">
+                <node id="counters_ready"                       mask="0x00000001"/>
+                <node id="fifo_empty"                           mask="0x00000002"/>
+                <node id="fsm_done"                             mask="0x00000004"/>
+           </node>
         </node>
 
         <node id="stub_counter_block"           address="0xF000">
