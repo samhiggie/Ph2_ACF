@@ -701,89 +701,139 @@ namespace Ph2_HwInterface {
         {
             if (!fCBC3Emulator)
             {
-                std::map<Cbc*, uint8_t> cStubLogictInputMap;
-                std::map<Cbc*, uint8_t> cHipRegMap;
-                std::vector<uint32_t> cVecReq;
+                bool cDoAuto = true;
 
-                cVecReq.clear();
+                // automatic mode
+                if (cDoAuto) {
 
+                    std::map<Cbc*, uint8_t> cStubLogictInputMap;
+                    std::map<Cbc*, uint8_t> cHipRegMap;
+                    std::vector<uint32_t> cVecReq;
+
+                    cVecReq.clear();
+
+                    for (auto cFe : pBoard->fModuleVector)
+                    {
+                        for (auto cCbc : cFe->fCbcVector)
+                        {
+
+                            uint8_t cOriginalStubLogicInput = cCbc->getReg ("Pipe&StubInpSel&Ptwidth");
+                            uint8_t cOriginalHipReg = cCbc->getReg ("HIP&TestMode");
+                            cStubLogictInputMap[cCbc] = cOriginalStubLogicInput;
+                            cHipRegMap[cCbc] = cOriginalHipReg;
+
+
+                            CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
+                            cRegItem.fValue = (cOriginalStubLogicInput & 0xCF) | (0x20 & 0x30);
+                            this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
+
+                            cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
+                            cRegItem.fValue = (cOriginalHipReg & ~ (0x1 << 4) );
+                            this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
+
+                        }
+                    }
+
+                    uint8_t cWriteAttempts = 0;
+                    this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+                    std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+
+                    int cCounter = 0;
+                    int cMaxAttempts = 10;
+
+                    uint32_t hardware_ready = 0;
+
+                    while (hardware_ready < 1)
+                    {
+                        if (cCounter++ > cMaxAttempts)
+                        {
+                            uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
+                            uint32_t tuning_state_cbc1 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc1");
+                            LOG(INFO) << "tuning state cbc0: " << cErrorMap[tuning_state_cbc0] << ", cbc1: " << cErrorMap[tuning_state_cbc1];
+                            exit (1);
+                        }
+
+                        this->CbcFastReset();
+                        usleep (10);
+                        // reset  the timing tuning
+                        WriteReg ("fc7_daq_ctrl.physical_interface_block.control.cbc3_tune_again", 0x1);
+
+                        std::this_thread::sleep_for (std::chrono::milliseconds (100) );
+                        hardware_ready = ReadReg ("fc7_daq_stat.physical_interface_block.hardware_ready");
+                    }
+
+                    //re-enable the stub logic
+                    cVecReq.clear();
+                    for (auto cFe : pBoard->fModuleVector)
+                    {
+                        for (auto cCbc : cFe->fCbcVector)
+                        {
+
+                            CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
+                            cRegItem.fValue = cStubLogictInputMap[cCbc];
+                            //this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
+
+                            cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
+                            cRegItem.fValue = cHipRegMap[cCbc];
+                            this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
+
+                        }
+                    }
+
+                    cWriteAttempts = 0;
+                    this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
+
+                    LOG (INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
+
+                } else {
+                    // manual mode apply
+                    uint8_t phase_cbc0[2] = {8, 1}; // delay, bitslip
+                    uint8_t phase_cbc1[2] = {15, 1}; // delay, bitslip
+
+                    // cbc0
+                    for(uint8_t line = 0; line < 6; line++) {
+                        // const
+                        uint32_t hybrid_raw = (0 & 0xF) << 28;
+                        uint32_t chip_raw = (0 & 0xF) << 24;
+                        uint32_t line_raw = (line & 0xF) << 20;
+                        uint32_t command_raw = (2 & 0xF) << 16;
+
+                        // manual mode
+                        uint32_t mode_raw = (2 & 0x3) << 12;
+                        uint32_t delay_raw = (phase_cbc0[0] & 0x1F) << 3;
+                        uint32_t bitslip_raw = (phase_cbc0[1] & 0x7) << 0;
+
+                        // write
+                        uint32_t command_final = command_raw + hybrid_raw + chip_raw + line_raw + mode_raw + delay_raw + bitslip_raw;
+                        WriteReg( "fc7_daq_ctrl.physical_interface_block.phase_tuning_ctrl", command_final );
+                    }
+
+                    // cbc1
+                    for(uint8_t line = 0; line < 6; line++) {
+                        // const
+                        uint32_t hybrid_raw = (0 & 0xF) << 28;
+                        uint32_t chip_raw = (1 & 0xF) << 24;
+                        uint32_t line_raw = (line & 0xF) << 20;
+                        uint32_t command_raw = (2 & 0xF) << 16;
+
+                        // manual mode
+                        uint32_t mode_raw = (2 & 0x3) << 12;
+                        uint32_t delay_raw = (phase_cbc1[0] & 0x1F) << 3;
+                        uint32_t bitslip_raw = (phase_cbc1[1] & 0x7) << 0;
+
+                        // write
+                        uint32_t command_final = command_raw + hybrid_raw + chip_raw + line_raw + mode_raw + delay_raw + bitslip_raw;
+                        WriteReg( "fc7_daq_ctrl.physical_interface_block.phase_tuning_ctrl", command_final );
+                    }
+
+                    LOG (INFO) << GREEN << "CBC3 Phase tuning " << RESET << RED << "APPLIED" << RESET << GREEN <<" succesfully" << RESET;
+                }
+
+                // print statuses
                 for (auto cFe : pBoard->fModuleVector)
-                {
                     for (auto cCbc : cFe->fCbcVector)
-                    {
+                        PhaseTuningGetLineStatus(cFe->getFeId(), cCbc->getCbcId(), 5);
 
-                        uint8_t cOriginalStubLogicInput = cCbc->getReg ("Pipe&StubInpSel&Ptwidth");
-                        uint8_t cOriginalHipReg = cCbc->getReg ("HIP&TestMode");
-                        cStubLogictInputMap[cCbc] = cOriginalStubLogicInput;
-                        cHipRegMap[cCbc] = cOriginalHipReg;
-
-
-                        CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
-                        cRegItem.fValue = (cOriginalStubLogicInput & 0xCF) | (0x20 & 0x30);
-                        this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
-
-                        cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
-                        cRegItem.fValue = (cOriginalHipReg & ~ (0x1 << 4) );
-                        this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
-
-                    }
-                }
-
-                uint8_t cWriteAttempts = 0;
-                this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
-
-                int cCounter = 0;
-                int cMaxAttempts = 10;
-
-                uint32_t hardware_ready = 0;
-
-                while (hardware_ready < 1)
-                {
-                    if (cCounter++ > cMaxAttempts)
-                    {
-                        uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
-			uint32_t tuning_state_cbc1 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc1");
-                        LOG(INFO) << "tuning state cbc0: " << cErrorMap[tuning_state_cbc0] << ", cbc1: " << cErrorMap[tuning_state_cbc1];
-                        exit (1);
-                    }
-
-                    this->CbcFastReset();
-                    usleep (10);
-                    // reset  the timing tuning
-                    WriteReg ("fc7_daq_ctrl.physical_interface_block.control.cbc3_tune_again", 0x1);
-
-                    std::this_thread::sleep_for (std::chrono::milliseconds (100) );
-                    hardware_ready = ReadReg ("fc7_daq_stat.physical_interface_block.hardware_ready");
-                }
-
-                //re-enable the stub logic
-                cVecReq.clear();
-                for (auto cFe : pBoard->fModuleVector)
-                {
-                    for (auto cCbc : cFe->fCbcVector)
-                    {
-
-                        CbcRegItem cRegItem = cCbc->getRegItem ( "Pipe&StubInpSel&Ptwidth" );
-                        cRegItem.fValue = cStubLogictInputMap[cCbc];
-                        //this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
-
-                        cRegItem = cCbc->getRegItem ( "HIP&TestMode" );
-                        cRegItem.fValue = cHipRegMap[cCbc];
-                        this->EncodeReg (cRegItem, cCbc->getFeId(), cCbc->getCbcId(), cVecReq, true, true);
-
-                    }
-                }
-
-                cWriteAttempts = 0;
-                this->WriteCbcBlockReg (cVecReq, cWriteAttempts, true);
-
-                LOG (INFO) << GREEN << "CBC3 Phase tuning finished succesfully" << RESET;
-		
-		/*for (int i = 0; i < 7; i++) {
-            		WriteReg ("fc7_daq_ctrl.physical_interface_block.control.cbc3_bitslip_stub1", 0x1);
-			usleep(10);
-		}*/
             }
         }
         else if (fFirwmareChipType == ChipType::CBC2)
@@ -1389,6 +1439,63 @@ namespace Ph2_HwInterface {
     void D19cFWInterface::CbcTrigger()
     {
         WriteReg ( "fc7_daq_ctrl.fast_command_block.control.fast_trigger", 0x1 );
+    }
+
+    // line status phase tuning
+    void D19cFWInterface::PhaseTuningGetLineStatus(uint8_t pHybrid, uint8_t pChip, uint8_t pLine) {
+        // encode the line id's
+        uint32_t hybrid_raw = (pHybrid & 0xF) << 28;
+        uint32_t chip_raw = (pChip & 0xF) << 24;
+        uint32_t line_raw = (pLine & 0xF) << 20;
+
+        // print header
+        LOG(INFO) << "\t Hybrid: " << +pHybrid << ", Chip: " << +pChip << ", Line: " << +pLine;
+
+        // encode command type
+        uint32_t command_raw = (0 & 0xF) << 16;
+        uint32_t command_final = hybrid_raw + chip_raw + line_raw + command_raw;
+        WriteReg( "fc7_daq_ctrl.physical_interface_block.phase_tuning_ctrl", command_final );
+        // sleep a bi
+        usleep(100);
+        // get the status back
+        PhaseTuningParseStatus();
+
+        // encode command type
+        command_raw = (1 & 0xF) << 16;
+        command_final = hybrid_raw + chip_raw + line_raw + command_raw;
+        WriteReg( "fc7_daq_ctrl.physical_interface_block.phase_tuning_ctrl", command_final );
+        // sleep a bi
+        usleep(100);
+        // get the status back
+        PhaseTuningParseStatus();
+
+
+    }
+
+    void D19cFWInterface::PhaseTuningParseStatus() {
+
+        uint32_t reply = ReadReg( "fc7_daq_stat.physical_interface_block.phase_tuning_reply" );
+        uint8_t output_type = (reply >> 24) & 0xF;
+
+        if (output_type == 0) {
+            uint8_t mode = (reply & 0x00003000) >> 12;
+            uint8_t delay = (reply & 0x000000F8) >> 3;
+            uint8_t bitslip = (reply & 0x00000007) >> 0;
+
+            LOG(INFO) << "\t\t Mode: " << +mode;
+            LOG(INFO) << "\t\t Manual Delay: " << +delay << ", Manual Bitslip: " << +bitslip;
+
+        } else if (output_type == 1) {
+            uint8_t delay = (reply & 0x00F80000) >> 19;
+            uint8_t bitslip = (reply & 0x00070000) >> 16;
+            uint8_t done = (reply & 0x00008000) >> 15;
+            uint8_t wa_fsm_state = (reply & 0x00000F00) >> 8;
+            uint8_t pa_fsm_state = (reply & 0x0000000F) >> 0;
+
+            LOG(INFO) << "\t\t Done: " << +done << ", PA FSM: " << +pa_fsm_state << ", WA FSM: " << +wa_fsm_state;
+            LOG(INFO) << "\t\t Delay: " << +delay << ", Bitslip: " << +bitslip;
+        }
+
     }
 
     void D19cFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )

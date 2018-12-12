@@ -270,6 +270,11 @@ namespace Ph2_HwInterface {
 
         void CbcTrigger();
 
+        // phase tuning coomands - d19c
+        void PhaseTuningGetLineStatus(uint8_t pHybrid, uint8_t pChip, uint8_t pLine);
+        void PhaseTuningParseStatus();
+
+
         ///////////////////////////////////////////////////////
         //      FPGA CONFIG                                 //
         /////////////////////////////////////////////////////
