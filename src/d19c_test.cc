@@ -55,6 +55,7 @@ int main ( int argc, char** argv )
     cmd.defineOptionAlternative ( "evtsize", "w" );
     cmd.defineOption ( "dqm", "Print every i-th event.  ", ArgvParser::OptionRequiresValue );
     cmd.defineOptionAlternative ( "dqm", "d" );
+    cmd.defineOption ( "mask", "Hybrid mask - default all enabled", ArgvParser::OptionRequiresValue /*| ArgvParser::OptionRequired*/ );
     cmd.defineOption ( "hard_reset", "Hard Reset the board", ArgvParser::NoOptionAttribute );
     cmd.defineOption ( "ddr3test", "Test the on-board ddr3 chip", ArgvParser::NoOptionAttribute );
 
@@ -226,6 +227,10 @@ int main ( int argc, char** argv )
             cTool.accept (cThresholdVisitor);
             auto cFe = pBoard->fModuleVector.at(0);
 
+            // hybrid mask
+            uint32_t cHybridMask = ( cmd.foundOption ( "mask" ) ) ? convertAnyInt ( cmd.optionValue ( "mask" ).c_str() ) : 0xFFFFFFFF;;
+            d19cfw->WriteReg("fc7_daq_cnfg.calibration_2s_block.enable_hybrids", cHybridMask);
+
             //
             uint32_t cThresholdMin = 400;
             uint32_t cThresholdMax = 800;
@@ -258,8 +263,8 @@ int main ( int argc, char** argv )
                     d19cfw->Measure2SOccupancy(cNEventsToCollect, cErrorCounters, cChannelCounters);
 
                     // debug output
-                    //for(uint8_t ch = 0; ch < 16; ch++) std::cout << +cChannelCounters[0][0][ch] << "\t";
-                    //std::cout << std::endl;
+                    for(uint8_t ch = 0; ch < 16; ch++) std::cout << +cChannelCounters[0][0][ch] << "\t";
+                    std::cout << std::endl;
 
                 }
 

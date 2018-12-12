@@ -127,6 +127,7 @@
 	</node>
 
         <node id="calibration_2s_block"         address="0xE000">
+            <node id="enable_hybrids"                   address="0x000" mask="0xffffffff"/>
         </node>
     </node>
 
