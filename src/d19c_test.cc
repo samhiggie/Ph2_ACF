@@ -213,11 +213,7 @@ int main ( int argc, char** argv )
         if (cOccupancy) {
             // init
             LOG(INFO) << "Initating occupancy meauserement";
-            uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 10000;
-
-            // create counters
-            uint8_t ***cChannelCounters = nullptr;
-            uint8_t **cErrorCounters = nullptr;
+            uint32_t cNEventsToCollect = ( cmd.foundOption ( "events" ) ) ? convertAnyInt ( cmd.optionValue ( "events" ).c_str() ) : 200;
 
             // get fw interface
             D19cFWInterface* d19cfw = (D19cFWInterface*)cTool.fBeBoardInterface->getFirmwareInterface();
@@ -225,7 +221,7 @@ int main ( int argc, char** argv )
             // init threshold visitior
             ThresholdVisitor cThresholdVisitor (cTool.fCbcInterface, 0);
             cTool.accept (cThresholdVisitor);
-            auto cFe = pBoard->fModuleVector.at(0);
+            auto cFe0 = pBoard->fModuleVector.at(0);
 
             // hybrid mask
             uint32_t cHybridMask = ( cmd.foundOption ( "mask" ) ) ? convertAnyInt ( cmd.optionValue ( "mask" ).c_str() ) : 0xFFFFFFFF;;
@@ -235,6 +231,13 @@ int main ( int argc, char** argv )
             uint32_t cThresholdMin = 400;
             uint32_t cThresholdMax = 800;
 
+            // create counters
+            uint8_t ***cChannelCounters = nullptr;
+            uint8_t **cErrorCounters = nullptr;
+            // allocate memory
+            d19cfw->Manage2SCountersMemory(cErrorCounters, cChannelCounters, true);
+
+            // start time counting
             Timer t;
             t.start();
 
@@ -246,36 +249,64 @@ int main ( int argc, char** argv )
                 // debug test
                 //for(uint8_t ch = 0; ch < NCHANNELS; ch++) std::cout << "Ch: " << +ch << ", Counter: " << +cChannelCounters[0][0][ch] << std::endl;
 
-                // release memory
-                d19cfw->Release2SCountersMemory(cErrorCounters, cChannelCounters);
             } else {
+
+                bool useCounters = true;
+
+                LOG(INFO) << "Mode: " << (useCounters ? "2S Counters" : "Conventional");
 
                 // do threshokd scan
                 for (uint32_t cThreshold = cThresholdMin; cThreshold < cThresholdMax; cThreshold++) {
 
                     // set threshold
-                    for(auto& cCbc : cFe->fCbcVector) {
+                    for(auto& cCbc : cFe0->fCbcVector) {
                         cThresholdVisitor.setThreshold(cThreshold);
                         cCbc->accept(cThresholdVisitor);
                     }
 
-                    // measure
-                    d19cfw->Measure2SOccupancy(cNEventsToCollect, cErrorCounters, cChannelCounters);
+                    // measure (equvuvalient tasks)
+                    if (useCounters) {
+                        d19cfw->Measure2SOccupancy(cNEventsToCollect, cErrorCounters, cChannelCounters);
+                    } else {
+                        cTool.ReadNEvents( pBoard, cNEventsToCollect );
+                        const std::vector<Event*>& events = cTool.GetEvents ( pBoard );
+                        for ( auto& ev : events ) {
+                            for(auto& cFe : pBoard->fModuleVector) {
+                                for(auto& cCbc : cFe->fCbcVector) {
+                                    for(uint8_t ch = 0; ch < NCHANNELS; ch++) {
+                                        if (ev->DataBit(cFe->getFeId(), cCbc->getCbcId(), ch))
+                                            cChannelCounters[cFe->getFeId()][cCbc->getCbcId()][ch]++;
+                                    }
+                                }
+                            }
+                        }
+
+                    }
 
                     // debug output
+                    std::cout << "th" << cThreshold << ":\t";
                     for(uint8_t ch = 0; ch < 16; ch++) std::cout << +cChannelCounters[0][0][ch] << "\t";
                     std::cout << std::endl;
+
+                    // reset the counters
+                    for(auto& cFe : pBoard->fModuleVector) {
+                        for(auto& cCbc : cFe->fCbcVector) {
+                            for(uint8_t ch = 0; ch < NCHANNELS; ch++) {
+                                cChannelCounters[cFe->getFeId()][cCbc->getCbcId()][ch] = 0;
+                            }
+                        }
+                    }
 
                 }
 
                 t.stop();
 
-                // release memory
-                d19cfw->Release2SCountersMemory(cErrorCounters, cChannelCounters);
-
                 // print
-                LOG(INFO) << "Time spent for SCurves: " << t.getElapsedTime() << " seconds (" << cThresholdMax-cThresholdMin << " points)";
+                LOG(INFO) << "Time spent for SCurves: " << 1000*t.getElapsedTime()/(cThresholdMax-cThresholdMin) << " mililiseconds per point (" << cThresholdMax-cThresholdMin << " points)";
             }
+
+            // release memory
+            d19cfw->Manage2SCountersMemory(cErrorCounters, cChannelCounters, false);
         }
     }
 

@@ -969,82 +969,36 @@ namespace Ph2_HwInterface {
 
         bool failed = false;
 
-        for (uint32_t event = 0; event < pNEvents; event++)
-        {            
-            uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-
-            int cNTries = 0;
-            int cNTriesMax = 50;
-
-            while (cNWords < 1)
+        uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+        int cNTries = 0;
+        int cNTriesMax = 50;
+        while (cNWords < pNEvents*computeEventSize(pBoard)) {
+            if (cNTries >= cNTriesMax)
             {
-                if (cNTries >= cNTriesMax)
+                uint32_t state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
+
+                if (state_id == 0)
                 {
-                    uint32_t state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
-
-                    if (state_id == 0)
-                    {
-                        LOG (INFO) << "After fsm stopped, still no data: resetting and re-trying";
-                        failed = true;
-                        break;
-                    }
-                    else cNTries = 0;
-                }                
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
-                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                cNTries++;
-            }
-
-            if (failed) break;
-
-            // reading header 1
-            uint32_t header1 = 0;
-            if (fIsDDR3Readout)
-                header1 = ReadBlockRegOffsetValue ("fc7_daq_ddr3", 1, fDDR3Offset).at(0);
-            else
-                header1 = ReadReg ("fc7_daq_ctrl.readout_block.readout_fifo");
-
-            // check header
-            if (((header1 >> 16) & 0xFFFF) != 0xFFFF) {
-                LOG(ERROR) << "Event header is corrupted - please verify the firmware";
-                exit(1);
-            }
-
-            // get event size
-            uint32_t cEventSize = (0x0000FFFF & header1);
-            cEventSize *= 4;
-
-            cNTries = 0;
-            while (cNWords < cEventSize - 1)
-            {
-                if (cNTries >= cNTriesMax) {
-                    LOG(ERROR) << "Some failure when waiting for the full event. Lets restart";
+                    LOG (INFO) << "After fsm stopped, still no data: resetting and re-trying";
                     failed = true;
                     break;
                 }
-
-                std::this_thread::sleep_for (std::chrono::milliseconds (10) );
-                cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-                cNTries++;
+                else cNTries = 0;
             }
+            std::this_thread::sleep_for (std::chrono::milliseconds (10) );
+            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+            cNTries++;
+        }
 
-            if (failed) break;
-
-            pData.push_back (header1);
-            std::vector<uint32_t> rest_of_data;
-            if (fIsDDR3Readout) {
-                rest_of_data = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cEventSize - 1, fDDR3Offset);
-            }
-            else {
-                rest_of_data = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cEventSize - 1);
-            }
-            pData.insert (pData.end(), rest_of_data.begin(), rest_of_data.end() );
-
+        if (fIsDDR3Readout) {
+            pData = ReadBlockRegOffsetValue ("fc7_daq_ddr3", pNEvents*computeEventSize(pBoard), fDDR3Offset);
+        }
+        else {
+            pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", pNEvents*computeEventSize(pBoard));
         }
 
         if (failed)
         {
-
             pData.clear();
             this->Stop();
 
@@ -1068,7 +1022,7 @@ namespace Ph2_HwInterface {
         for (const auto& cFe : pBoard->fModuleVector)
             cNCbc += cFe->getNCbc();
 
-        cNEventSize32 = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cNFe * cNCbc * D19C_EVENT_SIZE_32_CBC3;
+        cNEventSize32 = D19C_EVENT_HEADER1_SIZE_32_CBC3 + cNCbc * D19C_EVENT_SIZE_32_CBC3;
 
         if (fIsDDR3Readout) {
             uint32_t cNEventSize32_divided_by_8 = ((cNEventSize32 >> 3) << 3);
@@ -1411,28 +1365,13 @@ namespace Ph2_HwInterface {
     // measures the occupancy of the 2S chips
     bool D19cFWInterface::Measure2SOccupancy(uint32_t pNEvents, uint8_t **&pErrorCounters, uint8_t ***&pChannelCounters ) {
         // this will anyway be constant
-        const int NCHIPS_PER_HYBRID_COUNTERS = 8; // data from one CIC
         const int COUNTER_WIDTH_BITS = 8; // we have 8bit counters currently
-        const int HYBRIDS_TOTAL = fFWNHybrids; // for allocation
         const int BIT_MASK = 0xFF; // for counter widht 8
 
         // check the amount of events
         if (pNEvents > pow(2,COUNTER_WIDTH_BITS)-1) {
             LOG(ERROR) << "Requested more events, that counters could fit";
             return false;
-        }
-
-        // allocating the array
-        if (pChannelCounters == nullptr && pErrorCounters == nullptr) {
-            pChannelCounters = new uint8_t**[HYBRIDS_TOTAL];
-            pErrorCounters = new uint8_t*[HYBRIDS_TOTAL];
-            for(uint32_t h = 0; h < HYBRIDS_TOTAL; h++) {
-                pChannelCounters[h] = new uint8_t*[NCHIPS_PER_HYBRID_COUNTERS];
-                pErrorCounters[h] = new uint8_t[NCHIPS_PER_HYBRID_COUNTERS];
-                for(uint32_t c = 0; c < NCHIPS_PER_HYBRID_COUNTERS; c++) {
-                    pChannelCounters[h][c] = new uint8_t[NCHANNELS];
-                }
-            }
         }
 
         // set the configuration of the fast command (number of events)
@@ -1519,18 +1458,45 @@ namespace Ph2_HwInterface {
     }
 
     // method to remove the arrays
-    void D19cFWInterface::Release2SCountersMemory(uint8_t **&pErrorCounters, uint8_t ***&pChannelCounters) {
+    void D19cFWInterface::Manage2SCountersMemory(uint8_t **&pErrorCounters, uint8_t ***&pChannelCounters, bool pAllocate)
+    {
         // this will anyway be constant
         const int NCHIPS_PER_HYBRID_COUNTERS = 8; // data from one CIC
+        const int HYBRIDS_TOTAL = fFWNHybrids; // for allocation
 
-        // deleting all the array
-        for(uint32_t h = 0; h < fFWNHybrids; h++) {
-            for(uint32_t c = 0; c < NCHIPS_PER_HYBRID_COUNTERS; c++) delete pChannelCounters[h][c];
-            delete pChannelCounters[h];
-            delete pErrorCounters[h];
+        if (pAllocate) {
+            // allocating the array
+            if (pChannelCounters == nullptr && pErrorCounters == nullptr) {
+                // allocate
+                pChannelCounters = new uint8_t**[HYBRIDS_TOTAL];
+                pErrorCounters = new uint8_t*[HYBRIDS_TOTAL];
+                for(uint32_t h = 0; h < HYBRIDS_TOTAL; h++) {
+                    pChannelCounters[h] = new uint8_t*[NCHIPS_PER_HYBRID_COUNTERS];
+                    pErrorCounters[h] = new uint8_t[NCHIPS_PER_HYBRID_COUNTERS];
+                    for(uint32_t c = 0; c < NCHIPS_PER_HYBRID_COUNTERS; c++) {
+                        pChannelCounters[h][c] = new uint8_t[NCHANNELS];
+                    }
+                }
+
+                // set to zero
+                for(uint32_t h = 0; h < HYBRIDS_TOTAL; h++) {
+                    for(uint32_t c = 0; c < NCHIPS_PER_HYBRID_COUNTERS; c++) {
+                        for(int32_t ch = 0; ch < NCHANNELS; ch++) {
+                            pChannelCounters[h][c][ch] = 0;
+                        }
+                    }
+                }
+            }
+        } else {
+            // deleting all the array
+            for(uint32_t h = 0; h < HYBRIDS_TOTAL; h++) {
+                for(uint32_t c = 0; c < NCHIPS_PER_HYBRID_COUNTERS; c++) delete pChannelCounters[h][c];
+                delete pChannelCounters[h];
+                delete pErrorCounters[h];
+            }
+            delete pChannelCounters;
+            delete pErrorCounters;
         }
-        delete pChannelCounters;
-        delete pErrorCounters;
     }
 
     void D19cFWInterface::FlashProm ( const std::string& strConfig, const char* pstrFile )

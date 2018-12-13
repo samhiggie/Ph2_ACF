@@ -202,7 +202,7 @@ namespace Ph2_HwInterface {
         void calculate_address (uint32_t& cWordP, uint32_t& cBitP, uint32_t i) const
         {
             // the first 3 words contain header data
-            cWordP = 3 + (int)i/32;
+            cWordP = 3 + (i-i%32)/32;
             cBitP = 31 - i%32;
         }
 
