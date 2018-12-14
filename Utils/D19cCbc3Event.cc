@@ -664,7 +664,7 @@ namespace Ph2_HwInterface {
                         cPayload.append (cWord);
                     }
                     //last channel word (last two bits are empty)
-                    uint32_t cLastChanWord = (cData->second.at (10) & 0x3FFFFFFF) >> 2;
+                    uint32_t cLastChanWord = (cData->second.at (10) & 0xFFFFFFFC) >> 2;
                     cPayload.append (cLastChanWord, 30);
 
                     //don't forget the two padding 0s
