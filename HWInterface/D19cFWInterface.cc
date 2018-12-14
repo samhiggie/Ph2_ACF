@@ -955,9 +955,9 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::ReadNEvents (BeBoard* pBoard, uint32_t pNEvents, std::vector<uint32_t>& pData, bool pWait )
     {
-        // data hadnshake has to be disabled in that mode
-        WriteReg ("fc7_daq_cnfg.readout_block.packet_nbr", 0x0);
-        WriteReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable", 0x0);
+        // data hadnshake has to be enabled in that mode
+        WriteReg ("fc7_daq_cnfg.readout_block.packet_nbr", pNEvents-1);
+        WriteReg ("fc7_daq_cnfg.readout_block.global.data_handshake_enable", 0x1);
 
         // write the amount of the test pulses to be sent
         WriteReg ("fc7_daq_cnfg.fast_command_block.triggers_to_accept", pNEvents);
@@ -967,37 +967,57 @@ namespace Ph2_HwInterface {
         // start triggering machine which will collect N events
         this->Start();
 
-        bool failed = false;
+        // sta
+        bool pFailed = false;
+        uint32_t cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
+        uint32_t cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter");
+        uint32_t cTimeoutCounter = 0 ;
+        uint32_t cTimeoutValue = 1000;
+        while (cReadoutReq == 0 && !pFailed )
+        {
+            cReadoutReq = ReadReg ("fc7_daq_stat.readout_block.general.readout_req");
+            cNtriggers = ReadReg ("fc7_daq_stat.fast_command_block.trigger_in_counter");
 
-        uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-        int cNTries = 0;
-        int cNTriesMax = 50;
-        while (cNWords < pNEvents*computeEventSize(pBoard)) {
-            if (cNTries >= cNTriesMax)
+            if( cNtriggers == pNEvents )
             {
-                uint32_t state_id = ReadReg ("fc7_daq_stat.fast_command_block.general.fsm_state");
-
-                if (state_id == 0)
-                {
-                    LOG (INFO) << "After fsm stopped, still no data: resetting and re-trying";
-                    failed = true;
-                    break;
+                if( cTimeoutCounter >= cTimeoutValue ) {
+                    pFailed = true;
+                    LOG(INFO) << "No data in the readout after receiving all triggers. Re-trying the point";
                 }
-                else cNTries = 0;
+                cTimeoutCounter++;
+                std::this_thread::sleep_for (std::chrono::microseconds (10) );
             }
-            std::this_thread::sleep_for (std::chrono::milliseconds (10) );
-            cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
-            cNTries++;
         }
 
-        if (fIsDDR3Readout) {
-            pData = ReadBlockRegOffsetValue ("fc7_daq_ddr3", pNEvents*computeEventSize(pBoard), fDDR3Offset);
-        }
-        else {
-            pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", pNEvents*computeEventSize(pBoard));
+        if (!pFailed) {
+
+            // check the amount of words
+            uint32_t cNWords = ReadReg ("fc7_daq_stat.readout_block.general.words_cnt");
+            if (pBoard->getEventType() == EventType::VR)
+            {
+                if ( (cNWords % computeEventSize (pBoard) ) != 0) {
+                    pFailed = true;
+                    LOG (ERROR) << "Data amount (in words) is not multiple to EventSize! (" << cNWords << ")";
+                }
+            }
+            else
+            {
+                // for zs it's impossible to check, so it'll count later during event assignment
+            }
+
+            // read all the words
+            if (fIsDDR3Readout) {
+                pData = ReadBlockRegOffsetValue ("fc7_daq_ddr3", cNWords, fDDR3Offset);
+                //in the handshake mode offset is cleared after each handshake
+                fDDR3Offset = 0;
+            }
+            else
+                pData = ReadBlockRegValue ("fc7_daq_ctrl.readout_block.readout_fifo", cNWords);
+
         }
 
-        if (failed)
+        // again check if failed to re-run in case
+        if (pFailed)
         {
             pData.clear();
             this->Stop();
