@@ -50,6 +50,44 @@ void AntennaTester::Initialize()
     InitialiseSettings();
     InitializeHists();
 }
+
+void AntennaTester::EnableAntenna( bool pAntennaEnable, uint8_t pDigiPotentiometer)
+{
+    #ifdef __ANTENNA__
+         LOG (INFO) << BOLDBLUE << "Configuring antenna..." << RESET;
+         Antenna cAntenna;
+         uint8_t cADCChipSlave = 4;
+         cAntenna.initializeAntenna(trigSource); //initialize USB communication
+         cAntenna.ConfigureADC (cADCChipSlave); //initialize SPI communication for ADC
+         if(trigSource==5){
+         cAntenna.ConfigureClockGenerator (3, 8); //initialize SPI communication for ADC
+         }
+         else if (trigSource==7){
+         }
+         else{
+           LOG (INFO)  << "ERROR, wrong trig source set " << int(trigSource);
+         }
+         cAntenna.ConfigureDigitalPotentiometer (2,pDigiPotentiometer); //configure bias for antenna pull-up
+         // configure analogue switch 
+         uint8_t analog_switch_cs = 0;
+         cAntenna.ConfigureAnalogueSwitch (analog_switch_cs); //configure communication with analogue switch
+         LOG (INFO)  << "Chip Select ID " << +analog_switch_cs ;
+
+         if( !pAntennaEnable)
+     {
+            LOG (INFO)  << BOLDBLUE << "Disabling all channels on the antenna." <<  RESET ;
+                cAntenna.TurnOnAnalogSwitchChannel (9); //configure communication with analogue switch
+     }
+     else
+                for( int i =1 ; i < 5 ; i++ )
+                        cAntenna.TurnOnAnalogSwitchChannel (i);
+    #endif
+    //sleep ( 0.1 );
+}
+
+
+
+
 void AntennaTester::InitialiseSettings()
 {
     fDecisionThreshold = 10.0;
@@ -65,6 +103,11 @@ void AntennaTester::InitialiseSettings()
     // figure out what the number of events to take is
     cSetting = fSettingsMap.find ( "Nevents" );
     fTotalEvents = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 999;
+
+         cSetting = fSettingsMap.find ( "TriggerSource" );
+         if ( cSetting != std::end ( fSettingsMap ) ) trigSource = cSetting->second;
+         LOG (INFO)  <<int (trigSource);
+
 }
 void AntennaTester::InitializeHists()
 {
@@ -171,7 +214,7 @@ void AntennaTester::writeObjects()
 }
 
 
-void AntennaTester::Measure()
+void AntennaTester::Measure(uint8_t pDigiPotentiometer)
 {
 
     LOG (INFO)  << "Measuring Efficiency per Strip with the Antenna ... " ;
@@ -183,12 +226,9 @@ void AntennaTester::Measure()
 
     InitializeHists();
 #ifdef __ANTENNA__
+
+    EnableAntenna( 0, pDigiPotentiometer);
     Antenna cAntenna;
-    uint8_t cADCChipSlave = 4;
-    cAntenna.initializeAntenna(); //initialize USB communication
-    cAntenna.ConfigureADC (cADCChipSlave); //initialize SPI communication for ADC
-    cAntenna.ConfigureClockGenerator (3, 8); //configure clock for trigger generator
-    cAntenna.ConfigureDigitalPotentiometer (2, 125); //configure bias for antenna pull-up
     sleep ( 0.1 );
 
     fHistTop->GetYaxis()->SetRangeUser ( 0, fTotalEvents );
@@ -201,7 +241,6 @@ void AntennaTester::Measure()
     for ( uint8_t channel_position = 1; channel_position < 5; channel_position++ )
     {
         cAntenna.TurnOnAnalogSwitchChannel ( channel_position );
-
         if (channel_position == 9) break;
 
         for ( BeBoard* pBoard : this->fBoardVector )
@@ -244,10 +283,13 @@ void AntennaTester::Measure()
             /*Here clearing histograms after each event*/
             fHistBottom->Reset();
             fHistTop->Reset();
+
+
         }
 
 
     }
+    //EnableAntenna( 0, pDigiPotentiometer);
 
     //cAntenna.close();
 #endif
