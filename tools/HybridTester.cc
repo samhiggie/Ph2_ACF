@@ -63,6 +63,11 @@ void HybridTester::ReconfigureCBCRegisters (std::string pDirectoryName )
     {
         fBeBoardInterface->CbcHardReset ( cBoard );
 
+        trigSource = fBeBoardInterface->ReadBoardReg (cBoard, "fc7_daq_cnfg.fast_command_block.trigger_source" );
+         LOG (INFO)  <<int (trigSource);
+
+
+
         for (auto& cFe : cBoard->fModuleVector)
         {
             for (auto& cCbc : cFe->fCbcVector)
@@ -208,11 +213,17 @@ void HybridTester::InitialiseSettings()
     cSetting = fSettingsMap.find ( "TestPulsePotentiometer" );
     fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x7F;
 
-         cSetting = fSettingsMap.find ( "TriggerSource" );
-         if ( cSetting != std::end ( fSettingsMap ) ) trigSource = cSetting->second;
-         LOG (INFO)  <<int (trigSource);
+        // cSetting = fSettingsMap.find ( "TriggerSource" );
+        // if ( cSetting != std::end ( fSettingsMap ) ) trigSource = cSetting->second;
+        // LOG (INFO)  <<int (trigSource);
 
-    // LOG(INFO) << "Read the following Settings: " ;
+    for (auto& cBoard : fBoardVector)
+    {
+
+        trigSource = fBeBoardInterface->ReadBoardReg (cBoard, "fc7_daq_cnfg.fast_command_block.trigger_source" );
+         LOG (INFO)  <<int (trigSource);
+    }
+    // LOG(INFO) << "Read the f llowing Settings: " ;
     // LOG(INFO) << "Hole Mode: " << fHoleMode << std::endl << "NEvents: " << fTotalEvents << std::endl << "NSigmas: " << fSigmas ;
 }
 

@@ -105,8 +105,17 @@ void AntennaTester::InitialiseSettings()
     fTotalEvents = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 999;
 
          cSetting = fSettingsMap.find ( "TriggerSource" );
-         if ( cSetting != std::end ( fSettingsMap ) ) trigSource = cSetting->second;
+//         if ( cSetting != std::end ( fSettingsMap ) ) trigSource = cSetting->second;
+
+///fBeBoardInterface->ReadBoardReg (cBoard, getDelAfterTPString ( cBoard->getBoardType() ) );
+//trigSource =ReadReg("fc7_daq_cnfg.fast_command_block.trigger_source");
+//         LOG (INFO)  <<int (trigSource);
+    for (auto& cBoard : fBoardVector)
+    {
+
+        trigSource = fBeBoardInterface->ReadBoardReg (cBoard, "fc7_daq_cnfg.fast_command_block.trigger_source" );
          LOG (INFO)  <<int (trigSource);
+}
 
 }
 void AntennaTester::InitializeHists()
@@ -173,6 +182,9 @@ void AntennaTester::ReconfigureCBCRegisters (std::string pDirectoryName )
     for (auto& cBoard : fBoardVector)
     {
         fBeBoardInterface->CbcHardReset ( cBoard );
+
+        trigSource = fBeBoardInterface->ReadBoardReg (cBoard, "fc7_daq_cnfg.fast_command_block.trigger_source" );
+         LOG (INFO)  <<int (trigSource);
 
         for (auto& cFe : cBoard->fModuleVector)
         {
