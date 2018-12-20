@@ -40,8 +40,8 @@
         <!-- Fast Command Block -->
         <Register name="fast_command_block">
 		<Register name="triggers_to_accept"> 0 </Register>
-                <Register name="trigger_source"> 7 </Register>  <!-- Needs to be changed also at the bottom-->
-		<Register name="user_trigger_frequency"> 1 </Register><!-- Needs to be changed also at the bottom-->
+                <Register name="trigger_source"> 7 </Register>  
+		<Register name="user_trigger_frequency"> 1 </Register> 
 		<Register name="stubs_mask"> 1 </Register>
                 <!--this is the delay for the stub trigger-->
 		<Register name="stub_trigger_delay_value"> 0 </Register>
