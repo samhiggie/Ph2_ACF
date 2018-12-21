@@ -7,7 +7,7 @@
 
     <Module FeId="0" FMCId="0" ModuleId="0" Status="1">
         <Global>
-            <Settings threshold="580" latency="196"/>
+            <Settings threshold="280" latency="196"/>
             <TestPulse enable="0" polarity="0" amplitude="0xFF" channelgroup="0" delay="0" groundothers="1"/>
             <ClusterStub clusterwidth="4" ptwidth="14" layerswap="0" off1="0" off2="0" off3="0" off4="0"/>
             <Misc analogmux="0b00000" pipelogic="0" stublogic="0" or254="1" tpgclock="1" testclock="1" dll="4"/>
