@@ -133,10 +133,13 @@ int main ( int argc, char* argv[] )
     cTool.InitResultFile ( cResultfile );
     cTool.StartHttpServer();
     cTool.ConfigureHw ();
+    #ifdef __ANTENNA__
+
 
     AntennaTester cAntennaTester;
     cAntennaTester.Inherit (&cTool);
     cAntennaTester.Initialize();
+    #endif
 
     if ( cLatency || cStubLatency )
     {
@@ -150,18 +153,27 @@ int main ( int argc, char* argv[] )
 
 	if ( cLatency ) 
 	{
+#ifdef __ANTENNA__
+
 		if( cAntenna)cAntennaTester.EnableAntenna(cAntenna, cAntennaPotential );
+    #endif
+
 		cLatencyScan.ScanLatency ( cStartLatency, cLatencyRange, cNoTDC );
 	}
 
         if ( cStubLatency ) cLatencyScan.ScanStubLatency ( cStartLatency, cLatencyRange );
 
 	// if antenna was being used ... then disable it again at the end 
+
+#ifdef __ANTENNA__
+
         if( cAntenna)
 	{
 		LOG (INFO) << BOLDBLUE << "Disable antenna with " << +cAntennaPotential << " written to the potentiometer" <<  RESET;
 		   cAntennaTester.EnableAntenna(false, cAntennaPotential );
 	}
+    #endif
+
 	cLatencyScan.writeObjects();
     }
 
@@ -187,21 +199,26 @@ int main ( int argc, char* argv[] )
         Timer t;
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
+#ifdef __ANTENNA__
+
         if( cAntenna)
 		LOG (INFO) << BOLDBLUE << "Enabling antenna with " << +cAntennaPotential << " written to the potentiometer" <<  RESET;
 	if( cAntenna)cAntennaTester.EnableAntenna(cAntenna, cAntennaPotential );
+#endif
         cPedeNoise.Initialise (cAllChan); // canvases etc. for fast calibration
         t.start();
         cPedeNoise.measureNoise();
         t.stop();
         t.show ("Time for noise measurement");
         //cPedeNoise.Validate();
+#ifdef __ANTENNA__
+
               if( cAntenna)
         {
                 LOG (INFO) << BOLDBLUE << "Disable antenna with " << +cAntennaPotential << " written to the potentiometer" <<  RESET;
                    cAntennaTester.EnableAntenna(false, cAntennaPotential );
         }
-
+#endif
         cPedeNoise.writeObjects( );
         cPedeNoise.dumpConfigFiles();
     }
