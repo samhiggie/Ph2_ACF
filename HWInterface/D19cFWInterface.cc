@@ -1464,6 +1464,17 @@ namespace Ph2_HwInterface {
 
     }
 
+    void D19cFWInterface::PhaseTuningGetDefaultFSMState() {
+        // encode command type
+        uint32_t command_raw = (0 & 0xF) << 16;
+        uint32_t command_final = command_raw;
+        WriteReg( "fc7_daq_ctrl.physical_interface_block.phase_tuning_ctrl", command_final );
+        // sleep a bi
+        usleep(100);
+        // get the status back
+        PhaseTuningParseStatus();
+    }
+
     void D19cFWInterface::PhaseTuningParseStatus() {
 
         uint32_t reply = ReadReg( "fc7_daq_stat.physical_interface_block.phase_tuning_reply" );
@@ -1486,6 +1497,9 @@ namespace Ph2_HwInterface {
 
             LOG(INFO) << "\t\t Done: " << +done << ", PA FSM: " << +pa_fsm_state << ", WA FSM: " << +wa_fsm_state;
             LOG(INFO) << "\t\t Delay: " << +delay << ", Bitslip: " << +bitslip;
+        } else if (output_type == 6) {
+            uint8_t default_fsm_state = (reply & 0x000000FF) >> 0;
+            LOG(INFO) << "\t\t Default FSM State: " << +default_fsm_state;
         }
     }
 
