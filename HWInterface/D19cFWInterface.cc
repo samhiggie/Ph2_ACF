@@ -678,25 +678,6 @@ namespace Ph2_HwInterface {
 
     void D19cFWInterface::PhaseTuning (const BeBoard* pBoard)
     {
-        // map of the phase tuning statuses
-        std::map<int, std::string> cErrorMap = {{0, "Idle or ResetIDELAYE or WaitResetIDELAYE"},
-                                        {1, "ApplyInitialDelay or CheckInitialDelay"},
-                                        {2, "InitialSampling or ProcessInitialSampling"},
-                                        {3, "ApplyDelay or CheckDelay"},
-                                        {4, "Sampling or ProcessSampling"},
-                                        {5, "WaitGoodDelay"},
-                                        {6, "CheckPattern"},
-                                        {7, "ApplyBitslip or WaitBitslip"},
-                                        {8, "PatternVerification"},
-                                        {9, "FailedInitial"},
-                                        {10, "FailedToApplyDelay"},
-                                        {11, "FailedBitslip"},
-                                        {12, "FailedVerification"},
-                                        {13, "Not Defined"},
-                                        {14, "Tuned"},
-                                        {15, "Unknown"}
-                                       };
-
         if (fFirwmareChipType == ChipType::CBC3)
         {
             if (!fCBC3Emulator)
@@ -746,9 +727,11 @@ namespace Ph2_HwInterface {
                     {
                         if (cCounter++ > cMaxAttempts)
                         {
-                            uint32_t tuning_state_cbc0 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc0");
-                            uint32_t tuning_state_cbc1 = ReadReg("fc7_daq_stat.physical_interface_block.state_tuning_cbc1");
-                            LOG(INFO) << "tuning state cbc0: " << cErrorMap[tuning_state_cbc0] << ", cbc1: " << cErrorMap[tuning_state_cbc1];
+                            LOG(ERROR) << BOLDRED << "Failed phase tuning, debug information: " << RESET;
+                            // print statuses
+                            for (auto cFe : pBoard->fModuleVector)
+                                for (auto cCbc : cFe->fCbcVector)
+                                    PhaseTuningGetLineStatus(cFe->getFeId(), cCbc->getCbcId(), 5);
                             exit (1);
                         }
 
@@ -1441,7 +1424,7 @@ namespace Ph2_HwInterface {
         uint32_t line_raw = (pLine & 0xF) << 20;
 
         // print header
-        LOG(INFO) << "\t Hybrid: " << +pHybrid << ", Chip: " << +pChip << ", Line: " << +pLine;
+        LOG(INFO) << BOLDBLACK << "\t Hybrid: " << RESET << +pHybrid << BOLDBLACK << ", Chip: " << RESET << +pChip << BOLDBLACK << ", Line: " << RESET << +pLine;
 
         // encode command type
         uint32_t command_raw = (0 & 0xF) << 16;
@@ -1476,7 +1459,43 @@ namespace Ph2_HwInterface {
     }
 
     void D19cFWInterface::PhaseTuningParseStatus() {
+        // map of the phase tuning statuses
+        std::map<int, std::string> cPhaseFSMStateMap = {{0, "IdlePHASE"},
+                                                        {1, "ResetIDELAYE"},
+                                                        {2, "WaitResetIDELAYE"},
+                                                        {3, "ApplyInitialDelay"},
+                                                        {4, "CheckInitialDelay"},
+                                                        {5, "InitialSampling"},
+                                                        {6, "ProcessInitialSampling"},
+                                                        {7, "ApplyDelay"},
+                                                        {8, "CheckDelay"},
+                                                        {9, "Sampling"},
+                                                        {10, "ProcessSampling"},
+                                                        {11, "WaitGoodDelay"},
+                                                        {12, "FailedInitial"},
+                                                        {13, "FailedToApplyDelay"},
+                                                        {14, "TunedPHASE"},
+                                                        {15, "Unknown"}
+                                                       };
+        std::map<int, std::string> cWordFSMStateMap = {{0, "IdleWORD or WaitIserdese"},
+                                                        {1, "WaitFrame"},
+                                                        {2, "ApplyBitslip"},
+                                                        {3, "WaitBitslip"},
+                                                        {4, "PatternVerification"},
+                                                        {5, "Not Defined"},
+                                                        {6, "Not Defined"},
+                                                        {7, "Not Defined"},
+                                                        {8, "Not Defined"},
+                                                        {9, "Not Defined"},
+                                                        {10, "Not Defined"},
+                                                        {11, "Not Defined"},
+                                                        {12, "FailedFrame"},
+                                                        {13, "FailedVerification"},
+                                                        {14, "TunedWORD"},
+                                                        {15, "Unknown"}
+                                                       };
 
+        // read status
         uint32_t reply = ReadReg( "fc7_daq_stat.physical_interface_block.phase_tuning_reply" );
         uint8_t output_type = (reply >> 24) & 0xF;
 
@@ -1492,10 +1511,10 @@ namespace Ph2_HwInterface {
             uint8_t delay = (reply & 0x00F80000) >> 19;
             uint8_t bitslip = (reply & 0x00070000) >> 16;
             uint8_t done = (reply & 0x00008000) >> 15;
-            uint8_t wa_fsm_state = (reply & 0x00000F00) >> 8;
-            uint8_t pa_fsm_state = (reply & 0x0000000F) >> 0;
+            int wa_fsm_state = (reply & 0x00000F00) >> 8;
+            int pa_fsm_state = (reply & 0x0000000F) >> 0;
 
-            LOG(INFO) << "\t\t Done: " << +done << ", PA FSM: " << +pa_fsm_state << ", WA FSM: " << +wa_fsm_state;
+            LOG(INFO) << "\t\t Done: " << +done << ", PA FSM: " << BOLDGREEN << cPhaseFSMStateMap[pa_fsm_state] << RESET << ", WA FSM: " << BOLDGREEN << cWordFSMStateMap[wa_fsm_state] << RESET;
             LOG(INFO) << "\t\t Delay: " << +delay << ", Bitslip: " << +bitslip;
         } else if (output_type == 6) {
             uint8_t default_fsm_state = (reply & 0x000000FF) >> 0;
