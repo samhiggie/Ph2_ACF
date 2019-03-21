@@ -4,7 +4,6 @@ LatencyScan::LatencyScan() : Tool()
 {}
 
 LatencyScan::~LatencyScan() {}
-
 void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool pNoTdc)
 {
     for ( auto& cBoard : fBoardVector )
@@ -44,11 +43,13 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
                         cLatHist->GetXaxis()->SetBinLabel (cBin, Form ("%d+%d", cLatency, cPhase) );
                     }
                 }
+            	cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency*%d+TDC]", fTDCBins) );
             }
             else
-                cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) , pStartLatency - 0.5,  pStartLatency + (pLatencyRange ) - 0.5 );
-
-            cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency*%d+TDC]", fTDCBins) );
+            {   
+		cLatHist = new TH1F ( cName, Form ( "Latency FE%d; Latency; # of Hits", cFeId ), (pLatencyRange ) , pStartLatency - 0.5,  pStartLatency + (pLatencyRange ) - 0.5 );
+            	cLatHist->GetXaxis()->SetTitle (Form ("Signal timing (reverse time) [TriggerLatency]") );
+	    }	
             cLatHist->SetFillColor ( 4 );
             cLatHist->SetFillStyle ( 3001 );
             bookHistogram ( cFe, "module_latency", cLatHist );
@@ -77,7 +78,7 @@ void LatencyScan::Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bo
     LOG (INFO) << "Histograms and Settings initialised." ;
 }
 
-std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uint8_t pLatencyRange, bool pNoTdc )
+std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint16_t pStartLatency, uint16_t pLatencyRange, bool pNoTdc )
 {
     // This is not super clean but should work
     // Take the default VCth which should correspond to the pedestal and add 8 depending on the mode to exclude noise
@@ -108,12 +109,12 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
         cVisitor.setLatency (  cLat );
         this->accept ( cVisitor );
 
-
+        LOG (INFO) << "Latency set to " << +cLat << " clocks..." << RESET;
         // Take Data for all Modules
         for ( BeBoard* pBoard : fBoardVector )
         {
             // I need this to normalize the TDC values I get from the Strasbourg FW
-            int cNevents; 
+            /*int cNevents; 
             fBeBoardInterface->Start(pBoard);
             do
             {
@@ -131,12 +132,13 @@ std::map<Module*, uint8_t> LatencyScan::ScanLatency ( uint8_t pStartLatency, uin
                 // done counting hits for all FE's, now update the Histograms
                 updateHists ( "module_latency", false );
             }while( cNevents < fNevents );
-            fBeBoardInterface->Stop(pBoard);
+            fBeBoardInterface->Stop(pBoard);*/
 
-            //ReadNEvents ( pBoard, fNevents );
-            //const std::vector<Event*>& events = GetEvents ( pBoard );
+            LOG (INFO) << BOLDBLUE << "Reading " << +fNevents << " events from the FE(s)" << RESET;
+            ReadNEvents ( pBoard, fNevents );
+            const std::vector<Event*>& events = GetEvents ( pBoard );
             //Loop over Events from this Acquisition
-            //countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency, pNoTdc );
+            countHitsLat ( pBoard, events, "module_latency", cLat, pStartLatency, pNoTdc );
         }
 
         // done counting hits for all FE's, now update the Histograms
@@ -588,6 +590,10 @@ void LatencyScan::parseSettings()
 
     if ( cSetting != std::end ( fSettingsMap ) )  fHoleMode = cSetting->second;
     else fHoleMode = 1;
+
+         cSetting = fSettingsMap.find ( "TriggerSource" );
+         if ( cSetting != std::end ( fSettingsMap ) ) trigSource = cSetting->second;
+         LOG (INFO)  <<int (trigSource);
 
     //cSetting = fSettingsMap.find ( "TestPulsePotentiometer" );
     //fTestPulseAmplitude = ( cSetting != std::end ( fSettingsMap ) ) ? cSetting->second : 0x7F;

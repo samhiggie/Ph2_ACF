@@ -8,6 +8,7 @@
 #include "../tools/SignalScanFit.h"
 #include "../tools/LatencyScan.h"
 #include "../tools/PedeNoise.h"
+#include "../tools/AntennaTester.h"
 
 #include "../Utils/argvparser.h"
 #include "TROOT.h"
@@ -44,7 +45,9 @@ int main ( int argc, char* argv[] )
     cmd.defineOptionAlternative ( "latency", "l" );
 
     cmd.defineOption ( "notdc", "don't split the latency histogram in TDC sub-bins", ArgvParser::NoOptionAttribute );
+    cmd.defineOption ( "antenna", "perform latency scan with antenna on UIB",  ArgvParser::OptionRequiresValue );
 
+ 
     cmd.defineOption ( "stublatency", "scan the stub latency", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "stublatency", "s" );
 
@@ -88,6 +91,8 @@ int main ( int argc, char* argv[] )
     bool cSignalFit = ( cmd.foundOption ( "signalFit" ) ) ? true : false;
     bool cNoise = ( cmd.foundOption ( "noise" ) ) ? true : false;
     bool cNoTDC = ( cmd.foundOption ( "notdc" ) ) ? true : false;
+    bool cAntenna = (cmd.foundOption ("antenna") )? true : false;
+
     std::string cDirectory = ( cmd.foundOption ( "output" ) ) ? cmd.optionValue ( "output" ) : "Results/";
 
     //if ( !cNoise ) cDirectory += "Commissioning";
@@ -100,10 +105,11 @@ int main ( int argc, char* argv[] )
     bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
     bool cAllChan = ( cmd.foundOption ( "allChan" ) ) ? true : false;
 
-    uint8_t cStartLatency = ( cmd.foundOption ( "minimum" ) ) ? convertAnyInt ( cmd.optionValue ( "minimum" ).c_str() ) :  0;
-    uint8_t cLatencyRange = ( cmd.foundOption ( "range" ) )   ?  convertAnyInt ( cmd.optionValue ( "range" ).c_str() ) :  10;
+    uint16_t cStartLatency = ( cmd.foundOption ( "minimum" ) ) ? convertAnyInt ( cmd.optionValue ( "minimum" ).c_str() ) :  0;
+    uint16_t cLatencyRange = ( cmd.foundOption ( "range" ) )   ?  convertAnyInt ( cmd.optionValue ( "range" ).c_str() ) :  10;
     int     cSignalRange  = ( cmd.foundOption ( "signal" ) )  ?  convertAnyInt ( cmd.optionValue ( "signal" ).c_str() ) :  30;
     int     cSignalFitRange = ( cmd.foundOption ( "signalFit" ) )  ?  convertAnyInt ( cmd.optionValue ( "signalFit" ).c_str() ) :  30;
+    uint8_t cAntennaPotential = ( cmd.foundOption ( "antenna" ) )   ?  convertAnyInt ( cmd.optionValue ( "antenna" ).c_str() ) :  0;
 
     TApplication cApp ( "Root Application", &argc, argv );
 
@@ -116,6 +122,7 @@ int main ( int argc, char* argv[] )
     else if ( cSignal ) cResultfile = "SignalScan";
     else if ( cSignalFit ) cResultfile = "SignalScanFit";
     else cResultfile = "Commissioning";
+    LOG (INFO) << BOLDBLUE << "Scanning L1 latency between " << +cStartLatency << " and " << +(cStartLatency+cLatencyRange) << RESET ;
 
     std::stringstream outp;
     Tool cTool;
@@ -126,19 +133,48 @@ int main ( int argc, char* argv[] )
     cTool.InitResultFile ( cResultfile );
     cTool.StartHttpServer();
     cTool.ConfigureHw ();
+    #ifdef __ANTENNA__
+
+
+    AntennaTester cAntennaTester;
+    cAntennaTester.Inherit (&cTool);
+    cAntennaTester.Initialize();
+    #endif
 
     if ( cLatency || cStubLatency )
     {
         LatencyScan cLatencyScan;
         cLatencyScan.Inherit (&cTool);
         cLatencyScan.Initialize (cStartLatency, cLatencyRange, cNoTDC );
-
+     
         // Here comes our Part:
-        if ( cLatency ) cLatencyScan.ScanLatency ( cStartLatency, cLatencyRange, cNoTDC );
+        if( cAntenna)
+		LOG (INFO) << BOLDBLUE << "Enabling antenna with " << +cAntennaPotential << " written to the potentiometer" <<  RESET;
+
+	if ( cLatency ) 
+	{
+#ifdef __ANTENNA__
+
+		if( cAntenna)cAntennaTester.EnableAntenna(cAntenna, cAntennaPotential );
+    #endif
+
+		cLatencyScan.ScanLatency ( cStartLatency, cLatencyRange, cNoTDC );
+	}
 
         if ( cStubLatency ) cLatencyScan.ScanStubLatency ( cStartLatency, cLatencyRange );
 
-        cLatencyScan.writeObjects();
+	// if antenna was being used ... then disable it again at the end 
+
+#ifdef __ANTENNA__
+
+        if( cAntenna)
+	{
+		LOG (INFO) << BOLDBLUE << "Disable antenna with " << +cAntennaPotential << " written to the potentiometer" <<  RESET;
+		   cAntennaTester.EnableAntenna(false, cAntennaPotential );
+	}
+    #endif
+
+	cLatencyScan.writeObjects();
     }
 
     else if ( cSignal )
@@ -163,16 +199,40 @@ int main ( int argc, char* argv[] )
         Timer t;
         PedeNoise cPedeNoise;
         cPedeNoise.Inherit (&cTool);
-        //cPedeNoise.ConfigureHw ();
+#ifdef __ANTENNA__
+
+        if( cAntenna)
+		LOG (INFO) << BOLDBLUE << "Enabling antenna with " << +cAntennaPotential << " written to the potentiometer" <<  RESET;
+	if( cAntenna)cAntennaTester.EnableAntenna(cAntenna, cAntennaPotential );
+#endif
         cPedeNoise.Initialise (cAllChan); // canvases etc. for fast calibration
         t.start();
         cPedeNoise.measureNoise();
         t.stop();
         t.show ("Time for noise measurement");
-        cPedeNoise.Validate();
+        //cPedeNoise.Validate();
+#ifdef __ANTENNA__
+
+              if( cAntenna)
+        {
+                LOG (INFO) << BOLDBLUE << "Disable antenna with " << +cAntennaPotential << " written to the potentiometer" <<  RESET;
+                   cAntennaTester.EnableAntenna(false, cAntennaPotential );
+        }
+#endif
         cPedeNoise.writeObjects( );
         cPedeNoise.dumpConfigFiles();
     }
+/*    else if (cAntenna){
+
+
+cAntennaTester.ConfigureHw ();
+
+    cAntennaTester.Measure(cAntennaPotential);
+
+    // save results
+//    cAntennaTester.writeObjects();
+
+   }*/
 
     cTool.SaveResults();
     cTool.CloseResultFile();

@@ -44,10 +44,9 @@ class LatencyScan : public Tool
     LatencyScan();
     ~LatencyScan();
     void Initialize (uint32_t pStartLatency, uint32_t pLatencyRange, bool pNoTdc = false);
-    std::map<Module*, uint8_t> ScanLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20, bool pNoTdc = false );
+    std::map<Module*, uint8_t> ScanLatency ( uint16_t pStartLatency = 0, uint16_t pLatencyRange = 20, bool pNoTdc = false );
     std::map<Module*, uint8_t> ScanStubLatency ( uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20 );
     void ScanLatency2D(uint8_t pStartLatency = 0, uint8_t pLatencyRange = 20, bool pNoTdc = false );
-
     void writeObjects();
     
 
@@ -64,6 +63,7 @@ class LatencyScan : public Tool
     uint32_t fHoleMode;
     uint32_t fNCbc;
     uint8_t fTestPulseAmplitude;
+    uint32_t trigSource;
 
     const uint32_t fTDCBins = 8;
 
