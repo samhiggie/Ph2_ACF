@@ -27,6 +27,10 @@ class StubTool : public Tool
     void maskChannel(uint8_t iChan);
     void scanStubs();
     void scanStubs_wNoise();
+    void scanStubs_ptWidth();
+    void scanStubs_swap();
+    void scanStubs_clusterWidth(unsigned int teststrip);
+    void scanStubs_SoF(unsigned int teststrip);
 
 
   private:
@@ -36,6 +40,8 @@ class StubTool : public Tool
     void setInitialOffsets();
 
     void maskChannel(Cbc* pCbc, uint8_t iChan, bool mask = true);
+
+    uint16_t encodeId (uint8_t pFeId, uint8_t pCbcId);
 
     //from the settings map
     bool fHoleMode;
@@ -93,8 +99,16 @@ class StubTool : public Tool
     TCanvas* fCanvas5;
     TH2F* hSTUB_SCAN_tg;
     TCanvas* fCanvas6;
+    TH2F* hSTUB_SCAN_cw;
+    TH2F* hSTUB_SCAN_cbc;
+    TH2F* hSTUB_SCAN_sof;
+    TH2F* hSTUB_SCAN_SOF;
     TH2F* hSTUB_SCAN_bend;
+    TH2F* hSTUB_SCAN_error;
+    TH2F* hSTUB_SCAN_cw_cbc[8];
+    TH2F* hSTUB_SCAN_sof_cbc[8];
     TH2F* hSTUB_SCAN_bend_off[8];
+    TH2F* hSTUB_SCAN_bend_pt[8];
 };
 
 #endif

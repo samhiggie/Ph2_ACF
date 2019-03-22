@@ -37,8 +37,20 @@ int main ( int argc, char* argv[] )
     cmd.defineOption ( "offset","Run the stub bend test application using correlation offset", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "offset", "o" );
 
-    cmd.defineOption ( "noise", "Run the stub bend testt application using noises", ArgvParser::NoOptionAttribute );
+    cmd.defineOption ( "noise", "Run the stub bend test application using noises", ArgvParser::NoOptionAttribute );
     cmd.defineOptionAlternative ( "noise", "n" );
+
+    cmd.defineOption ( "ptwidth", "Run the stub bend test application using noises + correlation width tester", ArgvParser::NoOptionAttribute );
+    cmd.defineOptionAlternative ( "ptwidth", "p" );
+
+    cmd.defineOption ( "clustwidth", "Run the stub bend test application using noises + cluster width tester", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "clustwidth", "w" );
+
+    cmd.defineOption ( "sof", "Run the stub bend test application using noises + checking stub overflow bit", ArgvParser::OptionRequiresValue );
+    cmd.defineOptionAlternative ( "sof", "e" );
+
+    cmd.defineOption ( "swap", "Run the stub bend test application using noises + enable swap bit", ArgvParser::NoOptionAttribute );
+    cmd.defineOptionAlternative ( "swap", "s" );
 
     //actually parse
     int result = cmd.parse ( argc, argv );
@@ -51,10 +63,17 @@ int main ( int argc, char* argv[] )
 
     // now query the parsing results
     std::string cHWFile = ( cmd.foundOption ( "file" ) ) ? cmd.optionValue ( "file" ) : "settings/Calibration8CBC.xml";
+    unsigned int strip_cw  = ( cmd.foundOption ( "clustwidth" ) ) ? convertAnyInt ( cmd.optionValue ( "clustwidth" ).c_str() ) : 1;
+    unsigned int strip_sof = ( cmd.foundOption ( "sof" ) ) ? convertAnyInt ( cmd.optionValue ( "sof" ).c_str() ) : 1;
+
     //std::string cDirectory = "Results/mytest";
-    bool batchMode = ( cmd.foundOption ( "batch" ) ) ? true : false;
-    bool offset    = ( cmd.foundOption ( "offset" ) ) ? true : false;
-    bool noise     = ( cmd.foundOption ( "noise" ) ) ? true : false;
+    bool batchMode = ( cmd.foundOption ( "batch"  ) )    ? true : false;
+    bool offset    = ( cmd.foundOption ( "offset" ) )    ? true : false;
+    bool noise     = ( cmd.foundOption ( "noise"  ) )    ? true : false;
+    bool ptwidth   = ( cmd.foundOption ( "ptwidth") )    ? true : false;
+    bool clustwidth= ( cmd.foundOption ( "clustwidth") ) ? true : false;
+    bool sof       = ( cmd.foundOption ( "sof"    ) )    ? true : false;
+    bool swap      = ( cmd.foundOption ( "swap") )       ? true : false;
 
     TApplication cApp ( "Root Application", &argc, argv );
 
@@ -71,9 +90,13 @@ int main ( int argc, char* argv[] )
     cTool.InitializeSettings ( cHWFile, outp );
     LOG (INFO) << outp.str();
     outp.str ("");
-    std::string cDirectory = "Results/StubScan";
-    if (offset) cDirectory = "Results/StubScan_correlation_offset";
-    if (noise)  cDirectory = "Results/StubScan_noises";
+    std::string    cDirectory = "Results/StubScan";
+    if (offset)    cDirectory = "Results/StubScan_correlation_offset";
+    if (noise)     cDirectory = "Results/StubScan_noises";
+    if (ptwidth)   cDirectory = "Results/StubScan_ptWidth";
+    if (clustwidth)cDirectory = "Results/StubScan_clustwidth";
+    if (sof)       cDirectory = "Results/StubScan_sof";
+    if (swap)      cDirectory = "Results/StubScan_swap";
     cTool.CreateResultDirectory ( cDirectory);
     cTool.InitResultFile ( "mytestfile" );
     cTool.ConfigureHw ();
@@ -82,8 +105,12 @@ int main ( int argc, char* argv[] )
     StubTool cStubTool;
     cStubTool.Inherit (&cTool);
     cStubTool.Initialize();
-    if (offset) cStubTool.scanStubs();
-    if (noise)  cStubTool.scanStubs_wNoise();
+    if (offset)    cStubTool.scanStubs();
+    if (noise)     cStubTool.scanStubs_wNoise();
+    if (ptwidth)   cStubTool.scanStubs_ptWidth();
+    if (clustwidth)cStubTool.scanStubs_clusterWidth(strip_cw);
+    if (sof)       cStubTool.scanStubs_SoF(strip_sof);
+    if (swap)      cStubTool.scanStubs_swap();
 
     t.stop();
     t.show ( "Time to run our code: " );
