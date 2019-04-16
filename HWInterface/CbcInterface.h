@@ -123,6 +123,11 @@ namespace Ph2_HwInterface {
          * \brief Read all register in all Cbcs and then UpdateCbc
          * \param pModule : Module containing vector of Cbcs
          */
+        /*!
+         * \brief Read CBC ID eFuse
+         * \param pChip: pointer to Chip object
+         */
+        virtual uint32_t ReadCbcIDeFuse ( Cbc* pCbc );
         //void ReadAllCbc ( const Module* pModule );
         //void CbcCalibrationTrigger(const Cbc* pCbc );
         void output();
