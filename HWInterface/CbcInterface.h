@@ -127,7 +127,7 @@ namespace Ph2_HwInterface {
          * \brief Read CBC ID eFuse
          * \param pChip: pointer to Chip object
          */
-        virtual uint32_t ReadCbcIDeFuse ( Cbc* pCbc );
+        uint32_t ReadCbcIDeFuse ( Cbc* pCbc );
         //void ReadAllCbc ( const Module* pModule );
         //void CbcCalibrationTrigger(const Cbc* pCbc );
         void output();

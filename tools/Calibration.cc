@@ -216,10 +216,7 @@ void Calibration::FindVplus()
     float cMeanValue = 0;
 
     for ( auto& cCbc : fVplusMap ) //this toggles bit i on Vplus for each
-    {
-
-        fCbcInterface->ReadCbcIDeFuse(cCbc.first);     
-
+    {   
         TProfile* cTmpProfile = static_cast<TProfile*> ( getHist ( cCbc.first, "Vplus" ) );
         cCbc.second = cTmpProfile->GetMean ( 2 );
         cMeanValue += cCbc.second;
