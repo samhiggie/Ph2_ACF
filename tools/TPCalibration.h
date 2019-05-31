@@ -13,13 +13,12 @@ using namespace Ph2_HwInterface;
 using namespace Ph2_System;
 
 
-class TPCalibration : public Tool
+class TPCalibration : public PedeNoise
 {
 private: //attributes
   int fStartAmp;
   int fEndAmp;
   int fStepsize;
-  PedeNoise* fPedeNoise;
   int fTPCount;
 
 public: //methods

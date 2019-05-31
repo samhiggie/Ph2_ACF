@@ -4,9 +4,12 @@
 TPCalibration::TPCalibration()
 {
   LOG(INFO) << "Constructor of TPCalibration" << RESET;
+  PedeNoise();
+  fTPCount = 0;
   fStartAmp = 165;
   fEndAmp = 255;
   fStepsize = 10;
+
 }
 
 
@@ -71,14 +74,10 @@ void TPCalibration::RunCalibration()
 {
   LOG(INFO) << GREEN << "Start the test pulse calibration" << RESET;
   fTPCount = 0;
-  //It is not possible create the PedeNoise object for each test pulse new
-  fPedeNoise = new PedeNoise();
-  fPedeNoise->Inherit(this);
-  fPedeNoise->Initialise(false);
   for(int cTPAmp = fStartAmp; cTPAmp <= fEndAmp; cTPAmp += fStepsize)
   {
     LOG(INFO) << BLUE << "Measure pedestals for amplitude " << cTPAmp << RESET;
-    fPedeNoise->measureNoise(cTPAmp);
+    measureNoise(cTPAmp);
     FillHistograms(cTPAmp);
     fTPCount++;
   }
@@ -103,7 +102,7 @@ void TPCalibration::FillHistograms(int pTPAmp)
       {
         int cCbcId = cCbc->getCbcId();
         LOG(INFO) << "  - CBC" << cCbcId << RESET;
-        TH1F* cPedestalHist = dynamic_cast<TH1F*>(fPedeNoise->getHist(cCbc, "Cbc_Strippedestal"));
+        TH1F* cPedestalHist = dynamic_cast<TH1F*>(getHist(cCbc, "Cbc_Strippedestal"));
         for(int cChannel = 0; cChannel < NCHANNELS; cChannel++)
         {
           TGraph* cCorrGraph = dynamic_cast<TGraph*>(getHist(cCbc, Form("CorrChan%d", cChannel)));

@@ -87,15 +87,6 @@ int main ( int argc, char* argv[] )
 
     //Record the Pedestals for each Testpulse amplitude and then do a fit
     std::stringstream outp;
-    Tool cTool;
-    cTool.InitializeHw ( cHWFile, outp);
-    cTool.InitializeSettings ( cHWFile, outp );
-    LOG (INFO) << outp.str();
-    cTool.CreateResultDirectory ( cDirectory );
-    cTool.InitResultFile ( cResultfile );
-    cTool.StartHttpServer();
-    cTool.ConfigureHw ();
-
 
     LOG(INFO) << BOLDBLUE << "Do test pulse calibration for the range:" << RESET;
 
@@ -103,10 +94,17 @@ int main ( int argc, char* argv[] )
     t.start();
 
     TPCalibration cTBCalibrate;
-    cTBCalibrate.Inherit(&cTool);
+    cTBCalibrate.InitializeHw ( cHWFile, outp);
+    cTBCalibrate.InitializeSettings ( cHWFile, outp );
+    LOG (INFO) << outp.str();
+    cTBCalibrate.CreateResultDirectory ( cDirectory );
+    cTBCalibrate.InitResultFile ( cResultfile );
+    cTBCalibrate.StartHttpServer();
+    cTBCalibrate.ConfigureHw ();
+    cTBCalibrate.Initialise(false);
     cTBCalibrate.Init(cStartAmp, cEndAmp, cStepSize);
 
-
+    //Now do the actual calirbation
     cTBCalibrate.RunCalibration();
 
     cTBCalibrate.SaveResults();
