@@ -269,7 +269,7 @@ std::string PedeNoise::sweepSCurves (uint8_t pTPAmplitude)
             setFWTestPulse();
             setSystemTestPulse ( fTestPulseAmplitude, cTGrpM.first, true, fHoleMode );
         }
-        else if (fTestPulse && cTGrpM.first == -1)
+        else if (fAllChan && fTestPulse && cTGrpM.first == -1)
         {
             fTestPulse = false;
             LOG (INFO) << RED <<  "Test groups disabled. Can't enable Test Pulse for Test Group " << cTGrpM.first << RESET ;
