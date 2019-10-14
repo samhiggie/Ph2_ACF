@@ -420,7 +420,7 @@ class DQMEvent
         decodeId(cKey, feId, readoutId);                       
  	os << "== feId: <" << +feId << ">, readoutId: <" << +readoutId << ">" << std::endl;
         const ReadoutStatus& rs = it->second.first;
-        rs.print(os);
+        rs.print(true,os);
 
         const std::vector<bool>& cdata = it->second.second;
         os << "Channels hit: <";

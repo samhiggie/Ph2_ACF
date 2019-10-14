@@ -86,5 +86,5 @@ target_link_libraries(miniDQM ${LIBS} Ph2_Tools RootWeb)
 
 #miniSLinkDQM
 add_executable(miniSLinkDQM miniSLinkDQM.cc publisher.cc publisher.h DQMEvent.h DQMEvent.cc SLinkDQMHistogrammer.cc SLinkDQMHistogrammer.h)
-target_link_libraries(miniSLinkDQM ${LIBS} RootWeb)
+target_link_libraries(miniSLinkDQM ${LIBS} RootWeb Ph2_Description)
 

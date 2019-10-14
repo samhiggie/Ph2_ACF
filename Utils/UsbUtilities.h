@@ -24,7 +24,7 @@
 #include <istream>
 #include <limits>
 //#include <boost/lexical_cast.hpp>
-#include "pugixml/pugixml.hpp"
+#include "/usr/include/pugixml.hpp"
 #include "Utilities.h"
 #include "ConsoleColor.h"
 #include "easylogging++.h"

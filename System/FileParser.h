@@ -28,7 +28,8 @@
 #include "../Utils/Utilities.h"
 #include "../Utils/Exception.h"
 #include "../Utils/ConditionDataSet.h"
-#include "pugixml/pugixml.hpp"
+//#include "pugixml/pugixml.hpp"
+#include "/usr/include/pugixml.hpp"
 #include "../Utils/ConsoleColor.h"
 #include "../Utils/easylogging++.h"
 #include <iostream>

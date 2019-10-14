@@ -4,7 +4,8 @@
 #include <inttypes.h>
 #include <sys/stat.h>
 
-#include "pugixml/pugixml.hpp"
+//#include "pugixml/pugixml.hpp"
+#include "/usr/include/pugixml.hpp"
 #include <boost/filesystem.hpp>
 
 #include "../HWDescription/Cbc.h"
